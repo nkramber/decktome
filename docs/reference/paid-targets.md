@@ -63,7 +63,9 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `make feedback-harvest` writes every verdict since the last harvest to `docs/reference/feedback/`, as a dated document and a JSONL file (PR-28a). `SINCE=2026-09-01` sets the floor by hand, and `HARVEST_ARGS=-dry` counts and writes nothing. The watermark comes from the JSONL files, so the documents are the only record. It calls no model and costs nothing. Those files commit with the repository now (D-642).
 
-`make feedback-triage-dry` routes every verdict of the newest harvest into a class (PR-28b). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
+`make feedback-triage-dry` routes every verdict of the newest harvest into a class (PR-28b). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each.
+
+The target reads no `.env`, so run `set -a && . ./.env && set +a` first. Set `CARDS_SNAPSHOT_DIR` to `.local/gcs/mtg-local-cards/scryfall`, or each card case names its gap. The run of 2026-09-23 cost $0.0122 for one judge call. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
 
 `make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559). It edits code, commits, pushes, opens a pull request, and answers the review, with nobody watching. Ask the owner before every run.
 

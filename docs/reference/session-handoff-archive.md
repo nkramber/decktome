@@ -12,6 +12,51 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-23i
+
+**Pull request #218 counts the first harvest, and the triage leaves out a case that no gate can run (PR-68, F-49, D-840, D-841). It also holds the Gitar notice rule of D-842.**
+
+Author provider: Claude Code
+
+**The next step.** Ask the owner for the merge with the summary of four sections (D-836). Pending the owner merge.
+
+**The base.** `main` is `fa05e3c`, from #220. Cloud Build `12cdcf15` of `deploy-api` built `fa05e3c`, and it ended SUCCESS at 02:13:39 UTC on 2026-09-24.
+
+**Why this pull request exists.** Next step 7 asked for one live fix cycle. The session found three faults first: no harvest, a cycle that opens its own pull request, and a review step of Gitar alone (D-840). The owner chose a free count first.
+
+**What this pull request holds.**
+
+- The first harvest read 4 verdicts of one user. One carries a snapshot, and it is a C4 defect with no gate case.
+- The triage marks a conversation case with no message. The manifest and `-apply` leave it out, and the report names it.
+- The live judge lane read one verdict for $0.0122. It chose C4, and #99 fixed that fault the same day (F-75).
+- New tests: `TestACaseWithNoMessageReachesNoGate` and `TestApplyWritesNoCaseThatNoGateRuns`.
+- `docs/reference/f49-harvest-2026-09-23.md` holds each measurement. The harvest stays under `.local` (D-841).
+- A Gitar comment that names no specific item is not a finding, and nobody answers it (D-842). The rule sits in `pr-review`, `gitar-review`, and `docs/reference/gitar-pause.md`.
+- The deployed quality model `20260924T061156Z` holds the rates of 225 commanders (D-839).
+
+**The checks.** `make verify` passed on `a08c68a`, exit 0, before the rebase. `make verify` passed on `c947e64`, exit 0, on the base `fa05e3c`. Both new tests fail without the rule. `make feedback-loop-dry` reads 0 cases a gate measures.
+
+**The review.** Gitar pause (D-838). No Gitar finding: each Gitar comment is the plan notice or a work note. Codex approved effective head `c947e64` after the rebase. `make verify`, `make ste-check`, and `make ref-check` passed. The pushed record passed `review-gate`, `pr-contract`, `verify:eval`, `verify:shell`, and `verify:skip`. The other verify jobs skipped because the push changed documents alone (D-818).
+
+**What waits on the owner.**
+
+- The merge of this pull request, after the summary of four sections (D-836).
+- One live import on the deployed app. Each Commander import costs one judge read.
+- One deployed bracket 5 session reads the commander rates now.
+- The live fix cycle waits for a thumbs down that carries a session. The cycle opens its own pull request, and its review step reads Gitar alone (D-840).
+- PR-71, the power judge of a 60-card import. It needs a source of labeled lists (D-859).
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
+- The end of the Gitar pause, in a later pull request (D-838).
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. It is a paid target, so ask the owner first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Five sessions on the new files, before a decision on the checkpoint rule (next step 3, D-750).
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-23g: the land cap of bracket 5, PR-69
+
+**The owner started F-168 beside the open session of #218.** A free replay found that the cap drops Taiga, Plateau, Exotic Orchard, and Boseiju. The F-166 note named two other lands. The owner chose the score order for the mana half over a pass of the cap and over a cap of 45 (D-843). Run 12 read FAIL on the hands floor alone. A free measure of 6,497 top-cut lists showed that 84 percent of them fail it. The owner chose to fix the band in this pull request, at 0.56 for brackets 4 and 5 (D-844).
+
 ## The resume section of 2026-09-23h
 
 **Pull request #220 imports a deck list, and shows it as a deck the app built (PR-70, F-170, F-171, D-845 to D-862).**

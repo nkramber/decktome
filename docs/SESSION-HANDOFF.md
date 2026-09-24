@@ -6,7 +6,7 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-23i)
+## RESUME HERE (2026-09-23j)
 
 **Pull request #221 reads the power step of a 60-card import (PR-71, F-170, F-172, D-863 to D-876).**
 
@@ -14,7 +14,7 @@ Author provider: Claude Code
 
 **The next step.** Pending owner merge of #221. `review-gate` passes, and Gitar left its plan notice alone, with no finding.
 
-**The base.** `main` is `fa05e3c`, from #220. Cloud Build read SUCCESS for `deploy-api` and `deploy-web` of `fa05e3c` on 2026-09-24 UTC. The owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
+**The base.** `main` is `1d36928`, from #218, merged into this branch on 2026-09-24. This session read no deploy of `1d36928`. The deploy of `fa05e3c` ended SUCCESS, and the owner imported `go/internal/decklist/testdata/archidekt_living_weapon.txt` on decktome.com. The stored deck holds bracket 3 from the judge with no estimate mark. It also holds the legality block of D-846, the grade typical, and the summary of D-855.
 
 **What this pull request holds.**
 
@@ -33,6 +33,8 @@ Author provider: Claude Code
 
 - The merge of this pull request.
 - One live import of a 60-card list after the merge. Each costs one judge read, about $0.022.
+- One deployed bracket 5 session reads the commander rates now.
+- The live fix cycle waits for a thumbs down that carries a session. The cycle opens its own pull request, and its review step reads Gitar alone (D-840).
 - The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
 - The end of the Gitar pause, in a later pull request (D-838).
 - F-49, as a later item.
@@ -92,15 +94,15 @@ Twenty-two things a fresh session gets wrong without this file.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
 - The theme table `themes.json` reads `verified_at` 2026-09-20. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-20. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
-- CAUTION: the application default credentials of this Mac failed on 2026-09-13 with `invalid_rapt`. `make feedback-list` fails, and so do the harvest and the backfill, which read the same credentials. `scripts/read-session.sh` and `gcloud logging read` still work with `CLOUDSDK_CORE_ACCOUNT`. The owner runs `gcloud auth application-default login` to repair them.
+- The owner repaired the application default credentials of this Mac on 2026-09-23, after the failure of 2026-09-13. The harvest then read `decktome-prod`, and the sandbox let it read the feedback of each user.
 - CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration. A read on 2026-09-12 at 19:24 UTC found the configuration unchanged.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
-- The feedback store holds 3 verdicts on 2026-09-09, and every one predates the snapshot of D-635. `make feedback-list VERDICT=` reads both verdicts now (F-87). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
+- The feedback store holds 4 verdicts on 2026-09-23, all of one user. One carries the snapshot of D-635 (`docs/reference/f49-harvest-2026-09-23.md`). A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-23: Cloud Build `11533acf` of `deploy-api` built `f00a2af`, from #216, and ended SUCCESS at 18:24:15 UTC. The newest build of `deploy-web` is `dc8ed000`, of `503dffd`, from #211, and it ended SUCCESS at 02:45:32 UTC on 2026-09-23. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-24: Cloud Build `12cdcf15` of `deploy-api` built `fa05e3c`, from #220, and ended SUCCESS at 02:13:39 UTC. Build `6ff2e6ff` of `deploy-web` built `fa05e3c`, and it ended SUCCESS at 02:08:51 UTC. The `mtg-meta` job reads `worker:fa05e3c`. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
-- The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839). The deployed model holds none until a meta job runs the new fit.
-- The deployed quality model, read 2026-09-14: `20260914T070904Z`, from the meta job that started at 06:02 UTC and ended at 07:13 UTC. It fits 43,182 lists and 1,517 commanders. Its Commander fit reads `immaterial` 239 and accuracy 0.554, and its Standard fit reads a cross share of 0.667. The job read the weekly EDHREC pass, 2,077 pages and 4 lists. The mtgo source read 3,094 lists with 58 fetch errors. The mtggoldfish source read 155 lists with no failure. The mtgjson source read no list, because its deck list version differs from the stored table, as on 2026-09-12 and 2026-09-13.
+- The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
+- The deployed quality model, read 2026-09-24: `20260924T061156Z`, from the meta job that ran from 06:00:50 to 06:19:52 UTC on `worker:fa05e3c`. Its Commander fit read 25,851 lists and used 9,244, with `immaterial` 224 and accuracy 0.5595. It holds the rates of 225 commanders, and Najeela reads 64 lists and 169 cards (D-839). The EDHREC pass read nothing, because it ran on 2026-09-21. The mtgjson source read no list, because its deck list version differs from the stored table.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 16 now, and run 19 read version 12. Run 34 of 2026-09-21 is the newest whole deck gate run. It rejudges the summaries of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 52 is the newest whole questions run, and it reads PASS. Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
@@ -109,12 +111,12 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **The power step of a 60-card import** (PR-71, F-170, F-172, D-863 to D-876). This pull request is #221.
-2. **The open items of the roadmap.** One register row reads 🔧: F-49, and it waits for the owner. F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ with this pull request (D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+2. **The open items of the roadmap.** One register row reads 🔧: F-49. The live cycle of F-49 waits for a thumbs down with a session (D-841). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ with this pull request (D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-7. **The live half of the feedback loop has no run yet.** Three things want a measurement: the judge lane of the triage, one live fix cycle, and one review round. All three need the owner's word, and the cycle also needs `AUTOTUNE_FIXER_CMD` and a harvest whose verdicts carry a snapshot.
+7. **The live half of the feedback loop.** The judge lane ran once for $0.0122 (D-841). One live fix cycle and one review round wait for a thumbs down that carries a session. `.env` names `AUTOTUNE_FIXER_CMD`. The cycle opens its own pull request, and its review step reads Gitar alone (D-840).
 8. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
 9. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 10. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
@@ -131,18 +133,18 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-23g: the land cap of bracket 5, PR-69
-
-**The owner started F-168 beside the open session of #218.** A free replay found that the cap drops Taiga, Plateau, Exotic Orchard, and Boseiju. The F-166 note named two other lands. The owner chose the score order for the mana half over a pass of the cap and over a cap of 45 (D-843). Run 12 read FAIL on the hands floor alone. A free measure of 6,497 top-cut lists showed that 84 percent of them fail it. The owner chose to fix the band in this pull request, at 0.56 for brackets 4 and 5 (D-844).
-
 ### 2026-09-23h: the deck import, PR-70
 
 **The owner started PR-70 from the transitional prompt of #219.** No roadmap item covered a deck import. The session asked five batches of scope questions, and the owner approved the scope (D-845 to D-860). The owner chose a new judge for the power step of a 60-card import, and then its split into PR-71 (D-858, D-859). The code found the bug of the backfill, and the owner chose its fix here (D-861).
 
-### 2026-09-23i: the power step of a 60-card import, PR-71
+### 2026-09-23i: the first harvest, PR-68
+
+**The owner started F-49 from the transitional prompt of #217.** The deploy of `e755f65` ended SUCCESS. The session named three faults before a paid run, and the owner chose a free count first (D-840). The harvest read 4 verdicts. The owner chose the fix and one live judge call, kept the harvest out of git (D-841), and added the Gitar notice rule (D-842). The meta job of 2026-09-24 wrote the rates of 225 commanders, and the session moved the branch onto `fa05e3c`.
+
+### 2026-09-23j: the power step of a 60-card import, PR-71
 
 **The owner started PR-71 from the transitional prompt of #220.** A free count refuted a premise of D-859, and the owner chose the scope in five batches (D-863 to D-869). No product type of Wizards marked the FNM line, so a model of another family labeled 60 user decks (D-874, D-875). Test run 1 failed on small RCQs, and run 2 passed on fresh lists (D-876). The session found F-172 in the code, and the owner chose its fix here (D-870).
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23h, the records of 2026-08-31 to 2026-09-23f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-23i, the records of 2026-08-31 to 2026-09-23g, and 104 more sections, word for word. Read it for the detail behind a decision.
