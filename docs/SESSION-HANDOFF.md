@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `cb591e8`, exit 0. The two new tests fail on the code of `2c658ff`, and shellcheck is clean.
 
-**The review.** Gitar pause (D-838). Gitar is read one time after CI completes, and the Codex review follows. The pull request then waits for the owner.
+**The review.** Codex reads Blocked at `4805915726f10e1bfd380edf9e06c9473656e1ab`. The PR-73 gate lacks an owner waiver. No code finding is open. The pull request waits for the owner.
 
 **What waits on the owner.**
 
