@@ -421,3 +421,40 @@ func TestEmailContextRoundTrip(t *testing.T) {
 		t.Errorf("email with none = %q, want empty", got)
 	}
 }
+
+type fakeClosed struct {
+	closed map[string]bool
+	err    error
+}
+
+func (f fakeClosed) Closed(_ context.Context, uid string) (bool, error) { return f.closed[uid], f.err }
+
+// TestAClosedAccountIsRefused is D-941: a closed account ends at once,
+// and not when its token expires. The refusal names its state.
+func TestAClosedAccountIsRefused(t *testing.T) {
+	call := func(t *testing.T, opts ...Option) (string, error) {
+		t.Helper()
+		health, _ := newServer(t, opts...)
+		req := connect.NewRequest(&mtgv1.CheckRequest{})
+		req.Header().Set("Authorization", "Bearer good")
+		res, err := health.Check(context.Background(), req)
+		if err != nil {
+			return "", err
+		}
+		return res.Msg.GetVersion(), nil
+	}
+	if uid, err := call(t, WithClosed(fakeClosed{closed: map[string]bool{"u-7": true}})); err != nil || uid != "u-42" {
+		t.Errorf("an open account must get in: %q %v", uid, err)
+	}
+	_, err := call(t, WithClosed(fakeClosed{closed: map[string]bool{"u-42": true}}))
+	var connErr *connect.Error
+	if !errors.As(err, &connErr) || connErr.Code() != connect.CodePermissionDenied {
+		t.Fatalf("a closed account: %v", err)
+	}
+	if got := connErr.Meta().Get(RefusalHeader); got != RefusalClosed {
+		t.Errorf("%s = %q, want %q", RefusalHeader, got, RefusalClosed)
+	}
+	if _, err := call(t, WithClosed(fakeClosed{err: errors.New("firestore down")})); codeOf(err) != connect.CodeUnavailable {
+		t.Errorf("a mark that can not be read: %v", err)
+	}
+}

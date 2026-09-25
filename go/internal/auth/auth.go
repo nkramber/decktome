@@ -49,6 +49,13 @@ type Allowlist interface {
 	Allowed(ctx context.Context, email string) (bool, error)
 }
 
+// Closed says whether the owner closed the account of a user (D-941).
+// The interceptor asks it for every verified token, so a closed account
+// ends at once and not when its token expires.
+type Closed interface {
+	Closed(ctx context.Context, uid string) (bool, error)
+}
+
 // ErrNotConfigured is what RejectAll answers: the server has no verifier.
 var ErrNotConfigured = errors.New("token verification is not configured on this server")
 
@@ -144,10 +151,17 @@ func WithAllowlist(a Allowlist) Option {
 	return func(i *interceptor) { i.allow = a }
 }
 
+// WithClosed refuses every verified user whose account the owner closed,
+// with PermissionDenied (D-941).
+func WithClosed(c Closed) Option {
+	return func(i *interceptor) { i.closed = c }
+}
+
 type interceptor struct {
 	verify   Verifier
 	fallback string
 	allow    Allowlist
+	closed   Closed
 	// public names the procedures that need no sign-in, the shared deck
 	// reads of D-315. Such a call carries no user in its context.
 	public map[string]bool
@@ -184,6 +198,9 @@ var (
 	// errUnverified is the one sentence an invited user with an email
 	// that is not proved reads (D-903).
 	errUnverified = errors.New("open the link in the email that Deck Tome sent to prove your address, then sign in again")
+	// errClosed is the one sentence a user of a closed account reads
+	// (D-941).
+	errClosed = errors.New("this account is closed")
 )
 
 // RefusalHeader names the state behind a refusal (F-59). RefusalNotInvited
@@ -195,6 +212,7 @@ const (
 	RefusalHeader     = "Deck-Tome-Refusal"
 	RefusalNotInvited = "not-invited"
 	RefusalUnverified = "email-unverified"
+	RefusalClosed     = "account-closed"
 )
 
 // notInvited is the refusal a caller off the list reads (D-314). The
@@ -245,6 +263,17 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 		}
 		if !id.EmailVerified {
 			return nil, unverified()
+		}
+	}
+	if i.closed != nil {
+		closed, err := i.closed.Closed(ctx, id.UID)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeUnavailable, errors.New("the account state could not be read"))
+		}
+		if closed {
+			err := connect.NewError(connect.CodePermissionDenied, errClosed)
+			err.Meta().Set(RefusalHeader, RefusalClosed)
+			return nil, err
 		}
 	}
 	return WithEmail(WithUserID(ctx, id.UID), id.Email), nil

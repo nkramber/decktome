@@ -160,6 +160,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		authOpts.opts = append(authOpts.opts, auth.WithAllowlist(inviteList))
 		logger.Info("the invite list gates every request", "document", allowlist.Collection+"/"+allowlist.Doc)
 	}
+	// A closed account ends at once, and its share links answer NotFound
+	// (D-941). The mark is read once a minute for each user.
+	closedUsers := users.NewClosedCache(users.NewRepo(fs).Deactivated, nil)
+	authOpts.opts = append(authOpts.opts, auth.WithClosed(closedUsers))
 	// The interceptor puts the user id in the context.
 	userFn := auth.UserID
 	// The repo reads the index for the summary of a collection stored
@@ -182,6 +186,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		decksvc.WithCollections(collectionRepo),
 		decksvc.WithDecks(deckRepo),
 		decksvc.WithSessions(sessionRepo),
+		decksvc.WithClosedUsers(closedUsers),
 		decksvc.WithUser(userFn))
 	// The feedback store takes a verdict on a question, a summary, a
 	// card, or a deck of the caller (PR-27, D-558).

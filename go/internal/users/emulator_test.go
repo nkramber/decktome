@@ -154,3 +154,39 @@ func TestNoteRefusesAFieldThatIsNoCounter(t *testing.T) {
 		t.Fatal("a field that is no counter wrote to the record")
 	}
 }
+
+// TestDeactivateKeepsTheRecordAndTheFirstTime is D-941: a close writes
+// the mark alone, a second close keeps the first time, and a later note
+// keeps the mark.
+func TestDeactivateKeepsTheRecordAndTheFirstTime(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := uniqueUID()
+	made := time.Date(2026, 9, 9, 10, 0, 0, 0, time.UTC)
+	if err := r.Note(ctx, uid, "reader@example.com", DecksCreated, made); err != nil {
+		t.Fatal(err)
+	}
+	if closed, err := r.Deactivated(ctx, uid); err != nil || closed {
+		t.Fatalf("an open account reads closed %v, %v", closed, err)
+	}
+	first := made.Add(time.Hour)
+	if at, err := r.Deactivate(ctx, uid, first); err != nil || !at.Equal(first) {
+		t.Fatalf("Deactivate = %v, %v", at, err)
+	}
+	if at, err := r.Deactivate(ctx, uid, first.Add(time.Hour)); err != nil || !at.Equal(first) {
+		t.Errorf("a second close moved the time to %v, %v", at, err)
+	}
+	if err := r.Note(ctx, uid, "reader@example.com", DeckRevisions, first.Add(2*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	rec, err := r.Get(ctx, uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rec.DeactivatedAt == nil || !rec.DeactivatedAt.Equal(first) || rec.DecksCreated != 1 || rec.Email != "reader@example.com" {
+		t.Errorf("the record after the close: %+v", rec)
+	}
+	if closed, err := r.Deactivated(ctx, "u-no-record-"+uid); err != nil || closed {
+		t.Errorf("a uid with no record reads closed %v, %v", closed, err)
+	}
+}

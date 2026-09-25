@@ -85,6 +85,8 @@ With `--here`, the cycle commits on the branch of the session and pushes nothing
 
 `make allow EMAIL=... PROJECT_ID=...` invites one email to the deployed app, and `make disallow` takes one off (D-420). Both write one Firestore document of the deployed project with the caller's own credentials, and neither calls a model. `make mark-verified PROJECT_ID=...` lists each account of the deployed app with no proof of its email (D-903). With `UIDS=...` and `APPLY=1` it marks the named accounts as proved in Firebase Auth. It calls no model.
 
+`make deactivate-user USER_UID=... PROJECT_ID=...` closes one account and keeps each record of it (D-941). It prints the plan and changes nothing. With `CONFIRM=1`, it marks `users/<uid>` closed, then it deletes the Firebase Auth user. The API then refuses the user within one minute, and the share links of the user answer NotFound. It calls no provider, so it costs nothing. Ask the owner before a run with `CONFIRM=1`, as for each write to production.
+
 `make store-check` runs the session store against the local Firestore emulator. `make gcs-check` runs the live fake-GCS store test against a server seeded from the trimmed snapshot, and the CI step runs the same script (D-658). `make candidates-review` writes the PR-6 gate document from a local snapshot. `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
 
 `docs/reference/pr7-m5-scoring.md` is the owner's working copy. No target writes to it. A new sheet needs a new name and points at the latest gate document, for example `M5_OUT=docs/reference/pr7-m5-scoring-run18.md M5_RUNS=../docs/reference/pr7-question-gate-run18.md make m5-sheet`.

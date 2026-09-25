@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-09-25 correction pass 228 (PR-80, D-925 to D-938): the system map named a Firestore store for the cards and for the meta weights, and BigQuery for the evals. No code writes any of them, so each one reads REFUTED. The cost model named two services, and the deployment holds one service and two jobs. The guardrail summary counted seventeen of nineteen.
+2026-09-25 correction pass 228 (PR-80, D-925 to D-941): the system map named a Firestore store for the cards and for the meta weights, and BigQuery for the evals. No code writes any of them, so each one reads REFUTED. The cost model named two services, and the deployment holds one service and two jobs. The guardrail summary counted seventeen of nineteen.
 
 2026-09-24 correction pass 227 (PR-76, D-899, D-900): the owner ended the Gitar pause of PR-66. Each pull request waits for a current Gitar review again, and the push wait is one minute.
 
@@ -2270,7 +2270,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the third batch of review findings. Two tabs on two servers paid for two builds of one deck, and an account at its spend limit still started a chat. The review check now refuses a record from a copy of the repository, and a few scripts, pages, and checks got safer.
 
-**PR-80: Seventeen P3 findings of the repository review of 2026-09-24 (D-925 to D-938).** 🔧 planned. The mark comes before any review (D-822).
+**PR-80: Twenty P3 findings of the repository review of 2026-09-24 (D-925 to D-941).** 🔧 planned. The mark comes before any review (D-822).
 The owner asked for as many corrections as one session can finish (D-938). Each code finding has a regression test that fails before its correction.
 
 - **REV-033, the API start.** Cloud Run refuses the debug user, the emulator host, a bad cap, and a model with no price (D-925).
@@ -2278,6 +2278,7 @@ The owner asked for as many corrections as one session can finish (D-938). Each 
 - **REV-068, REV-069, REV-070, REV-071, and REV-073, the review and the deploy.** The checks are strict, and each image names its digest. An edit runs the gate. The review reads its rules from `main`, and the fix cycle freezes more (D-928 to D-932).
 - **REV-045, REV-049, and REV-050, the web.** A write pays for no second judge read. Three texts read 4.5:1, and a copy starts inside the click (D-933 to D-935).
 - **REV-035 and REV-037, the accounts and the data.** The owner accepts one hour of access after a revocation, and the deploy guide holds the restore of the daily backup (D-936, D-937).
+- **REV-032, REV-036, and REV-078, the spend and the accounts.** One user runs two turns at most, and the cap holds a reserve for each turn in flight. The owner closes an account and keeps its records. Each gate of the fix cycle stops under its cap (D-939 to D-941).
 - **REV-083, REV-088, REV-091, REV-092, and REV-093, the index and the documents** (D-938).
 
 Gate:
@@ -2286,7 +2287,7 @@ Gate:
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex record approves the effective head.
 - `make verify` passes.
-> *In plain English:* the fourth batch of review findings. A wrong setting can no longer open the live app or turn off its spend limit. A bad day of source data no longer changes the deck grades, and a few pages read more clearly.
+> *In plain English:* the fourth batch of review findings. A wrong setting can no longer open the live app or turn off its spend limit, and one user can no longer take every seat. The owner can close an account and keep its data. A bad day of source data no longer changes the deck grades, and a few pages read more clearly.
 
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
@@ -2665,7 +2666,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 69. **PR-72** the feedback fix cycle follows the one-PR rule and the Codex review (F-49, D-877 to D-879). It merged as #222, before PR-73. This list named it first in PR-79 (D-924).
 
 70. **PR-79** twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924). No paid target ran.
-71. **PR-80** seventeen P3 findings of the repository review of 2026-09-24 (D-925 to D-938). No paid target ran.
+71. **PR-80** twenty P3 findings of the repository review of 2026-09-24 (D-925 to D-941). No paid target ran.
 
 ## 9. Open questions
 

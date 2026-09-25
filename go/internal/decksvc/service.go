@@ -52,6 +52,17 @@ type DeckSource interface {
 	LookupShare(ctx context.Context, hash string) (uid, id string, err error)
 }
 
+// ClosedUsers says whether the owner closed the account of a user
+// (D-941). The share reads answer NotFound for a deck of such a user.
+type ClosedUsers interface {
+	Closed(ctx context.Context, uid string) (bool, error)
+}
+
+// WithClosedUsers wires the closed mark into the share reads (D-941).
+func WithClosedUsers(c ClosedUsers) Option {
+	return func(s *Server) { s.closed = c }
+}
+
 // WithDecks wires the deck store. Without it GetDeck and ListDecks
 // answer Unimplemented.
 func WithDecks(src DeckSource) Option {
@@ -102,7 +113,8 @@ func WithSessions(src SessionSource) Option {
 
 // Server answers DeckService requests.
 type Server struct {
-	decks DeckSource
+	decks  DeckSource
+	closed ClosedUsers
 	mtgv1connect.UnimplementedDeckServiceHandler
 	cfg         *rules.Config
 	index       cardsvc.IndexSource

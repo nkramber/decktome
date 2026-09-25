@@ -236,3 +236,43 @@ func TestASharedReadHidesAStoreError(t *testing.T) {
 		t.Fatalf("the log holds %q, want the store text and the procedure", logged.String())
 	}
 }
+
+type closedUsers map[string]bool
+
+func (c closedUsers) Closed(_ context.Context, uid string) (bool, error) { return c[uid], nil }
+
+// TestTheShareOfAClosedAccountAnswersNotFound is D-941: the owner closed
+// the account, so its link ends, and every document stays.
+func TestTheShareOfAClosedAccountAnswersNotFound(t *testing.T) {
+	ctx := context.Background()
+	f := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": sharedDeckFixture()}}
+	res, err := shareServer(t, f, "u1").ShareDeck(ctx, connect.NewRequest(&mtgv1.ShareDeckRequest{DeckId: "d1"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := res.Msg.Token
+	idx := cards.NewIndex(nil, nil, nil, time.Date(2026, 9, 3, 0, 0, 0, 0, time.UTC))
+	for _, tt := range []struct {
+		name   string
+		closed closedUsers
+		want   connect.Code
+	}{
+		{name: "an open account", closed: closedUsers{"u9": true}, want: 0},
+		{name: "a closed account", closed: closedUsers{"u1": true}, want: connect.CodeNotFound},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			visitor := New(nil, fixedIndex{idx}, WithDecks(f), WithClosedUsers(tt.closed))
+			_, err := visitor.GetSharedDeck(ctx, connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: token}))
+			if connect.CodeOf(err) != tt.want && !(tt.want == 0 && err == nil) {
+				t.Errorf("GetSharedDeck = %v, want %v", err, tt.want)
+			}
+			_, err = visitor.ExportSharedDeck(ctx, connect.NewRequest(&mtgv1.ExportSharedDeckRequest{Token: token}))
+			if connect.CodeOf(err) != tt.want && !(tt.want == 0 && err == nil) {
+				t.Errorf("ExportSharedDeck = %v, want %v", err, tt.want)
+			}
+		})
+	}
+	if f.decks["d1"] == nil || len(f.shares) != 1 {
+		t.Error("a read of a closed account removed a document")
+	}
+}

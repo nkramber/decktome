@@ -31,6 +31,7 @@ make dev-seed      # one-shot card snapshot refresh (needs make dev)
 make eval-check    # compare every eval baseline with its newest run, free (PR-15)
 make deck-gate-dry # build every deck gate shortlist over the trimmed snapshot, free (D-521)
 make allow EMAIL=... PROJECT_ID=...  # invite one email to the deployed app (D-420)
+make deactivate-user USER_UID=... PROJECT_ID=... [CONFIRM=1]  # close one account and keep its records (D-941)
 make quality-gate  # the PR-14B gate document from the local meta store, free
 make meta-refresh  # read the deck list sources into the meta store, network, free
 make themes-check  # theme slugs and the commander ranking against the snapshot
