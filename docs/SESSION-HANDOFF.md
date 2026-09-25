@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar and then Codex, after the push. Pending the auto-merge.
+**The review.** Gitar is current on `a782dfa`, and its finding is resolved. Codex finds no defect. Ready for owner merge, pending the auto-merge.
 
 **What waits on the owner.**
 
