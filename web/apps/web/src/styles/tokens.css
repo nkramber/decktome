@@ -22,10 +22,12 @@
   --primary: #c89b3c;
   --primary-foreground: #0a0c16;
   --accent: #7b5ea7;
-  --accent-foreground: #e8dcc8;
+  /* A lighter parchment on the purple reads 4.5:1 (D-934). */
+  --accent-foreground: #faf5ec;
   --ring: #c89b3c;
 
-  --danger: #d05a4a;
+  /* Light enough for 4.5:1 on a card and on its own tint (D-934). */
+  --danger: #e46d5d;
   --danger-foreground: #0a0c16;
   --success: #3f9a68;
   --warning: #c89b3c;
