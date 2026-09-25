@@ -156,7 +156,7 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 	}
 	// The judge reads every list, the bracket of a Commander list and the
 	// step of a 60-card list, so the spend cap applies to each (D-421).
-	if err := s.checkSpendCap(ctx, uid); err != nil {
+	if err := s.checkSpendCap(ctx, uid, 0); err != nil {
 		return nil, err
 	}
 
@@ -222,7 +222,7 @@ func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtg
 	if !generate.NeedsPowerRead(deck) {
 		return connect.NewResponse(&mtgv1.ReadImportBracketResponse{Deck: deck}), nil
 	}
-	if err := s.checkSpendCap(ctx, uid); err != nil {
+	if err := s.checkSpendCap(ctx, uid, 0); err != nil {
 		return nil, err
 	}
 	session, err := s.store.Get(ctx, uid, deck.GetSessionId())
