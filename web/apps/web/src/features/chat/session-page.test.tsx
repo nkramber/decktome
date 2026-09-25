@@ -312,6 +312,20 @@ describe("SessionPage", () => {
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
   });
 
+  // REV-051: only a turn that built a deck staled the cached chat, so a
+  // return after a question turn read the chat from before it.
+  it("reads the stored chat again after each turn", async () => {
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "Here is a plan.", questions: [], answers: [] }] },
+    });
+    chat.mockReturnValueOnce(events([ev("question", formatQuestion)]));
+    await renderAt("/session/s1");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "go on{enter}");
+    await screen.findByRole("group", { name: "Question: Which format?" });
+    await waitFor(() => expect(getSession.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
   // REV-041: the conversation list is not a live region, so a screen
   // reader heard no reply.
   it("announces the reply of a turn in the status row", async () => {

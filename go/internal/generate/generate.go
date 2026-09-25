@@ -309,9 +309,11 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 	metrics.Usage = spendBetween(before, acc.Report())
 	final := &Result{Deck: res.deck, Repaired: res.repaired, RepairReason: res.repairReason, Metrics: metrics}
 	// A name that missed twice never reaches the deck, and the user reads
-	// why it is absent.
+	// why it is absent. The deck stores the same line as a finding, so a
+	// reload still says it (REV-062).
 	for _, m := range res.misses {
 		final.Notes = append(final.Notes, MissNote(m))
+		addFinding(res.deck, CodeNameDropped, mtgv1.Severity_SEVERITY_INFO, MissNote(m))
 	}
 	return final, nil
 }
@@ -384,6 +386,10 @@ func (b *Builder) cutShortlist(ctx context.Context, req *Request) []string {
 // a block check, and the deck before it stands. It is an INFO: the
 // reader gets the legal deck with its warnings, and knows why they stay.
 const CodeRepairKept = "repair_kept_earlier"
+
+// CodeNameDropped marks a name that the model wrote twice and no card of
+// the shortlist carries, so the deck left it out (REV-062).
+const CodeNameDropped = "name_dropped"
 
 // worseRepair says whether a repair answered a worse deck than the one
 // it was to fix: the earlier pass had no miss and no block finding, and

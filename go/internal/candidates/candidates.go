@@ -1273,7 +1273,9 @@ const commanderNames = 3
 func (b *Builder) commanderPairs(idx *cards.Index, req Request, theme ThemeMatch,
 	colorSet map[mtgv1.Color]bool, setCodes map[string]bool, mode mtgv1.PoolRule, maxRank float64) []Candidate {
 	excluded := map[string]bool{}
-	for _, id := range req.CommanderOracleIDs {
+	// The commanders of an excluded precon leave the pairs too, as they
+	// leave the single leaders (D-408, REV-057).
+	for _, id := range append(append([]string(nil), req.CommanderOracleIDs...), req.ExcludeOracleIDs...) {
 		excluded[id] = true
 	}
 	var pairable []*mtgv1.Card

@@ -147,6 +147,17 @@ func TestBuildNotesANameThatMissesTwice(t *testing.T) {
 	if len(got.Notes) != 1 || !strings.Contains(got.Notes[0], "Craterhoof Behemoth") {
 		t.Fatalf("notes = %v, want one note naming the card", got.Notes)
 	}
+	// REV-062: the note streamed and was never stored, so a reload lost
+	// it. The deck holds it as an info finding.
+	stored := false
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeNameDropped && strings.Contains(f.GetMessage(), "Craterhoof Behemoth") {
+			stored = true
+		}
+	}
+	if !stored {
+		t.Error("the deck stores no finding for the dropped name")
+	}
 	for _, c := range got.Deck.GetCards() {
 		if c.GetName() == "Craterhoof Behemoth" {
 			t.Fatal("an invented name reached the deck after two misses")

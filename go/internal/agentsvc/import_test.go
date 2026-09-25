@@ -186,6 +186,22 @@ func TestImportAsksForTheCommander(t *testing.T) {
 	}
 }
 
+// TestASecondCompanionIsReported is REV-055 of the review of 2026-09-24.
+// The import kept the first companion line and dropped the second one in
+// silence.
+func TestASecondCompanionIsReported(t *testing.T) {
+	client, _ := importServer(t, &fakeDecks{}, &fakeDeckStore{}, &fakeNoter{})
+	list := "Companion\n1 Ajani's Welcome\n1 Lightning Bolt\n\nDeck\n4 Lightning Bolt\n56 Plains\n"
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list, Format: mtgv1.FormatId_FORMAT_ID_MODERN})
+	found := false
+	for _, u := range res.GetUnresolved() {
+		found = found || strings.Contains(u.GetRaw(), "a second companion: Lightning Bolt")
+	}
+	if !found {
+		t.Errorf("unresolved = %v, want the second companion named", res.GetUnresolved())
+	}
+}
+
 // TestAMarkedCommanderThatMatchesNoCardAsks is REV-054 of the review of
 // 2026-09-24. A Commander heading set the mark before the resolution, so
 // a misspelled commander imported a deck with no commander and no

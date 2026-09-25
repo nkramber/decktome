@@ -109,6 +109,20 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoCardMatched)
 	}
 	out := &mtgv1.ImportDeckResponse{Unresolved: bad}
+	// A deck holds one companion. A second companion line goes in the
+	// report, and not in silence (REV-055).
+	companions := 0
+	for _, e := range entries {
+		if e.Section != decklist.Companion {
+			continue
+		}
+		if companions++; companions > 1 {
+			out.Unresolved = append(out.Unresolved, &mtgv1.UnresolvedRow{
+				Raw:    "a second companion: " + e.Card.GetName(),
+				Reason: mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW,
+			})
+		}
+	}
 
 	format, err := importFormat(msg.GetFormat(), list, entries)
 	if err != nil {

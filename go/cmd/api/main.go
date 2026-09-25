@@ -85,6 +85,10 @@ func inviteListOrNil(l *allowlist.List) invitesvc.Allowlist {
 // largest expected body is a ManaBox export, under 5 MiB.
 const maxRequestBytes = 8 << 20
 
+// cardRequestBytes bounds one CardService body. GetCards takes at most
+// cardsvc.MaxGetCards ids of 36 bytes each (REV-085).
+const cardRequestBytes = 256 << 10
+
 // Server timing. A Chat stream holds a connection for minutes, so there
 // is no ReadTimeout. IdleTimeout closes keep-alive connections that
 // carry nothing. shutdownTimeout gives a stream that is mid-build time
@@ -225,7 +229,9 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	)}, probeOpts...)
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(healthServer, probeOpts...))
-	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, opts...))
+	// A card request names ids or a query, and never a file, so its body
+	// limit is far under the one of an upload (REV-085).
+	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, append(opts, connect.WithReadMaxBytes(cardRequestBytes))...))
 	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer, opts...))
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, deckOpts...))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))

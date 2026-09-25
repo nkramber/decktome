@@ -396,6 +396,17 @@ export function ChatPanel({
     void queryClient.invalidateQueries({ queryKey: ["session", builtSessionId] });
     if (streamedDeckId !== deckOverride?.id) onDeckBuilt?.(streamedDeckId);
   }, [streamedDeckId, state.busy, deckOverride?.id, onDeckBuilt, queryClient, builtSessionId]);
+  // Each finished turn stales the cached chat and the chat list, so a
+  // return to this chat within the stale time reads the answered
+  // questions, and not the chat before this turn (REV-051).
+  const turnRunning = useRef(false);
+  useEffect(() => {
+    if (turnRunning.current && !state.busy && builtSessionId) {
+      void queryClient.invalidateQueries({ queryKey: ["session", builtSessionId] });
+      void queryClient.invalidateQueries({ queryKey: ["sessions"] });
+    }
+    turnRunning.current = state.busy;
+  }, [state.busy, builtSessionId, queryClient]);
   // A question sits in the thread and in the open list at the same time,
   // and the card below it takes the answer. The thread holds the line for
   // the history, so it shows the question only after it is answered.

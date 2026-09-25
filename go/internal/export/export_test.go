@@ -9,6 +9,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/decklist"
 )
 
 func loadIndex(t *testing.T) *cards.Index {
@@ -223,5 +224,36 @@ func TestRenderAndFileName(t *testing.T) {
 	}
 	if _, _, err := Render(d, emptyLookup{}, mtgv1.ExportFormat(99)); err == nil {
 		t.Fatal("an unknown format must fail")
+	}
+}
+
+// TestArenaTextWritesTheCompanion is REV-055 of the review of 2026-09-24.
+// The export had no companion, so an imported deck lost its companion on
+// the way out. The deck list parser reads the section back.
+func TestArenaTextWritesTheCompanion(t *testing.T) {
+	idx := loadIndex(t)
+	sol := card(t, idx, "Sol Ring")
+	pl := card(t, idx, "Plains")
+	cmd := card(t, idx, "Anikthea, Hand of Erebos")
+	companion := card(t, idx, "Soul Warden")
+	d := &mtgv1.Deck{
+		CommanderOracleIds: []string{cmd.OracleId},
+		CompanionOracleId:  companion.OracleId,
+		Cards:              []*mtgv1.DeckCard{entry(sol, 1), entry(pl, 30)},
+	}
+	text := ArenaText(d, idx)
+	if !strings.Contains(text, "\nCompanion\n1 Soul Warden (") {
+		t.Fatalf("no companion section:\n%s", text)
+	}
+	list, err := decklist.Parse(strings.NewReader(text))
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, l := range list.Lines {
+		found = found || (l.Section == decklist.Companion && l.Name == "Soul Warden")
+	}
+	if !found {
+		t.Errorf("the deck list parser read no companion from:\n%s", text)
 	}
 }
