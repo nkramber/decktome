@@ -103,16 +103,19 @@ const maxBalanceSteps = 12
 // reads the worst color against one floor, and an even split of the
 // basics can pass it. Each color reads its sources over its need, capped
 // at one, and a trade is kept only when those ratios rise, the worst color
-// first. So a deck whose colors all meet their need keeps the split the
-// model chose. A trade is kept only when the band score does not rise, so
-// no band gets worse, and the trade keeps the land count, every nonbasic
-// land, and every spell. A color never gives up its last basic.
+// first. When the capped ratios tie, the trade is kept when the ratios
+// with no cap rise, so a color with sources to spare gives basics to the
+// color with the least margin (F-174, D-951). A trade is kept only when
+// the band score does not rise, so no band gets worse, and the trade keeps
+// the land count, every nonbasic land, and every spell. A color never
+// gives up its last basic.
 func (b *Builder) balanceBasics(req Request, deck *mtgv1.Deck, held []*mtgv1.Card, score float64) int {
 	basics := poolBasics(req, held)
 	if len(basics) < 2 {
 		return 0
 	}
-	current := cappedRatios(profile.ColorSources(deck, b.cards))
+	rows := profile.ColorSources(deck, b.cards)
+	current, currentRaw := cappedRatios(rows), rawRatios(rows)
 	kept := 0
 	for range maxBalanceSteps {
 		var options []balanceOption
@@ -127,22 +130,30 @@ func (b *Builder) balanceBasics(req Request, deck *mtgv1.Deck, held []*mtgv1.Car
 				}
 				undo := snapshot(deck)
 				step.apply(deck)
-				ratios := cappedRatios(profile.ColorSources(deck, b.cards))
+				after := profile.ColorSources(deck, b.cards)
 				restore(deck, undo)
-				if ratiosRise(ratios, current) {
-					options = append(options, balanceOption{step: step, ratios: ratios})
+				ratios, raw := cappedRatios(after), rawRatios(after)
+				tie := !ratiosRise(ratios, current) && !ratiosRise(current, ratios)
+				if ratiosRise(ratios, current) || (tie && ratiosRise(raw, currentRaw)) {
+					options = append(options, balanceOption{step: step, ratios: ratios, raw: raw})
 				}
 			}
 		}
 		// The best balance goes first, and the band score, which runs the
 		// simulation, is read only until one option keeps every band.
-		sort.SliceStable(options, func(i, j int) bool { return ratiosRise(options[i].ratios, options[j].ratios) })
+		sort.SliceStable(options, func(i, j int) bool {
+			x, y := options[i], options[j]
+			if ratiosRise(x.ratios, y.ratios) || ratiosRise(y.ratios, x.ratios) {
+				return ratiosRise(x.ratios, y.ratios)
+			}
+			return ratiosRise(x.raw, y.raw)
+		})
 		taken := false
 		for _, o := range options {
 			undo := snapshot(deck)
 			o.step.apply(deck)
 			if got := b.manaScore(deck); got <= score {
-				current, score, taken = o.ratios, got, true
+				current, currentRaw, score, taken = o.ratios, o.raw, got, true
 				break
 			}
 			restore(deck, undo)
@@ -161,8 +172,9 @@ type balanceOption struct {
 	step   manaStep
 	ratios []float64
 	// raw holds the ratios with no cap, in ascending order. When every
-	// color meets its need, the swap of PR-52 drops a basic land of the
-	// color with the most sources to spare.
+	// color meets its need, the balance phase moves basics toward the
+	// color with the least margin, and the swap of PR-52 drops a basic
+	// land of the color with the most sources to spare (F-174, D-951).
 	raw []float64
 }
 
