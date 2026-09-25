@@ -63,13 +63,13 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `make feedback-harvest` writes every verdict since the last harvest to `.local/feedback/`, as a dated document and a JSONL file (PR-28a, D-879). `SINCE=2026-09-01` sets the floor by hand, and `HARVEST_ARGS=-dry` counts and writes nothing. The watermark comes from the JSONL files, so the documents are the only record. It calls no model and costs nothing. The harvest stays on the Mac that ran it, and a case of the fix cycle still holds the words of the reader (D-642, D-879).
 
-`make feedback-triage-dry` routes every verdict of the newest harvest into a class (PR-28b). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each.
+`make feedback-triage-dry` routes every verdict of each harvest that no triage read into a class (PR-28b). A live run with `-apply` records each verdict that it applied in `.local/feedback/triaged.txt`. A harvest counts as read when each of its verdicts applied, so a failed verdict keeps its harvest pending (D-924). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each.
 
 The target reads no `.env`, so run `set -a && . ./.env && set +a` first. Set `CARDS_SNAPSHOT_DIR` to `.local/gcs/mtg-local-cards/scryfall`, or each card case names its gap. The run of 2026-09-23 cost $0.0122 for one judge call. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
 
 `make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559).
 
-With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
+With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). It refuses a changed tree, and it stops when the branch moves (D-923). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
 
 `make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It counts a revision and an imported deck apart from a first build (D-861). It never lowers a count. It calls no model and costs nothing.
 

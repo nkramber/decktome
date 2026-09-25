@@ -35,6 +35,9 @@ SHORTEST_HASH = 7
 HANDOFF_FILES = ("docs/SESSION-HANDOFF.md", "docs/reference/session-handoff-archive.md")
 DEPENDABOT = "dependabot[bot]"
 DEPENDABOT_EMAIL = "49699333+dependabot[bot]@users.noreply.github.com"
+# GitHub commits a Dependabot change, and a local amend or rebase writes
+# another committer (D-923).
+GITHUB_COMMITTER = "noreply@github.com"
 
 # The documentation set of the label (D-814). A folder ends in "/". Each
 # refused path comes first, because it sits inside an eligible folder: a
@@ -147,12 +150,15 @@ def check_head(path, text, head, commits=None):
     return "FAULT", f"the head field of `{path}` is `{recorded}`, and the effective head is `{head}`. Review the new diff, then update the head and the verdict together."
 
 
-def evaluate(number, author, labels, files, commits, authors, read_record):
+def evaluate(number, author, labels, files, commits, authors, read_record, fork=""):
     """Give the result of each rule as (rule, state, message).
 
     files is the list of changed paths. commits holds (sha, files) pairs,
-    oldest first. authors is the set of commit author emails. read_record
-    gives the text of a path at the head, or None.
+    oldest first. authors is the set of commit author emails, and of each
+    committer other than GitHub (D-923). read_record
+    gives the text of a path at the head, or None. fork names the head
+    repository when it is not the base repository, and it is empty for a
+    branch of the base repository.
     """
     results = []
     if LABEL in labels:
@@ -173,6 +179,11 @@ def evaluate(number, author, labels, files, commits, authors, read_record):
         results.append(("RG 2", "SKIP", "Dependabot opened the pull request, and another author wrote a commit, so the Codex review applies (D-817)."))
 
     path = record_path(number)
+    # `make codex-review` refuses a fork, so a record in a fork is a
+    # record that no Codex review wrote (D-920).
+    if fork:
+        results.append(("RG 3", "FAULT", f"the head comes from the fork `{fork}`, and a record in a fork proves no Codex review. The label of documents alone still applies (D-920)."))
+        return results
     text = read_record(path)
     if text is None:
         results.append(("RG 3", "FAULT", f"the head holds no review record at `{path}`. A Codex session writes it with the `pr-review` skill (D-811)."))
@@ -196,8 +207,8 @@ def gather(repo, base, head):
     # --no-renames: a code file that moves into docs/ still counts as a change of code.
     files = [p for p in git(repo, "diff", "--name-only", "--no-renames", merge_base, head).stdout.splitlines() if p]
     commits, authors = [], set()
-    for line in git(repo, "log", "--reverse", "--format=%H %P%x09%ae", f"{merge_base}..{head}").stdout.splitlines():
-        ids, email = line.split("\t", 1)
+    for line in git(repo, "log", "--reverse", "--format=%H %P%x09%ae%x09%ce", f"{merge_base}..{head}").stdout.splitlines():
+        ids, email, committer = line.split("\t", 2)
         sha, *parents = ids.split()
         changed = git(repo, "show", "--no-renames", "--name-only", "--format=", sha).stdout.splitlines()
         commit_files = [p for p in changed if p]
@@ -205,12 +216,29 @@ def gather(repo, base, head):
             commit_files.append(MERGE)
         commits.append((sha, commit_files))
         authors.add(email)
+        # A committer other than GitHub also wrote the commit, as an
+        # amend or a rebase by hand does (D-923).
+        if committer != GITHUB_COMMITTER:
+            authors.add(committer)
 
     def read_record(path):
         out = git(repo, "show", f"{head}:{path}", check=False)
         return out.stdout if out.returncode == 0 else None
 
     return files, commits, authors, read_record
+
+
+def head_fork(pr):
+    """Name the head repository when it is not the base repository.
+
+    A head with no repository, such as a deleted fork, reads as a fork,
+    because the gate can not prove that it is the base repository.
+    """
+    base = ((pr.get("base") or {}).get("repo") or {}).get("full_name", "")
+    head = ((pr.get("head") or {}).get("repo") or {}).get("full_name", "")
+    if head and head == base:
+        return ""
+    return head or "an unknown repository"
 
 
 def main():
@@ -238,7 +266,7 @@ def main():
     author = (pr.get("user") or {}).get("login", "")
     labels = {label["name"] for label in pr.get("labels") or []}
     files, commits, authors, read_record = gather(args.repo, pr["base"]["sha"], args.head)
-    results = evaluate(number, author, labels, files, commits, authors, read_record)
+    results = evaluate(number, author, labels, files, commits, authors, read_record, fork=head_fork(pr))
     print(f"review-gate: PR #{number}, {len(files)} changed path(s), {len(commits)} commit(s).")
     for rule, state, message in results:
         print(f"{rule}: {state} - {message}")

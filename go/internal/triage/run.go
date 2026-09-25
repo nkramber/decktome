@@ -3,7 +3,9 @@ package triage
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
@@ -117,18 +119,183 @@ func ReadHarvest(path string) ([]harvest.Record, error) {
 	return out, nil
 }
 
-// NewestHarvest names the newest JSONL file the harvest wrote under
-// root. It answers an empty string when no harvest exists.
-func NewestHarvest(root string) (string, error) {
+// TriagedRecord is the file under harvest.Dir that names each harvest a
+// live triage applied, one base name a line. It is no JSONL file, so the
+// harvest watermark never reads it.
+const TriagedRecord = "triaged.txt"
+
+// PendingHarvests names every JSONL file of the harvest under root that
+// no live triage applied, oldest first. Two harvests before one triage
+// leave two files, and the triage reads both (REV-082).
+func PendingHarvests(root string) ([]string, error) {
 	paths, err := filepath.Glob(filepath.Join(root, harvest.Dir, "*.jsonl"))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	if len(paths) == 0 {
-		return "", nil
+	done, err := triaged(root)
+	if err != nil {
+		return nil, err
 	}
-	// The names carry the date and a letter, so the last name in order is
-	// the newest file (harvest.Names).
+	// The names carry the date and a letter, so name order is age order
+	// (harvest.Names).
 	sort.Strings(paths)
-	return paths[len(paths)-1], nil
+	var out []string
+	for _, p := range paths {
+		if !done[filepath.Base(p)] {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
+// MarkTriaged adds each path to the record, so the next triage does not
+// write its cases again.
+func MarkTriaged(root string, paths []string) error {
+	if len(paths) == 0 {
+		return nil
+	}
+	done, err := triaged(root)
+	if err != nil {
+		return err
+	}
+	names := make([]string, 0, len(paths))
+	for _, p := range paths {
+		names = append(names, filepath.Base(p))
+	}
+	return appendRecord(root, filterNew(done, names))
+}
+
+// filterNew keeps each line that the record does not hold yet.
+func filterNew(done map[string]bool, lines []string) []string {
+	var out []string
+	for _, l := range lines {
+		if !done[l] {
+			done[l] = true
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// appendRecord adds lines to the record. Each line of lines is new.
+func appendRecord(root string, lines []string) error {
+	if len(lines) == 0 {
+		return nil
+	}
+	var add strings.Builder
+	for _, l := range lines {
+		add.WriteString(l + "\n")
+	}
+	if err := os.MkdirAll(filepath.Join(root, harvest.Dir), 0o750); err != nil {
+		return fmt.Errorf("triage: %w", err)
+	}
+	path := filepath.Join(root, harvest.Dir, TriagedRecord)
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600) // #nosec G304 -- a fixed name under the repo root.
+	if err != nil {
+		return fmt.Errorf("triage: %w", err)
+	}
+	if _, err := f.WriteString(add.String()); err != nil {
+		_ = f.Close()
+		return fmt.Errorf("triage: %s: %w", path, err)
+	}
+	return f.Close()
+}
+
+// verdictLine is the record line of one applied verdict. A harvest name
+// never starts with it.
+const verdictLine = "verdict "
+
+// Settle records what a live run applied. Each verdict with no failure
+// and a class gets a line, and a harvest is read once each of its
+// verdicts has one. A failed verdict keeps its harvest pending, and the
+// next run reads it again (REV-082). from names the harvest of each
+// record, and results come in the order of recs.
+func Settle(root string, recs []harvest.Record, from []string, results []Result) error {
+	if len(recs) != len(from) || len(recs) != len(results) {
+		return fmt.Errorf("triage: %d records, %d sources, %d results", len(recs), len(from), len(results))
+	}
+	done, err := triaged(root)
+	if err != nil {
+		return err
+	}
+	var lines []string
+	for i, rec := range recs {
+		r := results[i]
+		if r.Err != nil || r.Route.Need == NeedJudge || rec.ID == "" {
+			continue
+		}
+		// A case or an owner question that did not land keeps its verdict
+		// pending, so a failed write repeats no write that landed.
+		if r.NeedsWrite() && r.Applied == "" {
+			continue
+		}
+		lines = append(lines, verdictLine+rec.ID)
+	}
+	lines = filterNew(done, lines)
+	// A harvest is read when each of its verdicts has a line.
+	whole := map[string]bool{}
+	var order []string
+	for i, rec := range recs {
+		if _, seen := whole[from[i]]; !seen {
+			whole[from[i]] = true
+			order = append(order, from[i])
+		}
+		if !done[verdictLine+rec.ID] {
+			whole[from[i]] = false
+		}
+	}
+	var names []string
+	for _, path := range order {
+		if whole[path] {
+			names = append(names, filepath.Base(path))
+		}
+	}
+	return appendRecord(root, append(lines, filterNew(done, names)...))
+}
+
+// NeedsWrite reports whether the apply step writes this result: a case
+// that a gate runs, or an owner question.
+func (r Result) NeedsWrite() bool {
+	if r.Err != nil {
+		return false
+	}
+	if r.Route.Owner {
+		return true
+	}
+	return len(r.Case.Body) > 0 && r.Case.Target != "" && r.Case.NoRun == ""
+}
+
+// Unapplied drops each record whose verdict a live run already applied,
+// so a harvest read again writes no case twice.
+func Unapplied(root string, recs []harvest.Record) ([]harvest.Record, error) {
+	done, err := triaged(root)
+	if err != nil {
+		return nil, err
+	}
+	var out []harvest.Record
+	for _, rec := range recs {
+		if rec.ID == "" || !done[verdictLine+rec.ID] {
+			out = append(out, rec)
+		}
+	}
+	return out, nil
+}
+
+// triaged reads the record. An absent record names no file.
+func triaged(root string) (map[string]bool, error) {
+	path := filepath.Join(root, harvest.Dir, TriagedRecord)
+	raw, err := os.ReadFile(path) // #nosec G304 -- a fixed name under the repo root.
+	if errors.Is(err, fs.ErrNotExist) {
+		return map[string]bool{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("triage: %s: %w", path, err)
+	}
+	done := map[string]bool{}
+	for _, line := range strings.Split(string(raw), "\n") {
+		if name := strings.TrimSpace(line); name != "" {
+			done[name] = true
+		}
+	}
+	return done, nil
 }

@@ -106,6 +106,21 @@ describe("use-chat helpers", () => {
     expect(streamFailure(new ConnectError("a build is in progress", Code.Aborted))).toMatchObject({ code: "aborted", retryable: true });
     expect(streamFailure(new Error("boom"))).toEqual({ code: "stream", message: "boom", retryable: false });
   });
+
+  it("offers no retry for a refusal that a retry can not pass (D-922)", () => {
+    const cap = streamFailure(new ConnectError("you have spent your $5 for this month", Code.FailedPrecondition));
+    expect(cap).toMatchObject({ code: "failed_precondition", retryable: false });
+    const big = streamFailure(new ConnectError("this conversation is too long to continue", Code.FailedPrecondition));
+    expect(big.retryable).toBe(false);
+  });
+
+  it("does not say that a build continues after a discarded turn (D-922)", () => {
+    const conflict = streamFailure(new ConnectError("the session is busy with another turn, send the message again", Code.Unavailable));
+    expect(conflict.retryable).toBe(true);
+    expect(conflict.message).not.toContain("build continues");
+    const build = streamFailure(new ConnectError("a build is in progress", Code.Aborted));
+    expect(build.message).toContain("build continues");
+  });
 });
 
 // The phase of a turn rides beside the status lines (D-435).

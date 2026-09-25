@@ -1,8 +1,13 @@
 package decksvc
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"regexp"
 	"strings"
@@ -12,7 +17,9 @@ import (
 	"connectrpc.com/connect"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/rpcerr"
 )
 
 func sharedDeckFixture() *mtgv1.Deck {
@@ -199,5 +206,33 @@ func TestTheSharedDeckCarriesItsCommander(t *testing.T) {
 	}
 	if strings.Contains(fmt.Sprint(cmd), "owned") {
 		t.Errorf("the public commander carries an owned field: %v", cmd)
+	}
+}
+
+// TestASharedReadHidesAStoreError: a store failure on the public read
+// answers Internal with a fixed message, and the store text stays in
+// the server log.
+func TestASharedReadHidesAStoreError(t *testing.T) {
+	const detail = "firestore: rpc error: projects/p/databases/(default) unavailable"
+	f := &fakeDecks{err: errors.New(detail)}
+	var logged bytes.Buffer
+	mux := http.NewServeMux()
+	mux.Handle(mtgv1connect.NewDeckServiceHandler(shareServer(t, f, ""),
+		connect.WithInterceptors(rpcerr.Interceptor(slog.New(slog.NewTextHandler(&logged, nil))))))
+	srv := httptest.NewServer(mux)
+	defer srv.Close()
+	client := mtgv1connect.NewDeckServiceClient(srv.Client(), srv.URL)
+
+	token := strings.Repeat("a", 43)
+	_, err := client.GetSharedDeck(context.Background(), connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: token}))
+	if connect.CodeOf(err) != connect.CodeInternal {
+		t.Fatalf("code = %v, want Internal (err %v)", connect.CodeOf(err), err)
+	}
+	var ce *connect.Error
+	if !errors.As(err, &ce) || strings.Contains(ce.Message(), "firestore") {
+		t.Fatalf("the reader sees %q, want no store text", err)
+	}
+	if !strings.Contains(logged.String(), "firestore") || !strings.Contains(logged.String(), mtgv1connect.DeckServiceGetSharedDeckProcedure) {
+		t.Fatalf("the log holds %q, want the store text and the procedure", logged.String())
 	}
 }

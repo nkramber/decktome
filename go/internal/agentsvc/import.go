@@ -317,11 +317,16 @@ func importFormat(pick mtgv1.FormatId, list *decklist.List, entries []decklist.E
 }
 
 // leaders lists the cards of the main deck that can lead a Commander
-// deck, in the order of the list (D-847).
+// deck, in the order of the list (D-847). A Background leads only beside
+// a commander with "choose a Background", so the list offers it only
+// when the main deck holds one (CR 702.124k, REV-056).
 func leaders(entries []decklist.Entry) []*mtgv1.DeckCard {
+	chooser := slices.ContainsFunc(entries, func(e decklist.Entry) bool {
+		return e.Section == decklist.Main && e.Card.GetPartner() == mtgv1.PartnerKind_PARTNER_KIND_CHOOSE_BACKGROUND
+	})
 	var out []*mtgv1.DeckCard
 	for _, e := range entries {
-		if e.Section == decklist.Main && e.Card.GetCanBeCommander() {
+		if e.Section == decklist.Main && (e.Card.GetCanBeCommander() || chooser && e.Card.GetIsBackground()) {
 			out = append(out, &mtgv1.DeckCard{OracleId: e.Card.GetOracleId(), Name: e.Card.GetName(), Count: 1})
 		}
 	}
@@ -330,7 +335,8 @@ func leaders(entries []decklist.Entry) []*mtgv1.DeckCard {
 
 // pickCommanders moves one copy of each picked card from the main deck
 // to the command zone. The pick names one card, or two that can lead
-// together.
+// together. A Background counts only as the second card of a pair
+// (CR 702.124k, REV-056).
 func pickCommanders(entries []decklist.Entry, ids []string) ([]decklist.Entry, error) {
 	if len(ids) > 2 || (len(ids) == 2 && ids[0] == ids[1]) {
 		return nil, errBadPick
@@ -339,7 +345,8 @@ func pickCommanders(entries []decklist.Entry, ids []string) ([]decklist.Entry, e
 	var picked []*mtgv1.Card
 	for _, id := range ids {
 		i := slices.IndexFunc(out, func(e decklist.Entry) bool {
-			return e.Section == decklist.Main && e.Card.GetOracleId() == id && e.Card.GetCanBeCommander()
+			return e.Section == decklist.Main && e.Card.GetOracleId() == id &&
+				(e.Card.GetCanBeCommander() || e.Card.GetIsBackground())
 		})
 		if i < 0 {
 			return nil, errBadPick
@@ -349,6 +356,9 @@ func pickCommanders(entries []decklist.Entry, ids []string) ([]decklist.Entry, e
 		if out[i].Count--; out[i].Count == 0 {
 			out = slices.Delete(out, i, i+1)
 		}
+	}
+	if len(picked) == 1 && picked[0].GetIsBackground() {
+		return nil, errBadPick
 	}
 	if len(picked) == 2 && !rules.ValidPair(picked[0], picked[1]) {
 		return nil, errBadPickPair

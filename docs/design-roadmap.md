@@ -1294,7 +1294,7 @@ Every guard of `docs/reference/autotune-design.md` holds. They are the branch of
 
 **The cycle pushes, opens the pull request, and answers the review** (D-645, D-637). `scripts/feedback-review.sh` hands every open finding of `gitar-bot` to the fixer, runs the free checks, pushes, and replies on each thread. It stops after three rounds. No step runs in CI (D-286).
 
-Gate: one live cycle on the owner's word ends with a pull request and a passing gate on its new cases. `make eval-check` shows no flip on the baselines. The free half holds. `make feedback-loop-dry` plans a cycle over the fixture for nothing, and it names the three gates and the case ids of each one.
+Gate: one live cycle on the owner's word ends with a pull request and a passing gate on its new cases. `make eval-check` passes on the committed baselines. That check reads no row of the cycle. So the pull request of the cycle waits for a whole run of each gate that its fix touches (D-921). The free half holds. `make feedback-loop-dry` plans a cycle over the fixture for nothing, and it names the three gates and the case ids of each one.
 > *In plain English:* an assistant tries to fix what the complaints show. It proves the complaint is real first, then fixes it, then proves the fix worked. It opens the change for you to approve and answers the automatic reviewer. Nothing ships without you.
 
 **PR-34: More collection platforms (F-91, F-92, F-93, D-647).** ✅ merged 2026-09-10 (#123). Moxfield reads, and the app names the format itself.
@@ -1782,7 +1782,7 @@ Gate: a test fails on the old roles for a card tagged drain-life. The prompt ver
 2026-09-16 (built): every new test fails on the old code. The Gríma replay reads 3 wincon rows of a target of 3, against 2 before D-742. No deck gate prompt holds fewer finishers than `main`, and 11 of the 25 pools hold the same cards. Deck gate run 24 read FAIL and found F-150 to F-152, and run 25 read FAIL and found F-153 (D-743, D-744). Deck gate run 28 reads PASS at 25 of 25 decks, 0 invented names, and 0 false rules, for $2.7527. `eval-check` moves no gate row against run 19. Bracket gate run 8 reads the judge at 5 of 6, 83 percent against a bar of 80, for $0.5318. Every one of its six decks meets its finisher floor. `docs/reference/pr53-wincon-2026-09-16.md` holds every count.
 > *In plain English:* the app built a deck that had no way to win. This change counts the cards that can win a game, asks the builder for enough of them, and names the missing ones.
 
-**PR-55: A typal land signal on the type rows (F-144, F-148, D-737, D-759 to D-761).** 🔧 built 2026-09-19, as #190. It came after #189, which merged M-18.
+**PR-55: A typal land signal on the type rows (F-144, F-148, D-737, D-759 to D-761).** ✅ merged as #190, built 2026-09-19. It came after #189, which merged M-18.
 The type rows of `themes.json` read a subtype, a typal tag, and a few payoff phrases. None of them reads a land. So a typal shortlist lost every land that makes mana for its type, and F-148 recorded it.
 
 - **The block.** A new `typal_land` block of `themes.json` holds the tag `typal-choose` and the needle "shares a creature type with your commander". The tag reads Cavern of Souls, Secluded Courtyard, Unclaimed Territory, and Three Tree City. The needle reads Path of Ancestry, which names no chosen type.
@@ -1798,7 +1798,7 @@ Gate: a test fails on the old code for each of the five lands of F-148. A land n
 2026-09-19 (built): every new test fails on the old code. The dinosaur prompt of the deck gate holds all five lands of F-148 and Restless Ridgeline. The theme "dinosaur" read 0 of the five before D-761, and it reads all five now. The shortlist still holds 266 cards and 40 lands, and the on-theme count moves from 208 to 215. Seven lands that enter tapped on a condition leave to make the room. Before the change, every type row read an on-theme count of 1 or more in every single color. So the change hides no theme question of D-725. No paid target ran. `docs/reference/pr55-typal-lands-2026-09-19.md` holds every count.
 > *In plain English:* a tribal deck needs the lands that make mana for its tribe. The app dropped every one of them for a plain dual land. This change teaches each tribe row to recognize its own lands.
 
-**PR-56: A finding on the commander buys no repair turn (F-157, D-762, D-763).** 🔧 built 2026-09-19, as #191. It came after #190, which merged PR-55.
+**PR-56: A finding on the commander buys no repair turn (F-157, D-762, D-763).** ✅ merged as #191, built 2026-09-19. It came after #190, which merged PR-55.
 Each of the three M-18 builds ran a repair turn, and the reason of each one names a `not_owned` finding. That finding names the commander the reader named, and the collection of the reader holds no copy of it.
 
 - **The cause.** `assemble` takes the commander from the request on every pass. The answer of the model holds a card list, and that list never reaches the command zone. So a finding on a commander survives every repair turn.
@@ -1812,7 +1812,7 @@ Gate: two tests fail on the old code. The first reads the finding shape of the M
 2026-09-19 (built): both tests fail on the old code and pass on the new code. The whole `generate` package passes. The owned pool of the replay reaches 1 Game Changer and 1 tutor. Bracket 5 wants 8 and 4, so two floors sit outside its reach (D-763). No paid target ran, so no deck of a model measures the change. `docs/reference/f157-owned-commander-2026-09-19.md` holds every count.
 > *In plain English:* the app saw that your collection holds no copy of your own commander. It then paid the model a second time to repair a deck that no answer can repair. This change stops that second call, which costs money and about a minute.
 
-**PR-57: A typal card signal on the type rows (F-144, D-765 to D-768).** 🔧 built 2026-09-20, as #193. It came after #192, which merged the merge trigger of D-764.
+**PR-57: A typal card signal on the type rows (F-144, D-765 to D-768).** ✅ merged as #193, built 2026-09-20. It came after #192, which merged the merge trigger of D-764.
 PR-55 taught a type row to read a land that makes mana for its type. A card that is no land kept the old gap. Door of Destinies rewards a creature type the player chooses, it names no type, and its type line names no type. So no signal of the row read it.
 
 - **The block.** The `typal_land` block of `themes.json` is the `typal` block now. It holds `land_slugs` and `land_text` for a land. It holds `card_slugs` for a card that is no land. It holds `noncreature_slugs` for a card that is no land and no creature.
@@ -1829,7 +1829,7 @@ Gate: a test fails on the old code for a generic payoff of each tag. A creature 
 Before the change, every type row read an on-theme count of 1 or more in every single color. The generic rule reaches 190 more words, and 5 of their 950 color pairs read 0 before the change and after it. So the change hides no theme question of D-725. Deck gate run 29 reads PASS for $2.7384, and its dinosaur deck holds eight generic typal payoffs. The same deck of run 28 held none. `docs/reference/pr57-typal-nonlands-2026-09-20.md` holds every count.
 > *In plain English:* a tribal deck wants the cards that reward any tribe, such as Door of Destinies and Coat of Arms. The app read them as cards of no theme, so they almost never reached your deck. This change teaches each tribe row to recognize them.
 
-**PR-58: A type row reads a card that names its type (F-144, F-158, D-769, D-770).** 🔧 built 2026-09-20, as #194. It came after #193, which merged PR-57.
+**PR-58: A type row reads a card that names its type (F-144, F-158, D-769, D-770).** ✅ merged as #194, built 2026-09-20. It came after #193, which merged PR-57.
 PR-55 taught a type row to read a land that names its type, and PR-57 taught it to read a generic typal payoff. A card that only names the type kept the last gap. Army of the Damned makes thirteen Zombie tokens, it carries no Zombie type, and it holds no typal tag. So no signal of the zombies row read it.
 
 - **The needle.** The typal block gives each type row and each generic type word one text needle: the type word itself (D-769). It reads a card that names the type in its text.
@@ -1848,7 +1848,7 @@ A replay of five shortlists reads a swap and no growth: 84 cards entered and 84 
 Every type row reads 1 or more on-theme cards in every single color. That holds before the change and after it, so the change hides no theme question of D-725. No paid target ran (D-770). `docs/reference/pr58-type-name-2026-09-20.md` holds every count.
 > *In plain English:* a zombie deck wants the cards that make zombies. The app read a card that makes thirteen of them as a card of no theme. This change teaches each tribe row to find its own name in the card text. It also stops the word "cat" in a match with the word "indicate".
 
-**PR-59: The prompt reads the commander (F-159, D-771 to D-774).** 🔧 built 2026-09-20, as #195. It came after #194, which merged PR-58.
+**PR-59: The prompt reads the commander (F-159, D-771 to D-774).** ✅ merged as #195, built 2026-09-20. It came after #194, which merged PR-58.
 The review of the Gríma deck of 2026-09-14 asked whether the build reads the payoff shape of the commander. A free read of the code says it does not, and F-159 records the gap. Gríma, Saruman's Footman can not be blocked, and its trigger fires one time for each hit. The prompt stated none of that. It named the card and stopped.
 
 - **The block.** The prompt writes the name, the type line, the mana cost, the power and toughness, and every line of Oracle text of each commander (D-771).
@@ -1865,7 +1865,7 @@ Gate: a Commander session reads the type line, the mana cost, the power and toug
 Every count of this item is free, and no paid target ran. `docs/reference/grima-payoff-shape-2026-09-20.md` holds the replay of the M-18 shortlist, the classification of its 10 evasion cards, and the effect-class counts. CAUTION: the change is not deterministic. No test can prove that a deck improves, and the next whole deck gate run carries it beside any other change that lands first.
 > *In plain English:* the app told the model the name of the commander and nothing else. The model had to remember the card. This commander cannot be blocked, and it rewards each hit one time. The app now sends the card text, so the model can read what the deck must do.
 
-**PR-60: A deck shows its power counts beside its bracket (D-774 to D-777).** 🔧 built 2026-09-20, as #196. It came after #195, which merged PR-59.
+**PR-60: A deck shows its power counts beside its bracket (D-774 to D-777).** ✅ merged as #196, built 2026-09-20. It came after #195, which merged PR-59.
 The Gríma review of 2026-09-14 read the deck as bracket 3 by the rules, and the build aimed at bracket 5. The profile measured each power feature of the deck, and no number of the app told the reader. The deck page showed "Bracket 5" and stopped.
 
 - **The source.** `ProfileFeature` of `proto/mtg/v1/deck.proto` already carries `value`, `low`, `high`, and `has_high` for each power feature. The server writes it, and `GetDeck` returns it. No file of `web/apps/web/src` read `deck.profile` before this change.
@@ -1879,7 +1879,7 @@ Gate: a Commander deck of bracket 5 shows four counts beside its bracket, and ea
 2026-09-20 (built): six new tests cover the helper and the deck page. `powerCounts` of `web/apps/web/src/features/deck/deck-stats.ts` reads the profile alone. So the counts need no card data and no second network read. No paid target ran, and no Go file changes.
 > *In plain English:* the app told the reader the bracket of a deck and no more. Two decks of the same bracket can hold very different power. The page now shows how many tutors, fast mana, and Game Changers the deck holds. It shows how many the bracket wants beside each one. A number the deck misses reads "short".
 
-**PR-61: A deck build over the API alone, with no GUI (D-778 to D-781).** 🔧 built 2026-09-20.
+**PR-61: A deck build over the API alone, with no GUI (D-778 to D-781).** ✅ merged as #198, built 2026-09-20.
 The live check of #196 read the deploy, the released chunks, and the power counts of the deck page. It read no built deck. `scripts/read-session.sh` reads one session by id, and the sandbox of a session refuses every other read under `users/<uid>` (D-638). No session opens a browser as the owner, so a deck page needed the owner's hand. So no session had a way to prove that the deployed app still builds a deck.
 
 - **The client.** `go/cmd/api-build` is the first command of this repo that calls the deployed API as a client. `go/cmd/chat-probe` builds `agentsvc` in memory behind a test server, so it proves the RPC path and no part of the deployed stack.
@@ -2252,6 +2252,23 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the second batch of review findings. A pasted list can stall the server, a stopped share link stayed live, and the fallback deploy took any branch. A false address beat the rate limit, and a bad or stale card file reached no one. The share page lost its commander, and a mention of cEDH set the top power level. Forty-four such faults are fixed here.
 
+**PR-79: Twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924).** ✅ merged as #229. The mark comes before any review (D-822).
+The owner asked for as many corrections as one session can finish (D-920). Each code finding has a regression test that fails before its correction.
+
+- **REV-008, the review gate.** A record on a head from a fork fails RG 3. The owner chose no signed record for now (D-920).
+- **REV-029, the fix cycle.** Step 6 says that it proves no committed baseline changed, and the body asks for a whole run before the merge (D-921).
+- **REV-030, REV-043, and REV-044, the chat.** A build holds a lease on its chat in the store. The cap refusal comes before the chat exists, and each refusal code says whether a retry helps (D-922).
+- **Nine P3 findings.** REV-038, REV-039, REV-048, REV-056, REV-066, REV-074, REV-075, REV-084, and REV-086 (D-923).
+- **Seven more P3 findings.** REV-065, REV-076, REV-077, REV-082, REV-087, REV-089, and REV-094, of the CI skip, the paid tools, and the registers (D-924).
+
+Gate:
+
+- Each new regression test fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* the third batch of review findings. Two tabs on two servers paid for two builds of one deck, and an account at its spend limit still started a chat. The review check now refuses a record from a copy of the repository, and a few scripts, pages, and checks got safer.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2623,6 +2640,12 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 66. **PR-77** the five P1 findings of the repository review of 2026-09-24 (D-901 to D-904). No paid target ran.
 
 67. **PR-78** forty-four findings of the repository review of 2026-09-24 (D-905 to D-919). No paid target ran.
+
+68. **PR-61** a deck build over the API alone, with no GUI (D-778 to D-781). It merged as #198, after PR-60. This list named it first in PR-79 (D-924).
+
+69. **PR-72** the feedback fix cycle follows the one-PR rule and the Codex review (F-49, D-877 to D-879). It merged as #222, before PR-73. This list named it first in PR-79 (D-924).
+
+70. **PR-79** twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924). No paid target ran.
 
 ## 9. Open questions
 

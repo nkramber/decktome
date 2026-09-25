@@ -62,7 +62,7 @@ type Entry struct {
 // Manifest names every case one triage wrote.
 type Manifest struct {
 	WrittenAt time.Time `json:"written_at"`
-	// Harvest is the JSONL file the triage read.
+	// Harvest names each JSONL file the triage read, comma separated.
 	Harvest string  `json:"harvest,omitempty"`
 	Cases   []Entry `json:"cases"`
 }

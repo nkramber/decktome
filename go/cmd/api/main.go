@@ -46,6 +46,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/quality"
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/ratelimit"
+	"github.com/nkramber/decktome/go/internal/rpcerr"
 	"github.com/nkramber/decktome/go/internal/rules"
 	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/spellbook"
@@ -220,8 +221,13 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// (D-592). A nil list allows every email, which is local mode.
 	inviteServer := invitesvc.New(inviteListOrNil(inviteList))
 
-	// The health RPC answers a probe, which carries no token.
-	probeOpts := []connect.HandlerOption{connect.WithReadMaxBytes(maxRequestBytes)}
+	// The health RPC answers a probe, which carries no token. Every
+	// service answers an Internal error with one fixed sentence, and the
+	// detail goes to the log alone (REV-086).
+	probeOpts := []connect.HandlerOption{
+		connect.WithInterceptors(rpcerr.Interceptor(logger)),
+		connect.WithReadMaxBytes(maxRequestBytes),
+	}
 	opts := append([]connect.HandlerOption{connect.WithInterceptors(auth.Interceptor(authOpts.verifier, authOpts.opts...))}, probeOpts...)
 	// The shared deck reads need no sign-in, and a limit per client
 	// address bounds them (D-315). The limiter reads X-Forwarded-For, so

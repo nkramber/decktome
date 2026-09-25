@@ -157,7 +157,7 @@ The passive rule and the participle rule are heuristics. A past participle is an
 `docs/decisions.md` defines each `D-` id with a table row. `docs/design-roadmap.md` defines each `F-` id with a table row, and it defines each `M-`, `PR-`, and `I-` id with a bold entry title. A bare family id resolves against a lettered variant, for example PR-28 against PR-28a.
 
 - The check reads no `OQ-` id. This repo deletes an answered row from `docs/owner-questions.md`, and the decision then holds the answer (D-753).
-- The check reads no superseded decision. `docs/decisions.md` marks a superseded row in its Question column, and no column holds the id that replaced it.
+- The check reads no superseded decision. `docs/decisions.md` marks a changed row in its ID cell, and the mark names the row that changed it (D-924).
 - REF 2 reads a path with a slash and a first part that names a top-level entry. A bare file name is ambiguous, so the rule skips it. Write a name that is not a path of this repo without backticks.
 - A path under `.local`, and the folder that the feedback harvest writes, take no rule. A run creates each one.
 - A dated record is history, and a rewrite of it falsifies the record. So the check reads no file that ends with a date, and none of the hand-off archive.

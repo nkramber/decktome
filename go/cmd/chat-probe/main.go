@@ -265,10 +265,22 @@ func (m *memStore) Rename(_ context.Context, _, id, name string) (*mtgv1.Session
 	return sessions.Summarize(s), nil
 }
 
-func (m *memStore) Delete(_ context.Context, _, id string) error {
+func (m *memStore) Delete(_ context.Context, _, id string, _ time.Time) error {
 	if _, ok := m.sess[id]; !ok {
 		return sessions.ErrNotFound
 	}
 	delete(m.sess, id)
 	return nil
 }
+
+// The probe runs one process and one turn at a time, so the build lease
+// of D-922 always holds.
+func (m *memStore) Lease(context.Context, string, string, string, time.Time, time.Time) error {
+	return nil
+}
+
+func (m *memStore) Leased(context.Context, string, string, time.Time) (bool, error) {
+	return false, nil
+}
+
+func (m *memStore) Release(context.Context, string, string, string) error { return nil }

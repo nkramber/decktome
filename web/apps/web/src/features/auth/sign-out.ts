@@ -1,12 +1,17 @@
 import { signOutOfApp } from "../../lib/firebase";
 import { resetInviteState } from "./invite-state";
 
-// signOutAndClear clears the persisted ids, the query cache, and the
+// clearAccountState clears the persisted ids, the query cache, and the
 // invite answer, so the next account on this browser starts with nothing
-// of the last one.
-export async function signOutAndClear(reset: () => void, clear: () => void) {
-  await signOutOfApp();
+// of the last one. Sign-out and a change of user both call it (REV-039).
+export function clearAccountState(reset: () => void, clear: () => void) {
   reset();
   clear();
   resetInviteState();
+}
+
+// signOutAndClear ends the session, then clears the account state.
+export async function signOutAndClear(reset: () => void, clear: () => void) {
+  await signOutOfApp();
+  clearAccountState(reset, clear);
 }

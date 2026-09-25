@@ -13,10 +13,12 @@ The heavy jobs skip when one of two rules holds:
           run on the previous head passed.
 
 A fact that the script can not read runs every job, and never skips one.
-The documentation set is the set of the `review-override` label (D-814).
+The documentation set is the set of the `review-override` label (D-814),
+less each document that a Go test reads (REV-065).
 The script writes `skip=true` or `skip=false` to the output file.
 """
 import argparse
+import fnmatch
 import json
 import os
 import subprocess
@@ -30,6 +32,19 @@ WORKFLOW = "verify.yml"
 # The search for the last change of code on the base stops here, and the
 # jobs then run.
 MAX_COMMITS = 300
+
+# A Go test reads these documents, so a change to one runs the Go job
+# (REV-065). A pattern takes fnmatch wildcards. test_ci_skip.py finds
+# each read in the Go tests and refuses one that this list misses.
+TEST_READS = (
+    ".claude/skills/mtg-corpus/SKILL.md",
+    "docs/reference/feedback-fixer-prompt.md",
+    "docs/reference/pr7-question-gate-run1*.md",
+)
+
+
+def document(path):
+    return eligible(path) and not any(fnmatch.fnmatchcase(path, p) for p in TEST_READS)
 
 
 def passed(run):
@@ -52,7 +67,7 @@ def decide(pr_paths, push_paths, code_pr, code_run, previous_run):
     """
     if pr_paths is None:
         return False, "the paths of the pull request are unknown."
-    code = [p for p in pr_paths if not eligible(p)]
+    code = [p for p in pr_paths if not document(p)]
     if not code:
         if code_pr is not None and passed(code_run):
             return True, f"rule 1: each of the {len(pr_paths)} path(s) is a document, and #{code_pr}, the last change of code on the base, passed verify ({describe(code_run)})."
@@ -61,7 +76,7 @@ def decide(pr_paths, push_paths, code_pr, code_run, previous_run):
         rule1 = f"rule 1 does not hold: the pull request changes `{code[0]}`"
     if push_paths is None:
         return False, f"{rule1}, and the push has no previous head that is an ancestor of the head."
-    pushed = [p for p in push_paths if not eligible(p)]
+    pushed = [p for p in push_paths if not document(p)]
     if pushed:
         return False, f"{rule1}, and the push changes `{pushed[0]}`."
     if passed(previous_run):
@@ -90,7 +105,7 @@ def last_code_commit(repo, base):
     for line in out.splitlines():
         if line.startswith("@"):
             sha = line[1:]
-        elif line and not eligible(line):
+        elif line and not document(line):
             return sha
     return None
 
@@ -114,7 +129,7 @@ def gather(repo, slug, base, head, action, before):
     merge_base = (run(repo, "git", "merge-base", base, head) or "").strip()
     pr_paths = paths(repo, merge_base, head) if merge_base else None
     code_pr = code_run = None
-    if pr_paths is not None and all(eligible(p) for p in pr_paths):
+    if pr_paths is not None and all(document(p) for p in pr_paths):
         sha = last_code_commit(repo, merge_base)
         pr = gh_json(repo, f"repos/{slug}/commits/{sha}/pulls",
                      '[.[] | select(.merged_at != null)] | first | {number, sha: .head.sha}') if sha else None

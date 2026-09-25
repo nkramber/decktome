@@ -526,13 +526,13 @@ feedback-loop: ## Print how to start the feedback fix cycle. It never starts one
 	@echo "  FEEDBACK_LOOP_ALLOW=1 AUTOTUNE_FIXER_CMD=... scripts/feedback-loop.sh --here --cap 2.00"
 	@echo "  scripts/feedback-review.sh <pull request> 3 <state folder of the cycle>"
 
-feedback-loop-dry: ## Plan a feedback fix cycle over the newest harvest, call no model and commit nothing (free)
+feedback-loop-dry: ## Plan a feedback fix cycle over each harvest no live triage applied, call no model and commit nothing (free)
 	@scripts/feedback-loop.sh --dry $(LOOP_ARGS)
 
-feedback-triage-dry: ## Route every verdict of the newest harvest, call no model, and write no case (free)
+feedback-triage-dry: ## Route every verdict of each harvest no live triage applied, call no model, and write no case (free)
 	@$(GO) run ./cmd/feedback-triage -root $(CURDIR) -dry $(TRIAGE_ARGS)
 
-feedback-triage: ## Triage the newest harvest into test cases. Costs a few cents a verdict the reason keys can not place
+feedback-triage: ## Triage each harvest no live triage applied into test cases. Costs a few cents a verdict the reason keys can not place
 	@[ -n "$(TRIAGE_OUT)" ] || { echo "feedback-triage: set TRIAGE_OUT to a new document, for example docs/reference/pr28b-triage-2026-09-09.md"; exit 1; }
 	@FEEDBACK_TRIAGE=1 $(GO) run ./cmd/feedback-triage -root $(CURDIR) -out $(abspath $(TRIAGE_OUT)) $(TRIAGE_ARGS)
 

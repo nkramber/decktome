@@ -41,6 +41,38 @@ REPO="$(gh repo view --json nameWithOwner --jq .nameWithOwner 2>/dev/null)"
 
 say() { printf '%s  review: %s\n' "$(date -u +%H:%M:%S)" "$*" >&2; }
 
+# A round resets the tree and pushes it, so it starts on a clean tree
+# alone. A tracked change would be lost or pushed. An untracked file
+# survives a reset, but a fixer that commits with git add -A takes it,
+# and the revert of that round then deletes it.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "feedback-review: the tree holds uncommitted changes. Commit or stash them first." >&2
+  exit 2
+fi
+untracked="$(git ls-files --others --exclude-standard)"
+if [ -n "$untracked" ]; then
+  echo "feedback-review: untracked files could ride into a fix commit. Commit, stash, or remove: $(tr '\n' ' ' <<<"$untracked")" >&2
+  exit 2
+fi
+
+# START_BRANCH is the branch of the pull request. A reset, a pull, or a
+# push acts on it alone. When the checkout moved to another branch, the
+# round stops and changes nothing there.
+START_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+on_start_branch() {
+  local now
+  now="$(git rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  [ "$now" = "$START_BRANCH" ] && return 0
+  say "STOP: the checkout is on '$now', and the round started on '$START_BRANCH'. The round does not $1 there. A person reads it."
+  exit 1
+}
+
+# revert_to resets the start branch to a commit of this round.
+revert_to() {
+  on_start_branch "reset"
+  git reset -q --hard "$1"
+}
+
 # WAIT_SECONDS is how long one round waits for the review to land. Gitar
 # took 6 minutes 48 seconds on pull request #121, so the default gives it
 # room and still ends a stuck round.
@@ -230,7 +262,7 @@ fix_and_push() {
        AUTOTUNE_FIXER_PROMPT="$ROOT/docs/reference/feedback-fixer-prompt.md" \
        "$ROOT/scripts/autotune-fix.sh" > "$summary" 2>&1; then
     say "the fixer failed on $label. Read $summary"
-    git reset -q --hard "$before"
+    revert_to "$before"
     return 1
   fi
   after="$(git rev-parse HEAD)"
@@ -242,21 +274,22 @@ fix_and_push() {
   for path in $(frozen_paths); do
     if grep -qxF -- "$path" <<<"$changed" || grep -qF -- "$path/" <<<"$changed"; then
       say "the fixer touched a frozen path: $path. The cycle reverts $label."
-      git reset -q --hard "$before"
+      revert_to "$before"
       return 1
     fi
   done
   if git diff -U0 "$before" -- docs/decisions.md | grep -q '^-[^-]'; then
     say "the fixer removed a line of docs/decisions.md, which is append-only. The cycle reverts $label."
-    git reset -q --hard "$before"
+    revert_to "$before"
     return 1
   fi
   if ! ( cd "$ROOT/go" && go build ./... && go vet ./... && go test ./... >/dev/null ) \
      || ! ( cd "$ROOT" && make lint-go >/dev/null 2>&1 ); then
     say "the tree is red after the fix of $label. The cycle reverts it."
-    git reset -q --hard "$before"
+    revert_to "$before"
     return 1
   fi
+  on_start_branch "push"
   git push -q || { say "could not push the fix of $label"; return 1; }
   say "pushed $(git rev-list --count "$before".."$after") commit(s)"
 }
@@ -351,7 +384,7 @@ codex_round() {
   code=$?
   tail -n 3 "$log" >&2
   case "$code" in
-    0|3|4) git pull -q --ff-only || { say "could not pull the review record"; exit 1; } ;;
+    0|3|4) on_start_branch "pull"; git pull -q --ff-only || { say "could not pull the review record"; exit 1; } ;;
   esac
   case "$code" in
     0)

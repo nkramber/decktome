@@ -21,6 +21,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -51,6 +52,10 @@ func main() {
 	}
 }
 
+// newClient builds the eval client from the environment. A test swaps in a
+// scripted provider.
+var newClient = func() (*llm.Client, error) { return llm.NewFromEnv(gatekit.Env, gatekit.Quiet()) }
+
 func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) error {
 	if err := gatekit.SpendGuard("QUESTIONS_EVAL"); err != nil {
 		return err
@@ -71,8 +76,7 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 	rec.Header.Prompts["eval"] = evalVersion
 	rec.LowerIsBetter("bad", "bad_ratio", "bad_ratio_tune", "bad_ratio_holdout", "holdout_bad", "partial", "unjudged", "unsure")
 	rec.Header.Versions["gate_document"] = gate.Name
-	quiet := gatekit.Quiet()
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, err := newClient()
 	if err != nil {
 		return err
 	}
@@ -104,6 +108,9 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 	missed := map[string][]string{}
 	unjudged := map[string]string{}
 	var errored []string
+	// fault is the provider error that ended the run. The run still writes
+	// its partial summary, so the spend so far is on record (REV-077).
+	var fault error
 	// scored counts the conversations the eval was asked about, so the
 	// budget-stop message reports a count and not a map size.
 	scored := 0
@@ -135,7 +142,9 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 		}
 		vs, miss, err := score(client, acc, gate.Name, conv, checker.facts(conv))
 		if err != nil {
-			return fmt.Errorf("%s: %w", conv.Name, err)
+			fault = fmt.Errorf("%s: %w", conv.Name, err)
+			stopped = fmt.Sprintf("a provider fault stopped the run after %d conversations: %v", scored, fault)
+			break
 		}
 		scored++
 		// One verdict per question asked, or the conversation is unjudged
@@ -162,7 +171,9 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 	}
 	cost, err := costOf(acc, model)
 	if err != nil {
-		return err
+		// A fault before any reported usage leaves no spend to record, and
+		// the fault stays the first error the operator reads.
+		return errors.Join(fault, err)
 	}
 	sum := tune.Summarize(gate.Name, model, cost, gate.Metrics, verdicts)
 	// The per-conversation counts let a partial run be folded into this
@@ -201,6 +212,9 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 		if err := os.WriteFile(jsonOut, append(raw, '\n'), 0o600); err != nil {
 			return err
 		}
+	}
+	if fault != nil {
+		return fault
 	}
 	if stopped != "" {
 		return fmt.Errorf("%s", stopped)

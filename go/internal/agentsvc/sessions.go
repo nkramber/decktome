@@ -15,6 +15,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/decks"
 	"github.com/nkramber/decktome/go/internal/gzstore"
+	"github.com/nkramber/decktome/go/internal/sessions"
 )
 
 // The sessions list of PR-19 (D-433): the conversations a reader can
@@ -139,8 +140,8 @@ func (s *Server) UpdateSession(ctx context.Context, req *connect.Request[mtgv1.U
 	return connect.NewResponse(&mtgv1.UpdateSessionResponse{Session: sum}), nil
 }
 
-// DeleteSession removes a conversation for good (D-433). The decks it
-// built stay. A session with a build in flight waits: the build writes
+// DeleteSession removes a conversation and the decks it built, for good
+// (D-433, D-456). A session with a build in flight waits: the build writes
 // its deck id onto the session when it ends, and a delete under it
 // would bring the session back half-written.
 func (s *Server) DeleteSession(ctx context.Context, req *connect.Request[mtgv1.DeleteSessionRequest]) (*connect.Response[mtgv1.DeleteSessionResponse], error) {
@@ -158,7 +159,12 @@ func (s *Server) DeleteSession(ctx context.Context, req *connect.Request[mtgv1.D
 	if err != nil {
 		return nil, storeError(err)
 	}
-	if err := s.store.Delete(ctx, uid, id); err != nil {
+	// A build on another instance holds the lease in the store, and the
+	// delete reads it in its own transaction (D-922).
+	if err := s.store.Delete(ctx, uid, id, s.now()); err != nil {
+		if errors.Is(err, sessions.ErrLeased) {
+			return nil, connect.NewError(connect.CodeAborted, errDeleteMidBuild)
+		}
 		return nil, storeError(err)
 	}
 	if s.deckStore != nil {

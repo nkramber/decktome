@@ -1,6 +1,8 @@
 """Tests of ci_skip.py (D-818 to D-820)."""
+import glob
 import importlib.util
 import os
+import re
 import subprocess
 import tempfile
 import unittest
@@ -141,6 +143,49 @@ class Workflow(unittest.TestCase):
             with self.subTest(job=job):
                 self.assertNotIn("needs.skip.outputs.skip", jobs[job])
         self.assertIn("git show \"$BASE_SHA:docs/tools/ci_skip.py\"", jobs["skip"])
+
+
+# A Go test names a repository file as a "../" literal or as a
+# filepath.Join of literals, from its package folder.
+RELATIVE = re.compile(r'"((?:\.\./)+[^"]+)"')
+JOIN = re.compile(r'filepath\.Join\(((?:\s*"[^"]*"\s*,?)+)\)')
+LITERAL = re.compile(r'"([^"]*)"')
+
+
+def go_test_reads():
+    """Each repository path that a Go test reads, from the root, with its glob pattern."""
+    reads = set()
+    for folder, _, files in os.walk(os.path.join(cs.ROOT, "go")):
+        for name in files:
+            if not name.endswith("_test.go"):
+                continue
+            with open(os.path.join(folder, name), encoding="utf-8") as handle:
+                text = handle.read()
+            found = RELATIVE.findall(text)
+            found += [os.path.join(*LITERAL.findall(m)) for m in JOIN.findall(text) if LITERAL.findall(m)[0] == ".."]
+            for literal in found:
+                path = os.path.relpath(os.path.normpath(os.path.join(folder, literal)), cs.ROOT)
+                if not path.startswith(".."):
+                    reads.add(path)
+    return reads
+
+
+class GoTestReads(unittest.TestCase):
+    def test_a_document_that_a_go_test_reads_is_code(self):
+        # The Go job skips on a change of documents alone (REV-065).
+        reads = go_test_reads()
+        documents = [p for p in reads if cs.eligible(p)]
+        self.assertGreaterEqual(len(documents), 3, sorted(reads))
+        for pattern in documents:
+            paths = glob.glob(os.path.join(cs.ROOT, pattern))
+            self.assertTrue(paths, f"no file matches {pattern}")
+            for path in paths:
+                path = os.path.relpath(path, cs.ROOT)
+                with self.subTest(path=path):
+                    skip, reason = cs.decide(["docs/a.md", path], None, 211, GREEN, None)
+                    self.assertFalse(skip, reason)
+                    skip, reason = cs.decide(CODE, [path], None, None, GREEN)
+                    self.assertFalse(skip, reason)
 
 
 if __name__ == "__main__":

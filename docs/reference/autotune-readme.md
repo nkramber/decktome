@@ -310,13 +310,13 @@ The steps of one cycle:
 3. The fixer reads the failing cases, the reader's own words, and `docs/reference/feedback-fixer-prompt.md`.
 4. A frozen path, a removed line of `docs/decisions.md`, or a red tree reverts the fixer and keeps the cases.
 5. The same gates run over the same ids. **Every case must pass.**
-6. `make eval-check` must show no flip on the baselines.
+6. `make eval-check` passes on the committed baselines. It reads no row of the cycle, so ask the owner for a whole gate run (D-921).
 7. The cycle commits its evidence. With `--here`, it stops there.
 8. The session writes the documents, pushes, and opens its pull request.
 9. `scripts/feedback-review.sh` waits for CI and reads Gitar. It runs the Codex review, and the fixer answers each finding (D-878).
 10. A Codex approval ends the review step. The session then asks the owner, and the owner decides the merge.
 
-The review step reads the threads of `gitar-bot` and the owner alone, because the repository is public (D-902). `FEEDBACK_FINDING_AUTHORS` replaces that list of logins. Each reply goes out as raw text.
+The review step reads the threads of `gitar-bot` and the owner alone, because the repository is public (D-902). It refuses a changed tree or an untracked file, and it stops when the branch moves (D-923). `FEEDBACK_FINDING_AUTHORS` replaces that list of logins. Each reply goes out as raw text.
 
 Without `--here`, the cycle pushes and opens its own pull request at step 7, and it runs step 9 itself. That body holds the rows the cycle can prove, and `pr-contract` stays red until an author session completes the rest (D-748).
 

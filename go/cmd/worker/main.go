@@ -3,9 +3,9 @@
 // model (PR-14B).
 //
 // Production shape: a Cloud Run job. One Cloud Scheduler cron
-// starts it with -once:
+// starts it with -once (D-634):
 //
-//	"*/15 * * * *"   every 15 minutes, every day
+//	"0 * * * *"   each hour, every day
 //
 // A run exits 0 early ("skip") when the newest stored version is less
 // than 60 minutes old and no announcement is pending. Otherwise it

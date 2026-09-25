@@ -69,8 +69,9 @@ type DeckServiceClient interface {
 	// UpdateDeck writes the two fields a user owns: the name and the
 	// favorite mark (PR-17). It changes nothing the agent built.
 	UpdateDeck(context.Context, *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error)
-	// DeleteDeck removes one deck for good (PR-17). The session keeps the
-	// id in deck_ids, and the chat shows the deck as deleted.
+	// DeleteDeck removes a deck for good, with the chat that built it and
+	// every deck of that chat (PR-17, D-456). It refuses while a build of
+	// that chat runs (D-922).
 	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
 	// ShareDeck makes a share link for one of the caller's decks and
 	// answers the token once (D-315). A deck with a link gets a new one,
@@ -238,8 +239,9 @@ type DeckServiceHandler interface {
 	// UpdateDeck writes the two fields a user owns: the name and the
 	// favorite mark (PR-17). It changes nothing the agent built.
 	UpdateDeck(context.Context, *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error)
-	// DeleteDeck removes one deck for good (PR-17). The session keeps the
-	// id in deck_ids, and the chat shows the deck as deleted.
+	// DeleteDeck removes a deck for good, with the chat that built it and
+	// every deck of that chat (PR-17, D-456). It refuses while a build of
+	// that chat runs (D-922).
 	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
 	// ShareDeck makes a share link for one of the caller's decks and
 	// answers the token once (D-315). A deck with a link gets a new one,

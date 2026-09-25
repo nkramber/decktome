@@ -570,8 +570,9 @@ export const DeckService: GenService<{
     output: typeof UpdateDeckResponseSchema;
   },
   /**
-   * DeleteDeck removes one deck for good (PR-17). The session keeps the
-   * id in deck_ids, and the chat shows the deck as deleted.
+   * DeleteDeck removes a deck for good, with the chat that built it and
+   * every deck of that chat (PR-17, D-456). It refuses while a build of
+   * that chat runs (D-922).
    *
    * @generated from rpc mtg.v1.DeckService.DeleteDeck
    */

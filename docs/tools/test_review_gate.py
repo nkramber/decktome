@@ -16,6 +16,7 @@ N = 212
 HEAD = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678"
 CODE = [(HEAD, ["go/internal/generate/manapass.go"])]
 SESSION = "session@example.com"
+REPO = "nkramber/decktome"
 
 
 def record(head=HEAD[:7], verdict=f"**{rg.APPROVED}.** This verdict applies to head `x`.", identity=True):
@@ -26,9 +27,10 @@ def record(head=HEAD[:7], verdict=f"**{rg.APPROVED}.** This verdict applies to h
     return "\n".join(lines)
 
 
-def run(labels=(), files=("go/internal/generate/manapass.go",), commits=CODE, authors=(SESSION,), text=None, author="nkramber"):
+def run(labels=(), files=("go/internal/generate/manapass.go",), commits=CODE, authors=(SESSION,), text=None, author="nkramber",
+        fork=""):
     reader = lambda path: text if path == rg.record_path(N) else None
-    results = rg.evaluate(N, author, set(labels), list(files), commits, set(authors), reader)
+    results = rg.evaluate(N, author, set(labels), list(files), commits, set(authors), reader, fork=fork)
     return [(rule, state) for rule, state, _ in results], results
 
 
@@ -94,6 +96,17 @@ class ReviewRecord(unittest.TestCase):
     def test_metadata_commits_alone_have_no_effective_head(self):
         states, _ = run(commits=[(HEAD, ["docs/SESSION-HANDOFF.md"])], text=record())
         self.assertIn(("RG 5", "FAULT"), states)
+
+
+class Fork(unittest.TestCase):
+    def test_a_record_from_a_fork_fails(self):
+        rules, results = run(text=record(), fork="someone/decktome")
+        self.assertIn(("RG 3", "FAULT"), rules)
+        self.assertNotIn(("RG 5", "PASS"), rules)
+
+    def test_a_record_of_the_same_repository_passes(self):
+        rules, results = run(text=record())
+        self.assertEqual(faults(rules), [])
 
 
 class DocumentsAfterTheApproval(unittest.TestCase):
@@ -201,26 +214,28 @@ class GitFacts(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def git(self, *args, email=SESSION):
+    def git(self, *args, email=SESSION, committer=None):
         env = {**os.environ, "GIT_AUTHOR_NAME": "a", "GIT_AUTHOR_EMAIL": email,
-               "GIT_COMMITTER_NAME": "a", "GIT_COMMITTER_EMAIL": email}
+               "GIT_COMMITTER_NAME": "a", "GIT_COMMITTER_EMAIL": committer or email}
         out = subprocess.run(["git", *args], cwd=self.repo, capture_output=True, text=True, env=env, check=True)
         return out.stdout.strip()
 
-    def commit(self, files, message, email=SESSION):
+    def commit(self, files, message, email=SESSION, committer=None):
         for path, text in files.items():
             full = os.path.join(self.repo, path)
             os.makedirs(os.path.dirname(full), exist_ok=True)
             with open(full, "w", encoding="utf-8") as handle:
                 handle.write(text)
             self.git("add", path)
-        self.git("commit", "-q", "-m", message, email=email)
+        self.git("commit", "-q", "-m", message, email=email, committer=committer)
         return self.git("rev-parse", "HEAD")
 
-    def gate(self, labels=(), author="nkramber"):
+    def gate(self, labels=(), author="nkramber", head_repo=REPO):
         event = os.path.join(self.repo, "..", f"event-{os.path.basename(self.repo)}.json")
+        head = {"sha": "x", "repo": None if head_repo is None else {"full_name": head_repo}}
         with open(event, "w", encoding="utf-8") as handle:
-            json.dump({"pull_request": {"number": N, "user": {"login": author}, "base": {"sha": self.base},
+            json.dump({"pull_request": {"number": N, "user": {"login": author},
+                                        "base": {"sha": self.base, "repo": {"full_name": REPO}}, "head": head,
                                         "labels": [{"name": name} for name in labels]}}, handle)
         out = subprocess.run([sys.executable, os.path.join(HERE, "review_gate.py"), "--event", event,
                               "--head", "HEAD", "--repo", self.repo], capture_output=True, text=True)
@@ -233,6 +248,26 @@ class GitFacts(unittest.TestCase):
         status, out = self.gate()
         self.assertEqual(status, 0, out)
         self.assertIn(f"effective head `{code}`", out)
+
+    def test_the_command_fails_an_approved_record_from_a_fork(self):
+        code = self.commit({"go/a.go": "package a\n"}, "code")
+        self.commit({rg.record_path(N): record(head=code)}, "review")
+        status, out = self.gate(head_repo="someone/decktome")
+        self.assertEqual(status, 1, out)
+        self.assertIn("RG 3: FAULT", out)
+        self.assertIn("`someone/decktome`", out)
+
+    def test_the_command_fails_a_record_whose_head_repository_is_gone(self):
+        code = self.commit({"go/a.go": "package a\n"}, "code")
+        self.commit({rg.record_path(N): record(head=code)}, "review")
+        status, out = self.gate(head_repo=None)
+        self.assertEqual(status, 1, out)
+        self.assertIn("RG 3: FAULT", out)
+
+    def test_the_label_still_passes_documents_from_a_fork(self):
+        self.commit({"docs/decisions.md": "| D-1 |\n"}, "docs")
+        status, out = self.gate(labels=[rg.LABEL], head_repo="someone/decktome")
+        self.assertEqual(status, 0, out)
 
     def test_the_command_fails_a_code_push_after_the_review(self):
         code = self.commit({"go/a.go": "package a\n"}, "code")
@@ -301,6 +336,18 @@ class GitFacts(unittest.TestCase):
         self.commit({"docs/decisions.md": "| D-1 |\n"}, "docs")
         status, out = self.gate(labels=[rg.LABEL])
         self.assertEqual(status, 0, out)
+
+    def test_dependabot_passes_with_the_committer_of_github(self):
+        self.commit({"go/go.mod": "module a\n"}, "bump", email=rg.DEPENDABOT_EMAIL, committer=rg.GITHUB_COMMITTER)
+        status, out = self.gate(author=rg.DEPENDABOT)
+        self.assertEqual(status, 0, out)
+
+    def test_dependabot_fails_after_an_amend_by_a_session(self):
+        self.commit({"go/go.mod": "module a\n"}, "bump", email=rg.DEPENDABOT_EMAIL, committer=rg.GITHUB_COMMITTER)
+        self.commit({"go/go.sum": "x\n"}, "fix the conflict", email=rg.DEPENDABOT_EMAIL, committer=SESSION)
+        status, out = self.gate(author=rg.DEPENDABOT)
+        self.assertEqual(status, 1, out)
+        self.assertIn("RG 2: SKIP", out)
 
     def test_dependabot_reads_the_commit_authors(self):
         self.commit({"go/go.mod": "module a\n"}, "bump", email=rg.DEPENDABOT_EMAIL)

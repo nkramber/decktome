@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/nkramber/decktome/go/internal/harvest"
 	"github.com/nkramber/decktome/go/internal/triage"
 )
 
@@ -47,5 +48,46 @@ func TestApplyWritesAParserFixture(t *testing.T) {
 	got, err := os.ReadFile(filepath.Join(root, want))
 	if err != nil || string(got) != "hello\nworld\n" {
 		t.Errorf("fixture = %q, %v", got, err)
+	}
+}
+
+// TestAFailedWriteKeepsTheWrittenCases is REV-082 (Codex P2-3, #229). The
+// second case write fails after the first one lands. The record names
+// the first verdict alone, so a new read writes the second case and never
+// the first one again.
+func TestAFailedWriteKeepsTheWrittenCases(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, harvest.Dir)
+	if err := os.MkdirAll(filepath.Join(root, "blocked"), 0o750); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	file := filepath.Join(dir, "feedback-2026-09-20.jsonl")
+	if err := os.WriteFile(file, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	recs := []harvest.Record{{ID: "v1"}, {ID: "v2"}}
+	results := []triage.Result{
+		{Case: triage.Case{Class: "I1", Artifact: triage.AParseFixture, Target: triage.TargetDeckReports, ID: 3, Body: []byte(`"one\n"`)}},
+		{Case: triage.Case{Class: "Q1", Target: "blocked", ID: 2, Body: []byte(`{"id":2}`)}},
+	}
+	if err := applyCases(root, results); err == nil {
+		t.Fatal("a write into a folder succeeded")
+	}
+	if err := triage.Settle(root, recs, []string{file, file}, results); err != nil {
+		t.Fatal(err)
+	}
+	left, err := triage.Unapplied(root, recs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) != 1 || left[0].ID != "v2" {
+		t.Errorf("the next read holds %v, want v2 alone", left)
+	}
+	pending, err := triage.PendingHarvests(root)
+	if err != nil || len(pending) != 1 {
+		t.Errorf("pending = %v (%v), want the harvest", pending, err)
 	}
 }

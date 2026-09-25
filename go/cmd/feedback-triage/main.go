@@ -29,10 +29,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nkramber/decktome/go/internal/gatekit"
@@ -54,7 +56,7 @@ func main() {
 
 func run() error {
 	root := flag.String("root", "..", "the repo root the triage reads and writes under")
-	in := flag.String("in", "", "a harvest JSONL file. Empty reads the newest one")
+	in := flag.String("in", "", "a harvest JSONL file. Empty reads every harvest no live -apply triage read")
 	out := flag.String("out", "", "write the triage document here")
 	dry := flag.Bool("dry", false, "call no model. A verdict the reason keys can not place keeps its need and writes no case")
 	apply := flag.Bool("apply", false, "write each case into the file that owns it")
@@ -72,22 +74,37 @@ func run() error {
 		return err
 	}
 
-	path := *in
-	if path == "" {
-		p, err := triage.NewestHarvest(*root)
+	paths := []string{*in}
+	if *in == "" {
+		pending, err := triage.PendingHarvests(*root)
 		if err != nil {
 			return err
 		}
-		if p == "" {
-			return fmt.Errorf("no harvest under %s. Run make feedback-harvest first", filepath.Join(*root, harvest.Dir))
+		if len(pending) == 0 {
+			return fmt.Errorf("no harvest under %s that a triage did not apply. Run make feedback-harvest first", filepath.Join(*root, harvest.Dir))
 		}
-		path = p
+		paths = pending
 	}
-	recs, err := triage.ReadHarvest(path)
-	if err != nil {
-		return err
+	// from names the harvest of each record, so a live run marks a
+	// harvest read only when each of its verdicts applied (REV-082).
+	var recs []harvest.Record
+	var from []string
+	for _, path := range paths {
+		part, err := triage.ReadHarvest(path)
+		if err != nil {
+			return err
+		}
+		// A verdict that an earlier live run applied writes no case twice.
+		fresh, err := triage.Unapplied(*root, part)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "harvest      %s, %d verdict(s), %d not applied\n", path, len(part), len(fresh))
+		recs = append(recs, fresh...)
+		for range fresh {
+			from = append(from, path)
+		}
 	}
-	fmt.Fprintf(os.Stderr, "harvest      %s, %d verdict(s)\n", path, len(recs))
 
 	quiet := gatekit.Quiet()
 	// The card index names a commander and a card. It is free and local,
@@ -129,15 +146,25 @@ func run() error {
 	results := triage.Run(context.Background(), recs, judger, namer, nextID)
 
 	if *apply {
-		if err := applyCases(*root, results); err != nil {
-			return err
+		applyErr := applyCases(*root, results)
+		// A dry run writes no case for a verdict that needs the judge, so
+		// only a live run records what it applied. A failed verdict or a
+		// failed write keeps its verdict pending, and the writes that landed
+		// stay on record (REV-082).
+		if !*dry {
+			if err := triage.Settle(*root, recs, from, results); err != nil {
+				return errors.Join(applyErr, err)
+			}
+		}
+		if applyErr != nil {
+			return applyErr
 		}
 	}
 	// The manifest names the cases a gate measures, whether or not this
 	// run wrote them into a gate file. So the plan of a dry cycle reads
 	// the same list the live one acts on.
 	if *manifest != "" {
-		m := triage.ManifestOf(path, time.Now().UTC(), results)
+		m := triage.ManifestOf(strings.Join(paths, ", "), time.Now().UTC(), results)
 		if err := triage.WriteManifest(*manifest, m); err != nil {
 			return err
 		}
@@ -172,7 +199,7 @@ func run() error {
 // owner question into the decision queue.
 func applyCases(root string, results []triage.Result) error {
 	for i, r := range results {
-		if r.Err != nil || len(r.Case.Body) == 0 || r.Case.Target == "" || r.Case.NoRun != "" {
+		if !r.NeedsWrite() || r.Route.Owner {
 			continue
 		}
 		path := filepath.Join(root, r.Case.Target)
@@ -203,18 +230,19 @@ func applyCases(root string, results []triage.Result) error {
 	if err != nil {
 		return err
 	}
-	for _, o := range owners {
-		question, whyYou, blocks := triage.OwnerRow(o)
+	// Each question marks its own result as it lands, so a failed write
+	// leaves the earlier ones on record (REV-082).
+	for i, r := range results {
+		if r.Err != nil || !r.Route.Owner {
+			continue
+		}
+		question, whyYou, blocks := triage.OwnerRow(r.Route)
 		number := fmt.Sprintf("OQ-%d", next)
 		if err := triage.AppendOwnerQuestion(path, number, question, whyYou, blocks); err != nil {
 			return err
 		}
+		results[i].Applied = ownerQuestions
 		next++
-	}
-	for i, r := range results {
-		if r.Err == nil && r.Route.Owner {
-			results[i].Applied = ownerQuestions
-		}
 	}
 	return nil
 }

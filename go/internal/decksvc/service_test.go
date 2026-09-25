@@ -780,6 +780,18 @@ func TestDeleteDeck(t *testing.T) {
 		}
 	})
 
+	t.Run("a chat with a build in flight keeps the deck and the chat", func(t *testing.T) {
+		src := fresh()
+		src.decks["d1"].SessionId = "s1"
+		chats := &fakeSessions{sessions: map[string]*mtgv1.Session{"s1": {Id: "s1", DeckIds: []string{"d1"}}}, leased: map[string]bool{"s1": true}}
+		if err := del(src, "d1", WithSessions(chats)); codeOf(t, err) != connect.CodeAborted {
+			t.Errorf("code = %v, want Aborted", codeOf(t, err))
+		}
+		if len(src.deleted) != 0 || chats.sessions["s1"] == nil {
+			t.Errorf("a delete under a build removed decks %v, chat kept %v", src.deleted, chats.sessions["s1"] != nil)
+		}
+	})
+
 	t.Run("an unknown deck is not found", func(t *testing.T) {
 		if err := del(fresh(), "d9"); codeOf(t, err) != connect.CodeNotFound {
 			t.Errorf("code = %v", codeOf(t, err))
@@ -847,6 +859,8 @@ func TestDeleteDeck(t *testing.T) {
 // fakeSessions is the chat store of the delete test.
 type fakeSessions struct {
 	sessions map[string]*mtgv1.Session
+	// leased marks a chat whose build holds the lease (D-922).
+	leased map[string]bool
 }
 
 func (f *fakeSessions) Get(_ context.Context, _, id string) (*mtgv1.Session, error) {
@@ -857,9 +871,12 @@ func (f *fakeSessions) Get(_ context.Context, _, id string) (*mtgv1.Session, err
 	return s, nil
 }
 
-func (f *fakeSessions) Delete(_ context.Context, _, id string) error {
+func (f *fakeSessions) Delete(_ context.Context, _, id string, _ time.Time) error {
 	if _, ok := f.sessions[id]; !ok {
 		return sessions.ErrNotFound
+	}
+	if f.leased[id] {
+		return sessions.ErrLeased
 	}
 	delete(f.sessions, id)
 	return nil

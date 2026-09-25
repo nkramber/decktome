@@ -12,6 +12,49 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-25a
+
+**Pull request #228, PR-78, corrects forty-four findings of the repository review of 2026-09-24 (D-905 to D-919).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: the next findings of the review report, REV-008, REV-029, REV-030, and the P3 findings that remain.
+
+**The base.** `main` is `72290db`, from #227.
+
+**The change.** The owner asked for as many corrections as one session can finish, then for more (D-905). Each code finding has a regression test that fails on the base.
+
+- REV-006, REV-026: an import takes at most 250 deck cards (D-908), and 9,000 collection rows (D-910).
+- REV-007, REV-021, REV-022: a share link ends with its deck, names its commander, and waits for the index (D-909, D-914).
+- REV-009, REV-015: the fallback deploy runs on `main` alone, and the guide names the index roles (D-906).
+- REV-013, REV-014: a traffic pin fails the deploy, and a stored proto drops an unknown field (D-912).
+- REV-010: the rate limit keys on the rightmost client address (D-907).
+- REV-011, REV-012: a failed job and a stale snapshot alert the owner, and a bad version never serves (D-911).
+- REV-016, REV-018, REV-020: no meld result, no lost locked card, and the revise cost counts (D-909).
+- REV-023, REV-024, REV-025, REV-027, REV-028: the feedback dialog, the commander swap, cEDH, the Commander import pick, and the TopDeck.gg credit (D-913, D-914).
+- REV-017, REV-019: a colorless deck, and the repair input (D-915, D-916).
+- P3: REV-031, REV-034, REV-040 to REV-042, REV-047, REV-051 to REV-055, REV-057 to REV-064 except REV-056, REV-067, REV-085, and REV-090 (D-916 to D-919).
+- The owner approved three production writes: the provider condition (D-906), and the Pushover secrets of both jobs (D-911).
+- No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar found one issue on `89bd9b4`: bare join words kept the old commander. `44d2fb0` fixes it, and Gitar approved `44d2fb0`. Codex found that a slow failed snapshot run skipped its alert (P2-1). `3673ca4` fixes it, and the regression test and `make verify` pass. Gitar approved `3673ca4`. Codex records `Ready for owner merge` at `3673ca4`. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy, eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- Next step 3 (D-750). M-19 comes after it.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for the rules of D-913, and a deck gate run for the repair input of D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-24e: the end of the Gitar pause, PR-76
+
+**The owner asked to end the Gitar pause of PR-66 (D-838).** The session read that Gitar finished no review on #215 to #225, and told the owner before the change. The owner showed a Gitar review of the same day on another repository, and confirmed that reviews come again. The session followed the steps of the end in the pause file (D-899). The owner then asked for a push wait of one minute (D-900). This pull request waits for its own Gitar review before the merge.
+
 ## The resume section of 2026-09-24f
 
 **Pull request #227 corrects the five P1 findings of the repository review of 2026-09-24 (PR-77, D-901 to D-904).**
