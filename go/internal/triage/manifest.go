@@ -65,6 +65,11 @@ type Manifest struct {
 	// Harvest names each JSONL file the triage read, comma separated.
 	Harvest string  `json:"harvest,omitempty"`
 	Cases   []Entry `json:"cases"`
+	// Calls and CostUSD are the spend of the judge of this triage. The fix
+	// cycle charges it to its ledger (REV-078, D-939). A nil cost with
+	// calls is an unpriced run.
+	Calls   int      `json:"calls"`
+	CostUSD *float64 `json:"cost_usd"`
 }
 
 // ManifestOf reads the cases of a finished run. A result with no case,

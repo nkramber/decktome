@@ -34,7 +34,7 @@ export function BuildStepper({ phase, repaired }: { phase: BuildPhase; repaired:
           <li
             key={s.phase}
             aria-current={active ? "step" : undefined}
-            className={cn("flex items-center gap-1.5", done ? "text-muted-foreground" : active ? "text-primary" : "text-muted-foreground/50")}
+            className={cn("flex items-center gap-1.5", active ? "text-primary" : "text-muted-foreground")}
           >
             <span aria-hidden="true" className={cn("grid size-4 place-items-center rounded-full border", active ? "border-primary" : done ? "border-muted-foreground" : "border-border")}>
               {done ? <CheckIcon className="size-2.5" /> : <span className={cn("size-1.5 rounded-full", active && "animate-pulse bg-primary")} />}

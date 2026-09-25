@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"os"
 	"os/signal"
@@ -159,6 +160,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		authOpts.opts = append(authOpts.opts, auth.WithAllowlist(inviteList))
 		logger.Info("the invite list gates every request", "document", allowlist.Collection+"/"+allowlist.Doc)
 	}
+	// A closed account ends at once, and its share links answer NotFound
+	// (D-941). The mark is read once a minute for each user.
+	closedUsers := users.NewClosedCache(users.NewRepo(fs).Deactivated, nil)
+	authOpts.opts = append(authOpts.opts, auth.WithClosed(closedUsers))
 	// The interceptor puts the user id in the context.
 	userFn := auth.UserID
 	// The repo reads the index for the summary of a collection stored
@@ -181,6 +186,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		decksvc.WithCollections(collectionRepo),
 		decksvc.WithDecks(deckRepo),
 		decksvc.WithSessions(sessionRepo),
+		decksvc.WithClosedUsers(closedUsers),
 		decksvc.WithUser(userFn))
 	// The feedback store takes a verdict on a question, a summary, a
 	// card, or a deck of the caller (PR-27, D-558).
@@ -367,21 +373,34 @@ type authSetup struct {
 	opts     []auth.Option
 }
 
-// authOptions picks the verifier and the fallback. Local mode keeps the debug user as
-// the fallback for a request with no token. On Cloud Run the fallback
-// exists only with ALLOW_DEBUG_USER=1, and a missing or refused token is
-// Unauthenticated otherwise.
+// errUnsafeOnCloudRun names a local switch that Cloud Run refuses (D-925).
+var errUnsafeOnCloudRun = errors.New("a local-only switch is set on Cloud Run")
+
+// cloudRunAuthGuard refuses the two switches that open the API on Cloud
+// Run: the debug user fallback, and the emulator host, which makes the
+// Firebase SDK trust an unsigned token (D-925).
+func cloudRunAuthGuard(onCloudRun bool, getenv func(string) string) error {
+	if !onCloudRun {
+		return nil
+	}
+	for _, k := range []string{"ALLOW_DEBUG_USER", "FIREBASE_AUTH_EMULATOR_HOST"} {
+		if getenv(k) != "" {
+			return fmt.Errorf("%w: %s", errUnsafeOnCloudRun, k)
+		}
+	}
+	return nil
+}
+
+// authOptions picks the verifier and the fallback. Local mode keeps the
+// debug user as the fallback for a request with no token. On Cloud Run
+// no fallback exists, and a missing or refused token is Unauthenticated.
 func authOptions(ctx context.Context, project string, logger *slog.Logger) (authSetup, error) {
 	onCloudRun := gcpenv.OnCloudRun()
-	allowDebug := os.Getenv("ALLOW_DEBUG_USER") == "1"
+	if err := cloudRunAuthGuard(onCloudRun, os.Getenv); err != nil {
+		return authSetup{}, err
+	}
 	var setup authSetup
-	switch {
-	case onCloudRun && !allowDebug:
-		// No fallback. Every request needs a token.
-	case onCloudRun:
-		logger.Warn("debug user fallback enabled on Cloud Run by ALLOW_DEBUG_USER=1")
-		setup.opts = append(setup.opts, auth.WithFallback(gcpenv.EnvOr("DEBUG_USER_ID", "local-dev")))
-	default:
+	if !onCloudRun {
 		setup.opts = append(setup.opts, auth.WithFallback(gcpenv.EnvOr("DEBUG_USER_ID", "local-dev")))
 	}
 	// The Firebase verifier needs a project and either the emulator or
@@ -562,12 +581,20 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		logger.Warn("llm prices unavailable, the usage event carries no cost", "err", err)
+		prices = nil
 	} else {
 		opts = append(opts, agentsvc.WithPrices(prices))
 	}
 	// The per-user monthly spend cap (D-421). Cloud Run gets the $5
 	// default, and local mode gets a cap only when SPEND_CAP_USD names one.
-	if capUSD := spendCap(logger); capUSD > 0 {
+	capUSD, err := spendCap(gcpenv.OnCloudRun(), os.Getenv)
+	if err != nil {
+		return nil, err
+	}
+	if capUSD > 0 {
+		if roles := unpricedRoles(client.Config(), prices); len(roles) > 0 {
+			return nil, fmt.Errorf("the spend cap is on, and roles %v have no price row in prices.json (D-925)", roles)
+		}
 		opts = append(opts, agentsvc.WithSpendCap(usage.NewRepo(fs), capUSD))
 		logger.Info("the monthly spend cap is on", "cap_usd", capUSD)
 		if over := spendCapOverrides(logger); len(over) > 0 {
@@ -582,22 +609,43 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 const defaultSpendCapUSD = 5
 
 // spendCap reads SPEND_CAP_USD. Unset, Cloud Run gets the default and
-// local mode gets no cap. Zero turns the cap off anywhere, and a value
-// that is not a number is an error the log names.
-func spendCap(logger *slog.Logger) float64 {
-	raw := os.Getenv("SPEND_CAP_USD")
+// local mode gets no cap. Zero turns the cap off anywhere. A value that
+// is not a number, or is under zero, stops the start, so a typo never
+// turns the cap off (D-925).
+func spendCap(onCloudRun bool, getenv func(string) string) (float64, error) {
+	raw := getenv("SPEND_CAP_USD")
 	if raw == "" {
-		if gcpenv.OnCloudRun() {
-			return defaultSpendCapUSD
+		if onCloudRun {
+			return defaultSpendCapUSD, nil
 		}
-		return 0
+		return 0, nil
 	}
 	v, err := strconv.ParseFloat(raw, 64)
-	if err != nil || v < 0 {
-		logger.Error("SPEND_CAP_USD is not a number, so the cap is off", "value", raw)
-		return 0
+	if err != nil || v < 0 || math.IsNaN(v) || math.IsInf(v, 0) {
+		return 0, fmt.Errorf("SPEND_CAP_USD %q is not a number of zero or more", raw)
 	}
-	return v
+	return v, nil
+}
+
+// unpricedRoles names each role whose model has no price row. A turn of
+// such a model books no cost, so the cap can not see it (D-925). The fake
+// provider costs nothing, and it needs no row.
+func unpricedRoles(cfg *llm.Config, prices *llm.PriceTable) []llm.Role {
+	var out []llm.Role
+	for _, r := range llm.Roles {
+		spec := cfg.Roles[r]
+		if spec.Provider == llm.FakeName {
+			continue
+		}
+		if prices == nil {
+			out = append(out, r)
+			continue
+		}
+		if _, ok := prices.Models[spec.Model]; !ok {
+			out = append(out, r)
+		}
+	}
+	return out
 }
 
 // spendCapOverrides reads SPEND_CAP_OVERRIDES, a comma-separated list of

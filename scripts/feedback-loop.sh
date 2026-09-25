@@ -46,7 +46,8 @@ HERE="0"
 # FROZEN holds what the fixer may not touch. The cases are the
 # measurement: a fixer that edits one makes the gate agree with the code
 # instead of with the reader. The rest is the scorer, the accept rules,
-# and the loop itself (T-10).
+# the loop itself (T-10), the gates, the review, the checks, and the
+# deploy (D-930).
 FROZEN="
 go/cmd/questions-gate/conversations.json
 go/cmd/deck-gate/prompts.json
@@ -70,6 +71,26 @@ docs/reference/feedback-fixer-prompt.md
 docs/reference/autotune-fixer-prompt.md
 docs/reference/autotune-lessons.md
 docs/reference/eval/baselines.json
+go/cmd/bracket-gate
+go/cmd/deck-gate
+go/cmd/questions-gate
+go/cmd/revise-gate
+go/cmd/sixty-gate
+go/cmd/quality-gate
+go/cmd/summary-judge
+go/cmd/eval
+go/internal/gatekit
+go/internal/evalrun
+scripts/feedback-review.sh
+docs/tools
+docs/reviews
+.github
+.claude
+cloudbuild
+Makefile
+firebase.json
+firestore.rules
+firestore.indexes.json
 "
 
 usage() {
@@ -205,11 +226,15 @@ under_cap() {
 
 # run_gate runs one gate over the case ids of one suite and writes its
 # run file. It calls the Makefile target, so every guard of that target
-# holds: the env variable, the overwrite check, and the key loading.
+# holds: the env variable, the overwrite check, and the key loading. The
+# gate gets the room left under the cap, and it stops before an item
+# once it spent that room (D-939). It answers 3 when the cap stopped it.
 run_gate() {
-  local gate="$1" ids="$2" label="$3" doc run
+  local gate="$1" ids="$2" label="$3" doc run room
   doc="$STATE_DIR/$gate-$label.md"
   run="$STATE_DIR/$gate-$label.jsonl"
+  room="$(awk -v s="$(spent)" -v c="$CAP" 'BEGIN {printf "%.4f", c - s}')"
+  export GATE_MAX_USD="$room"
   case "$gate" in
     questions) make questions-gate GATE_OUT="$doc" GATE_RUN="$run" GATE_ARGS="-only $ids" >>"$LOG" 2>&1 ;;
     decks)     make deck-gate DECK_GATE_OUT="$doc" DECK_GATE_RUN="$run" DECK_GATE_ARGS="-only $ids" >>"$LOG" 2>&1 ;;
@@ -222,6 +247,13 @@ run_gate() {
   [ -f "$run" ] || { say "the $gate gate wrote no run file. Read $LOG"; return 2; }
   charge "$run" || { say "the $gate run is unpriced, so the cap can not count it"; return 2; }
   echo "$run"
+  local stopped
+  stopped="$(head -1 "$run" | python3 -c 'import json,sys
+print(json.load(sys.stdin).get("stopped", ""))' 2>/dev/null)"
+  if [ -n "$stopped" ]; then
+    say "the cap stopped the $gate gate: $stopped"
+    return 3
+  fi
   return 0
 }
 
@@ -272,6 +304,18 @@ else
 fi
 triage_code=$?
 [ -f "$MANIFEST" ] || die "the triage wrote no manifest. Read $LOG"
+# The judge of the triage spends too, so its cost enters the ledger
+# before any gate (D-939). Calls with no priced cost are a fault.
+triage_cost="$(python3 -c 'import json,sys
+m = json.load(open(sys.argv[1]))
+c = m.get("cost_usd")
+if c is None:
+    if m.get("calls", 0):
+        sys.exit(1)
+    c = 0
+print(c)' "$MANIFEST")" || die "the triage made unpriced calls, so the cap can not count them. Read $LOG"
+echo "${triage_cost:-0}" >> "$LEDGER"
+say "the triage spent \$${triage_cost:-0}"
 if [ "$triage_code" -ne 0 ]; then
   say "WARNING: the triage exited $triage_code. Read $TRIAGE_DOC"
 fi
@@ -345,7 +389,12 @@ m = json.load(open(sys.argv[1]))
 print(",".join(str(c["id"]) for c in (m.get("cases") or []) if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
   say "  the $gate gate over -only $ids"
   echo "### The $gate gate, before the fix" >> "$REPORT"
-  run="$(run_gate "$gate" "$ids" confirm)" || die "the $gate gate faulted. Read $LOG"
+  run="$(run_gate "$gate" "$ids" confirm)"
+  case $? in
+    0) ;;
+    3) capped=1; break ;;
+    *) die "the $gate gate faulted. Read $LOG" ;;
+  esac
   check_cases "$gate" "$run" fail
   case $? in
     0) TO_FIX="$TO_FIX $gate" ;;
@@ -420,7 +469,12 @@ for gate in $TO_FIX; do
 m = json.load(open(sys.argv[1]))
 print(",".join(str(c["id"]) for c in (m.get("cases") or []) if c["gate"] == sys.argv[2]))' "$MANIFEST" "$gate")"
   echo "### The $gate gate, after the fix" >> "$REPORT"
-  run="$(run_gate "$gate" "$ids" measure)" || die "the $gate gate faulted. Read $LOG"
+  run="$(run_gate "$gate" "$ids" measure)"
+  case $? in
+    0) ;;
+    3) say "the cap stopped the $gate gate before each case was measured."; failed=1; break ;;
+    *) die "the $gate gate faulted. Read $LOG" ;;
+  esac
   check_cases "$gate" "$run" pass
   case $? in
     0) say "  every case of the $gate gate passes" ;;

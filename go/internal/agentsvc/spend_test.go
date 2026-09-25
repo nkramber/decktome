@@ -152,7 +152,7 @@ func TestSpendCapOverrideTurnsTheCapOffForOneEmail(t *testing.T) {
 	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 500}}
 	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
 	ctx := auth.WithEmail(context.Background(), "owner@example.com")
-	if err := srv.checkSpendCap(ctx, "u1"); err != nil {
+	if err := srv.checkSpendCap(ctx, "u1", 0); err != nil {
 		t.Fatalf("the override did not turn the cap off: %v", err)
 	}
 }
@@ -163,7 +163,7 @@ func TestSpendCapOverrideKeepsTheCapForEveryOtherEmail(t *testing.T) {
 	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 5}}
 	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
 	ctx := auth.WithEmail(context.Background(), "guest@example.com")
-	err := srv.checkSpendCap(ctx, "u1")
+	err := srv.checkSpendCap(ctx, "u1", 0)
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("a guest at the cap: %v", err)
 	}
@@ -175,12 +175,12 @@ func TestSpendCapOverrideReadsItsOwnNumber(t *testing.T) {
 	srv := capServer(t, &fakeLedger{spent: map[string]float64{"u1/1970-01": 19.99}},
 		map[string]float64{"big@example.com": 20})
 	ctx := auth.WithEmail(context.Background(), "big@example.com")
-	if err := srv.checkSpendCap(ctx, "u1"); err != nil {
+	if err := srv.checkSpendCap(ctx, "u1", 0); err != nil {
 		t.Fatalf("under the override: %v", err)
 	}
 	srv = capServer(t, &fakeLedger{spent: map[string]float64{"u1/1970-01": 20}},
 		map[string]float64{"big@example.com": 20})
-	if err := srv.checkSpendCap(ctx, "u1"); connect.CodeOf(err) != connect.CodeFailedPrecondition {
+	if err := srv.checkSpendCap(ctx, "u1", 0); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("at the override: %v", err)
 	}
 }
@@ -191,7 +191,7 @@ func TestSpendCapOverrideIgnoresTheCaseOfTheEmail(t *testing.T) {
 	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 500}}
 	srv := capServer(t, ledger, map[string]float64{"Owner@Example.com": 0})
 	ctx := auth.WithEmail(context.Background(), "OWNER@example.COM")
-	if err := srv.checkSpendCap(ctx, "u1"); err != nil {
+	if err := srv.checkSpendCap(ctx, "u1", 0); err != nil {
 		t.Fatalf("the override missed on case: %v", err)
 	}
 }
@@ -201,8 +201,57 @@ func TestSpendCapOverrideIgnoresTheCaseOfTheEmail(t *testing.T) {
 func TestSpendCapWithNoOverrideReadsTheCapOfEveryUser(t *testing.T) {
 	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 5}}
 	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
-	err := srv.checkSpendCap(context.Background(), "u1")
+	err := srv.checkSpendCap(context.Background(), "u1", 0)
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("a caller with no email: %v", err)
+	}
+}
+
+// TestSpendCapHoldsAReserveForTurnsInFlight is REV-032 (D-940): the cap
+// reads the ledger before a turn, and a turn books its cost after it. So
+// each other turn of the user in flight holds back TurnReserveUSD.
+func TestSpendCapHoldsAReserveForTurnsInFlight(t *testing.T) {
+	tests := []struct {
+		name     string
+		spent    float64
+		inFlight int
+		want     connect.Code
+	}{
+		{name: "no turn in flight", spent: 4.80, inFlight: 0},
+		{name: "one turn in flight reaches the cap", spent: 4.80, inFlight: 1, want: connect.CodeResourceExhausted},
+		{name: "one turn in flight stays under the cap", spent: 4.70, inFlight: 1},
+		{name: "two turns in flight reach the cap", spent: 4.70, inFlight: 2, want: connect.CodeResourceExhausted},
+		{name: "a spent cap stays a spent cap", spent: 5, inFlight: 1, want: connect.CodeFailedPrecondition},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			srv := capServer(t, &fakeLedger{spent: map[string]float64{"u1/1970-01": tt.spent}}, nil)
+			err := srv.checkSpendCap(context.Background(), "u1", tt.inFlight)
+			if got := connect.CodeOf(err); err != nil && got != tt.want || err == nil && tt.want != 0 {
+				t.Fatalf("checkSpendCap = %v (%v), want code %v", err, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestUserTurnsCountEachUserApart: one user holds UserChatLimit turns at
+// most, and another user keeps every slot of their own (D-940).
+func TestUserTurnsCountEachUserApart(t *testing.T) {
+	var u userTurns
+	for i := 0; i < UserChatLimit; i++ {
+		before, ok := u.acquire("u1", UserChatLimit)
+		if !ok || before != i {
+			t.Fatalf("turn %d of u1: before %d, ok %v", i+1, before, ok)
+		}
+	}
+	if _, ok := u.acquire("u1", UserChatLimit); ok {
+		t.Fatal("u1 took a turn past the limit")
+	}
+	if before, ok := u.acquire("u2", UserChatLimit); !ok || before != 0 {
+		t.Fatalf("u2 lost a turn to u1: before %d, ok %v", before, ok)
+	}
+	u.release("u1")
+	if _, ok := u.acquire("u1", UserChatLimit); !ok {
+		t.Fatal("a released turn did not come back")
 	}
 }

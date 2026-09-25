@@ -135,6 +135,44 @@ class FeedbackReviewGuardTest(unittest.TestCase):
         self.assertEqual(self.git("log", "-1", "--format=%s", "work", cwd=self.remote), "z", res.stderr)
         self.assertIn("pushed 1 commit(s)", res.stderr)
 
+    def test_a_fixer_that_edits_the_frozen_list_is_refused(self):
+        # D-930: the round reads the list of its start commit. A fixer that
+        # removes two lines of the list, then edits one of the two paths,
+        # must still fail the round.
+        fixer = ("sed -i.bak -e '/^scripts\\/feedback-loop.sh$/d' -e '/^docs\\/owner-questions.md$/d' scripts/feedback-loop.sh\n"
+                 "rm -f scripts/feedback-loop.sh.bak\n"
+                 "mkdir -p docs && echo edited > docs/owner-questions.md\n"
+                 "git add -A && git commit -qm fix\nexit 0\n")
+        self.make_repo(fixer)
+        pushed = self.git("rev-parse", "work", cwd=self.remote)
+        res = self.run_round()
+        self.assertEqual(self.git("rev-parse", "work", cwd=self.remote), pushed, res.stderr)
+        self.assertIn("frozen path", res.stderr)
+
+
+class FrozenListTest(unittest.TestCase):
+    """The list covers the gates, the review, the checks, and the deploy (D-930)."""
+
+    def frozen(self):
+        with open(os.path.join(ROOT, "scripts", "feedback-loop.sh"), encoding="utf-8") as f:
+            text = f.read()
+        block = text.split('\nFROZEN="\n', 1)[1].split('\n"\n', 1)[0]
+        return [line.strip() for line in block.splitlines() if line.strip()]
+
+    def test_each_listed_path_exists(self):
+        for path in self.frozen():
+            self.assertTrue(os.path.exists(os.path.join(ROOT, path)), path)
+
+    def test_the_gate_review_check_and_deploy_paths_are_frozen(self):
+        frozen = self.frozen()
+        gates = sorted(d for d in os.listdir(os.path.join(ROOT, "go", "cmd")) if d.endswith("-gate"))
+        self.assertTrue(gates)
+        for path in [*(f"go/cmd/{d}" for d in gates), "go/internal/gatekit", "go/internal/evalrun",
+                     "scripts/feedback-loop.sh", "scripts/feedback-review.sh", "scripts/autotune-fix.sh",
+                     "docs/tools", "docs/reviews", ".github", ".claude", "cloudbuild", "Makefile",
+                     "firebase.json", "firestore.rules", "firestore.indexes.json"]:
+            self.assertIn(path, frozen)
+
 
 if __name__ == "__main__":
     unittest.main()

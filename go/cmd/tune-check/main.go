@@ -488,8 +488,9 @@ func readWhole(path string) (*tune.Summary, error) {
 }
 
 // fixerCopy writes the summary with every holdout verdict removed. The
-// counts stay, so the fixer reads the holdout ratio and never which
-// questions made it (T-8, D-134).
+// holdout counts stay, so the fixer reads the holdout ratio and never
+// which questions made it (T-8, D-134). The row, fault, and action
+// counts name questions, so they count the tune verdicts alone (D-926).
 func fixerCopy(in, out string) error {
 	if in == "" || out == "" {
 		return fmt.Errorf("-fixer needs -next and -out")
@@ -505,6 +506,8 @@ func fixerCopy(in, out string) error {
 		}
 	}
 	s.Verdicts = kept
+	tuneOnly := tune.Summarize(s.Run, s.Model, s.CostUSD, s.Metrics, kept)
+	s.ByRow, s.ByFault, s.Actions = tuneOnly.ByRow, tuneOnly.ByFault, tuneOnly.Actions
 	raw, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err

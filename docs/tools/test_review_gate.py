@@ -383,6 +383,15 @@ class Workflow(unittest.TestCase):
         self.assertNotIn("ref: ${{ github.event.pull_request.head", text)
         self.assertNotIn("write", text.split("permissions:", 1)[1].split("\n\n", 1)[0])
 
+    def test_a_new_base_runs_the_gate_again(self):
+        with open(os.path.join(rg.ROOT, ".github/workflows/review-gate.yml"), encoding="utf-8") as handle:
+            text = handle.read()
+        types = text.split("types: [", 1)[1].split("]", 1)[0]
+        self.assertIn("edited", [t.strip() for t in types.split(",")])
+        # A skipped job reads as a pass of a required check, so the job
+        # takes no condition.
+        self.assertNotIn("    if:", text)
+
 
 if __name__ == "__main__":
     unittest.main()

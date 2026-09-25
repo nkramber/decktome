@@ -18,6 +18,7 @@ package users
 import (
 	"context"
 	"errors"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -76,6 +77,11 @@ type Record struct {
 	FeedbackUp        int64 `firestore:"total_feedback_up"`
 	FeedbackDown      int64 `firestore:"total_feedback_down"`
 	DecksImported     int64 `firestore:"total_decks_imported"`
+
+	// DeactivatedAt closes the account (D-941). The API refuses the user,
+	// and the share links of the user answer NotFound. Every record of
+	// the user stays. Nil is an open account.
+	DeactivatedAt *time.Time `firestore:"deactivated_at,omitempty"`
 }
 
 // Repo stores the records. The caller owns the client.
@@ -214,4 +220,87 @@ func NoteQuietly(ctx context.Context, n Noter, uid, email string, c Counter, at 
 		return
 	}
 	_ = n.Note(ctx, uid, email, c, at)
+}
+
+// Deactivate closes the account of uid at the given time, and keeps
+// every record (D-941). It writes the one field, and a second call keeps
+// the first time. A uid with no record gets one that holds the mark.
+func (r *Repo) Deactivate(ctx context.Context, uid string, at time.Time) (time.Time, error) {
+	ref := r.doc(uid)
+	var when time.Time
+	err := r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		snap, err := tx.Get(ref)
+		if err != nil && status.Code(err) != codes.NotFound {
+			return err
+		}
+		if err == nil {
+			var rec Record
+			if err := snap.DataTo(&rec); err != nil {
+				return err
+			}
+			if rec.DeactivatedAt != nil {
+				when = *rec.DeactivatedAt
+				return nil
+			}
+		}
+		when = at.UTC()
+		return tx.Set(ref, map[string]any{"deactivated_at": when}, firestore.MergeAll)
+	})
+	return when, err
+}
+
+// Deactivated says whether the account of uid is closed. A uid with no
+// record is open.
+func (r *Repo) Deactivated(ctx context.Context, uid string) (bool, error) {
+	rec, err := r.Get(ctx, uid)
+	if err != nil {
+		return false, err
+	}
+	return rec.DeactivatedAt != nil, nil
+}
+
+// ClosedTTL is how long one read of a closed mark serves, the TTL of the
+// invite list (D-420, D-941).
+const ClosedTTL = time.Minute
+
+// ClosedCache answers Closed for each uid from a read at most ClosedTTL
+// old, so a request reads the store once a minute for each user.
+type ClosedCache struct {
+	read func(ctx context.Context, uid string) (bool, error)
+	now  func() time.Time
+	mu   sync.Mutex
+	seen map[string]closedRead
+}
+
+type closedRead struct {
+	closed bool
+	at     time.Time
+}
+
+// NewClosedCache wraps a read of the closed mark, such as
+// Repo.Deactivated.
+func NewClosedCache(read func(ctx context.Context, uid string) (bool, error), now func() time.Time) *ClosedCache {
+	if now == nil {
+		now = time.Now
+	}
+	return &ClosedCache{read: read, now: now, seen: map[string]closedRead{}}
+}
+
+// Closed says whether the account of uid is closed. A failed read is an
+// error, and the cache keeps nothing from it.
+func (c *ClosedCache) Closed(ctx context.Context, uid string) (bool, error) {
+	c.mu.Lock()
+	got, ok := c.seen[uid]
+	c.mu.Unlock()
+	if ok && c.now().Sub(got.at) < ClosedTTL {
+		return got.closed, nil
+	}
+	closed, err := c.read(ctx, uid)
+	if err != nil {
+		return false, err
+	}
+	c.mu.Lock()
+	c.seen[uid] = closedRead{closed: closed, at: c.now()}
+	c.mu.Unlock()
+	return closed, nil
 }

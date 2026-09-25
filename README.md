@@ -165,25 +165,9 @@ make candidates-review   # write the PR-6 gate document from the local snapshot
 
 `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline, and it costs nothing.
 
-CAUTION: the ten targets below and `scripts/autotune.sh` call the real LLM providers and spend money. `make autotune` is free. Ask the owner before each run, and write to a new output file (D-65). Each gate target refuses to overwrite a scored output, and each one needs `.env`.
+CAUTION: fifteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. They call the real LLM providers or the Codex plan. Ask the owner before each run, and write to a new output file (D-65). `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each one, and each free target.
 
-```bash
-make questions-gate    # 104 conversations, $0.15 to $0.17, about 20 minutes
-make questions-eval    # score a gate run, $0.092 to $0.104 (runs 14 to 25), about 13 minutes
-make eval-calibrate    # eval model against claude-sonnet-5, $0.25 to $0.30
-make autotune          # free: print how to start the paid loop, scripts/autotune.sh ($0.25 an iteration)
-make deck-gate         # the PR-8 gate document, $2.24 for 24 prompts under the profile (run 12)
-make deck-gate-dry     # every shortlist over the trimmed snapshot of the repo, free (D-521)
-make bracket-gate      # the PR-14A gate document, 15 builds and a judge lane, $2.08 plus $0.26 (run 1)
-make revise-gate       # two base decks and six revisions (PR-12B), about $0.30 (run 2, $0.29)
-make chat-probe        # drive the real Chat RPC to a deck, a few cents
-make generate-probe    # build one deck with the real generate role, a few cents
-make summary-judge     # judge every deck summary of a gate document (F-26), a few cents
-make test-smoke        # live LLM smoke test, reads .env, a few cents
-make api-build         # build one deck over the deployed API, no GUI, $0.10 to $0.20 (D-778)
-```
-
-The question gate cost is from 2026-08-26, and the deck gate and bracket gate costs are from 2026-09-02.
+`make autotune` is free: it prints how to start the paid loop. `make deck-gate-dry` is free too: it builds every shortlist over the trimmed snapshot of the repo (D-521).
 
 `make smoke` costs nothing. It starts the emulators empty, the API over the trimmed snapshot with every role on the fake provider, and the web app. Then it runs one Playwright flow (PR-23, D-553). The flow creates an account, uploads the fixture export, builds a deck, opens it, and downloads the deck list. 
 

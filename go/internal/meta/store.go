@@ -368,6 +368,72 @@ func LatestCommandersDay(ctx context.Context, s ObjectStore) (string, error) {
 	return strings.TrimSuffix(strings.TrimPrefix(last, CommandersPrefix), ".jsonl.gz"), nil
 }
 
+// CommandersForFit reads the newest commander day. EDHREC reads once a
+// week and the tournaments each day, so the newest day alone often holds
+// no EDHREC field. Each row then takes the EDHREC fields of the newest
+// day with a complete EDHREC read, and a commander of that read alone
+// joins the rows (D-927).
+func CommandersForFit(ctx context.Context, s ObjectStore) (string, []Commander, error) {
+	names, err := s.List(ctx, CommandersPrefix)
+	if err != nil || len(names) == 0 {
+		return "", nil, err
+	}
+	dayOf := func(name string) string {
+		return strings.TrimSuffix(strings.TrimPrefix(name, CommandersPrefix), ".jsonl.gz")
+	}
+	day := dayOf(names[len(names)-1])
+	reads, err := ReadCommanders(ctx, s, day)
+	if err != nil {
+		return "", nil, err
+	}
+	for i := len(names) - 1; i >= 0; i-- {
+		read := dayOf(names[i])
+		_, ok, err := s.Get(ctx, RawName(SourceEDHREC, read+"/read"))
+		if err != nil {
+			return "", nil, err
+		}
+		if !ok {
+			continue
+		}
+		if read == day {
+			return day, reads, nil
+		}
+		edhrec, err := ReadCommanders(ctx, s, read)
+		if err != nil {
+			return "", nil, err
+		}
+		return day, withEDHREC(reads, edhrec), nil
+	}
+	return day, reads, nil
+}
+
+// withEDHREC fills the EDHREC fields of each row from an older read.
+func withEDHREC(reads, edhrec []Commander) []Commander {
+	index := map[string]int{}
+	for i, c := range reads {
+		index[c.Slug] = i
+	}
+	for _, e := range edhrec {
+		if e.NumDecks == 0 {
+			continue
+		}
+		i, ok := index[e.Slug]
+		if !ok {
+			index[e.Slug] = len(reads)
+			reads = append(reads, Commander{Name: e.Name, Slug: e.Slug, NumDecks: e.NumDecks, Rank: e.Rank, BracketCounts: e.BracketCounts, ReadAt: e.ReadAt})
+			continue
+		}
+		if c := &reads[i]; c.NumDecks == 0 {
+			c.NumDecks, c.Rank, c.BracketCounts = e.NumDecks, e.Rank, e.BracketCounts
+			if c.Name == "" {
+				c.Name = e.Name
+			}
+		}
+	}
+	sort.Slice(reads, func(a, b int) bool { return reads[a].Slug < reads[b].Slug })
+	return reads
+}
+
 // WriteModel stores one model version, the marker last.
 func WriteModel(ctx context.Context, s ObjectStore, version string, model []byte) error {
 	data, err := gzstore.Marshal(model)

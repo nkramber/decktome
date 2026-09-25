@@ -846,6 +846,65 @@ func TestConcurrencyCap(t *testing.T) {
 	}
 }
 
+// TestOneUserHoldsTwoTurnsAtMost is REV-032 (D-940): one user who
+// starts three turns at once gets the third refused, and it takes no slot
+// of the process.
+func TestOneUserHoldsTwoTurnsAtMost(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	roles := map[llm.Role]llm.RoleSpec{}
+	for _, r := range llm.Roles {
+		roles[r] = llm.RoleSpec{Provider: llm.FakeName, Model: "fake-" + string(r), MaxOutputTokens: 1024}
+	}
+	g := &gate{entered: make(chan struct{}, UserChatLimit), release: make(chan struct{}), steps: firstTurn(t)}
+	client, err := llm.New(&llm.Config{VerifiedAt: "2026-08-24", Roles: roles}, []llm.Provider{g}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	srv, err := New(cat, client, newFakeStore(), func(context.Context) string { return "u1" }, WithLogger(quiet))
+	if err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	mux.Handle(mtgv1connect.NewAgentServiceHandler(srv))
+	httpSrv := httptest.NewServer(mux)
+	t.Cleanup(httpSrv.Close)
+	c := mtgv1connect.NewAgentServiceClient(httpSrv.Client(), httpSrv.URL)
+	send := func(ctx context.Context, msg string) error {
+		stream, err := c.Chat(ctx, connect.NewRequest(&mtgv1.ChatRequest{Message: msg}))
+		if err != nil {
+			return err
+		}
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+		return err
+	}
+	done := make(chan error, UserChatLimit)
+	for i := 0; i < UserChatLimit; i++ {
+		go func() { done <- send(context.Background(), "build me a lifegain commander deck for 50 dollars") }()
+		select {
+		case <-g.entered:
+		case <-time.After(5 * time.Second):
+			t.Fatalf("turn %d never reached the provider", i+1)
+		}
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	err = send(ctx, "a third turn")
+	if connect.CodeOf(err) != connect.CodeResourceExhausted || !strings.Contains(err.Error(), "turns running already") {
+		t.Errorf("the third turn of one user gave %v: %v", connect.CodeOf(err), err)
+	}
+	close(g.release)
+	for i := 0; i < UserChatLimit; i++ {
+		<-done
+	}
+}
+
 // TestFailureMessages covers the failure codes the UI acts on.
 func TestFailureMessages(t *testing.T) {
 	mk := func(class llm.Class, status int, msg string) error {

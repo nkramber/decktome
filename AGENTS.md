@@ -31,10 +31,21 @@ make dev-seed      # one-shot card snapshot refresh (needs make dev)
 make eval-check    # compare every eval baseline with its newest run, free (PR-15)
 make deck-gate-dry # build every deck gate shortlist over the trimmed snapshot, free (D-521)
 make allow EMAIL=... PROJECT_ID=...  # invite one email to the deployed app (D-420)
+make deactivate-user USER_UID=... PROJECT_ID=... [CONFIRM=1]  # close one account and keep its records (D-941)
 make quality-gate  # the PR-14B gate document from the local meta store, free
 make meta-refresh  # read the deck list sources into the meta store, network, free
 make themes-check  # theme slugs and the commander ranking against the snapshot
+make verify        # every check of the verify workflow, on this machine, free (D-578)
+make where         # the branch, the tree, and the state of the pull request of the branch
+make hooks         # install the pre-commit hook that refuses a commit on main (D-585)
+make pr-check      # the body and the diff of a pull request against D-747
+make lifecycle-check  # the skill frontmatter and the wiring, part of make lint (D-748)
+make context-budget   # the byte limits of the start read and the lists of paid targets (D-749)
+make pipefail-check   # each piped recipe of the Makefile sets pipefail, part of make lint (F-160)
+make ruleset-check    # the live ruleset of main against .github/rulesets (D-828)
 ```
+
+Fifteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each one.
 
 CI runs `verify` on each pull request (D-639). A change of documents alone skips the six heavy jobs when the code under it passed (D-818). The `pr-contract` workflow reads the body and the diff of each pull request against D-747. The `review-gate` workflow reads the review record.
 

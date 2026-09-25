@@ -5,7 +5,7 @@
 # from the Actions minutes of GitHub, and a minute costs less there.
 steps:
   - id: build-api
-    name: gcr.io/cloud-builders/docker
+    name: gcr.io/cloud-builders/docker@sha256:bbb3d633c5c2813b2ce5245852979e1d637768f4acfc504d8ece288f91e9b60f
     args:
       - build
       - -f
@@ -15,7 +15,7 @@ steps:
       - .
 
   - id: build-worker
-    name: gcr.io/cloud-builders/docker
+    name: gcr.io/cloud-builders/docker@sha256:bbb3d633c5c2813b2ce5245852979e1d637768f4acfc504d8ece288f91e9b60f
     args:
       - build
       - -f
@@ -25,7 +25,7 @@ steps:
       - .
 
   - id: push
-    name: gcr.io/cloud-builders/docker
+    name: gcr.io/cloud-builders/docker@sha256:bbb3d633c5c2813b2ce5245852979e1d637768f4acfc504d8ece288f91e9b60f
     entrypoint: bash
     args:
       - -c
@@ -38,7 +38,7 @@ steps:
   # The deploy names the image alone. Every environment variable, every
   # secret, and every flag of the revision before it carries over.
   - id: deploy-api
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
     entrypoint: gcloud
     args:
       - run
@@ -49,7 +49,7 @@ steps:
       - --quiet
 
   - id: update-jobs
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
     entrypoint: bash
     args:
       - -c
@@ -64,7 +64,7 @@ steps:
   # takes that path. /readyz reads `starting` for about 90 seconds after
   # a cold start, so the check waits for it.
   - id: check
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
     entrypoint: bash
     args:
       - -c

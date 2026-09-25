@@ -138,3 +138,82 @@ func TestDirObjectsRejectsEscape(t *testing.T) {
 		t.Fatal("a name that leaves the root must fail")
 	}
 }
+
+// TestCommandersForFit: the newest day of a tournament read takes the
+// EDHREC fields of the last complete EDHREC read (D-927).
+func TestCommandersForFit(t *testing.T) {
+	ctx := context.Background()
+	edhrecDay := []Commander{
+		{Name: "Atraxa", Slug: "atraxa", NumDecks: 900, Rank: 1, BracketCounts: map[int]int{3: 400}},
+		{Name: "Krenko", Slug: "krenko", NumDecks: 500, Rank: 2},
+	}
+	tourneyDay := []Commander{{Name: "Atraxa", Slug: "atraxa", Entries: 12, TopCuts: 3, Competitive: true}}
+	tests := []struct {
+		name      string
+		setup     func(s DirObjects)
+		wantDay   string
+		wantRows  int
+		wantDecks map[string]int
+	}{
+		{
+			name: "a tournament day after an EDHREC day",
+			setup: func(s DirObjects) {
+				put(t, s, "2026-09-20", edhrecDay, true)
+				put(t, s, "2026-09-24", tourneyDay, false)
+			},
+			wantDay: "2026-09-24", wantRows: 2, wantDecks: map[string]int{"atraxa": 900, "krenko": 500},
+		},
+		{
+			name: "the newest day holds its own EDHREC read",
+			setup: func(s DirObjects) {
+				put(t, s, "2026-09-20", []Commander{{Slug: "old", NumDecks: 1}}, true)
+				put(t, s, "2026-09-24", edhrecDay, true)
+			},
+			wantDay: "2026-09-24", wantRows: 2, wantDecks: map[string]int{"atraxa": 900, "krenko": 500},
+		},
+		{
+			name: "no EDHREC read at all",
+			setup: func(s DirObjects) {
+				put(t, s, "2026-09-24", tourneyDay, false)
+			},
+			wantDay: "2026-09-24", wantRows: 1, wantDecks: map[string]int{"atraxa": 0},
+		},
+		{name: "no commander day", setup: func(DirObjects) {}, wantDay: "", wantRows: 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := DirObjects{Root: t.TempDir()}
+			tt.setup(s)
+			day, rows, err := CommandersForFit(ctx, s)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if day != tt.wantDay || len(rows) != tt.wantRows {
+				t.Fatalf("day %q with %d rows, want %q with %d: %+v", day, len(rows), tt.wantDay, tt.wantRows, rows)
+			}
+			for _, c := range rows {
+				if want, ok := tt.wantDecks[c.Slug]; ok && c.NumDecks != want {
+					t.Errorf("%s NumDecks = %d, want %d", c.Slug, c.NumDecks, want)
+				}
+				if c.Slug == "atraxa" && tt.name == "a tournament day after an EDHREC day" {
+					if c.Entries != 12 || !c.Competitive || c.Rank != 1 || c.BracketCounts[3] != 400 {
+						t.Errorf("atraxa lost a field: %+v", c)
+					}
+				}
+			}
+		})
+	}
+}
+
+func put(t *testing.T, s DirObjects, day string, reads []Commander, edhrec bool) {
+	t.Helper()
+	ctx := context.Background()
+	if err := WriteCommanders(ctx, s, day, reads); err != nil {
+		t.Fatal(err)
+	}
+	if edhrec {
+		if err := s.Put(ctx, RawName(SourceEDHREC, day+"/read"), []byte("done")); err != nil {
+			t.Fatal(err)
+		}
+	}
+}

@@ -240,7 +240,10 @@ func TestAgreeComparesTwoJudges(t *testing.T) {
 // counts and loses every holdout verdict.
 func TestFixerCopyDropsTheHoldout(t *testing.T) {
 	dir := t.TempDir()
-	in := write(t, dir, "in.json", summarize(verdict("1. a", "meta", "q", "no", false), verdict("3. h", "meta", "q", "no", true)))
+	train, held := verdict("1. a", "meta", "q", "no", false), verdict("3. h", "held-row", "q", "no", true)
+	train.Faults, train.CatalogAction = []string{"vague"}, "reword"
+	held.Faults, held.CatalogAction = []string{"held-fault"}, "held-action"
+	in := write(t, dir, "in.json", summarize(train, held))
 	out := filepath.Join(dir, "in.fixer.json")
 	if err := fixerCopy(in, out); err != nil {
 		t.Fatal(err)
@@ -254,5 +257,14 @@ func TestFixerCopyDropsTheHoldout(t *testing.T) {
 	}
 	if got.HoldoutJudged != 1 || got.HoldoutBad != 1 {
 		t.Errorf("the holdout counts were lost: judged %d bad %d", got.HoldoutJudged, got.HoldoutBad)
+	}
+	if len(got.ByRow) != 1 || got.ByRow["meta"] != 1 {
+		t.Errorf("row counts = %v, want the tune row alone", got.ByRow)
+	}
+	if len(got.ByFault) != 1 || got.ByFault["vague"] != 1 {
+		t.Errorf("fault counts = %v, want the tune fault alone", got.ByFault)
+	}
+	if len(got.Actions) != 1 || got.Actions["reword"] != 1 {
+		t.Errorf("action counts = %v, want the tune action alone", got.Actions)
 	}
 }

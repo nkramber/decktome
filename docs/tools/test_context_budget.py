@@ -45,7 +45,7 @@ MAKEFILE = "deck-gate: ## paid\n\t@true\nbracket-gate:\n\t@true\n"
 
 
 def files(**override):
-    base = {cb.CLAUDE: CLAUDE, cb.HANDOFF: HANDOFF, cb.PAID: PAID, "Makefile": MAKEFILE}
+    base = {cb.CLAUDE: CLAUDE, cb.HANDOFF: HANDOFF, cb.PAID: PAID, cb.README: PAID, cb.AGENTS: PAID, "Makefile": MAKEFILE}
     base.update({k.replace("__", "/"): v for k, v in override.items()})
     return base
 
@@ -58,7 +58,7 @@ class ContextBudgetTest(unittest.TestCase):
     def test_small_files_pass(self):
         report, errors = run(files())
         self.assertEqual(errors, [])
-        self.assertIn("paid targets: 3 named in 3 files", report)
+        self.assertIn("paid targets: 3 named in 5 files", report)
 
     def test_file_over_limit_fails(self):
         texts = files()
@@ -97,6 +97,17 @@ class ContextBudgetTest(unittest.TestCase):
         texts[cb.CLAUDE] = CLAUDE.replace("`make bracket-gate`, ", "")
         _, errors = run(texts)
         self.assertTrue(any("differ" in e and "make bracket-gate" in e for e in errors), errors)
+
+    def test_an_entry_file_with_a_stale_list_fails(self):
+        # REV-092: the README and AGENTS lists of paid targets fell behind.
+        for path in (cb.README, cb.AGENTS):
+            texts = files()
+            texts[path] = "# Entry\n\nTwo targets spend money: `make deck-gate` and `make bracket-gate`.\n"
+            _, errors = run(texts)
+            self.assertTrue(any(e.startswith(f"the paid targets of {path} differ") for e in errors), errors)
+            texts[path] = "# Entry\n\nNo list.\n"
+            _, errors = run(texts)
+            self.assertIn(f"{path} holds no sentence with 'spend money:' that names the paid targets", errors)
 
     def test_paid_target_that_is_no_makefile_target_fails(self):
         line = PAID_LINE.replace("`make deck-gate`", "`make deck-gat`")

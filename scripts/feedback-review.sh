@@ -242,11 +242,14 @@ wait_for_ci() {
   done
 }
 
-# frozen_paths prints the FROZEN block of the cycle. The fixer of a review
-# round keeps the same rule as the fixer of the cycle (D-645), and it never
-# edits the review record, which belongs to the reviewer (D-878).
+# frozen_paths prints the FROZEN block of the cycle at a commit. The fixer
+# of a review round keeps the same rule as the fixer of the cycle (D-645),
+# and it never edits the review record, which belongs to the reviewer
+# (D-878). The round reads the block of its start commit, so a fixer that
+# edits the list changes nothing (D-930).
 frozen_paths() {
-  awk '/^FROZEN="$/ {f = 1; next} f && /^"$/ {exit} f && NF {print $1}' "$ROOT/scripts/feedback-loop.sh"
+  git show "$1:scripts/feedback-loop.sh" \
+    | awk '/^FROZEN="$/ {f = 1; next} f && /^"$/ {exit} f && NF {print $1}'
   echo "docs/reviews/pr-$PR.md"
 }
 
@@ -271,7 +274,14 @@ fix_and_push() {
     return 0
   fi
   changed="$(git diff --name-only "$before"; git ls-files --others --exclude-standard)"
-  for path in $(frozen_paths); do
+  local frozen
+  frozen="$(frozen_paths "$before")"
+  if [ -z "$frozen" ] || ! grep -qxF "scripts/feedback-loop.sh" <<<"$frozen"; then
+    say "the frozen list of $before does not read. The cycle reverts $label."
+    revert_to "$before"
+    return 1
+  fi
+  for path in $frozen; do
     if grep -qxF -- "$path" <<<"$changed" || grep -qF -- "$path/" <<<"$changed"; then
       say "the fixer touched a frozen path: $path. The cycle reverts $label."
       revert_to "$before"

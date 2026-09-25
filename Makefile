@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -495,6 +495,12 @@ disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT
 	@[ -n "$(PROJECT_ID)" ] || { echo "disallow: set PROJECT_ID=... to the deployed project"; exit 1; }
 	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "disallow: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)" -remove
+
+deactivate-user: ## Close one account and keep its records (D-941): make deactivate-user USER_UID=... PROJECT_ID=... [CONFIRM=1]
+	@[ -n "$(USER_UID)" ] || { echo "deactivate-user: set USER_UID=..."; exit 1; }
+	@[ -n "$(PROJECT_ID)" ] || { echo "deactivate-user: set PROJECT_ID=... to the deployed project"; exit 1; }
+	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "deactivate-user: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
+	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/deactivate-user -uid "$(USER_UID)" $(if $(filter 1,$(CONFIRM)),-confirm,)
 
 # The invite gate trusts a proved email alone (D-903). With no UIDS the
 # target lists the accounts that are not proved. UIDS names the accounts

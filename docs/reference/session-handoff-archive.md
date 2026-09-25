@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-25b
+
+**Pull request #229, PR-79, corrects twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: the next findings of the review report. The P3 findings that remain come next.
+
+**The base.** `main` is `8aec379`, from #228.
+
+**The change.** The owner asked for as many corrections as one session can finish (D-920). Each code finding has a regression test that fails on the base.
+
+- REV-008: a review record on a head from a fork fails RG 3. The owner chose the fork check alone, and no signed record (D-920).
+- REV-029: step 6 of the fix cycle says what `make eval-check` proves, and asks for a whole run before the merge (D-921).
+- REV-030, REV-043, REV-044: a build holds a lease on its chat in the store. The cap refusal comes before the chat exists. The cap and the size refusals use FailedPrecondition, and a conflict uses Unavailable (D-922).
+- P3: REV-038, REV-039, REV-048, REV-056, REV-066, REV-074, REV-075, REV-084, and REV-086 (D-923).
+- Seven more P3, on the owner's word: REV-065, REV-076, REV-077, REV-082, REV-087, REV-089, and REV-094 (D-924).
+- No paid target ran. No production write.
+
+**The checks.** See the pull request body. `TestEmulatorListRenameDelete` fails on a reused emulator on the base too: it never deletes one of its sessions.
+
+**The review.** Gitar found one issue on `32c6267`: the lease ran on the client context, so a client that left lost the paid turn. The next commit takes it detached, and `TestTheLeaseOutlivesTheClient` failed before it. Gitar approved `4d51d4c` and confirmed the fix at `a8efdf3`. The Codex review of `4d51d4c` found P2-1: a delete read the lease outside its transaction. The next commit reads it inside, for the chat delete and the deck delete. The repeat review of `a8efdf3` closed P2-1 and read `Blocked` on D-921. That rule applies to a fix cycle alone, so the earlier verdict had no basis. The repeat review found P2-2 at `da63923`: a live triage can mark a harvest processed when a judge call fails. `c427583` records each verdict it applies, and a failed verdict keeps its harvest pending. The next review found P2-3: a later write failure duplicated a case on retry. `950a757` records each case and owner question after its write, then settles the landed verdicts after a failed write. The current review closes P2-3 and reads Ready for owner merge. The focused tests and `make verify` pass. The Gitar review is current, and all threads are resolved. The review gate needs a new run after this record reaches the branch. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy, eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- Next step 3 (D-750). M-19 comes after it.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for the rules of D-913, and a deck gate run for the repair input of D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-24f: the five P1 findings of the review, PR-77
+
+**The owner asked for the corrections of the review report of 2026-09-24, as many as one session can finish.** The session read the owner answers in the report first. The owner picked all five P1 findings (D-901). The two answers on REV-001 conflicted, and the owner chose the author filter and the raw reply (D-902). The owner chose an Admin script for the current accounts, run before the merge (D-903), and Modern for a declined 60-card format (D-904).
+
 ## The resume section of 2026-09-25a
 
 **Pull request #228, PR-78, corrects forty-four findings of the repository review of 2026-09-24 (D-905 to D-919).**

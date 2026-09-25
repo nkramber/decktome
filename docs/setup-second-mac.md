@@ -14,6 +14,7 @@ The repo comes from GitHub. Five things do not, and the paid gates and the dev s
 | The card snapshots and the meta store | `.local/gcs/mtg-local-cards/` and `.local/gcs/mtg-local-cards.bucketMetadata` | 574 MB | Ten Scryfall snapshot versions (310 MB) and the meta store: the deck lists, the commanders, the quality model, the precon table (263 MB). Every gate reads the newest complete snapshot, and the quality model version is part of every fingerprint. |
 | The eval run files | `.local/tune/` | 4.6 MB | The JSON of every question eval run. `make questions-eval` writes there, and `tune-check` reads it. |
 | The emulator data | `.local/firestore/` | 744 KB | The sessions, decks, and collections of the local dev stack. Optional. |
+| The feedback harvests | `.local/feedback/` | 284 KB | The verdicts that `make feedback-harvest` read from production. The triage and the fix cycle read them. Keep them out of git. |
 | The Claude Code memory | `~/.claude/projects/-Users-nate-Repos-decktome/memory/` | 60 KB | The facts Claude Code keeps about you and this repo. Not in git. |
 
 CAUTION: the fake GCS server keeps the metadata of each object in an extended attribute, `user.metadata`. A copy that drops the attribute breaks every listing of the bucket, and the API then loads no card index. Use `tar` or `ditto`, which keep the attributes on macOS. Do not use a cloud drive that strips them, and do not write a file into `.local/gcs` by hand.
@@ -22,7 +23,7 @@ Pack the data on this Mac:
 
 ```
 cd ~/Repos/decktome
-tar -czf ~/Desktop/mtg-carry.tgz .env .local/gcs/mtg-local-cards .local/gcs/mtg-local-cards.bucketMetadata .local/tune .local/firestore
+tar -czf ~/Desktop/mtg-carry.tgz .env .local/gcs/mtg-local-cards .local/gcs/mtg-local-cards.bucketMetadata .local/tune .local/firestore .local/feedback
 tar -czf ~/Desktop/mtg-claude-memory.tgz -C ~/.claude/projects ./-Users-nate-Repos-decktome/memory
 ```
 
@@ -37,6 +38,7 @@ CAUTION: `mtg-carry.tgz` holds your API keys. Move it with AirDrop or a USB driv
 5. Run `ssh -T git@github.com`. The answer names your account.
 6. Run `git clone git@github.com:nkramber/decktome.git ~/Repos/decktome`.
 7. Run `cd ~/Repos/decktome`. The work continues on `main`, and every new branch starts from it (D-494).
+8. Run `make hooks`. The pre-commit hook refuses a commit on `main` (D-585).
 
 Keep the path `~/Repos/decktome`. Claude Code names its memory directory after the repo path, and section 6 explains the rule.
 
@@ -56,6 +58,7 @@ The pinned versions live in `go/go.mod`, `.nvmrc`, `web/package.json`, and `scri
 10. Run `cd web && pnpm install && cd ..`.
 11. Run `make buf`. It builds `.bin/buf` from `go/go.mod`, and `make proto` uses it.
 12. Run `make doctor`. Every line must read `ok` or `warn`.
+13. Run `npm install -g @openai/codex`, then `codex login`. Choose the ChatGPT sign-in. `make codex-review` refuses an API key (D-833).
 
 Two tools are optional. `brew install --cask docker-desktop` serves `make dev-docker` only, and `brew install --cask gcloud-cli` serves the cloud deploy of PR-22 only. `make dev` needs neither. Python 3 ships with macOS. The STE checker, `make pr-check`, and the session hook of D-746 use it.
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/nkramber/decktome/go/internal/candidates"
@@ -16,7 +17,9 @@ import (
 // Refit reads every stored list and the newest commander reads, fits
 // the model against the index, and stores it as a new version. The
 // worker runs it after each meta refresh. It answers the model and the
-// report. A stored model reads the default synergy floor (D-652).
+// report. A stored model reads the default synergy floor (D-652). A fit
+// that fails a bar answers ErrBarFailed with the model, and the stored
+// model stays the newest (D-927).
 func Refit(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now time.Time, logger *slog.Logger) (*Model, *FitReport, error) {
 	if logger == nil {
 		logger = slog.Default()
@@ -25,15 +28,23 @@ func Refit(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now ti
 	if err != nil {
 		return nil, rep, err
 	}
+	return model, rep, publish(ctx, store, model, rep, logger)
+}
+
+// publish stores a model that passes every bar.
+func publish(ctx context.Context, store meta.ObjectStore, model *Model, rep *FitReport, logger *slog.Logger) error {
+	if fails := BarFailures(model, rep); len(fails) > 0 {
+		return fmt.Errorf("%w, so the stored model stays: %s", ErrBarFailed, strings.Join(fails, "; "))
+	}
 	data, err := model.Encode()
 	if err != nil {
-		return nil, rep, err
+		return err
 	}
 	if err := meta.WriteModel(ctx, store, model.Version, data); err != nil {
-		return nil, rep, fmt.Errorf("quality: write model: %w", err)
+		return fmt.Errorf("quality: write model: %w", err)
 	}
 	logger.Info("quality model stored", "version", model.Version, "bytes", len(data))
-	return model, rep, nil
+	return nil
 }
 
 // FitStore fits the model over the store's lists and stores nothing.
@@ -51,15 +62,9 @@ func FitStore(ctx context.Context, store meta.ObjectStore, idx *cards.Index, now
 		}
 		lists = append(lists, got...)
 	}
-	day, err := meta.LatestCommandersDay(ctx, store)
+	_, reads, err := meta.CommandersForFit(ctx, store)
 	if err != nil {
 		return nil, nil, err
-	}
-	var reads []meta.Commander
-	if day != "" {
-		if reads, err = meta.ReadCommanders(ctx, store, day); err != nil {
-			return nil, nil, err
-		}
 	}
 	cfg, err := rules.Load()
 	if err != nil {

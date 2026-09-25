@@ -104,6 +104,18 @@ const maxFoldedBytes = 2 * MaxMessageBytes
 // holds a model call open for minutes, and every turn is billed.
 const DefaultChatLimit = 8
 
+// UserChatLimit caps the Chat turns of one user that one process runs at
+// once, so one user can not hold every slot of DefaultChatLimit (REV-032,
+// D-940).
+const UserChatLimit = 2
+
+// TurnReserveUSD is the spend that the cap holds back for each turn of
+// the user still in flight on this process. The cap reads the ledger
+// before a turn, and a turn books its cost after it. A build over the
+// API cost $0.10 to $0.20 (D-778), so the reserve sits above one build
+// (D-940).
+const TurnReserveUSD = 0.25
+
 // storeLimit bounds one store write that runs after a paid model call.
 // The write runs detached from the client, so it needs its own clock
 // (D-303).
@@ -138,6 +150,8 @@ type Server struct {
 	buildLimit time.Duration
 	// turns is the concurrency gate: one token per running Chat turn.
 	turns chan struct{}
+	// userTurns counts the running Chat turns of each user (D-940).
+	userTurns userTurns
 	// building marks each session with a build in flight, keyed by
 	// uid and session id. A turn during a build is refused (D-303).
 	building    sync.Map
@@ -355,6 +369,7 @@ var (
 	errTooLong         = fmt.Errorf("the message and the answers are longer than %d bytes together, or one is alone", MaxMessageBytes)
 	errTooManyAnswers  = fmt.Errorf("more than %d answers in one turn", MaxAnswers)
 	errBusy            = errors.New("the server runs its limit of turns at once, send the message again in a moment")
+	errUserBusy        = fmt.Errorf("you have %d turns running already, send the message again when one ends", UserChatLimit)
 	errSessionBig      = errors.New("this conversation is too long to continue, start a new session")
 	errBuildInProgress = errors.New("a build is in progress")
 	errNoSessionID     = errors.New("session_id is required")
@@ -457,6 +472,13 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 			return connect.NewError(connect.CodeAborted, errBuildInProgress)
 		}
 	}
+	// The limit of one user comes before the gate of the process, so a
+	// refused turn takes no slot from another user (D-940).
+	inFlight, ok := s.userTurns.acquire(uid, UserChatLimit)
+	if !ok {
+		return connect.NewError(connect.CodeResourceExhausted, errUserBusy)
+	}
+	defer s.userTurns.release(uid)
 	// The gate is non-blocking: a caller past the limit hears it at once
 	// instead of a queue that holds the connection open.
 	select {
@@ -471,7 +493,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	// refuses the turn too: a cap nobody can read is no cap. It comes
 	// before load, so a refused first message makes and counts no
 	// session (D-922).
-	if err := s.checkSpendCap(ctx, uid); err != nil {
+	if err := s.checkSpendCap(ctx, uid, inFlight); err != nil {
 		return err
 	}
 	session, snap, version, owned, collectionGone, err := s.load(ctx, uid, req.Msg)
@@ -754,7 +776,9 @@ func (s *Server) takeLease(ctx context.Context, uid, id string) (func(), error) 
 }
 
 // checkSpendCap refuses the turn of a user at or over the monthly cap.
-func (s *Server) checkSpendCap(ctx context.Context, uid string) error {
+// Each other turn of the user in flight holds back TurnReserveUSD, so
+// turns that run at once can not pass the cap together (D-940).
+func (s *Server) checkSpendCap(ctx context.Context, uid string, inFlight int) error {
 	if s.ledger == nil {
 		return nil
 	}
@@ -768,8 +792,13 @@ func (s *Server) checkSpendCap(ctx context.Context, uid string) error {
 		s.log.ErrorContext(ctx, "the spend ledger could not be read, so the turn is refused", "user", uid, "err", err)
 		return connect.NewError(connect.CodeUnavailable, errors.New("the spend ledger could not be read"))
 	}
-	if spent < capUSD {
+	if spent < capUSD && spent+float64(inFlight)*TurnReserveUSD < capUSD {
 		return nil
+	}
+	if spent < capUSD {
+		s.log.InfoContext(ctx, "a turn waits for the turns in flight at the spend cap", "user", uid, "spent_usd", spent, "in_flight", inFlight)
+		return connect.NewError(connect.CodeResourceExhausted,
+			fmt.Errorf("a turn of yours is still running, and it can reach your $%.0f cap for this month. Send the message again when it ends", capUSD))
 	}
 	reset, err := usage.ResetDate(month)
 	if err != nil {
@@ -1231,4 +1260,37 @@ func cardOptions(qs []*mtgv1.Question, idx *cards.Index) {
 			q.OptionPartnerOracleIds = partners
 		}
 	}
+}
+
+// userTurns counts the running Chat turns of each user on this process.
+type userTurns struct {
+	mu sync.Mutex
+	n  map[string]int
+}
+
+// acquire takes one turn for uid when the user runs fewer than limit. It
+// answers the turns the user ran before this one.
+func (u *userTurns) acquire(uid string, limit int) (int, bool) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if u.n == nil {
+		u.n = map[string]int{}
+	}
+	before := u.n[uid]
+	if before >= limit {
+		return before, false
+	}
+	u.n[uid] = before + 1
+	return before, true
+}
+
+// release gives back one turn of uid.
+func (u *userTurns) release(uid string) {
+	u.mu.Lock()
+	defer u.mu.Unlock()
+	if u.n[uid] <= 1 {
+		delete(u.n, uid)
+		return
+	}
+	u.n[uid]--
 }

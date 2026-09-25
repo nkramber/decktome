@@ -185,6 +185,25 @@ describe("the power read of an imported deck", () => {
     expect(screen.queryByText(/power step not read yet/)).not.toBeInTheDocument();
   });
 
+  it("asks the judge once when a write follows a failed read (REV-045)", async () => {
+    getDeck.mockResolvedValue({ deck: sixty });
+    updateDeck.mockResolvedValue({ deck: { ...sixty, name: "Burn" } });
+    readImportBracket.mockRejectedValue(new Error("the judge is down"));
+    await renderAt("/decks/d1");
+    await waitFor(() => expect(readImportBracket).toHaveBeenCalledTimes(1));
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Rename" }));
+    const field = await screen.findByLabelText("Deck name");
+    await user.clear(field);
+    await user.type(field, "Burn");
+    await user.click(screen.getByRole("button", { name: "Save the name" }));
+    await waitFor(() => expect(updateDeck).toHaveBeenCalled());
+    // The write refetches the deck. The judge must not run again.
+    await waitFor(() => expect(getDeck.mock.calls.length).toBeGreaterThan(1));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(readImportBracket).toHaveBeenCalledTimes(1);
+  });
+
   it("asks nothing for a 60-card import that holds a step", async () => {
     getDeck.mockResolvedValue({ deck: { ...sixty, power: { level: { case: "sixtyStep", value: SixtyStep.CASUAL } } } });
     await renderAt("/decks/d1");

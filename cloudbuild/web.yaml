@@ -1,11 +1,17 @@
 # The web app, built and released on Cloud Build (D-584). The trigger
-# fires on a push to main whose diff touches web/ or firebase.json.
+# fires on a push to main whose diff touches web/, firebase.json, or
+# firestore.indexes.json. The install runs npm code, so the trigger is to
+# run as web-deployer, which can release Hosting and the indexes alone.
+# docs/deploy-and-rollback.md holds that account and its switch (D-931).
+#
+# Each image names its digest, so a new release of an image changes no
+# build (D-931). docs/deploy-and-rollback.md holds the refresh.
 #
 # The four VITE_FIREBASE_ values reach the browser in the bundle, so they
 # are plain substitutions and never secrets.
 steps:
   - id: build
-    name: node:22.23.2
+    name: node:22.23.2@sha256:dd5847a04b0deee391fa145f1f4c6d214196668b6bcc7988ebed67249f226844
     entrypoint: bash
     env:
       - VITE_API_BASE_URL=${_API_BASE_URL}
@@ -26,7 +32,7 @@ steps:
   # firebase-tools reads the credentials of the build from the metadata
   # server, so no token of a person lives in this repository.
   - id: release
-    name: node:22.23.2
+    name: node:22.23.2@sha256:dd5847a04b0deee391fa145f1f4c6d214196668b6bcc7988ebed67249f226844
     entrypoint: bash
     args:
       - -c
@@ -40,7 +46,7 @@ steps:
           --project "$PROJECT_ID" --non-interactive
 
   - id: check
-    name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
     entrypoint: bash
     args:
       - -c

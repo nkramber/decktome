@@ -91,6 +91,17 @@ func (s *Server) sharedRead(ctx context.Context, token string) (*mtgv1.Deck, err
 	if err != nil {
 		return nil, storeError(err)
 	}
+	// A closed account shares nothing, and its documents stay (D-941).
+	// The answer is the NotFound of a revoked link.
+	if s.closed != nil {
+		closed, err := s.closed.Closed(ctx, uid)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeUnavailable, errors.New("the share could not be read"))
+		}
+		if closed {
+			return nil, connect.NewError(connect.CodeNotFound, decks.ErrNotFound)
+		}
+	}
 	d, err := s.decks.Get(ctx, uid, id)
 	if err != nil {
 		return nil, storeError(err)

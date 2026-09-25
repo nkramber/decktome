@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -77,15 +78,21 @@ func runMeta(ctx context.Context, opts metaOptions, logger *slog.Logger) error {
 		return err
 	}
 	logMetaReport(logger, rep)
+	// A fit that fails a bar keeps the stored model, and the job fails, so
+	// the alert of a failed job reaches the owner (D-927, D-911).
 	model, fit, err := quality.Refit(ctx, objects, idx, time.Now().UTC(), logger)
-	if err != nil {
+	if err != nil && !errors.Is(err, quality.ErrBarFailed) {
 		return fmt.Errorf("quality fit: %w", err)
 	}
+	barErr := err
 	for word, fr := range fit.Formats {
 		logger.Info("quality fit", "format", word, "read", fr.Read, "used", fr.Used, "unusable", fr.Unusable, "out_of_pool", fr.OutOfPool,
 			"synthetic", fr.Synthetic, "immaterial", fr.ImmaterialCount(), "holdout", fr.Holdout.Lists,
 			"great_over_baseline", fr.Holdout.GreatOverBaseline.Share(),
 			"baseline_over_bad", fr.Holdout.BaselineOverBad.Share(), "accuracy", fr.Holdout.Accuracy)
+	}
+	if barErr != nil {
+		return fmt.Errorf("quality fit: %w", barErr)
 	}
 	logger.Info("meta job done", "model", model.Version)
 	return nil

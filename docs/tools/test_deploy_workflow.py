@@ -62,5 +62,23 @@ class DeployWorkflowTest(unittest.TestCase):
         self.assertEqual(unguarded(text), ["api"])
 
 
+class CloudBuildImagesTest(unittest.TestCase):
+    """Each step of a Cloud Build file names its image by digest (REV-069, D-931)."""
+
+    def test_each_step_image_names_a_digest(self):
+        folder = os.path.join(ROOT, "cloudbuild")
+        seen = 0
+        for name in sorted(os.listdir(folder)):
+            if not name.endswith(".yaml"):
+                continue
+            with open(os.path.join(folder, name), encoding="utf-8") as f:
+                for line in f:
+                    m = re.match(r"^\s+(?:- )?name:\s*(\S+)\s*$", line)
+                    if m:
+                        seen += 1
+                        self.assertRegex(m.group(1), r"@sha256:[0-9a-f]{64}$", f"{name}: {m.group(1)}")
+        self.assertGreater(seen, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

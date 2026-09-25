@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/evalrun"
 	"github.com/nkramber/decktome/go/internal/gcpenv"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/meta"
@@ -35,6 +37,55 @@ func SpendGuard(name string) error {
 		return fmt.Errorf("this run calls a real provider and costs money: set %s=1 to allow it", name)
 	}
 	return nil
+}
+
+// EnvMaxUSD names the most one gate run may spend. The fix cycle sets
+// it to the room left under its own cap, so one gate can not pass that
+// cap (REV-078, D-939). Empty sets no cap.
+const EnvMaxUSD = "GATE_MAX_USD"
+
+// SpendCap stops a gate before its next item once the run spent its cap.
+// The zero value sets no cap.
+type SpendCap struct{ maxUSD float64 }
+
+// NewSpendCap reads EnvMaxUSD. A value that is not a number above zero
+// is an error, and never a run with no cap.
+func NewSpendCap(getenv func(string) string) (SpendCap, error) {
+	raw := strings.TrimSpace(getenv(EnvMaxUSD))
+	if raw == "" {
+		return SpendCap{}, nil
+	}
+	v, err := strconv.ParseFloat(raw, 64)
+	if err != nil || !(v > 0) || math.IsInf(v, 0) {
+		return SpendCap{}, fmt.Errorf("%s %q is not a number above zero", EnvMaxUSD, raw)
+	}
+	return SpendCap{maxUSD: v}, nil
+}
+
+// Spent says whether the run reached its cap. It marks nothing, so a
+// run that finished its items stays whole. A report with calls and no
+// priced cost reads spent, because the cap can not see its spend.
+func (c SpendCap) Spent(rep llm.Report) bool {
+	if c.maxUSD == 0 {
+		return false
+	}
+	return rep.CostUSD == nil && rep.Calls > 0 || rep.CostUSD != nil && *rep.CostUSD >= c.maxUSD
+}
+
+// Stop answers true when the run must start no more items, and marks
+// the run stopped. Call it before an item alone. After the last item a
+// spent cap stops nothing, so use Spent there.
+func (c SpendCap) Stop(rec *evalrun.Run, rep llm.Report) bool {
+	if !c.Spent(rep) {
+		return false
+	}
+	switch {
+	case rep.CostUSD == nil && rep.Calls > 0:
+		rec.Header.Stopped = fmt.Sprintf("the run made %d unpriced calls under a cap of $%.2f", rep.Calls, c.maxUSD)
+	default:
+		rec.Header.Stopped = fmt.Sprintf("the run spent $%.4f of its cap of $%.2f", *rep.CostUSD, c.maxUSD)
+	}
+	return true
 }
 
 // RefuseExisting returns an error when any named path exists. A paid

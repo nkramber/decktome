@@ -9,10 +9,13 @@ name: review-gate
 # GitHub starts this trigger from the default branch alone, so the pull
 # request that adds this file can not run it.
 #
-# A label changes the result, so a label event runs the job again.
+# A label changes the result, so a label event runs the job again. A new
+# base changes the commits under review, so an edit runs it too. The job
+# has no condition: a skipped job reads as a pass of a required check
+# (D-928).
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled]
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled, edited]
 
 # The job itself is the check run, so the token reads contents alone.
 permissions:

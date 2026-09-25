@@ -67,7 +67,11 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 The target reads no `.env`, so run `set -a && . ./.env && set +a` first. Set `CARDS_SNAPSHOT_DIR` to `.local/gcs/mtg-local-cards/scryfall`, or each card case names its gap. The run of 2026-09-23 cost $0.0122 for one judge call. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
 
-`make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559).
+`make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs and the triage (D-559, D-939).
+
+The ledger charges the judge of the triage first. Each gate then gets the room left under the cap in `GATE_MAX_USD`, and it stops before its next item once it spent that room. So one gate can pass the cap by the cost of one item alone. A stopped run reads partial, and the cycle stops before the fixer.
+
+`GATE_MAX_USD` works on a hand run of `make questions-gate`, `make deck-gate`, or `make bracket-gate` too. A value that is not a number above zero stops the run before its first call.
 
 With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). It refuses a changed tree, and it stops when the branch moves (D-923). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
 
@@ -80,6 +84,8 @@ With `--here`, the cycle commits on the branch of the session and pushes nothing
 `make deck-gate-dry` builds every deck gate shortlist over the trimmed snapshot of the repo and calls no provider (D-521). `make deck-gate-trim` rewrites that snapshot from the local store, and the fixture must stay under 10 MB. Both are free.
 
 `make allow EMAIL=... PROJECT_ID=...` invites one email to the deployed app, and `make disallow` takes one off (D-420). Both write one Firestore document of the deployed project with the caller's own credentials, and neither calls a model. `make mark-verified PROJECT_ID=...` lists each account of the deployed app with no proof of its email (D-903). With `UIDS=...` and `APPLY=1` it marks the named accounts as proved in Firebase Auth. It calls no model.
+
+`make deactivate-user USER_UID=... PROJECT_ID=...` closes one account and keeps each record of it (D-941). It prints the plan and changes nothing. With `CONFIRM=1`, it marks `users/<uid>` closed, then it deletes the Firebase Auth user. The API then refuses the user within one minute, and the share links of the user answer NotFound. It calls no provider, so it costs nothing. Ask the owner before a run with `CONFIRM=1`, as for each write to production.
 
 `make store-check` runs the session store against the local Firestore emulator. `make gcs-check` runs the live fake-GCS store test against a server seeded from the trimmed snapshot, and the CI step runs the same script (D-658). `make candidates-review` writes the PR-6 gate document from a local snapshot. `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline.
 

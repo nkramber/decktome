@@ -10,7 +10,15 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 
 ## Asked, waiting
 
-OQ-23, OQ-28 to OQ-31, OQ-37, and OQ-39 sit in `docs/owner-questions.md`, the decision queue. This file does not repeat them.
+OQ-67 and OQ-77 sit in `docs/owner-questions.md`, the decision queue. This file does not repeat them.
+
+## Deferred by the owner
+
+These questions wait for work, and not for an answer of the owner.
+
+| # | Question | Why it matters | Ask when |
+|---|---|---|---|
+| OQ-85 | A cap for each effect class of the shortlist, weighted by what the commander cares about. | D-773 defers it: the class weights need the payoff shape, and the shortlist has no shape score. `docs/reference/grima-payoff-shape-2026-09-20.md` holds the count. | When the shortlist reads a shape score. |
 
 
 ## Answered (moved to decisions.md)
