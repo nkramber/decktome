@@ -25,7 +25,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending the Gitar pass and the Codex review.
+**The review.** Head: `64a4891`. Verdict: Changes required. Open finding: P1-1.
 
 **What waits on the owner.**
 
