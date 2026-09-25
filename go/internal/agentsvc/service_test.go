@@ -57,7 +57,11 @@ type fakeLease struct {
 	until time.Time
 }
 
-func (f *fakeStore) Lease(_ context.Context, _, id, token string, now, until time.Time) error {
+func (f *fakeStore) Lease(ctx context.Context, _, id, token string, now, until time.Time) error {
+	// A write on a cancelled context fails, as Firestore does.
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if l, ok := f.leases[id]; ok && l.token != token && now.Before(l.until) {
@@ -1186,5 +1190,36 @@ func TestAnUnreadableLeaseHidesItsCause(t *testing.T) {
 	}
 	if connect.CodeOf(err) != connect.CodeUnavailable || strings.Contains(err.Error(), "projects/p") {
 		t.Errorf("an unreadable lease gave %v, want Unavailable with no store text", err)
+	}
+}
+
+// TestTheLeaseOutlivesTheClient is D-303 and D-922. The classify call is
+// paid, so a client that leaves after a ready turn must not stop the
+// lease, or the turn is never stored.
+func TestTheLeaseOutlivesTheClient(t *testing.T) {
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+	client, _ := fakeClient(t)
+	store := newFakeStore()
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	srv, err := New(cat, client, store, func(context.Context) string { return "u1" },
+		WithLogger(quiet), WithClock(func() time.Time { return time.Unix(1000, 0).UTC() }))
+	if err != nil {
+		t.Fatalf("server: %v", err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	release, err := srv.takeLease(ctx, "u1", "sess-1")
+	if err != nil {
+		t.Fatalf("a lease after the client left gave %v", err)
+	}
+	if leased, _ := store.Leased(context.Background(), "u1", "sess-1", time.Unix(1000, 0).UTC()); !leased {
+		t.Error("no lease holds the session")
+	}
+	release()
+	if leased, _ := store.Leased(context.Background(), "u1", "sess-1", time.Unix(1000, 0).UTC()); leased {
+		t.Error("the release after the client left kept the lease")
 	}
 }

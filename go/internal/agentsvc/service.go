@@ -725,12 +725,16 @@ func (s *Server) leaseUnreadable(ctx context.Context, id string, err error) erro
 }
 
 // takeLease takes the build lease of a session for one build and its
-// store writes. The release runs detached, so a client that left still
-// frees the session (D-922).
+// store writes. The lease and its release run detached, so a client that
+// left neither loses the paid turn nor holds the session (D-922).
 func (s *Server) takeLease(ctx context.Context, uid, id string) (func(), error) {
 	token := rand.Text()
 	now := s.now()
-	err := s.store.Lease(ctx, uid, id, token, now, now.Add(s.buildDeadline()+2*storeLimit))
+	// The classify call is paid, so the lease runs detached from the
+	// client, as the Put after it does (D-303).
+	lctx, lcancel := detached(ctx, storeLimit)
+	err := s.store.Lease(lctx, uid, id, token, now, now.Add(s.buildDeadline()+2*storeLimit))
+	lcancel()
 	if errors.Is(err, sessions.ErrLeased) {
 		return nil, connect.NewError(connect.CodeAborted, errBuildInProgress)
 	}
