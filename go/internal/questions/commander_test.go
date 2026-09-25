@@ -1106,6 +1106,9 @@ func TestANewCommanderNameReplacesTheOldOne(t *testing.T) {
 	for _, msg := range []string{
 		"Use Atraxa as my commander instead.",
 		"Change the commander to Atraxa.",
+		// A swap that asks for more beside it still swaps.
+		"Use Atraxa as my commander instead, and add more removal.",
+		"Change the commander to Atraxa. Also keep it on a budget.",
 	} {
 		t.Run(msg, func(t *testing.T) {
 			named := commanderClassify()

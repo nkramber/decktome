@@ -393,8 +393,10 @@ var swapSigns = []string{
 }
 
 // joinSigns add a second commander to the first one with no pair word:
-// "add Tymna as the second commander".
-var joinSigns = []string{"second commander", "as well", "also", "alongside", "add"}
+// "add Tymna as the second commander". A bare "add", "also", or "as well"
+// sits in most requests, such as "and add more removal", so none of them
+// counts. A partner or a Background is a pair word of pairSigns.
+var joinSigns = []string{"second commander", "alongside"}
 
 // joinsCommander reports whether the message adds a commander to the one
 // the state holds, not in its place (REV-024).
