@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending the Gitar review and the Codex review.
+**The review.** Codex records Ready for owner merge at `36dd4e9`. No finding stays open. The review-gate check must pass after the record reaches the branch.
 
 **What waits on the owner.**
 
