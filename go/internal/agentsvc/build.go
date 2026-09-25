@@ -194,6 +194,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 			Format:           format,
 			Theme:            slots.GetTheme(),
 			Colors:           slots.GetColors(),
+			Colorless:        questions.ColorlessRequest(session),
 			PoolRule:         slots.GetPoolRule(),
 			Owned:            owned,
 			Bracket:          slots.GetPower().GetBracket(),
@@ -250,6 +251,8 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		outsideRoles = manaRoles(generate.TargetsFor(format, slots.GetPower()))
 	}
 	req := candidates.Request{
+		// A commander with no color leads a colorless deck (REV-017).
+		Colorless:          format == mtgv1.FormatId_FORMAT_ID_COMMANDER && len(commanders) > 0 && len(colors) == 0,
 		MetaBoost:          s.metaBoost(format),
 		CommanderRate:      s.commanderRate(commanderIDs),
 		Format:             format,

@@ -214,6 +214,9 @@ func (a *Agent) readFacts(st *State) {
 	if pa, ok := a.hints.(PairAware); ok && st.Ctx.WantPair {
 		pa.UseWantPair(true, st.Ctx.WantBackground)
 	}
+	if ca, ok := a.hints.(ColorlessAware); ok && colorlessRequest(st.Ctx.Words) {
+		ca.UseColorless(true)
+	}
 	if sa, ok := a.hints.(SlotAware); ok {
 		sa.UseSlots(st.Slots.GetFormat().GetId(), st.Slots.GetColors(), st.Slots.GetPoolRule())
 	}

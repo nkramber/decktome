@@ -85,6 +85,11 @@ type Request struct {
 	// single commanders. The pool also offers them when too few single
 	// commanders fit the colors, which is the four-color case (D-154).
 	WantPair bool
+	// Colorless says the deck identity holds no color: a colorless
+	// commander leads it, or the user asked for a colorless deck. Colors
+	// is then empty, and no colored card fits. With it false, the
+	// commander offer holds no colorless commander (REV-017, D-915).
+	Colorless bool
 	// Limits override the defaults. Zero fields keep the default.
 	Limits Limits
 	// BudgetUSD is the budget the reader named, and 0 with none. An
@@ -315,7 +320,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	// none. With tags loaded, an untagged card is not a staple.
 	useText := idx.Tags().Len() == 0
 	legalKey := legalKeys[req.Format]
-	colorSet := colorSetOf(req.Colors)
+	colorSet := req.colorSet()
 	setCodes := cards.CodeSet(req.SetCodes)
 	excluded := map[string]bool{}
 	for _, id := range req.CommanderOracleIDs {
@@ -928,6 +933,15 @@ func legalIn(c *mtgv1.Card, key string) bool {
 	return s == mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL || s == mtgv1.LegalityStatus_LEGALITY_STATUS_RESTRICTED
 }
 
+// colorSet is the allowed color identity: nil for every color, and an
+// empty set for a colorless deck.
+func (r Request) colorSet() map[mtgv1.Color]bool {
+	if r.Colorless {
+		return map[mtgv1.Color]bool{}
+	}
+	return colorSetOf(r.Colors)
+}
+
 func colorSetOf(colors []mtgv1.Color) map[mtgv1.Color]bool {
 	if len(colors) == 0 {
 		return nil
@@ -1095,7 +1109,7 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		return nil, fmt.Errorf("candidates: pool rule %s needs a collection", mode)
 	}
 	theme := b.themes.matchIn(req.Theme, idx)
-	colorSet := colorSetOf(req.Colors)
+	colorSet := req.colorSet()
 	setCodes := cards.CodeSet(req.SetCodes)
 	maxRank := maxRankOf(idx)
 
@@ -1126,6 +1140,11 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 		// belongs in a blue-red deck.
 		if colorSet != nil &&
 			(!IdentityFits(c.ColorIdentity, colorSet) || !identityCovers(c.ColorIdentity, colorSet)) {
+			continue
+		}
+		// A colorless commander leads only a deck that the user asked to
+		// be colorless (REV-017, D-915).
+		if len(c.ColorIdentity) == 0 && !req.Colorless {
 			continue
 		}
 		if c.GameChanger && req.Bracket > 0 && req.Bracket <= 2 {
@@ -1216,6 +1235,9 @@ func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Col
 		// color the user named, and no other (D-148).
 		if colorSet != nil &&
 			(!IdentityFits(c.GetColorIdentity(), colorSet) || !identityCovers(c.GetColorIdentity(), colorSet)) {
+			continue
+		}
+		if len(c.GetColorIdentity()) == 0 && !req.Colorless {
 			continue
 		}
 		if c.GetGameChanger() && req.Bracket > 0 && req.Bracket <= 2 {
@@ -1380,7 +1402,7 @@ func CountInSets(idx *cards.Index, req Request) int {
 		return 0
 	}
 	setCodes := cards.CodeSet(req.SetCodes)
-	colorSet := colorSetOf(req.Colors)
+	colorSet := req.colorSet()
 	legalKey := legalKeys[req.Format]
 	n := 0
 	for _, c := range idx.All() {
@@ -1430,7 +1452,7 @@ func (b *Builder) CountManaInSets(idx *cards.Index, req Request) int {
 		return 0
 	}
 	setCodes := cards.CodeSet(req.SetCodes)
-	colorSet := colorSetOf(req.Colors)
+	colorSet := req.colorSet()
 	legalKey := legalKeys[req.Format]
 	roleTags := b.themes.roleSets(idx.Tags())
 	useText := idx.Tags().Len() == 0

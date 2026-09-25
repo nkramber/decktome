@@ -188,7 +188,7 @@ func (r *Repo) Seed(ctx context.Context, uid, email string, counts map[Counter]i
 			DecksCreated: cur.DecksCreated, DeckRevisions: cur.DeckRevisions,
 			CollectionsUpload: cur.CollectionsUpload,
 			SessionsStarted:   cur.SessionsStarted, FeedbackUp: cur.FeedbackUp,
-			FeedbackDown: cur.FeedbackDown,
+			FeedbackDown: cur.FeedbackDown, DecksImported: cur.DecksImported,
 		}
 		for c, n := range counts {
 			if n > held[c] {

@@ -226,13 +226,8 @@ func ParseArenaText(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 	line := 0
 	for sc.Scan() {
 		line++
-		text := strings.TrimSpace(sc.Text())
-		if text == "" || strings.HasPrefix(text, "//") {
-			continue
-		}
-		// Section headers in deck exports ("Deck", "Sideboard", "Commander").
-		lower := strings.ToLower(text)
-		if lower == "deck" || lower == "sideboard" || lower == "commander" || lower == "about" {
+		text := arenaText(sc.Text())
+		if arenaSkip(text) {
 			continue
 		}
 		row, ok := parseArenaLine(text)
@@ -247,6 +242,26 @@ func ParseArenaText(r io.Reader) ([]Row, []*mtgv1.UnresolvedRow, error) {
 		rows = append(rows, row)
 	}
 	return rows, bad, sc.Err()
+}
+
+// arenaText is one line of an Arena list with its space and a leading
+// byte order mark removed. TrimSpace keeps U+FEFF (REV-053).
+func arenaText(line string) string {
+	return strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "\uFEFF"))
+}
+
+// arenaSkip reports a line of an Arena list that holds no card: a blank
+// line, a comment, or a section heading of a deck export. The detector
+// and the parser share it, so the two can not disagree (REV-053).
+func arenaSkip(text string) bool {
+	if text == "" || strings.HasPrefix(text, "//") {
+		return true
+	}
+	switch strings.ToLower(text) {
+	case "deck", "sideboard", "commander", "companion", "about":
+		return true
+	}
+	return false
 }
 
 // ParseLine reads one Arena line: a count, a name, and an optional

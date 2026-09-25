@@ -34,6 +34,8 @@ type CandidateHints struct {
 	WantPair bool
 	// WantBackground narrows that to pairs that hold a Background.
 	WantBackground bool
+	// Colorless says the user asked for a colorless deck (REV-017).
+	Colorless bool
 	// Bracket is the Commander bracket the reader named, 0 before the
 	// power row. CommanderSignal is the quality model's cEDH signal, nil
 	// with no model. A bracket 4 or 5 offer ranks on it (PR-14B, OQ-48).
@@ -256,6 +258,14 @@ func (h *CandidateHints) UseWantPair(want, background bool) {
 	}
 }
 
+// UseColorless records that the user asked for a colorless deck.
+func (h *CandidateHints) UseColorless(colorless bool) {
+	if h == nil || !colorless {
+		return
+	}
+	h.Colorless = true
+}
+
 // UseBracket takes the bracket as it stands inside the turn (F-104). The
 // power answer and the pick row share a turn, so the offer must read the
 // bracket the reader just picked. Zero is no bracket, and the one on the
@@ -290,6 +300,9 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 	if h.WantBackground {
 		cacheKey += "\x00background"
 	}
+	if h.Colorless {
+		cacheKey += "\x00colorless"
+	}
 	if v, ok := h.commanders[cacheKey]; ok {
 		return v
 	}
@@ -301,6 +314,7 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		Owned:          h.Owned,
 		WantPair:       h.WantPair,
 		WantBackground: h.WantBackground,
+		Colorless:      h.Colorless,
 		Bracket:        h.Bracket,
 		// A bracket 4 or 5 request offers the strongest commanders, not
 		// the most popular (PR-14B, OQ-48).

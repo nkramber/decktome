@@ -148,9 +148,14 @@ var AllColors = []mtgv1.Color{
 // BasicLands returns the basic lands of a color identity, in color order.
 // find is the card lookup, so this package needs no card index.
 //
-// A colorless deck gets no basic. Wastes is the colorless basic, and the
-// app builds no deck that needs it today.
+// A colorless identity gets Wastes, the colorless basic (REV-017, D-915).
 func BasicLands(find func(string) (*mtgv1.Card, bool), colors []mtgv1.Color) []*mtgv1.Card {
+	if len(colors) == 0 {
+		if c, ok := find("Wastes"); ok {
+			return []*mtgv1.Card{c}
+		}
+		return nil
+	}
 	var out []*mtgv1.Card
 	for _, col := range AllColors {
 		if !hasColor(colors, col) {

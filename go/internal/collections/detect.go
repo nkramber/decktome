@@ -192,8 +192,8 @@ func firstContentLine(content []byte) (string, bool) {
 	sc := bufio.NewScanner(bytes.NewReader(content))
 	sc.Buffer(make([]byte, 0, 64<<10), 1<<20)
 	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || strings.EqualFold(line, "Deck") || strings.EqualFold(line, "Sideboard") {
+		line := arenaText(sc.Text())
+		if arenaSkip(line) {
 			continue
 		}
 		return line, true

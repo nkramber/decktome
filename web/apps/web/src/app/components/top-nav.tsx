@@ -25,7 +25,9 @@ export function TopNav() {
             )}
           >
             <item.icon className="size-3.5" aria-hidden="true" />
-            <span className="hidden sm:inline">{item.label}</span>
+            {/* A phone hides the label from sight and not from a screen
+                reader, so each link keeps its name (REV-040). */}
+            <span className="sr-only sm:not-sr-only">{item.label}</span>
           </NavLink>
         );
       })}

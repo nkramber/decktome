@@ -110,6 +110,14 @@ func TestBuildRepairsAnInventedName(t *testing.T) {
 	if in := sc.Calls[1].Input; !strings.Contains(in, "Craterhoof Behemoth") {
 		t.Error("the repair input did not name the miss")
 	}
+	// REV-019: the repair prompt names "the deck you returned", and the
+	// call carries no history, so the input must hold that deck.
+	if in := sc.Calls[1].Input; !strings.Contains(in, "## The deck you returned") || !strings.Contains(in, "- 4 Ajani's Welcome (synergy)") {
+		t.Errorf("the repair input holds no deck of the first turn:\n%s", in)
+	}
+	if strings.Contains(sc.Calls[0].Input, "## The deck you returned") {
+		t.Error("the first turn got a returned deck")
+	}
 	for _, c := range got.Deck.GetCards() {
 		if c.GetName() == "Craterhoof Behemoth" {
 			t.Fatal("an invented name reached the deck")

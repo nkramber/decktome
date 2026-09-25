@@ -124,9 +124,16 @@ export function SessionPage() {
         <p role="alert" className="text-danger">
           Could not load the session: {session.isError ? errorMessage(session.error) : "the server returned no session"}
         </p>
-        <Button asChild variant="outline">
-          <Link to="/session/new">Start a new chat</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {/* A cold start or a short fault clears on a second read, and no
+              query of the app retries by itself (REV-047). */}
+          <Button variant="outline" onClick={() => void session.refetch()}>
+            Try again
+          </Button>
+          <Button asChild variant="outline">
+            <Link to="/session/new">Start a new chat</Link>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -396,6 +403,17 @@ export function ChatPanel({
   const shown = state.thread.filter((item) => item.kind !== "question" || !openIds.has(item.question.id));
   // The reader's last message, which the scroll holds at the top (D-360).
   const lastMineId = shown.reduce((id, item) => (item.kind === "user" ? item.id : id), -1);
+  // A screen reader hears each reply when the turn ends. The list of the
+  // conversation is not a live region, because a reopened chat would read
+  // the whole history (REV-041).
+  const replied = lastMineId >= 0 && !state.busy ? shown.slice(shown.findIndex((item) => item.id === lastMineId) + 1) : [];
+  const announcement = [
+    ...replied.flatMap((item) => (item.kind === "agent" ? [item.text] : [])),
+    replied.some((item) => item.kind === "question") || openCount > 0 ? "The agent asked a question." : "",
+    replied.some((item) => item.kind === "deck") ? "The deck is ready." : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
   const thread = (
     <ol className="flex flex-col gap-5" aria-label="Conversation">
       {shown.map((item) => (
@@ -438,6 +456,9 @@ export function ChatPanel({
   const step = state.busy ? (shown.reduce((text, item) => (item.kind === "status" ? item.text : text), "") ?? "") : "";
   const working = (
     <div className="flex flex-col gap-2" role="status">
+      <p className="sr-only" data-testid="reply-announcement">
+        {announcement}
+      </p>
       {state.busy && (
         <>
           <div className="flex flex-wrap items-center gap-3">

@@ -4,12 +4,14 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"sort"
 	"time"
 
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
@@ -350,7 +352,13 @@ func CheckVersion(ctx context.Context, store Store, version string) error {
 		optional bool
 		parse    func(io.Reader, string) error
 	}{
-		{"oracle_cards.jsonl.gz", false, func(r io.Reader, n string) error { _, _, err := LoadCardsStats(r, n); return err }},
+		{"oracle_cards.jsonl.gz", false, func(r io.Reader, n string) error {
+			list, _, err := LoadCardsStats(r, n)
+			if err != nil {
+				return err
+			}
+			return checkGameChangers(list)
+		}},
 		{"default_cards.jsonl.gz", false, func(r io.Reader, n string) error { _, err := LoadPrintings(r, n); return err }},
 		{"oracle_tags.jsonl.gz", false, func(r io.Reader, n string) error { _, err := LoadTags(r, n); return err }},
 		{SetsFile, true, func(r io.Reader, n string) error { _, err := LoadSets(r, n); return err }},
@@ -360,6 +368,37 @@ func CheckVersion(ctx context.Context, store Store, version string) error {
 		if err := check(st.file, st.optional, func(r io.Reader) error { return st.parse(r, st.file) }); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+// The bracket limits read the game_changer field of each card, and an
+// absent field reads false. A whole snapshot holds about 34,600 cards and
+// flagged 53 Game Changers on 2026-09-13. So a snapshot of more than
+// fullSnapshot cards with fewer than minGameChangers flags lost the field,
+// and it must not serve (REV-058). A test fixture is smaller, and the
+// check skips it.
+const (
+	fullSnapshot    = 10000
+	minGameChangers = 20
+)
+
+// errFewGameChangers refuses a whole snapshot that flags too few Game
+// Changers.
+var errFewGameChangers = errors.New("the snapshot flags too few Game Changers, so the game_changer field is likely gone")
+
+func checkGameChangers(list []*mtgv1.Card) error {
+	if len(list) <= fullSnapshot {
+		return nil
+	}
+	n := 0
+	for _, c := range list {
+		if c.GetGameChanger() {
+			n++
+		}
+	}
+	if n < minGameChangers {
+		return fmt.Errorf("%w: %d of %d cards", errFewGameChangers, n, len(list))
 	}
 	return nil
 }
@@ -412,6 +451,9 @@ func LoadVersion(ctx context.Context, store Store, version string, logger *slog.
 	parsed, stats, err := LoadCardsStats(oc, "oracle_cards.jsonl.gz")
 	if err != nil {
 		return nil, err
+	}
+	if err := checkGameChangers(parsed); err != nil {
+		return nil, fmt.Errorf("%s: %w", version, err)
 	}
 	if stats.NoOracleID > 0 {
 		logger.Warn("cards index: cards with no oracle_id skipped", "count", stats.NoOracleID)

@@ -312,6 +312,34 @@ describe("SessionPage", () => {
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
   });
 
+  // REV-041: the conversation list is not a live region, so a screen
+  // reader heard no reply.
+  it("announces the reply of a turn in the status row", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("textDelta", "Here is a plan."), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByRole("group", { name: "Question: Which format?" });
+    const said = screen.getByTestId("reply-announcement");
+    await waitFor(() => expect(said).toHaveTextContent("Here is a plan. The agent asked a question."));
+    expect(said.closest('[role="status"]')).not.toBeNull();
+  });
+
+  // REV-047: a cold start or a short fault left the chat on an error with
+  // no retry.
+  it("retries a chat that did not load", async () => {
+    getSession.mockRejectedValueOnce(new ConnectError("card database not loaded yet", Code.Unavailable));
+    getSession.mockResolvedValueOnce({
+      session: { id: "s9", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "Here is a plan.", questions: [], answers: [] }] },
+    });
+    await renderAt("/session/s9");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("Here is a plan.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
+  });
+
   // REV-023: React sends the submit of a dialog portal up to the chat
   // form around its trigger, so a thumbs down sent the answers too.
   it("a thumbs down on an answered question sends no answers", async () => {

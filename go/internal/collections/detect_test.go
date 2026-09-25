@@ -186,3 +186,25 @@ func TestFormatsNamesEveryReaderFacingFormat(t *testing.T) {
 		t.Error("the Arena list has no reader-facing name")
 	}
 }
+
+// TestDetectReadsAnArenaListWithABOMOrAHeading is REV-053 of the review
+// of 2026-09-24. The detector skipped the "Deck" and "Sideboard" headings
+// alone, and TrimSpace keeps a byte order mark, so these lists read as no
+// format.
+func TestDetectReadsAnArenaListWithABOMOrAHeading(t *testing.T) {
+	for _, text := range []string{
+		"\uFEFF4 Lightning Bolt\n",
+		"Commander\n1 Karlov of the Ghost Council\n\nDeck\n4 Lightning Bolt\n",
+		"// COMMANDER\n1 Karlov of the Ghost Council\n",
+		"Companion\n1 Lurrus of the Dream-Den\n",
+	} {
+		got, err := Detect([]byte(text))
+		if err != nil || got != mtgv1.ImportSource_IMPORT_SOURCE_ARENA_TEXT {
+			t.Errorf("Detect(%q) = %v, %v, want Arena text", text, got, err)
+		}
+		rows, bad, err := ParseArenaText(strings.NewReader(text))
+		if err != nil || len(bad) != 0 || len(rows) == 0 {
+			t.Errorf("ParseArenaText(%q) = %d rows, %d bad, err %v", text, len(rows), len(bad), err)
+		}
+	}
+}

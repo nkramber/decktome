@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
@@ -716,4 +717,31 @@ func TestABadVersionNeverServes(t *testing.T) {
 			t.Errorf("load = %v, %v, want an error", idx, err)
 		}
 	})
+}
+
+// TestAWholeSnapshotNeedsItsGameChangers is REV-058 of the review of
+// 2026-09-24. The field decodes as a plain bool, so a snapshot without it
+// read every card as no Game Changer, and the bracket limits went off.
+func TestAWholeSnapshotNeedsItsGameChangers(t *testing.T) {
+	many := func(n, flagged int) []*mtgv1.Card {
+		out := make([]*mtgv1.Card, n)
+		for i := range out {
+			out[i] = &mtgv1.Card{OracleId: fmt.Sprint(i), GameChanger: i < flagged}
+		}
+		return out
+	}
+	for _, tc := range []struct {
+		name        string
+		n, flagged  int
+		wantRefused bool
+	}{
+		{"a whole snapshot with no flag", fullSnapshot + 1, 0, true},
+		{"a whole snapshot one flag short", fullSnapshot + 1, minGameChangers - 1, true},
+		{"a whole snapshot with the flags", fullSnapshot + 1, 53, false},
+		{"a test fixture", 5, 0, false},
+	} {
+		if err := checkGameChangers(many(tc.n, tc.flagged)); (err != nil) != tc.wantRefused {
+			t.Errorf("%s: err = %v, want refused %v", tc.name, err, tc.wantRefused)
+		}
+	}
 }

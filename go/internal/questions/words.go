@@ -845,6 +845,18 @@ var colorlessSigns = []string{"colorless", "no colors", "no color"}
 // The negation guard applies, so "not colorless" is not such a request.
 func colorlessRequest(text string) bool { return anyPhrase(text, colorlessSigns) }
 
+// ColorlessRequest reports whether a message of the session asked for a
+// colorless deck. Only such a request lets the app offer or pick a
+// colorless commander (REV-017, D-915).
+func ColorlessRequest(session *mtgv1.Session) bool {
+	for _, t := range session.GetTurns() {
+		if colorlessRequest(UserWords(t.GetUserMessage())) {
+			return true
+		}
+	}
+	return false
+}
+
 // bestSigns hand a choice to the agent with a superlative. They name no
 // card, and they tell the agent to select one.
 var bestSigns = []string{"the best", "the strongest", "the top"}

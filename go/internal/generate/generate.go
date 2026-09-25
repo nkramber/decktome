@@ -260,7 +260,7 @@ func (b *Builder) Build(ctx context.Context, req Request, acc *llm.Accumulator) 
 		req.phase(mtgv1.BuildPhase_BUILD_PHASE_REPAIRING)
 		callStarted := time.Now()
 		out2, err := b.call(ctx, llm.RoleRepair, repairInstructions,
-			b.input(req, res.misses, findings), req.SessionID, acc)
+			b.repairInput(req, res.deck, res.misses, findings), req.SessionID, acc)
 		if err != nil {
 			// The deck before the repair stands, as it stands when a
 			// repair answers a worse deck (D-235, F-77). A failed call

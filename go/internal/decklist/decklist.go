@@ -83,8 +83,8 @@ var headers = map[string]Section{
 }
 
 // Parse reads a list. It fails on a read error, on a list over
-// maxLines, and on a list over maxCards. A line that reads as no card goes to Bad, and the import
-// reports it (D-846).
+// maxLines, and on a list over maxCards. A line that reads as no card
+// goes to Bad, and the import reports it (D-846).
 func Parse(r io.Reader) (*List, error) {
 	out := &List{}
 	sc := bufio.NewScanner(r)
