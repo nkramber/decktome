@@ -31,7 +31,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar and the Codex review are pending. `make verify` passed. No paid target ran.
+**The review.** Gitar approved the current head, `4e5cb69`. Codex reads Ready for owner merge at that head. `make verify` passed with Node 22.23.2. No paid target ran.
 
 **What waits on the owner.**
 
