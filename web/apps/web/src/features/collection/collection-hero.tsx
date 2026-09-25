@@ -1,6 +1,7 @@
 import type { Collection } from "@mtg/api-client/mtg/v1/collection_pb";
 
 import { statsFrom, useCollectionArt } from "./use-collection";
+import { ArtCredit } from "../credit/data-credit";
 
 // The rarity of a printing carries the color the game prints it in.
 const rarityToken: Record<string, string> = {
@@ -79,6 +80,7 @@ export function CollectionHero({ collection }: { collection: Collection }) {
             </ul>
           </div>
         )}
+        <ArtCredit artists={cards.map((card) => card.faces?.[0]?.artist ?? card.defaultPrinting?.artist ?? "")} />
       </div>
     </section>
   );

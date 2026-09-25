@@ -40,7 +40,7 @@ import {
 } from "./deck-stats";
 import { DiffList } from "./deck-diff";
 import { useDeckCards } from "./use-cards";
-import { DataCredit } from "../credit/data-credit";
+import { ArtCredit, DataCredit } from "../credit/data-credit";
 
 // The deck view (ui plan, step 4, and PR-20). Cards group by role, each
 // with its art and attribution (D-6), both faces for a DFC (F-9), the
@@ -196,6 +196,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
             {feedbackId && <Thumbs target={{ kind: FeedbackKind.SUMMARY, deckId: feedbackId }} itemName="the deck description" className="print:hidden" />}
           </div>
         )}
+        {commanderArt && <ArtCredit artists={[commanderCard?.faces?.[0]?.artist ?? commanderCard?.defaultPrinting?.artist ?? ""]} />}
       </header>
 
       {deck.revisionNote && (

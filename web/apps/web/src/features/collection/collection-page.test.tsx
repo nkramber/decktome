@@ -140,6 +140,14 @@ describe("the binder head", () => {
     // The import picked them, and the mythic sorts before the common.
     expect(getCards).toHaveBeenCalledWith({ oracleIds: ["o-jace", "o-bolt"] });
   });
+
+  // REV-042: the hero showed art crops with no artist, against the
+  // Scryfall guidelines and guardrail 7.
+  it("names the artist of each art crop", async () => {
+    useAppStore.setState({ collectionId: "c-old", poolMode: "owned_only" });
+    await renderAt("/collection");
+    expect(await screen.findByText(/^Art: A\. /)).toBeInTheDocument();
+  });
 });
 
 describe("CollectionPage", () => {

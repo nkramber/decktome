@@ -333,8 +333,11 @@ func TestLegalityDiff(t *testing.T) {
 	}{
 		{"same data", legalA + "\n" + legalB + "\n", legalA + "\n" + legalB + "\n", 0},
 		{"one ban", legalA + "\n" + legalB + "\n", bannedA + "\n" + legalB + "\n", 1},
-		{"new card", legalA + "\n", legalA + "\n" + legalB + "\n", 1},
-		{"removed card", legalA + "\n" + legalB + "\n", legalA + "\n", 1},
+		// REV-059: a new preview card or a removed card is not a ban, and
+		// a change in a format of no use to the app is not one either.
+		{"new card", legalA + "\n", legalA + "\n" + legalB + "\n", 0},
+		{"removed card", legalA + "\n" + legalB + "\n", legalA + "\n", 0},
+		{"a change in another format", legalA + "\n", cardLine("a", map[string]string{"modern": "legal", "legacy": "banned"}) + "\n", 0},
 		{"reversible card keyed by face oracle id", faceOnly + "\n", faceOnly + "\n", 0},
 		{"blank lines ignored", legalA + "\n\n", "\n" + legalA + "\n", 0},
 	}

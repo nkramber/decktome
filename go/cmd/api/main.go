@@ -85,6 +85,11 @@ func inviteListOrNil(l *allowlist.List) invitesvc.Allowlist {
 // largest expected body is a ManaBox export, under 5 MiB.
 const maxRequestBytes = 8 << 20
 
+// apiInstances is the instance cap of the service, `--max-instances 3` in
+// `docs/setup-gcp.md`. Each instance takes its share of the Spellbook
+// rate (D-459, REV-060).
+const apiInstances = 3
+
 // cardRequestBytes bounds one CardService body. GetCards takes at most
 // cardsvc.MaxGetCards ids of 36 bytes each (REV-085).
 const cardRequestBytes = 256 << 10
@@ -533,7 +538,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 			return idx.Tags()
 		}
 		return nil
-	}, spellbook.New(nil, "", logger))
+	}, spellbook.New(nil, "", logger).WithShare(apiInstances))
 	if err != nil {
 		return nil, err
 	}

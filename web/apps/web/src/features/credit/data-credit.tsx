@@ -4,6 +4,15 @@
 export const topdeckCredit = "Tournament data by TopDeck.gg";
 export const topdeckURL = "https://topdeck.gg";
 
+// ArtCredit names the artist of each art crop on a page. The Scryfall
+// guidelines ask for the artist and the copyright beside an art crop,
+// and the full card image carries its own (D-291, guardrail 7, REV-042).
+export function ArtCredit({ artists }: { artists: string[] }) {
+  const names = [...new Set(artists.filter(Boolean))];
+  if (names.length === 0) return null;
+  return <p className="text-[10px] text-muted-foreground">Art: {names.join(", ")}. ™ & © Wizards of the Coast.</p>;
+}
+
 export function DataCredit() {
   return (
     <p className="text-xs text-muted-foreground">

@@ -257,10 +257,16 @@ func sortByVersionTime(versions []string) {
 	})
 }
 
-// LegalityDiff counts the cards whose legalities changed between two
-// stored versions (C-2). It reads only oracle_id and legalities, so it
-// costs a fraction of a full index load. A card that is present in one
-// version only counts as changed.
+// DiffFormats are the legality keys of the formats of the app, as the
+// scryfall_key values of `go/internal/rules/formats.json` name them. A
+// test of the rules package holds the two lists equal.
+var DiffFormats = []string{"commander", "modern", "standard"}
+
+// LegalityDiff counts the cards whose legality changed between two
+// stored versions (C-2), in a format of the app. It reads only oracle_id
+// and legalities, so it costs a fraction of a full index load. A card in
+// one version alone is a new preview or a removed card, and not a ban,
+// so it does not count (REV-059).
 func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion string) (changed int, err error) {
 	before, err := loadLegalities(ctx, store, oldVersion)
 	if err != nil {
@@ -271,13 +277,7 @@ func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion strin
 		return 0, err
 	}
 	for id, a := range after {
-		b, ok := before[id]
-		if !ok || !sameLegalities(a, b) {
-			changed++
-		}
-	}
-	for id := range before {
-		if _, ok := after[id]; !ok {
+		if b, ok := before[id]; ok && !sameLegalities(a, b) {
 			changed++
 		}
 	}
@@ -285,11 +285,8 @@ func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion strin
 }
 
 func sameLegalities(a, b map[string]string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		if b[k] != v {
+	for _, k := range DiffFormats {
+		if a[k] != b[k] {
 			return false
 		}
 	}

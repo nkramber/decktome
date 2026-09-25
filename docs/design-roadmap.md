@@ -2220,7 +2220,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a review of the whole code found five serious faults. The robot that fixes review comments read the comments of strangers, and a 60-card import skipped the monthly spend limit. An invited email went to the first person who claimed it. A click on "Standard" built a Commander deck, and a change to an imported deck swapped its commander. This change fixes all five.
 
-**PR-78: Thirty-nine findings of the repository review of 2026-09-24 (D-905 to D-918).** 🔧 in review. The mark comes before any review (D-822).
+**PR-78: Forty-four findings of the repository review of 2026-09-24 (D-905 to D-919).** 🔧 in review. The mark comes before any review (D-822).
 The owner asked for as many corrections as one session can finish, and then for more (D-905). Each code finding has a regression test that fails before its correction.
 
 - **REV-006, the size of an import.** A deck list takes at most 250 cards, and the goldfish simulation reads at most 1,000 (D-908).
@@ -2241,7 +2241,8 @@ The owner asked for as many corrections as one session can finish, and then for 
 - **REV-019, the repair turn.** The repair input holds the deck of the first turn (D-916).
 - **Seven P3 findings.** REV-034, REV-040, REV-041, REV-047, REV-053, REV-058, and REV-067 (D-916).
 - **Five more P3 findings.** REV-052, REV-054, REV-061, REV-063, and REV-064, of the import, the revision, and the trim (D-917).
-- **Five last P3 findings.** REV-051, REV-055, REV-057, REV-062, and REV-085, of the chat cache, the companion, the pair offer, the dropped names, and the card reads (D-918).
+- **Five more P3 findings.** REV-051, REV-055, REV-057, REV-062, and REV-085, of the chat cache, the companion, the pair offer, the dropped names, and the card reads (D-918).
+- **Five last P3 findings.** REV-031, REV-042, REV-059, REV-060, and REV-090, of the format default, the art credit, the M-2 marker, the Spellbook rate, and the project guard (D-919).
 
 Gate:
 
@@ -2249,7 +2250,7 @@ Gate:
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex record approves the effective head.
 - `make verify` passes.
-> *In plain English:* the second batch of review findings. A pasted list can stall the server, a stopped share link stayed live, and the fallback deploy took any branch. A false address beat the rate limit, and a bad or stale card file reached no one. The share page lost its commander, and a mention of cEDH set the top power level. Thirty-nine such faults are fixed here.
+> *In plain English:* the second batch of review findings. A pasted list can stall the server, a stopped share link stayed live, and the fallback deploy took any branch. A false address beat the rate limit, and a bad or stale card file reached no one. The share page lost its commander, and a mention of cEDH set the top power level. Forty-four such faults are fixed here.
 
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
@@ -2621,7 +2622,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 
 66. **PR-77** the five P1 findings of the repository review of 2026-09-24 (D-901 to D-904). No paid target ran.
 
-67. **PR-78** thirty-nine findings of the repository review of 2026-09-24 (D-905 to D-918). No paid target ran.
+67. **PR-78** forty-four findings of the repository review of 2026-09-24 (D-905 to D-919). No paid target ran.
 
 ## 9. Open questions
 
