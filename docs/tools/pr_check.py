@@ -340,9 +340,9 @@ def check_skills(read, listdir):
     except ValueError:
         settings = {}
         errors.append(".claude/settings.json is not valid JSON")
-    hooks = json.dumps(settings.get("hooks", {}).get("PreToolUse", []))
-    if "session_bind.py" not in hooks:
-        errors.append(".claude/settings.json does not run the session_bind.py hook on PreToolUse")
+    for event, hook in (("PreToolUse", "session_bind.py"), ("PostToolUse", "context_checkpoint.py")):
+        if hook not in json.dumps(settings.get("hooks", {}).get(event, [])):
+            errors.append(f".claude/settings.json does not run the {hook} hook on {event}")
     return errors
 
 

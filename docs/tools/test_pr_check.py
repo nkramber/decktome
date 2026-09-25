@@ -204,6 +204,8 @@ class RepositoryWiring(unittest.TestCase):
         errors = pc.check_skills(files.get, lambda path: ["one-pr-one-session"])
         self.assertTrue(any("exact text" in e for e in errors), errors)
         self.assertTrue(any("CLAUDE.md does not require" in e for e in errors), errors)
+        self.assertTrue(any("session_bind.py hook on PreToolUse" in e for e in errors), errors)
+        self.assertTrue(any("context_checkpoint.py hook on PostToolUse" in e for e in errors), errors)
 
 
 if __name__ == "__main__":

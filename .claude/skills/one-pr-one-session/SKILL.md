@@ -113,9 +113,31 @@ The session stays bound to the pull request while it waits for Gitar, for the Co
 After the Gitar pass, start the Codex review with `make codex-review` (D-823). A pull request of documents alone takes the label in place of that review.
 
 - Tell the owner that the session is ready for a context compaction while the pull request waits (D-754).
-- Say the same when the context of the session passes 300K tokens (D-750).
 - Read the resume section of `docs/SESSION-HANDOFF.md` again after a context compaction.
 - A context compaction of this session keeps its binding. It starts no new pull request.
+
+### The context checkpoint
+
+A session past 300K tokens of context ends, and a new clean session continues the same pull request (D-946). A session can not see the size of its context. So the hook `.claude/hooks/context_checkpoint.py` tells it at 300K, and again at each further 100K. The hook runs in Claude Code alone, and a Codex session does the same steps past 300K.
+
+Do these steps after the message of the hook:
+
+1. Finish the current step. A paid run, a push, and a background job end first.
+2. Write the state to the resume section of `docs/SESSION-HANDOFF.md`: the finished work, the open work, and the next action.
+3. Commit the hand-off, and push it. A commit of the hand-off alone keeps the Gitar pass current (D-752).
+4. Write the checkpoint prompt below in the last message, and end the session.
+
+The new session does the start gate of section 1, and it keeps the role and the pull request. The binding hook binds each session apart, so the new session can bind the same branch.
+
+```
+Continue PR #<n>: <the one concern>
+
+Checkpoint at <tokens> tokens of context (D-946). Read `docs/SESSION-HANDOFF.md` first.
+Branch: `<branch>`. Head: `<sha>`. Role: <role>.
+Load the `one-pr-one-session` skill and the skills of the task before any change.
+Open work: <each open finding, review round, or check, or `none`>.
+First action: <the next concrete action>.
+```
 
 ## 5. The transitional prompt
 
@@ -183,6 +205,7 @@ The session ends with this prompt. It makes no branch and no change for the next
 | The third open round of one finding | `make codex-review`, exit 4 (D-826) |
 | An API key in a Codex process | `make codex-review` (D-833) |
 | A second branch in one session | `.claude/hooks/session_bind.py` (D-748) |
+| The context checkpoint at 300K tokens | `.claude/hooks/context_checkpoint.py` tells the session, and `make lifecycle-check` reads its wiring (D-946) |
 | The skill frontmatter and the wiring | `make lifecycle-check` (D-748) |
 | The byte budget of the start read | `make context-budget` (D-749) |
 | Each cited id and each repository path | `make ref-check` (D-753) |

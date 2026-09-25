@@ -12,6 +12,47 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-25d
+
+**Pull request #231, PR-81, corrects REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-945).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: read the first `deploy-web` build after the merge. It runs as `web-deployer` and proves REV-069. Then next step 3.
+
+**The base.** `main` is `3b26cde`, from #230.
+
+**The change.** The owner asked for as many corrections as one session can finish, with no rule of one concern (D-944). Each code finding has a regression test that fails on the base.
+
+- REV-046: `GetSession` reports a build that runs. After a Stop during a build step, or on a load during a build, the chat says that the build continues. It reads the chat each five seconds until the build ends (D-942).
+- REV-072: the owner chose guards in the two build files over one pipeline (D-943). `/readyz` and `/version.json` name the live commits. A build skips a deploy when the live commit is later. The web of a merge that changed the API waits for that API.
+- REV-069: the owner approved three remote writes. The session made the custom role `webDeployRulesTest`, granted it to `web-deployer`, and moved `deploy-web` there (D-944).
+- No paid target ran. No deploy.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approved the current effective head, `da75656`. Codex reads Ready for owner merge at `da75656`. P1-1 is an accepted risk under D-945. It is the only finding, and it is not open. `make verify` passed. No paid target ran, and no deploy ran. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy of this merge: read the `guard` step of both builds. The web build must wait for the API, then release. `/readyz` and `/version.json` must name the commit of the merge.
+- UNVERIFIED: the Cloud SDK image of the build holds git. Without git, the guards place no commit, and each deploy runs as before.
+- The first `deploy-web` build after the merge runs as `web-deployer`. On a 403, put `gh-deployer` back (`docs/deploy-and-rollback.md`, step 6).
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- Next step 3 (D-750). M-19 comes after it.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-25b: twenty-one findings of the review, PR-79
+
+**The owner asked for the next corrections of the review report of 2026-09-24, with no rule of one concern.** The owner picked the fork check alone for REV-008, and no signed record (D-920). The base run of the new two-server test started a second paid build and wrote the chat, as the report said. A frame rule of the web host waits, because the auth domain frames its helper page from another origin (D-923).
+
 ## The resume section of 2026-09-25c
 
 **Pull request #230, PR-80, corrects twenty-two P3 findings of the repository review of 2026-09-24, one of them in part (D-925 to D-941).**
