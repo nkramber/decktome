@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-25 correction pass 228 (PR-80, D-925 to D-938): the system map named a Firestore store for the cards and for the meta weights, and BigQuery for the evals. No code writes any of them, so each one reads REFUTED. The cost model named two services, and the deployment holds one service and two jobs. The guardrail summary counted seventeen of nineteen.
+
 2026-09-24 correction pass 227 (PR-76, D-899, D-900): the owner ended the Gitar pause of PR-66. Each pull request waits for a current Gitar review again, and the push wait is one minute.
 
 2026-09-23 correction pass 226 (PR-71, D-863 to D-876): the power judge of a 60-card import gets its labels, its prompt, its split, and its gate. The store labels a casual list and an FNM list, which refutes a premise of D-859. A new read also fixes the power of the session (F-172). Changes: PR-71, F-172.
@@ -330,17 +332,17 @@ We sequence the program so that each layer is testable before the next one exist
 
 | Component | Language | Owns | Reads | Writes | Sensitivity |
 |---|---|---|---|---|---|
-| `cards` service (card database) | Go | Scryfall snapshot, legalities, Oracle tags, images URIs | Scryfall bulk daily | Firestore `cards/`, GCS snapshot | High - every legality answer comes from here |
+| `cards` service (card database) | Go | Scryfall snapshot, legalities, Oracle tags, images URIs | Scryfall bulk daily | GCS snapshot, and the index in memory. REFUTED 2026-09-25 by PR-80: "Firestore `cards/`". No code writes it. | High - every legality answer comes from here |
 | `collections` service | Go | ManaBox import, ownership counts per Oracle ID | User CSV upload | Firestore `users/{uid}/collections/` | High - PII-adjacent, user data |
 | `users` record | Go | One document per user: the counters of what they made, the creation date, the last active time, and the verified email (D-638) | `auth` for the email, and every service that makes something | Firestore `users/{uid}` | High - it holds an address. **No harvest reads it** (D-559, D-638) |
 | `rules` engine (library) | Go | Format rules, deck validation, bracket rules, color identity | `cards` | none | Total - the last gate before the user |
 | `profile` (bracket profile, library) | Go | The bands per bracket, the feature vector, the goldfish simulation, the content check (PR-14A) | `cards`, `rules`, Commander Spellbook | none | High - it says what a bracket means |
 | `agent` service | Go | Turn-based chat, question workflow, deck generation, LLM role layer | `cards`, `collections`, `rules`, `meta` | Firestore `users/{uid}/sessions/`, `decks/` | High - the product |
-| `meta` service | Go | Deck quality model per format: the labeled lists, the fitted weights, the scorer (PR-14) | MTGO decklists, the Topdeck.gg API, MTGTop8, the cEDH database, EDHREC (D-5, D-417) | GCS raw pages and normalized lists, Firestore `meta/` for the weights | Medium - advisory input to the agent, and the code keeps the final say |
+| `meta` service | Go | Deck quality model per format: the labeled lists, the fitted weights, the scorer (PR-14) | MTGO decklists, the Topdeck.gg API, MTGTop8, the cEDH database, EDHREC (D-5, D-417) | GCS raw pages, normalized lists, and each model version, under `meta/` of the card bucket. REFUTED 2026-09-25 by PR-80: "Firestore `meta/` for the weights". | Medium - advisory input to the agent, and the code keeps the final say |
 | `worker` | Go | Scheduled jobs: Scryfall refresh, meta refresh, ban-list watch | Cloud Scheduler, Cloud Tasks | see above | Medium |
 | `web` (UI) | TypeScript, React, Vite | Chat, deck view with card art, collection upload, export, the deck library, the binder, the share page (Phase 3B) | Connect-RPC API | none | Medium |
 | `proto` | Protobuf | The one contract between Go and TypeScript | - | generated code, committed | High - a schema change is a cross-stack change |
-| `eval` | Go + fixtures | Golden decks, deterministic checks, judge runs | all services in-process | BigQuery `evals.*` | Medium |
+| `eval` | Go + fixtures | Golden decks, deterministic checks, judge runs | all services in-process | The run files under `docs/reference/eval/` and `.local/tune/`. REFUTED 2026-09-25 by PR-80: "BigQuery `evals.*`". No code writes BigQuery (D-596). | Medium |
 
 Three structural facts drive the plan:
 
@@ -356,7 +358,7 @@ Three structural facts drive the plan:
 - **Card data.** Scryfall bulk: 24.5 MB compressed per day for Oracle cards, 77.5 MB for all English printings. Free. Images hotlinked (D-6), zero storage. GCS: one snapshot per day, about 100 MB, cheap lifecycle to 30 days.
 - **Meta data.** The source terms passed the legal check (D-5). MTGO decklists are official and free, and one event page is about 330 KB. A year holds about 3,600 events, so the raw pages are about 1.2 GB, and the normalized lists are a few megabytes. A fit runs in seconds in Go and costs no LLM call.
 - **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, D-16), sessions, decks. Low. A measure of 2026-09-25 stored about 90 gzip bytes for each distinct row, so one document holds about 10,000 rows. The import refuses a collection over 9,000 distinct rows, and the message names the limit (D-910).
-- **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
+- **Cloud Run.** One service, `mtg-api`, and two jobs, `mtg-snapshot` and `mtg-meta`, read 2026-09-25. Each one scales to zero. Low until users exist. REFUTED 2026-09-25 by PR-80: "two services plus a worker".
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
 - **Deck import (PR-70, 2026-09-23).** One judge read on each Commander import, about $0.014 to $0.017 from bracket gate runs 9 and 12. The floor and the profile call Commander Spellbook up to three times. REFUTED 2026-09-23 by PR-71: "a 60-card import calls no model". A 60-card import makes one judge read, about $0.022 from `make sixty-gate` run 2.
 - **Bracket profile (PR-14A, 2026-09-02).** Commander Spellbook is free at 90 calls a minute, two calls per build. The profile's repair passes raise a build from about one model call to two. Deck gate run 12 cost $2.24 against $1.46 for run 11.
@@ -568,12 +570,11 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 16. **One pull request, one clean session (D-746 to D-748).** A session works on one pull request. The pull request carries its code, tests, decisions, documents, review answers, and hand-off. Each canonical document has a row in its documentation-impact table. No pull request exists to record an earlier merge or deploy. The `one-pr-one-session` skill holds the procedure, and `pr-contract` and a session hook check what a machine can read.
 17. **The start read stays small (D-749).** `CLAUDE.md` loads into every call, and the hand-off is the first read of every session. `make context-budget` holds `CLAUDE.md` under 11,000 bytes, the hand-off under 24,000, and its resume section under 6,000. The hand-off keeps three session records at most. History moves to the archive or a dated reference document, word for word.
 
-> *In plain English:* seventeen promises every change must keep. The most important: the code, not the AI, has the final say on every card. And the app never quietly swaps a card the AI got wrong for one it guessed.
-
----
 18. **Every cited id and every path resolves (D-753).** A register defines each id that a document cites. `make ref-check` fails on an id that no register defines. It also fails on a path in backticks that no file and no folder holds. A dated record is exempt, because a rewrite of it falsifies the record. Each `.md` file of `.claude/skills` also stays under 36,864 bytes, and `mtg-corpus` keeps the exemption of D-750.
 
 19. **A command that fails must fail its make target (D-782).** Each recipe line of `Makefile` that pipes sets `set -o pipefail` itself. GNU Make 3.82 added `.SHELLFLAGS`, and GNU Make 3.81 ignores it, so a recipe reads pipefail from no variable. `make pipefail-check` holds the rule, and it proves the rule against the make of the machine. A recipe whose exit code carries no fault takes a `pipefail-ok` comment with its reason. F-160 and D-641 record the two targets that read green over a failure.
+
+> *In plain English:* nineteen promises every change must keep. The most important: the code, not the AI, has the final say on every card. And the app never quietly swaps a card the AI got wrong for one it guessed.
 
 ## 7. Roadmap
 
@@ -2269,6 +2270,24 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the third batch of review findings. Two tabs on two servers paid for two builds of one deck, and an account at its spend limit still started a chat. The review check now refuses a record from a copy of the repository, and a few scripts, pages, and checks got safer.
 
+**PR-80: Seventeen P3 findings of the repository review of 2026-09-24 (D-925 to D-938).** 🔧 planned. The mark comes before any review (D-822).
+The owner asked for as many corrections as one session can finish (D-938). Each code finding has a regression test that fails before its correction.
+
+- **REV-033, the API start.** Cloud Run refuses the debug user, the emulator host, a bad cap, and a model with no price (D-925).
+- **REV-079, REV-080, and REV-081, the quality data.** The fixer copy hides the holdout rows. The daily refit keeps the stored model on a failed bar, and reads the last EDHREC fields (D-926, D-927).
+- **REV-068, REV-069, REV-070, REV-071, and REV-073, the review and the deploy.** The checks are strict, and each image names its digest. An edit runs the gate. The review reads its rules from `main`, and the fix cycle freezes more (D-928 to D-932).
+- **REV-045, REV-049, and REV-050, the web.** A write pays for no second judge read. Three texts read 4.5:1, and a copy starts inside the click (D-933 to D-935).
+- **REV-035 and REV-037, the accounts and the data.** The owner accepts one hour of access after a revocation, and the deploy guide holds the restore of the daily backup (D-936, D-937).
+- **REV-083, REV-088, REV-091, REV-092, and REV-093, the index and the documents** (D-938).
+
+Gate:
+
+- Each new regression test fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* the fourth batch of review findings. A wrong setting can no longer open the live app or turn off its spend limit. A bad day of source data no longer changes the deck grades, and a few pages read more clearly.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2646,6 +2665,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 69. **PR-72** the feedback fix cycle follows the one-PR rule and the Codex review (F-49, D-877 to D-879). It merged as #222, before PR-73. This list named it first in PR-79 (D-924).
 
 70. **PR-79** twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924). No paid target ran.
+71. **PR-80** seventeen P3 findings of the repository review of 2026-09-24 (D-925 to D-938). No paid target ran.
 
 ## 9. Open questions
 

@@ -25,6 +25,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 CLAUDE = "CLAUDE.md"
 HANDOFF = "docs/SESSION-HANDOFF.md"
 PAID = "docs/reference/paid-targets.md"
+README = "README.md"
+AGENTS = "AGENTS.md"
 
 FILE_LIMITS = {CLAUDE: 11000, HANDOFF: 24000}
 
@@ -41,7 +43,7 @@ SESSIONS_LIMIT = 3
 
 # Each of these files names the paid targets in one sentence with this marker.
 PAID_MARKER = "spend money:"
-PAID_FILES = [CLAUDE, HANDOFF, PAID]
+PAID_FILES = [CLAUDE, HANDOFF, PAID, README, AGENTS]
 PAID_NAME = re.compile(r"`(make [a-z0-9-]+|scripts/[a-z0-9_-]+\.sh)`")
 
 
@@ -79,7 +81,7 @@ def check(read, exists, skill_files=()):
     `skill_files` names every `.md` file of the skills folder.
     """
     report, errors = [], []
-    texts = {path: read(path) for path in {CLAUDE, HANDOFF, PAID, "Makefile"}}
+    texts = {path: read(path) for path in {CLAUDE, HANDOFF, PAID, README, AGENTS, "Makefile"}}
     for path, limit in FILE_LIMITS.items():
         text = texts[path]
         if text is None:

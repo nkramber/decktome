@@ -139,6 +139,9 @@ The project moved from the Spark plan to the Blaze plan when you linked the bill
 
 1. Run `gcloud firestore databases create --location=REGION --type=firestore-native --edition=standard`. The database id stays `(default)`.
 2. Run `firebase deploy --only firestore`. It writes the deny-all rules and the indexes of the repo.
+3. Run `gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=10d`. `decktome-prod` keeps each backup 10 days (D-936).
+
+Section 11 of `docs/deploy-and-rollback.md` holds the restore. The schedule command is from `gcloud firestore backups schedules create --help`, gcloud 533.0.0, read 2026-09-25.
 
 The rules deny every client read and write. The Go services use the Admin SDK, which bypasses the rules, so the API is the only door. Firestore allows exactly one free database per project, and the first one you create is it.
 
@@ -239,7 +242,7 @@ gcloud run deploy mtg-api \
 
 Six notes on the flags:
 
-- `--allow-unauthenticated` opens the URL to the internet. The API checks the Firebase token itself on every request, and a request with no token gets Unauthenticated on Cloud Run. Do not set `ALLOW_DEBUG_USER`.
+- `--allow-unauthenticated` opens the URL to the internet. The API checks the Firebase token itself on every request, and a request with no token gets Unauthenticated on Cloud Run. The API refuses to start on Cloud Run when `ALLOW_DEBUG_USER` or `FIREBASE_AUTH_EMULATOR_HOST` holds a value (D-925).
 - `--min-instances 0` bills nothing at idle. The first request after an idle period starts an instance, and the instance loads the newest snapshot from the bucket. The load takes about 90 seconds, and the card RPCs answer `Unavailable` until the index lands.
 - `--no-cpu-throttling` keeps the CPU on between the requests (D-574). The snapshot loads in a background goroutine (`cmd/api/main.go`), and the default of Cloud Run gives that goroutine almost no CPU at an idle instance. Without this flag the load never completes, and `/readyz` reads `starting` for as long as the traffic stays low. The flag moves the service to instance-based billing.
 - `--memory 2Gi` is a starting point. The API holds the whole card index in memory. Read the memory chart after the first week and move the number.
@@ -247,7 +250,7 @@ Six notes on the flags:
 - `--set-secrets` pins version `1`. Rotate a key with a new version and a new deploy.
 - The two Pushover secrets are optional. Leave them out of `--set-secrets` when you made no Pushover application, and the API sends no notice.
 - `PROJECT_ID` must be explicit. Cloud Run sets `K_SERVICE` and not the project id.
-- `SPEND_CAP_USD` names the monthly cap per user (D-421). Cloud Run reads $5 with no value, and `0` turns the cap off.
+- `SPEND_CAP_USD` names the monthly cap per user (D-421). Cloud Run reads $5 with no value, and `0` turns the cap off. A value that is not a number of zero or more stops the start (D-925). With the cap on, a role model with no row in `go/internal/llm/prices.json` stops the start too.
 - `SPEND_CAP_OVERRIDES` gives a named email its own cap (D-576). It reads a comma-separated list of `email:usd` pairs, and `0` turns the cap off for that email alone. Example: `SPEND_CAP_OVERRIDES=owner@example.com:0`. The API drops an entry that names no number, and the log names it.
 - `ALLOWED_ORIGINS` takes a comma-separated list (`auth.ParseOrigins`). The list holds the two Hosting origins as well as the domain. The web app runs on `PROJECT_ID.web.app` until section 14 connects the domain, and the browser blocks the RPCs without that origin.
 - `^@^` is the alternate delimiter of gcloud. A value with a comma in it needs one, or gcloud reads the comma as the end of the variable.

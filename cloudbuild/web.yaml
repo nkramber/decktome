@@ -1,8 +1,8 @@
 # The web app, built and released on Cloud Build (D-584). The trigger
 # fires on a push to main whose diff touches web/, firebase.json, or
-# firestore.indexes.json. It runs as web-deployer, which can release
-# Hosting and the indexes alone, because the install runs npm code
-# (D-931).
+# firestore.indexes.json. The install runs npm code, so the trigger is to
+# run as web-deployer, which can release Hosting and the indexes alone.
+# docs/deploy-and-rollback.md holds that account and its switch (D-931).
 #
 # Each image names its digest, so a new release of an image changes no
 # build (D-931). docs/deploy-and-rollback.md holds the refresh.

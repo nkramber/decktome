@@ -83,6 +83,32 @@ for sa in mtg-api mtg-worker; do
 done
 ```
 
+6. Give the web build its own account (D-931). The web build runs `pnpm install`, and an install script runs as the build account. `gh-deployer` holds `roles/run.admin` and `roles/firebaserules.admin`, so a bad package can deploy an API revision or open the rules. `web-deployer` releases Hosting and the indexes, and it can not write a rule.
+
+State on 2026-09-25: `web-deployer` exists, and it holds `roles/firebasehosting.admin`, `roles/datastore.indexAdmin`, and `roles/logging.logWriter`. The trigger `deploy-web` still runs as `gh-deployer`. The owner runs the steps below.
+
+```
+WEB=web-deployer@decktome-prod.iam.gserviceaccount.com
+gcloud iam roles create webDeployRulesTest --project=decktome-prod \
+  --title="Web deploy: test and read Firebase rules" --stage=GA \
+  --permissions=firebaserules.rulesets.test,firebaserules.rulesets.get,firebaserules.rulesets.list,firebaserules.releases.get,firebaserules.releases.list
+gcloud projects add-iam-policy-binding decktome-prod --member=serviceAccount:$WEB \
+  --role=projects/decktome-prod/roles/webDeployRulesTest --condition=None
+```
+
+CAUTION: do not switch the trigger before the custom role holds. The index deploy calls the `:test` method of the Rules API (D-605). `roles/firebaserules.viewer` holds no `firebaserules.rulesets.test`, so the web build then fails with a 403, and Hosting does not deploy.
+
+Then switch the trigger. `gcloud builds triggers update github` refuses a trigger of a 2nd-gen repository, and a PATCH of the whole trigger body works (D-603). UNVERIFIED: the export and import pair below, which sends the whole body too.
+
+```
+gcloud builds triggers export deploy-web --region=us-central1 --destination=/tmp/deploy-web.yaml
+sed -i '' 's#serviceAccounts/gh-deployer@#serviceAccounts/web-deployer@#' /tmp/deploy-web.yaml
+gcloud builds triggers import --region=us-central1 --source=/tmp/deploy-web.yaml
+gcloud builds triggers describe deploy-web --region=us-central1 --format='value(serviceAccount)'
+```
+
+Read the next `deploy-web` build with `gcloud builds list --region=us-central1 --limit=2`. When it fails with a 403, put `gh-deployer` back with the same three commands, and read the log for the permission it named.
+
 Note: the Workload Identity Federation setup of D-582 stays. The GitHub workflow reads it when somebody runs the deploy by hand.
 
 The Cloud Build files hold the four Firebase values as substitutions, so a build reads them from the repository. The GitHub workflow reads them from the repository variables of `nkramber/decktome` instead, and `gh variable list` prints what they hold.
@@ -256,6 +282,38 @@ Note: a stored deck or chat session is gzip JSON of a proto message. The decoder
 - A secret version stays active until you disable it.
 - A Pushover notice that the API sent stays on the device and with Pushover.
 - A card snapshot in the bucket stays. The worker keeps three versions (`cards.KeepVersions`).
+- Section 11 restores the Firestore data from a daily backup.
+
+## 11. Restore the Firestore data
+
+The owner turned on a daily backup of the `(default)` database on 2026-09-23 (REV-037, D-936). A read of 2026-09-25 gave these facts:
+
+- The schedule runs each day, and each backup stays 10 days (`864000s`).
+- Two backups read READY: 2026-09-24 at 07:07 UTC, and 2026-09-25 at 07:19 UTC.
+- Point-in-time recovery reads disabled, and delete protection reads disabled.
+
+A restore writes a new database. It never writes over `(default)`. Do these steps:
+
+1. Run `gcloud firestore backups list --project=decktome-prod --format="value(name,snapshotTime,state)"`.
+2. Choose the newest READY backup before the damage.
+3. Set `BACKUP` to its full name, and `DEST` to a new id, for example `restore-20260925`.
+4. Run `gcloud firestore databases restore --project=decktome-prod --source-backup="$BACKUP" --destination-database="$DEST"`.
+5. Read the damaged documents in `$DEST`, and compare each one with `(default)`.
+6. Copy each document back into `(default)` with a script that the owner reads first.
+7. Run `gcloud firestore databases delete --project=decktome-prod --database="$DEST"` after the repair.
+
+CAUTION: a copy back writes production user data. Copy only the documents that the damage changed. A later write of a user sits in `(default)` alone, and a whole copy removes it.
+
+## 12. Refresh the image digests
+
+Each step of `cloudbuild/api.yaml` and `cloudbuild/web.yaml` names its image by digest (D-931). So a new release of an image changes no build, and it brings no fix either. `docs/tools/test_deploy_workflow.py` refuses a step with no digest.
+
+1. Run `gcloud container images describe gcr.io/cloud-builders/docker:latest --format='value(image_summary.digest)'`.
+2. Run the same command for `gcr.io/google.com/cloudsdktool/cloud-sdk:latest`.
+3. Run `docker buildx imagetools inspect node:22.23.2`, and read its `Digest` line.
+4. Replace each old digest in the two files, and open a pull request.
+
+The digests of 2026-09-25 are the first ones. A merge that touches `go/` then builds with the new digests of `cloudbuild/api.yaml`.
 
 ## 10. Sources and dates
 
@@ -270,3 +328,6 @@ Note: a stored deck or chat session is gzip JSON of a proto message. The decoder
 | `/readyz` is the readiness path, and the frontend takes `/healthz` | The deploy of 2026-09-07, five paths compared |
 | `--update-secrets` keeps the other secrets, and a deploy keeps the secrets of the revision before it | The update of `mtg-api` on 2026-09-24, revisions `mtg-api-00077-vwp` and `mtg-api-00078-hv2` |
 | The Vite build needs Node 22 | `docs/setup.md` and the toolchain of the repo |
+| The restore writes a new database, with `--source-backup` and `--destination-database` | `gcloud firestore databases restore --help`, gcloud 533.0.0, read 2026-09-25 |
+| The backup schedule, the two backups, and the disabled recovery and protection | `gcloud firestore backups schedules list`, `gcloud firestore backups list`, and `gcloud firestore databases describe`, read 2026-09-25 |
+| `roles/firebaserules.viewer` holds no `firebaserules.rulesets.test` | `gcloud iam roles describe`, read 2026-09-25 |
