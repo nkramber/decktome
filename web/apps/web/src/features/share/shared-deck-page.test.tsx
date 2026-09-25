@@ -49,6 +49,7 @@ const shared = {
     { oracleId: "o-forest", name: "Forest", count: 1, role: CardRole.LAND, reason: "" },
   ],
   sideboard: [],
+  commanders: [],
 };
 
 beforeEach(() => {
@@ -77,6 +78,8 @@ describe("SharedDeckPage", () => {
     expect(screen.queryByTestId("buy-mark")).not.toBeInTheDocument();
     expect(screen.queryByText(/nate@example.com/)).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+    // REV-028: the terms of TopDeck.gg ask for a visible credit (D-417).
+    expect(screen.getByRole("link", { name: "Tournament data by TopDeck.gg" })).toHaveAttribute("href", "https://topdeck.gg");
   });
 
   it("exports the deck list through the public call", async () => {
@@ -89,6 +92,25 @@ describe("SharedDeckPage", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Copied the deck list: 5 lines.");
     expect(exportSharedDeck).toHaveBeenCalledWith({ token });
     expect(write).toHaveBeenCalledWith(expect.stringContaining("1 Llanowar Elves"));
+  });
+
+  // REV-021: a build keeps the commander out of cards since F-124, and the
+  // page showed no commander at all.
+  it("shows the commander that the server sends in its own list", async () => {
+    const [ezuri, ...rest] = shared.cards;
+    getSharedDeck.mockResolvedValue({ deck: { ...shared, cards: rest, commanders: [ezuri] } });
+    await renderAt(`/d/${token}`);
+    const commander = await screen.findByRole("region", { name: "Commander (1)" });
+    expect(within(commander).getByAltText("Ezuri, Renegade Leader (card)")).toBeInTheDocument();
+  });
+
+  // REV-022: a cold start answers Unavailable until the card index loads,
+  // and the page had retry off, so a first visit stayed on the error.
+  it("retries a cold start and then shows the deck", async () => {
+    getSharedDeck.mockRejectedValueOnce(new ConnectError("card database not loaded yet", Code.Unavailable));
+    await renderAt(`/d/${token}`);
+    expect(await screen.findByRole("heading", { name: "Elf Ball" }, { timeout: 3000 })).toBeInTheDocument();
+    expect(getSharedDeck).toHaveBeenCalledTimes(2);
   });
 
   it("says when a link opens nothing", async () => {

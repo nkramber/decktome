@@ -9,6 +9,7 @@ import { errorMessage } from "../../lib/errors";
 import { Thumbs } from "../feedback/thumbs";
 import { FaceImage, facesOf } from "./card-tile";
 import { priceText } from "./deck-stats";
+import { cardQueryRetry } from "../../lib/card-retry";
 
 // The card detail (PR-20, D-318): a Sheet with the full image and both
 // faces, the Oracle text, the type line, the mana cost, the rulings with
@@ -73,12 +74,14 @@ export function CardDetail({
     queryFn: () => cardClient.getRulings({ oracleId }),
     enabled: open && oracleId !== "",
     staleTime: Infinity,
+    ...cardQueryRetry,
   });
   const printings = useQuery({
     queryKey: ["printings", oracleId],
     queryFn: () => cardClient.getPrintings({ oracleId }),
     enabled: open && oracleId !== "",
     staleTime: Infinity,
+    ...cardQueryRetry,
   });
   const faces = facesOf(card, entry?.ownedPrinting);
   const name = card?.name || entry?.name || "Card";

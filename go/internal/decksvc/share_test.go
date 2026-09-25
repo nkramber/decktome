@@ -2,6 +2,7 @@ package decksvc
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"regexp"
 	"strings"
@@ -149,5 +150,54 @@ func TestSharedDeckHoldsNoUserField(t *testing.T) {
 	d := publicDeck(sharedDeckFixture())
 	if d.SessionId != "" || d.Favorite || d.Validation != nil || d.Cards[0].Owned || d.Cards[0].OwnedCount != 0 || d.Cards[0].OwnedPrinting != nil {
 		t.Errorf("publicDeck kept a user field: %+v", d)
+	}
+}
+
+// TestTheSharedDeckWaitsForTheIndex is REV-022 of the review of
+// 2026-09-24. Before the index loads, the shared deck held no card data
+// and the call succeeded, so the page showed blank cards until a reload.
+// It answers Unavailable now. The export keeps the stored names.
+func TestTheSharedDeckWaitsForTheIndex(t *testing.T) {
+	ctx := context.Background()
+	f := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": sharedDeckFixture()}}
+	res, err := shareServer(t, f, "u1").ShareDeck(ctx, connect.NewRequest(&mtgv1.ShareDeckRequest{DeckId: "d1"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cold := New(nil, fixedIndex{nil}, WithDecks(f))
+	if _, err := cold.GetSharedDeck(ctx, connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: res.Msg.Token})); connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Errorf("shared read before the index = %v, want Unavailable", err)
+	}
+	if _, err := cold.ExportSharedDeck(ctx, connect.NewRequest(&mtgv1.ExportSharedDeckRequest{Token: res.Msg.Token})); err != nil {
+		t.Errorf("the export failed before the index: %v", err)
+	}
+}
+
+// TestTheSharedDeckCarriesItsCommander is REV-021 of the review of
+// 2026-09-24. A build keeps the commander out of the cards since F-124,
+// so the shared copy held no commander card. It carries one now, with
+// its card data.
+func TestTheSharedDeckCarriesItsCommander(t *testing.T) {
+	d := sharedDeckFixture()
+	d.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}
+	d.CommanderOracleIds = []string{"o-elf"}
+	d.Cards = d.Cards[1:]
+	d.Commanders = []*mtgv1.DeckCard{{OracleId: "o-elf", Name: "Llanowar Elves", Count: 1, Owned: true, OwnedCount: 4}}
+	ctx := context.Background()
+	f := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": d}}
+	res, err := shareServer(t, f, "u1").ShareDeck(ctx, connect.NewRequest(&mtgv1.ShareDeckRequest{DeckId: "d1"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := shareServer(t, f, "").GetSharedDeck(ctx, connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: res.Msg.Token}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cmd := got.Msg.GetDeck().GetCommanders()
+	if len(cmd) != 1 || cmd[0].GetOracleId() != "o-elf" || cmd[0].GetCard().GetName() != "Llanowar Elves" {
+		t.Fatalf("commanders = %v, want the commander with its card data", cmd)
+	}
+	if strings.Contains(fmt.Sprint(cmd), "owned") {
+		t.Errorf("the public commander carries an owned field: %v", cmd)
 	}
 }

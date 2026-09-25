@@ -286,10 +286,10 @@ func TestFormatDoesNotRevertToAReplacedValue(t *testing.T) {
 // TestCEDHNamesBracketFive is D-164. "A cEDH deck" names bracket 5, so
 // the agent must not ask which power bracket to target.
 func TestCEDHNamesBracketFive(t *testing.T) {
-	if !cedhRequest("a cEDH deck") {
+	if !cedhRequest("a cEDH deck", false) {
 		t.Error("cEDH was not read as a power level")
 	}
-	if cedhRequest("a competitive Commander deck") {
+	if cedhRequest("a competitive Commander deck", false) {
 		t.Error("competitive Commander names no bracket, and it fired")
 	}
 	if id, ok := FormatFromWords("a cEDH deck"); !ok || id != mtgv1.FormatId_FORMAT_ID_COMMANDER {
@@ -307,6 +307,45 @@ func TestCEDHNamesBracketFive(t *testing.T) {
 	}
 	if got := st.Slots.GetPower().GetBracket(); got != cedhBracket {
 		t.Errorf("power bracket = %d, want %d", got, cedhBracket)
+	}
+}
+
+// TestAMentionOfCEDHIsNoRequest is REV-025 of the review of 2026-09-24.
+// Any mention of cEDH in the chat set bracket 5, so "tired of cEDH"
+// built a bracket 5 deck with no question.
+func TestAMentionOfCEDHIsNoRequest(t *testing.T) {
+	for _, tc := range []struct {
+		text string
+		want bool
+	}{
+		{"a cEDH deck", true},
+		{"Build me a cEDH Kinnan list", true},
+		{"something for cEDH please", true},
+		{"cEDH level power", true},
+		{"a competitive EDH deck", true},
+		{"I am tired of cEDH, build me a fun lifegain deck", false},
+		{"anything but cEDH", false},
+		{"weaker than a cEDH deck", false},
+		{"not a cEDH deck", false},
+		{"my friends play cEDH", false},
+		{"a competitive Commander deck", false},
+	} {
+		if got := cedhRequest(tc.text, false); got != tc.want {
+			t.Errorf("cedhRequest(%q) = %v, want %v", tc.text, got, tc.want)
+		}
+	}
+	// A reply to the power question needs no request form.
+	if !cedhRequest("cEDH", true) || cedhRequest("cEDH", false) || cedhRequest("anything but cEDH", true) {
+		t.Error("a reply to the power question read wrong")
+	}
+	out := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "any_card", BudgetUSD: 50}
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "commander", "colors"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "I am tired of cEDH, build me a fun lifegain Commander deck.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if st.Slots.GetPower() != nil {
+		t.Errorf("a mention of cEDH set the power %v", st.Slots.GetPower())
 	}
 }
 

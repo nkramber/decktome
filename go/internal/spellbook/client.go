@@ -33,6 +33,15 @@ const DefaultBaseURL = "https://backend.commanderspellbook.com"
 // RequestsPerMinute is the rate the owner set (D-459).
 const RequestsPerMinute = 90
 
+// WithShare divides the rate of D-459 among n processes that call the
+// endpoint at the same time, so their sum stays under it (REV-060).
+func (c *Client) WithShare(n int) *Client {
+	if n > 1 {
+		c.limiter = newLimiter(time.Minute / time.Duration(max(1, RequestsPerMinute/n)))
+	}
+	return c
+}
+
 // DefaultRetryAfter is the wait after a 429 with no Retry-After header.
 const DefaultRetryAfter = 30 * time.Second
 

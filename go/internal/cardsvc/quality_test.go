@@ -2,6 +2,8 @@ package cardsvc
 
 import (
 	"context"
+	"fmt"
+	"runtime"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -48,5 +50,29 @@ func TestGetCardsQualityRows(t *testing.T) {
 	}
 	if res.Msg.GetCards()[0].GetQuality() != nil {
 		t.Errorf("after the source left: %+v", res.Msg.GetCards()[0])
+	}
+}
+
+// TestGetCardsStopsAtTheCap is REV-085 of the review of 2026-09-24. The
+// handler sized its map and its list from the whole request before the
+// cap check, so a request of a million ids allocated for a million.
+func TestGetCardsStopsAtTheCap(t *testing.T) {
+	s := New()
+	s.Swap(testIndex(3))
+	ids := make([]string, 1_000_000)
+	for i := range ids {
+		ids[i] = fmt.Sprintf("o-%d", i)
+	}
+	req := connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: ids})
+	var before, after runtime.MemStats
+	runtime.GC()
+	runtime.ReadMemStats(&before)
+	_, err := s.GetCards(context.Background(), req)
+	runtime.ReadMemStats(&after)
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Fatalf("err = %v, want InvalidArgument", err)
+	}
+	if grew := after.TotalAlloc - before.TotalAlloc; grew > 1<<20 {
+		t.Errorf("the refused call allocated %d bytes, want under 1 MiB", grew)
 	}
 }

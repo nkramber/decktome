@@ -46,6 +46,13 @@ type PairAware interface {
 	UseWantPair(want, background bool)
 }
 
+// ColorlessAware lets a hint source know the user asked for a colorless
+// deck. The commander offer holds a colorless commander then alone
+// (REV-017).
+type ColorlessAware interface {
+	UseColorless(colorless bool)
+}
+
 // BracketAware lets a hint source read the bracket as it stands inside
 // the turn. The pick row fires on the turn the power answer arrives
 // (D-631), and the offer of that turn read the bracket of the turn

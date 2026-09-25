@@ -68,11 +68,14 @@ func buildOpts(t *testing.T, fd *fakeDecks) []Option {
 // fakeDecks stands in for the generator. It records the request, so the
 // test can read what the session handed over.
 type fakeDecks struct {
-	got   generate.Request
-	res   *generate.Result
-	err   error
-	runs  int
-	block bool
+	// during runs inside ReadImport, so a test can act while the judge
+	// reads.
+	during func()
+	got    generate.Request
+	res    *generate.Result
+	err    error
+	runs   int
+	block  bool
 	// started and release gate one build, so a test can act while a
 	// build is in flight. started closes once.
 	started   chan struct{}
@@ -265,9 +268,10 @@ func TestBuildTimeoutEndsTheTurnCleanly(t *testing.T) {
 
 // fakeDeckStore records what the build kept.
 type fakeDeckStore struct {
-	n    int
-	put  []*mtgv1.Deck
-	fail error
+	n        int
+	put      []*mtgv1.Deck
+	rewrites int
+	fail     error
 }
 
 func (f *fakeDeckStore) NewID(string) string {
@@ -304,6 +308,26 @@ func (f *fakeDeckStore) Put(ctx context.Context, _ string, d *mtgv1.Deck) error 
 	}
 	f.put = append(f.put, d)
 	return nil
+}
+
+// Rewrite replaces a stored deck, and keeps the fields of the user as
+// the store does. A deck that is gone answers decks.ErrNotFound.
+func (f *fakeDeckStore) Rewrite(ctx context.Context, _ string, d *mtgv1.Deck) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if f.fail != nil {
+		return f.fail
+	}
+	for i, cur := range f.put {
+		if cur.GetId() == d.GetId() {
+			d.Name, d.Favorite, d.Shared = cur.GetName(), cur.GetFavorite(), cur.GetShared()
+			f.put[i] = d
+			f.rewrites++
+			return nil
+		}
+	}
+	return decks.ErrNotFound
 }
 
 // TestTheDeckIsKeptAndRecorded is D-245: the built deck is stored and

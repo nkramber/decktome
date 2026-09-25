@@ -487,11 +487,13 @@ autotune: ## Print how to start the overnight tuning loop. It never starts one
 allow: ## Invite one email to the deployed app: make allow EMAIL=ann@example.com PROJECT_ID=my-project
 	@[ -n "$(EMAIL)" ] || { echo "allow: set EMAIL=..."; exit 1; }
 	@[ -n "$(PROJECT_ID)" ] || { echo "allow: set PROJECT_ID=... to the deployed project"; exit 1; }
+	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "allow: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)"
 
 disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT_ID=...
 	@[ -n "$(EMAIL)" ] || { echo "disallow: set EMAIL=..."; exit 1; }
 	@[ -n "$(PROJECT_ID)" ] || { echo "disallow: set PROJECT_ID=... to the deployed project"; exit 1; }
+	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "disallow: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)" -remove
 
 # The invite gate trusts a proved email alone (D-903). With no UIDS the
@@ -499,6 +501,7 @@ disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT
 # the owner confirmed, and APPLY=1 writes. It never runs on its own.
 mark-verified: ## List accounts whose email is not proved, or mark named ones: make mark-verified PROJECT_ID=... [UIDS=u1,u2 APPLY=1]
 	@[ -n "$(PROJECT_ID)" ] || { echo "mark-verified: set PROJECT_ID=... to the deployed project"; exit 1; }
+	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "mark-verified: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/mark-verified -uid "$(UIDS)" $(if $(filter 1,$(APPLY)),-apply,)
 
 feedback-list: ## Read the newest verdicts of every user: make feedback-list [VERDICT=down] [LIMIT=50]

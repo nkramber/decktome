@@ -179,3 +179,21 @@ func TestTheNetKeepsTheAnswerTheReaderGave(t *testing.T) {
 		}
 	}
 }
+
+// TestAStalledFormatTakesTheDefault is REV-031 of the review of
+// 2026-09-24. The stall rule closed the format question with no value, so
+// the build read no format and ended blocked.
+func TestAStalledFormatTakesTheDefault(t *testing.T) {
+	s := NewState(false)
+	s.Slots.SlotStates = map[string]mtgv1.SlotState{"format": mtgv1.SlotState_SLOT_STATE_ASKED}
+	s.Ctx.Outstanding = map[string]string{"format": "format"}
+	s.Turn = 3
+	s.Asks = []Ask{{QuestionID: "q1", RowID: "format", Key: "format", Slot: "format", Turn: 1}}
+	closed, _ := s.CloseStalled()
+	if !slices.Equal(closed, []string{"format"}) {
+		t.Fatalf("closed = %v, want [format]", closed)
+	}
+	if got := s.Slots.GetFormat().GetId(); got != s.DeclinedFormat() || got == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		t.Errorf("format = %v, want the default %v", got, s.DeclinedFormat())
+	}
+}

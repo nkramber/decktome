@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
@@ -332,8 +333,11 @@ func TestLegalityDiff(t *testing.T) {
 	}{
 		{"same data", legalA + "\n" + legalB + "\n", legalA + "\n" + legalB + "\n", 0},
 		{"one ban", legalA + "\n" + legalB + "\n", bannedA + "\n" + legalB + "\n", 1},
-		{"new card", legalA + "\n", legalA + "\n" + legalB + "\n", 1},
-		{"removed card", legalA + "\n" + legalB + "\n", legalA + "\n", 1},
+		// REV-059: a new preview card or a removed card is not a ban, and
+		// a change in a format of no use to the app is not one either.
+		{"new card", legalA + "\n", legalA + "\n" + legalB + "\n", 0},
+		{"removed card", legalA + "\n" + legalB + "\n", legalA + "\n", 0},
+		{"a change in another format", legalA + "\n", cardLine("a", map[string]string{"modern": "legal", "legacy": "banned"}) + "\n", 0},
 		{"reversible card keyed by face oracle id", faceOnly + "\n", faceOnly + "\n", 0},
 		{"blank lines ignored", legalA + "\n\n", "\n" + legalA + "\n", 0},
 	}
@@ -643,5 +647,104 @@ func TestBackfillSetsOnAnEmptyStore(t *testing.T) {
 	wrote, err := BackfillSets(t.Context(), f.client(), DirStore{Root: t.TempDir()}, slog.Default())
 	if err != nil || wrote {
 		t.Fatalf("BackfillSets = %v, %v, want false, nil", wrote, err)
+	}
+}
+
+// TestABadVersionNeverServes is REV-012 of the review of 2026-09-24. The
+// worker finalized a version that it never parsed, and the API loaded the
+// newest version alone. A new instance then served no card data until a
+// later version came.
+func TestABadVersionNeverServes(t *testing.T) {
+	ctx := context.Background()
+	day1 := time.Date(2026, 8, 23, 9, 1, 0, 0, time.UTC)
+	good := cardLine("a", map[string]string{"commander": "legal"}) + "\n"
+
+	t.Run("the worker does not finalize a version that does not parse", func(t *testing.T) {
+		f := newFakeScryfall(t, day1)
+		f.bodies["oracle_cards"] = good
+		store := DirStore{Root: t.TempDir()}
+		if _, err := Refresh(ctx, f.client(), store, slog.Default()); err != nil {
+			t.Fatal(err)
+		}
+		for typ := range f.updatedAt {
+			f.updatedAt[typ] = day1.Add(24 * time.Hour)
+		}
+		f.bodies["oracle_cards"] = `{"oracle_id":"b","name":"Card b","legalities":{"commander":1}}` + "\n"
+		if _, err := Refresh(ctx, f.client(), store, slog.Default()); err == nil {
+			t.Fatal("a version that does not parse was stored with no error")
+		}
+		if latest, _ := store.LatestVersion(ctx); latest != VersionFor(day1) {
+			t.Errorf("latest = %q, want the good version %q", latest, VersionFor(day1))
+		}
+	})
+
+	t.Run("the loader serves the version before a bad one", func(t *testing.T) {
+		store := DirStore{Root: t.TempDir()}
+		write := func(version, oracle string) {
+			for file, body := range map[string]string{
+				"oracle_cards.jsonl.gz": oracle, "default_cards.jsonl.gz": "", "oracle_tags.jsonl.gz": "",
+			} {
+				w, err := store.Create(ctx, version, file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := w.Write(gzipBytes(t, body)); err != nil {
+					t.Fatal(err)
+				}
+				if err := w.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := store.Finalize(ctx, version); err != nil {
+				t.Fatal(err)
+			}
+		}
+		write(VersionFor(day1), good)
+		write(VersionFor(day1.Add(24*time.Hour)), "not json\n")
+		idx, err := LoadIndex(ctx, store, slog.Default())
+		if err != nil || idx == nil {
+			t.Fatalf("load = %v, %v, want the good version", idx, err)
+		}
+		if _, ok := idx.ByOracleID("a"); !ok || idx.Len() != 1 {
+			t.Errorf("the index holds %d cards, want card a of the good version", idx.Len())
+		}
+	})
+
+	t.Run("no version loads", func(t *testing.T) {
+		store := DirStore{Root: t.TempDir()}
+		w, _ := store.Create(ctx, VersionFor(day1), "oracle_cards.jsonl.gz")
+		_, _ = w.Write(gzipBytes(t, "not json\n"))
+		_ = w.Close()
+		_ = store.Finalize(ctx, VersionFor(day1))
+		if idx, err := LoadIndex(ctx, store, slog.Default()); err == nil || idx != nil {
+			t.Errorf("load = %v, %v, want an error", idx, err)
+		}
+	})
+}
+
+// TestAWholeSnapshotNeedsItsGameChangers is REV-058 of the review of
+// 2026-09-24. The field decodes as a plain bool, so a snapshot without it
+// read every card as no Game Changer, and the bracket limits went off.
+func TestAWholeSnapshotNeedsItsGameChangers(t *testing.T) {
+	many := func(n, flagged int) []*mtgv1.Card {
+		out := make([]*mtgv1.Card, n)
+		for i := range out {
+			out[i] = &mtgv1.Card{OracleId: fmt.Sprint(i), GameChanger: i < flagged}
+		}
+		return out
+	}
+	for _, tc := range []struct {
+		name        string
+		n, flagged  int
+		wantRefused bool
+	}{
+		{"a whole snapshot with no flag", fullSnapshot + 1, 0, true},
+		{"a whole snapshot one flag short", fullSnapshot + 1, minGameChangers - 1, true},
+		{"a whole snapshot with the flags", fullSnapshot + 1, 53, false},
+		{"a test fixture", 5, 0, false},
+	} {
+		if err := checkGameChangers(many(tc.n, tc.flagged)); (err != nil) != tc.wantRefused {
+			t.Errorf("%s: err = %v, want refused %v", tc.name, err, tc.wantRefused)
+		}
 	}
 }

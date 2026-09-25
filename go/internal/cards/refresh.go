@@ -4,12 +4,14 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
 	"sort"
 	"time"
 
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
@@ -74,6 +76,12 @@ func Refresh(ctx context.Context, client *scryfall.Client, store Store, logger *
 	// before the marker, so a complete version always holds it.
 	if err := copySets(ctx, client, store, remote); err != nil {
 		return "", err
+	}
+	// A version that the API can not parse never becomes the newest one.
+	// The equal remote version then reads as current, so no later cycle
+	// would replace it (REV-012).
+	if err := CheckVersion(ctx, store, remote); err != nil {
+		return "", fmt.Errorf("check %s: %w", remote, err)
 	}
 	if err := store.Finalize(ctx, remote); err != nil {
 		return "", fmt.Errorf("finalize %s: %w", remote, err)
@@ -249,10 +257,16 @@ func sortByVersionTime(versions []string) {
 	})
 }
 
-// LegalityDiff counts the cards whose legalities changed between two
-// stored versions (C-2). It reads only oracle_id and legalities, so it
-// costs a fraction of a full index load. A card that is present in one
-// version only counts as changed.
+// DiffFormats are the legality keys of the formats of the app, as the
+// scryfall_key values of `go/internal/rules/formats.json` name them. A
+// test of the rules package holds the two lists equal.
+var DiffFormats = []string{"commander", "modern", "standard"}
+
+// LegalityDiff counts the cards whose legality changed between two
+// stored versions (C-2), in a format of the app. It reads only oracle_id
+// and legalities, so it costs a fraction of a full index load. A card in
+// one version alone is a new preview or a removed card, and not a ban,
+// so it does not count (REV-059).
 func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion string) (changed int, err error) {
 	before, err := loadLegalities(ctx, store, oldVersion)
 	if err != nil {
@@ -263,13 +277,7 @@ func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion strin
 		return 0, err
 	}
 	for id, a := range after {
-		b, ok := before[id]
-		if !ok || !sameLegalities(a, b) {
-			changed++
-		}
-	}
-	for id := range before {
-		if _, ok := after[id]; !ok {
+		if b, ok := before[id]; ok && !sameLegalities(a, b) {
 			changed++
 		}
 	}
@@ -277,11 +285,8 @@ func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion strin
 }
 
 func sameLegalities(a, b map[string]string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for k, v := range a {
-		if b[k] != v {
+	for _, k := range DiffFormats {
+		if a[k] != b[k] {
 			return false
 		}
 	}
@@ -320,16 +325,116 @@ func loadLegalities(ctx context.Context, store Store, version string) (map[strin
 	return out, nil
 }
 
-// LoadIndex builds an Index from the newest stored snapshot.
-// It returns nil with no error when the store is empty.
+// CheckVersion parses each file of one version, one file at a time, so
+// the worker never holds the whole index. The set file and the rulings
+// file can be absent, as LoadIndex reads them, but a file that is there
+// must parse (REV-012).
+func CheckVersion(ctx context.Context, store Store, version string) error {
+	check := func(file string, optional bool, parse func(io.Reader) error) error {
+		r, err := store.Open(ctx, version, file)
+		if err != nil {
+			if optional {
+				return nil
+			}
+			return err
+		}
+		defer func() { _ = r.Close() }()
+		if err := parse(r); err != nil {
+			return fmt.Errorf("%s/%s: %w", version, file, err)
+		}
+		return nil
+	}
+	steps := []struct {
+		file     string
+		optional bool
+		parse    func(io.Reader, string) error
+	}{
+		{"oracle_cards.jsonl.gz", false, func(r io.Reader, n string) error {
+			list, _, err := LoadCardsStats(r, n)
+			if err != nil {
+				return err
+			}
+			return checkGameChangers(list)
+		}},
+		{"default_cards.jsonl.gz", false, func(r io.Reader, n string) error { _, err := LoadPrintings(r, n); return err }},
+		{"oracle_tags.jsonl.gz", false, func(r io.Reader, n string) error { _, err := LoadTags(r, n); return err }},
+		{SetsFile, true, func(r io.Reader, n string) error { _, err := LoadSets(r, n); return err }},
+		{RulingsFile, true, func(r io.Reader, n string) error { _, err := LoadRulings(r, n); return err }},
+	}
+	for _, st := range steps {
+		if err := check(st.file, st.optional, func(r io.Reader) error { return st.parse(r, st.file) }); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// The bracket limits read the game_changer field of each card, and an
+// absent field reads false. A whole snapshot holds about 34,600 cards and
+// flagged 53 Game Changers on 2026-09-13. So a snapshot of more than
+// fullSnapshot cards with fewer than minGameChangers flags lost the field,
+// and it must not serve (REV-058). A test fixture is smaller, and the
+// check skips it.
+const (
+	fullSnapshot    = 10000
+	minGameChangers = 20
+)
+
+// errFewGameChangers refuses a whole snapshot that flags too few Game
+// Changers.
+var errFewGameChangers = errors.New("the snapshot flags too few Game Changers, so the game_changer field is likely gone")
+
+func checkGameChangers(list []*mtgv1.Card) error {
+	if len(list) <= fullSnapshot {
+		return nil
+	}
+	n := 0
+	for _, c := range list {
+		if c.GetGameChanger() {
+			n++
+		}
+	}
+	if n < minGameChangers {
+		return fmt.Errorf("%w: %d of %d cards", errFewGameChangers, n, len(list))
+	}
+	return nil
+}
+
+// LoadIndex builds an Index from the newest stored snapshot that loads.
+// A version that fails to load logs a warning, and the version before it
+// serves, so a new instance never starts with no card data while an
+// older complete version exists (REV-012). It returns nil with no error
+// when the store is empty, and the error of the newest version when no
+// version loads.
 func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, error) {
-	version, err := store.LatestVersion(ctx)
+	idx, _, err := LoadNewest(ctx, store, logger)
+	return idx, err
+}
+
+// LoadNewest is LoadIndex, and it also answers the version that loaded.
+func LoadNewest(ctx context.Context, store Store, logger *slog.Logger) (*Index, string, error) {
+	versions, err := store.ListVersions(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	if version == "" {
-		return nil, nil
+	sortByVersionTime(versions)
+	var first error
+	for i := len(versions) - 1; i >= 0; i-- {
+		idx, err := LoadVersion(ctx, store, versions[i], logger)
+		if err == nil {
+			return idx, versions[i], nil
+		}
+		if first == nil {
+			first = err
+		}
+		logger.Warn("cards index: a stored version did not load, so the version before it serves",
+			"version", versions[i], "err", err)
 	}
+	return nil, "", first
+}
+
+// LoadVersion builds an Index from one stored version.
+func LoadVersion(ctx context.Context, store Store, version string, logger *slog.Logger) (*Index, error) {
 	start := time.Now()
 	asOf, err := VersionTime(version)
 	if err != nil {
@@ -343,6 +448,9 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 	parsed, stats, err := LoadCardsStats(oc, "oracle_cards.jsonl.gz")
 	if err != nil {
 		return nil, err
+	}
+	if err := checkGameChangers(parsed); err != nil {
+		return nil, fmt.Errorf("%s: %w", version, err)
 	}
 	if stats.NoOracleID > 0 {
 		logger.Warn("cards index: cards with no oracle_id skipped", "count", stats.NoOracleID)

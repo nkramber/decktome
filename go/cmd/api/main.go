@@ -85,6 +85,15 @@ func inviteListOrNil(l *allowlist.List) invitesvc.Allowlist {
 // largest expected body is a ManaBox export, under 5 MiB.
 const maxRequestBytes = 8 << 20
 
+// apiInstances is the instance cap of the service, `--max-instances 3` in
+// `docs/setup-gcp.md`. Each instance takes its share of the Spellbook
+// rate (D-459, REV-060).
+const apiInstances = 3
+
+// cardRequestBytes bounds one CardService body. GetCards takes at most
+// cardsvc.MaxGetCards ids of 36 bytes each (REV-085).
+const cardRequestBytes = 256 << 10
+
 // Server timing. A Chat stream holds a connection for minutes, so there
 // is no ReadTimeout. IdleTimeout closes keep-alive connections that
 // carry nothing. shutdownTimeout gives a stream that is mid-build time
@@ -225,7 +234,9 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	)}, probeOpts...)
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(healthServer, probeOpts...))
-	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, opts...))
+	// A card request names ids or a query, and never a file, so its body
+	// limit is far under the one of an upload (REV-085).
+	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, append(opts, connect.WithReadMaxBytes(cardRequestBytes))...))
 	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer, opts...))
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, deckOpts...))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
@@ -527,7 +538,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 			return idx.Tags()
 		}
 		return nil
-	}, spellbook.New(nil, "", logger))
+	}, spellbook.New(nil, "", logger).WithShare(apiInstances))
 	if err != nil {
 		return nil, err
 	}
@@ -615,8 +626,10 @@ func spendCapOverrides(logger *slog.Logger) map[string]float64 {
 }
 
 // loadSnapshot installs the newest stored snapshot when its version
-// differs from lastVersion. A load error keeps the old index and the
-// old version, so the next tick tries again.
+// differs from lastVersion. A load error keeps the old index and the old
+// version, so the next tick tries again. An instance with no index yet
+// serves the newest version that loads instead, and answers that version,
+// so the next tick tries the newest one again (REV-012).
 func loadSnapshot(ctx context.Context, store cards.Store, server *cardsvc.Server, lastVersion string, logger *slog.Logger) string {
 	current, err := store.LatestVersion(ctx)
 	if err != nil {
@@ -629,14 +642,20 @@ func loadSnapshot(ctx context.Context, store cards.Store, server *cardsvc.Server
 		}
 		return lastVersion
 	}
-	idx, err := cards.LoadIndex(ctx, store, logger)
+	idx, err := cards.LoadVersion(ctx, store, current, logger)
 	if err != nil {
 		logger.Error("snapshot load failed", "version", current, "err", err)
-		return lastVersion
+		if server.Current() != nil {
+			return lastVersion
+		}
+		older, loaded, ferr := cards.LoadNewest(ctx, store, logger)
+		if ferr != nil || older == nil {
+			return lastVersion
+		}
+		server.Swap(older)
+		return loaded
 	}
-	if idx != nil {
-		server.Swap(idx)
-	}
+	server.Swap(idx)
 	return current
 }
 

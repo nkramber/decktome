@@ -70,3 +70,22 @@ func TestDiffEmptyReadsAnUnchangedDeck(t *testing.T) {
 		t.Error("a deck with one more card read as no change")
 	}
 }
+
+// TestDiffReadsTheSideboard is REV-063 of the review of 2026-09-24. The
+// diff counted the main deck alone, so a revision of the sideboard alone
+// read as no change and was discarded.
+func TestDiffReadsTheSideboard(t *testing.T) {
+	main := []*mtgv1.DeckCard{{OracleId: "o-bolt", Name: "Lightning Bolt", Count: 4}}
+	base := &mtgv1.Deck{Cards: main, Sideboard: []*mtgv1.DeckCard{{OracleId: "o-duress", Name: "Duress", Count: 2}}}
+	swapped := &mtgv1.Deck{Cards: main, Sideboard: []*mtgv1.DeckCard{{OracleId: "o-negate", Name: "Negate", Count: 2}}}
+	d := DiffDecks(base, swapped)
+	if d.Empty() {
+		t.Fatal("a sideboard swap read as no change")
+	}
+	if len(d.Added) != 1 || d.Added[0] != "2 Negate (sideboard)" || len(d.Removed) != 1 || d.Removed[0] != "2 Duress (sideboard)" {
+		t.Errorf("diff = %+v", d)
+	}
+	if !DiffDecks(base, base).Empty() {
+		t.Error("the same deck read as a change")
+	}
+}

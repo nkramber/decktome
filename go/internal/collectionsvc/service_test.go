@@ -3,6 +3,8 @@ package collectionsvc
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -526,5 +528,49 @@ func TestANamedSourceBeatsTheDetector(t *testing.T) {
 		importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, "4 Sol Ring (C21) 263\n"))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("err = %v, want the named parser to refuse it", err)
+	}
+}
+
+// TestImportRefusesACollectionOverTheRowLimit is REV-026 of the review of
+// 2026-09-24. A collection of about 10,000 distinct rows failed at the
+// store write with a note that sharding is a later step. The import now
+// names the stated limit, and a collection at the limit imports.
+func TestImportRefusesACollectionOverTheRowLimit(t *testing.T) {
+	c := &mtgv1.Card{OracleId: "oracle-1", Name: "Pawpatch Recruit"}
+	var printings []cards.Printing
+	for i := range collections.MaxEntries + 1 {
+		printings = append(printings, cards.Printing{ScryfallID: fmt.Sprintf("p-%05d", i), OracleID: c.OracleId, Name: c.Name,
+			SetCode: "blb", CollectorNumber: strconv.Itoa(i), Layout: "normal"})
+	}
+	idx := cards.NewIndex([]*mtgv1.Card{c}, printings, nil, time.Now())
+	csv := func(n int) string {
+		var b strings.Builder
+		b.WriteString("Name,Set code,Collector number,Quantity,Scryfall ID,Foil,Condition,Language\n")
+		for i := range n {
+			fmt.Fprintf(&b, "Pawpatch Recruit,BLB,%d,1,p-%05d,normal,near_mint,en\n", i, i)
+		}
+		return b.String()
+	}
+	for _, tc := range []struct {
+		rows int
+		want connect.Code
+	}{
+		{collections.MaxEntries + 1, connect.CodeResourceExhausted},
+		{collections.MaxEntries, 0},
+	} {
+		repo := newFakeRepo()
+		_, err := newServer(repo, idx).ImportCollection(context.Background(), importReq("Binder", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, csv(tc.rows)))
+		switch {
+		case tc.want == 0 && err != nil:
+			t.Errorf("%d rows: err = %v, want none", tc.rows, err)
+		case tc.want != 0 && connect.CodeOf(err) != tc.want:
+			t.Errorf("%d rows: err = %v, want code %v", tc.rows, err, tc.want)
+		}
+		if tc.want != 0 && !strings.Contains(fmt.Sprint(err), strconv.Itoa(collections.MaxEntries)) {
+			t.Errorf("%d rows: the message does not name the limit: %v", tc.rows, err)
+		}
+		if tc.want != 0 && len(repo.stored) != 0 {
+			t.Errorf("%d rows: a refused collection was stored", tc.rows)
+		}
 	}
 }

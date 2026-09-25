@@ -27,6 +27,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/candidates"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/cardsvc"
+	"github.com/nkramber/decktome/go/internal/decks"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/gzstore"
 	"github.com/nkramber/decktome/go/internal/llm"
@@ -210,6 +211,10 @@ type DeckStore interface {
 	// id, so the build needs one before it runs.
 	NewID(uid string) string
 	Put(ctx context.Context, uid string, d *mtgv1.Deck) error
+	// Rewrite writes a new read of a stored deck. It keeps the name, the
+	// favorite mark, and the share link, and a deleted deck answers
+	// decks.ErrNotFound (REV-007).
+	Rewrite(ctx context.Context, uid string, d *mtgv1.Deck) error
 	// Delete removes one deck. A chat delete takes its decks with it
 	// (D-456).
 	Delete(ctx context.Context, uid, id string) error
@@ -1076,7 +1081,7 @@ func storeError(err error) error {
 	if errors.As(err, &connectErr) {
 		return err
 	}
-	if errors.Is(err, sessions.ErrNotFound) {
+	if errors.Is(err, sessions.ErrNotFound) || errors.Is(err, decks.ErrNotFound) {
 		return connect.NewError(connect.CodeNotFound, err)
 	}
 	if errors.Is(err, sessions.ErrConflict) {

@@ -51,6 +51,9 @@ export function FeedbackDialog({
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    // React sends the submit of a portal up the tree of its components,
+    // so a dialog inside a chat form would also send that form (REV-023).
+    e.stopPropagation();
     if (!canSubmit) return;
     // The reasons go in the order the dialog shows them, whatever the
     // order of the clicks.

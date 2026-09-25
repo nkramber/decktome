@@ -1061,8 +1061,13 @@ type SharedDeck struct {
 	Sideboard          []*SharedCard          `protobuf:"bytes,7,rep,name=sideboard,proto3" json:"sideboard,omitempty"`
 	LegalityAsOf       string                 `protobuf:"bytes,8,opt,name=legality_as_of,json=legalityAsOf,proto3" json:"legality_as_of,omitempty"`
 	CardCount          int32                  `protobuf:"varint,9,opt,name=card_count,json=cardCount,proto3" json:"card_count,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// commanders holds each commander of commander_oracle_ids, with its card
+	// data. A build keeps the commander out of cards since F-124, and an
+	// import keeps it in the ids alone, so the page found no commander
+	// (REV-021). The public copy holds no owned mark and no owner price.
+	Commanders    []*SharedCard `protobuf:"bytes,10,rep,name=commanders,proto3" json:"commanders,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *SharedDeck) Reset() {
@@ -1156,6 +1161,13 @@ func (x *SharedDeck) GetCardCount() int32 {
 		return x.CardCount
 	}
 	return 0
+}
+
+func (x *SharedDeck) GetCommanders() []*SharedCard {
+	if x != nil {
+		return x.Commanders
+	}
+	return nil
 }
 
 // SharedCard is one entry of a shared deck, with the card data inline,
@@ -1724,7 +1736,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x05speed\x18\x04 \x01(\x05R\x05speed\x12\x1d\n" +
 	"\n" +
 	"extra_turn\x18\x05 \x01(\bR\textraTurn\x12(\n" +
-	"\x10mass_land_denial\x18\x06 \x01(\bR\x0emassLandDenial\"\xdf\x02\n" +
+	"\x10mass_land_denial\x18\x06 \x01(\bR\x0emassLandDenial\"\x93\x03\n" +
 	"\n" +
 	"SharedDeck\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12&\n" +
@@ -1736,7 +1748,11 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\tsideboard\x18\a \x03(\v2\x12.mtg.v1.SharedCardR\tsideboard\x12$\n" +
 	"\x0elegality_as_of\x18\b \x01(\tR\flegalityAsOf\x12\x1d\n" +
 	"\n" +
-	"card_count\x18\t \x01(\x05R\tcardCount\"\xb3\x01\n" +
+	"card_count\x18\t \x01(\x05R\tcardCount\x122\n" +
+	"\n" +
+	"commanders\x18\n" +
+	" \x03(\v2\x12.mtg.v1.SharedCardR\n" +
+	"commanders\"\xb3\x01\n" +
 	"\n" +
 	"SharedCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
@@ -1858,20 +1874,21 @@ var file_mtg_v1_deck_proto_depIdxs = []int32{
 	17, // 17: mtg.v1.SharedDeck.power:type_name -> mtg.v1.PowerLevel
 	11, // 18: mtg.v1.SharedDeck.cards:type_name -> mtg.v1.SharedCard
 	11, // 19: mtg.v1.SharedDeck.sideboard:type_name -> mtg.v1.SharedCard
-	0,  // 20: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
-	19, // 21: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
-	0,  // 22: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	20, // 23: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
-	14, // 24: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	21, // 25: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
-	22, // 26: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
-	1,  // 27: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	23, // 28: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
-	29, // [29:29] is the sub-list for method output_type
-	29, // [29:29] is the sub-list for method input_type
-	29, // [29:29] is the sub-list for extension type_name
-	29, // [29:29] is the sub-list for extension extendee
-	0,  // [0:29] is the sub-list for field type_name
+	11, // 20: mtg.v1.SharedDeck.commanders:type_name -> mtg.v1.SharedCard
+	0,  // 21: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
+	19, // 22: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
+	0,  // 23: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
+	20, // 24: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
+	14, // 25: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	21, // 26: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	22, // 27: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	1,  // 28: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	23, // 29: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
+	30, // [30:30] is the sub-list for method output_type
+	30, // [30:30] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }

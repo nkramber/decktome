@@ -106,3 +106,22 @@ func TestValidID(t *testing.T) {
 		}
 	}
 }
+
+// TestAnUnknownFieldIsDropped is REV-014 of the review of 2026-09-24. A
+// build older than a field failed to read each document that held the
+// field, so a rollback broke every deck read. The field is dropped now,
+// and a payload that is not JSON still fails.
+func TestAnUnknownFieldIsDropped(t *testing.T) {
+	payload, err := Marshal([]byte(`{"id":"x","futureField":1,"name":"Elves"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var d mtgv1.Deck
+	if err := UnmarshalProto(payload, &d); err != nil || d.GetId() != "x" || d.GetName() != "Elves" {
+		t.Fatalf("deck = %v, err %v, want the known fields", &d, err)
+	}
+	bad, _ := Marshal([]byte(`{"id":`))
+	if err := UnmarshalProto(bad, &d); err == nil {
+		t.Error("a broken payload decoded")
+	}
+}

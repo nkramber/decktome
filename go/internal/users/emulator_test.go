@@ -114,9 +114,16 @@ func TestSeedNeverLowersACount(t *testing.T) {
 			t.Fatalf("note: %v", err)
 		}
 	}
+	// REV-034 of the review of 2026-09-24: a user imported 5 lists and deleted 2, and
+	// the backfill counts the 3 that remain.
+	for range 5 {
+		if err := r.Note(ctx, uid, "", DecksImported, at); err != nil {
+			t.Fatalf("note: %v", err)
+		}
+	}
 	// The backfill counted 1, and the record already holds 3.
 	err := r.Seed(ctx, uid, "reader@example.com", map[Counter]int64{
-		DecksCreated: 1, CollectionsUpload: 5,
+		DecksCreated: 1, CollectionsUpload: 5, DecksImported: 3,
 	}, at.Add(-time.Hour), at)
 	if err != nil {
 		t.Fatalf("Seed: %v", err)
@@ -127,6 +134,9 @@ func TestSeedNeverLowersACount(t *testing.T) {
 	}
 	if rec.DecksCreated != 3 {
 		t.Errorf("decks = %d, and the seed lowered a live count", rec.DecksCreated)
+	}
+	if rec.DecksImported != 5 {
+		t.Errorf("imports = %d, and the seed lowered a live count", rec.DecksImported)
 	}
 	if rec.CollectionsUpload != 5 {
 		t.Errorf("collections = %d, want the seeded 5", rec.CollectionsUpload)

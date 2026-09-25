@@ -135,6 +135,12 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 		}
 		return connect.NewResponse(&mtgv1.ImportCollectionResponse{Collection: col, Report: report}), nil
 	}
+	// A collection over the stated limit fails here, with the limit in the
+	// message, and not at the store write (REV-026).
+	if len(entries) > collections.MaxEntries {
+		return nil, connect.NewError(connect.CodeResourceExhausted,
+			fmt.Errorf("%w. This file holds %d", collections.ErrTooManyEntries, len(entries)))
+	}
 	col.Entries = entries
 	col.CardCount = collections.CardCount(entries)
 	// The binder head reads this and never the entries (D-392). The card
@@ -211,6 +217,12 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 	offset, err := decodePageToken(req.Msg.GetPageToken(), filter, by)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+	// The filters read the display fields that the index fills, so a
+	// page before the index loads would match the wrong rows. The call
+	// answers Unavailable, and the binder retries (REV-022, F-164).
+	if s.index.Current() == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
 	}
 	col, err := s.repo.Get(ctx, uid, id)
 	if err != nil {

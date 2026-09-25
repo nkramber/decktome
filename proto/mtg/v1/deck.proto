@@ -213,6 +213,11 @@ message SharedDeck {
   repeated SharedCard sideboard = 7;
   string legality_as_of = 8;
   int32 card_count = 9;
+  // commanders holds each commander of commander_oracle_ids, with its card
+  // data. A build keeps the commander out of cards since F-124, and an
+  // import keeps it in the ids alone, so the page found no commander
+  // (REV-021). The public copy holds no owned mark and no owner price.
+  repeated SharedCard commanders = 10;
 }
 
 // SharedCard is one entry of a shared deck, with the card data inline,

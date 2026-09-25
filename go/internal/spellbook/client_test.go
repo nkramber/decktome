@@ -126,3 +126,15 @@ func TestBracketOf(t *testing.T) {
 		}
 	}
 }
+
+// TestWithShareDividesTheRate is REV-060 of the review of 2026-09-24. Each
+// process held the whole rate of D-459, so three API instances could call
+// three times as often as the owner set.
+func TestWithShareDividesTheRate(t *testing.T) {
+	if got := New(nil, "", nil).WithShare(3).limiter.interval; got != 2*time.Second {
+		t.Errorf("a share of 3 waits %v between calls, want 2s (30 a minute)", got)
+	}
+	if got := New(nil, "", nil).limiter.interval; got != time.Minute/RequestsPerMinute {
+		t.Errorf("a single process waits %v, want the whole rate", got)
+	}
+}

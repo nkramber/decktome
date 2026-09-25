@@ -70,6 +70,18 @@ describe("ImportDialog", () => {
     await waitFor(() => expect(getDeck).toHaveBeenCalledWith({ deckId: "d9" }));
   });
 
+  // REV-027: a Commander list of 99 or 101 cards reads no format of its
+  // own, and the choice offered no Commander.
+  it("offers Commander in the format choice, then asks for the leader", async () => {
+    importDeck.mockResolvedValueOnce({ needsFormat: true, commanderOptions: [], unresolved: [] });
+    importDeck.mockResolvedValueOnce({ needsFormat: false, commanderOptions: [{ oracleId: "o-k", name: "Karlov of the Ghost Council" }], unresolved: [] });
+    const user = await openAndPaste("1 Karlov of the Ghost Council");
+    await user.click(await screen.findByRole("radio", { name: "Commander" }));
+    await user.click(screen.getByRole("button", { name: "Import" }));
+    await waitFor(() => expect(importDeck).toHaveBeenLastCalledWith(expect.objectContaining({ format: FormatId.COMMANDER })));
+    expect(await screen.findByRole("radio", { name: "Karlov of the Ghost Council" })).toBeInTheDocument();
+  });
+
   it("offers neither as the house format", async () => {
     importDeck.mockResolvedValueOnce({ needsFormat: true, commanderOptions: [], unresolved: [] });
     importDeck.mockResolvedValueOnce({ deck: stored, sessionId: "s9", commanderOptions: [], unresolved: [] });

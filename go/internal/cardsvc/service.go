@@ -183,17 +183,19 @@ func (s *Server) GetCards(ctx context.Context, req *connect.Request[mtgv1.GetCar
 	if err != nil {
 		return nil, err
 	}
-	seen := make(map[string]struct{}, len(req.Msg.GetOracleIds()))
-	ids := make([]string, 0, len(req.Msg.GetOracleIds()))
+	// The loop stops at the first id past the cap, so a long request
+	// allocates no more than the cap (REV-085).
+	seen := make(map[string]struct{}, min(len(req.Msg.GetOracleIds()), MaxGetCards+1))
+	ids := make([]string, 0, min(len(req.Msg.GetOracleIds()), MaxGetCards+1))
 	for _, id := range req.Msg.GetOracleIds() {
 		if _, dup := seen[id]; dup || id == "" {
 			continue
 		}
 		seen[id] = struct{}{}
 		ids = append(ids, id)
-	}
-	if len(ids) > MaxGetCards {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyIDs)
+		if len(ids) > MaxGetCards {
+			return nil, connect.NewError(connect.CodeInvalidArgument, errTooManyIDs)
+		}
 	}
 	res := &mtgv1.GetCardsResponse{}
 	quality := s.quality.Load()

@@ -1,13 +1,17 @@
 // Package ratelimit bounds the public reads of the API per client
-// address (D-315). Behind Firebase Hosting and Cloud Run the remote
-// address is the proxy, so the limiter reads the client address from
-// X-Forwarded-For first, and every visitor gets a bucket of their own.
+// address (D-315). Behind Cloud Run the remote address is the proxy, so
+// the limiter reads the client address from X-Forwarded-For first, and
+// every visitor gets a bucket of their own. The caller writes the left
+// part of that header, and the Google front end appends the address that
+// it saw. So the key is the rightmost address that no proxy of Google
+// holds (REV-010).
 package ratelimit
 
 import (
 	"context"
 	"errors"
 	"net"
+	"net/netip"
 	"strings"
 	"sync"
 	"time"
@@ -66,12 +70,43 @@ func (l *Limiter) Allow(key string) bool {
 	return l.counts[key] <= l.limit
 }
 
-// ClientAddress reads the client behind a proxy: the first address of
-// X-Forwarded-For, else the host of the remote address, else the remote
-// address as it came.
+// proxyRanges are the source ranges of the Google front-end proxies, as
+// the firewall rules of Cloud Load Balancing name them. An address in one
+// of them is a proxy hop and never a client.
+var proxyRanges = []netip.Prefix{
+	netip.MustParsePrefix("35.191.0.0/16"),
+	netip.MustParsePrefix("130.211.0.0/22"),
+}
+
+// proxyHop says that an address belongs to a proxy and not to a client:
+// a Google front end, or a private, loopback, or link-local address.
+func proxyHop(a netip.Addr) bool {
+	a = a.Unmap()
+	if a.IsPrivate() || a.IsLoopback() || a.IsLinkLocalUnicast() || a.IsUnspecified() {
+		return true
+	}
+	for _, p := range proxyRanges {
+		if p.Contains(a) {
+			return true
+		}
+	}
+	return false
+}
+
+// ClientAddress reads the client behind a proxy. It walks X-Forwarded-For
+// from the right, past each proxy hop and each entry that is no address,
+// and answers the first client address. The caller can write any value to
+// the left of it, and that value never becomes the key (REV-010). With no
+// such address it answers the host of the remote address, else the
+// remote address as it came.
 func ClientAddress(forwardedFor, remoteAddr string) string {
-	if first, _, _ := strings.Cut(forwardedFor, ","); strings.TrimSpace(first) != "" {
-		return strings.TrimSpace(first)
+	hops := strings.Split(forwardedFor, ",")
+	for i := len(hops) - 1; i >= 0; i-- {
+		a, err := netip.ParseAddr(strings.TrimSpace(hops[i]))
+		if err != nil || proxyHop(a) {
+			continue
+		}
+		return a.Unmap().String()
 	}
 	if host, _, err := net.SplitHostPort(remoteAddr); err == nil {
 		return host

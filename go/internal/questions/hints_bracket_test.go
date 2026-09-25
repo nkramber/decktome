@@ -22,8 +22,10 @@ import (
 func signalIndex() (*cards.Index, func(ids ...string) float64) {
 	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
 	card := func(name, oracle string, rank int32) *mtgv1.Card {
+		// A white identity: the offer drops a colorless legend unless the
+		// user asked for a colorless deck (D-915).
 		return &mtgv1.Card{
-			Name: name, OracleId: oracle, EdhrecRank: rank,
+			Name: name, OracleId: oracle, EdhrecRank: rank, ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W},
 			TypeLine: "Legendary Creature — Human", CanBeCommander: true, Legalities: legal,
 		}
 	}

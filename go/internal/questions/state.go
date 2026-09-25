@@ -763,6 +763,13 @@ func (s *State) CloseStalled() (closed, waiting []string) {
 		s.markSkipped(key)
 		closed = append(closed, key)
 		delete(s.Ctx.Outstanding, key)
+		// A closed format takes the default of a declined one, or the
+		// build reads no format and ends blocked (REV-031).
+		if key == "format" && s.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+			f := s.DeclinedFormat()
+			s.Slots.Format = &mtgv1.Format{Id: f}
+			s.Ctx.Format = f
+		}
 	}
 	sort.Strings(closed)
 	sort.Strings(waiting)

@@ -312,6 +312,87 @@ describe("SessionPage", () => {
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
   });
 
+  // REV-051: only a turn that built a deck staled the cached chat, so a
+  // return after a question turn read the chat from before it.
+  it("reads the stored chat again after each turn", async () => {
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "Here is a plan.", questions: [], answers: [] }] },
+    });
+    chat.mockReturnValueOnce(events([ev("question", formatQuestion)]));
+    await renderAt("/session/s1");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "go on{enter}");
+    await screen.findByRole("group", { name: "Question: Which format?" });
+    await waitFor(() => expect(getSession.mock.calls.length).toBeGreaterThanOrEqual(2));
+  });
+
+  // REV-041: the conversation list is not a live region, so a screen
+  // reader heard no reply.
+  it("announces the reply of a turn in the status row", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("textDelta", "Here is a plan."), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByRole("group", { name: "Question: Which format?" });
+    const said = screen.getByTestId("reply-announcement");
+    await waitFor(() => expect(said).toHaveTextContent("Here is a plan. The agent asked a question."));
+    expect(said.closest('[role="status"]')).not.toBeNull();
+  });
+
+  // REV-047: a cold start or a short fault left the chat on an error with
+  // no retry.
+  it("retries a chat that did not load", async () => {
+    getSession.mockRejectedValueOnce(new ConnectError("card database not loaded yet", Code.Unavailable));
+    getSession.mockResolvedValueOnce({
+      session: { id: "s9", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "Here is a plan.", questions: [], answers: [] }] },
+    });
+    await renderAt("/session/s9");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Try again" }));
+    await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+    expect(await screen.findByText("Here is a plan.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
+  });
+
+  // REV-023: React sends the submit of a dialog portal up to the chat
+  // form around its trigger, so a thumbs down sent the answers too.
+  it("a thumbs down on an answered question sends no answers", async () => {
+    submitFeedback.mockReset();
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    await user.click(within(card).getByRole("button", { name: "Modern" }));
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
+    await user.click(within(card).getByRole("button", { name: "This missed" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByLabelText("The wording is unclear."));
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(1));
+    expect(chat).toHaveBeenCalledTimes(1);
+  });
+
+  it("a problem report sends no draft message", async () => {
+    submitFeedback.mockReset();
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1")]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByText("Session id: s1");
+    await user.type(await screen.findByLabelText("Your message"), "a draft");
+    await user.click(screen.getByRole("button", { name: "Report a problem" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Other"), "the page froze");
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(1));
+    expect(chat).toHaveBeenCalledTimes(1);
+  });
+
   it("a thrown send gives the answered questions and their drafts back", async () => {
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]))

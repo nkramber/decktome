@@ -1253,3 +1253,22 @@ func TestBuildBracketDropsMassLandDenialAndExtraTurns(t *testing.T) {
 		}
 	}
 }
+
+// TestAPairDropsTheCommanderOfAnExcludedPrecon is REV-057 of the review of
+// 2026-09-24. The pair path excluded the named commanders alone, so a
+// partner of an excluded precon still led a delegated pair.
+func TestAPairDropsTheCommanderOfAnExcludedPrecon(t *testing.T) {
+	b, _ := New()
+	R, U := mtgv1.Color_COLOR_R, mtgv1.Color_COLOR_U
+	idx := fixture(t, doctorCards())
+	pool, err := b.CommanderPool(idx, Request{Format: cmdr, Theme: "lifegain", Colors: []mtgv1.Color{U, R},
+		WantPair: true, ExcludeOracleIDs: []string{"tenth"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range pool {
+		if c.Card.OracleId == "tenth" || (c.Partner != nil && c.Partner.OracleId == "tenth") {
+			t.Errorf("an excluded precon commander is offered: %s", c.DisplayName())
+		}
+	}
+}

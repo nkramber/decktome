@@ -49,6 +49,38 @@ func TestLoadCardsStatsSkipsNoOracleID(t *testing.T) {
 	}
 }
 
+// TestLoadCardsDropsAMeldResult is REV-016 of the review of 2026-09-24.
+// The oracle file gave Brisela the layout "meld" and a Commander
+// legality, so a build could name it. Its two halves stay. The oracle
+// file names another printing in all_parts, so the match reads the name.
+func TestLoadCardsDropsAMeldResult(t *testing.T) {
+	parts := `"all_parts":[{"id":"x1","component":"meld_part","name":"Bruna, the Fading Light"},` +
+		`{"id":"x2","component":"meld_result","name":"Brisela, Voice of Nightmares"},` +
+		`{"id":"x3","component":"meld_part","name":"Gisela, the Broken Blade"}]`
+	in := strings.Join([]string{
+		`{"id":"p1","oracle_id":"o1","name":"Bruna, the Fading Light","layout":"meld",` + parts + `}`,
+		`{"id":"p2","oracle_id":"o2","name":"Brisela, Voice of Nightmares","layout":"meld",` + parts + `}`,
+		`{"id":"p3","oracle_id":"o3","name":"Gisela, the Broken Blade","layout":"meld",` + parts + `}`,
+		`{"id":"p4","oracle_id":"o4","name":"Brisela, Voice of Nightmares","layout":"normal",` + parts + `}`,
+	}, "\n") + "\n"
+	cardList, stats, err := LoadCardsStats(strings.NewReader(in), "x.jsonl")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, c := range cardList {
+		names = append(names, c.GetName()+"/"+c.GetLayout())
+	}
+	want := []string{"Bruna, the Fading Light/meld", "Gisela, the Broken Blade/meld", "Brisela, Voice of Nightmares/normal"}
+	if strings.Join(names, ";") != strings.Join(want, ";") || stats.Skipped != 1 {
+		t.Errorf("cards = %v, skipped %d, want %v and 1", names, stats.Skipped, want)
+	}
+	p, err := parsePrinting([]byte(`{"id":"p2","oracle_id":"o2","name":"Brisela, Voice of Nightmares","layout":"meld",` + parts + `}`))
+	if err != nil || p.Layout != MeldResult {
+		t.Errorf("printing layout = %q, err %v, want %q", p.Layout, err, MeldResult)
+	}
+}
+
 func TestIndexCollisionsAndPriceAsOf(t *testing.T) {
 	asOf := time.Date(2026, 8, 24, 9, 0, 0, 0, time.UTC)
 	cardList := []*mtgv1.Card{

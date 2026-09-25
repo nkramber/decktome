@@ -36,8 +36,9 @@ func Render(d *mtgv1.Deck, cards Lookup, f mtgv1.ExportFormat) (text, fileName s
 // ArenaText renders the deck one card per line: the count, the full
 // name, then "(SET) number" when a printing is known. The commander
 // comes first under "Commander", the main deck under "Deck", and the
-// sideboard under "Sideboard". An owned card names its owned printing,
-// else the default paper printing (D-307).
+// sideboard under "Sideboard". A companion comes under "Companion",
+// which the import reads back (REV-055). An owned card names its owned
+// printing, else the default paper printing (D-307).
 func ArenaText(d *mtgv1.Deck, cards Lookup) string {
 	var b strings.Builder
 	commanders := commanderSet(d)
@@ -47,6 +48,13 @@ func ArenaText(d *mtgv1.Deck, cards Lookup) string {
 			b.WriteString(arenaLine(e, cards))
 		}
 		b.WriteString("\n")
+	}
+	if id := d.GetCompanionOracleId(); id != "" {
+		if c, ok := cards.ByOracleID(id); ok && c != nil {
+			b.WriteString("Companion\n")
+			b.WriteString(arenaLine(&mtgv1.DeckCard{OracleId: id, Name: c.GetName(), Count: 1}, cards))
+			b.WriteString("\n")
+		}
 	}
 	b.WriteString("Deck\n")
 	for _, e := range d.GetCards() {

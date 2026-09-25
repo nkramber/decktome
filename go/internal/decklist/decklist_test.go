@@ -3,6 +3,7 @@ package decklist
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -218,12 +219,37 @@ func TestResolveRealExports(t *testing.T) {
 // TestParseRefusesALongList is P2-1 of the review of #220: a list over
 // maxLines fails whole, and no line past the cap goes missing (D-846).
 func TestParseRefusesALongList(t *testing.T) {
-	text := strings.Repeat("1 Plains\n", maxLines+1)
+	// Comment lines hold no copy, so the card cap stays out of the way.
+	text := strings.Repeat("// a note\n", maxLines+1)
 	l, err := Parse(strings.NewReader(text))
 	if !errors.Is(err, ErrTooManyLines) || l != nil {
 		t.Fatalf("list is nil = %v, err = %v, want ErrTooManyLines", l == nil, err)
 	}
-	if _, err := Parse(strings.NewReader(strings.Repeat("1 Plains\n", maxLines))); err != nil {
+	if _, err := Parse(strings.NewReader(strings.Repeat("// a note\n", maxLines))); err != nil {
 		t.Errorf("a list of %d lines failed: %v", maxLines, err)
+	}
+}
+
+func TestParseRefusesAListOfTooManyCards(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		text string
+		want error
+	}{
+		{"998 lines of 10000 Forest", "Commander\n1 Atraxa, Praetors' Voice\n\nDeck\n" + strings.Repeat("10000 Forest\n", 998), ErrTooManyCards},
+		{"one line past the cap", fmt.Sprintf("%d Forest\n", maxCards+1), ErrTooManyCards},
+		{"a sum past the cap", strings.Repeat("50 Forest\n", maxCards/50) + "1 Island\n", ErrTooManyCards},
+		{"the cap exactly", strings.Repeat("50 Forest\n", maxCards/50), nil},
+		{"a Commander deck", "Commander\n1 Atraxa, Praetors' Voice\n\nDeck\n99 Forest\n", nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			l, err := Parse(strings.NewReader(tc.text))
+			if !errors.Is(err, tc.want) {
+				t.Fatalf("err = %v, want %v", err, tc.want)
+			}
+			if tc.want != nil && l != nil {
+				t.Errorf("a refused list came back")
+			}
+		})
 	}
 }

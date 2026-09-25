@@ -41,6 +41,36 @@ type rawCard struct {
 	ImageUris     *rawImages        `json:"image_uris"`
 	Digital       bool              `json:"digital"`
 	Prices        map[string]string `json:"prices"`
+	AllParts      []rawPart         `json:"all_parts"`
+}
+
+// rawPart is one entry of all_parts: a card that this card makes or
+// joins.
+type rawPart struct {
+	Name      string `json:"name"`
+	Component string `json:"component"`
+}
+
+// MeldResult is the layout that the loader gives the result card of a
+// meld. Scryfall gives it the layout "meld", as each of its two halves.
+// No single physical card carries the result, so it can not go in a deck,
+// and the index drops it (REV-016).
+const MeldResult = "meld_result"
+
+// meldLayout answers the layout of a card: MeldResult when the card is
+// the meld_result part of its own meld, else the Scryfall layout. The
+// oracle file names another printing in all_parts, so the match reads
+// the name and not the id.
+func meldLayout(layout, name string, parts []rawPart) string {
+	if layout != "meld" {
+		return layout
+	}
+	for _, p := range parts {
+		if p.Component == "meld_result" && p.Name == name {
+			return MeldResult
+		}
+	}
+	return layout
 }
 
 type rawFace struct {
@@ -114,7 +144,7 @@ func parseCard(line []byte) (*mtgv1.Card, error) {
 		TypeLine:      r.TypeLine,
 		OracleText:    r.OracleText,
 		Keywords:      r.Keywords,
-		Layout:        r.Layout,
+		Layout:        meldLayout(r.Layout, r.Name, r.AllParts),
 		Power:         r.Power,
 		Toughness:     r.Toughness,
 		Loyalty:       r.Loyalty,
@@ -228,6 +258,7 @@ func parsePrinting(line []byte) (Printing, error) {
 		CardFaces       []struct {
 			OracleID string `json:"oracle_id"`
 		} `json:"card_faces"`
+		AllParts []rawPart `json:"all_parts"`
 	}
 	if err := json.Unmarshal(line, &r); err != nil {
 		return Printing{}, err
@@ -237,7 +268,7 @@ func parsePrinting(line []byte) (Printing, error) {
 		r.OracleID = r.CardFaces[0].OracleID
 	}
 	p := Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
-		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: r.Layout,
+		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: meldLayout(r.Layout, r.Name, r.AllParts),
 		Digital: r.Digital, ReleasedAt: r.ReleasedAt, SetName: r.SetName,
 		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto()}
 	p.PriceUSD, p.PriceFinish = usdPrice(r.Prices)

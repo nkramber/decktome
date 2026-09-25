@@ -92,9 +92,10 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 	}
 
 	// A list that does not read offers the report form on the page
-	// (D-887). A list over the line cap is a size limit and no fault.
+	// (D-887). A list over the line cap or the card cap is a size limit
+	// and no fault (REV-006).
 	list, err := decklist.Parse(strings.NewReader(msg.GetText()))
-	if errors.Is(err, decklist.ErrTooManyLines) {
+	if errors.Is(err, decklist.ErrTooManyLines) || errors.Is(err, decklist.ErrTooManyCards) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if err != nil {
@@ -108,6 +109,20 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoCardMatched)
 	}
 	out := &mtgv1.ImportDeckResponse{Unresolved: bad}
+	// A deck holds one companion. A second companion line goes in the
+	// report, and not in silence (REV-055).
+	companions := 0
+	for _, e := range entries {
+		if e.Section != decklist.Companion {
+			continue
+		}
+		if companions++; companions > 1 {
+			out.Unresolved = append(out.Unresolved, &mtgv1.UnresolvedRow{
+				Raw:    "a second companion: " + e.Card.GetName(),
+				Reason: mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW,
+			})
+		}
+	}
 
 	format, err := importFormat(msg.GetFormat(), list, entries)
 	if err != nil {
@@ -117,7 +132,9 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 		out.NeedsFormat = true
 		return connect.NewResponse(out), nil
 	}
-	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && !list.Marked {
+	// A Commander heading whose line matched no card leaves the list
+	// with no commander, so it asks as an unmarked list does (REV-054).
+	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && !slices.ContainsFunc(entries, func(e decklist.Entry) bool { return e.Section == decklist.Commander }) {
 		if len(msg.GetCommanderOracleIds()) == 0 {
 			out.CommanderOptions = leaders(entries)
 			if len(out.CommanderOptions) == 0 {
@@ -226,7 +243,7 @@ func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtg
 	}
 	sctx, cancel := detached(ctx, storeLimit)
 	defer cancel()
-	if err := s.deckStore.Put(sctx, uid, deck); err != nil {
+	if err := s.deckStore.Rewrite(sctx, uid, deck); err != nil {
 		return nil, storeError(err)
 	}
 	s.storeImportPower(sctx, uid, session.GetId(), deck, report)

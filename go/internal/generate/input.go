@@ -59,6 +59,13 @@ func (b *Builder) commanderText(req Request) string {
 }
 
 func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) string {
+	return b.repairInput(req, nil, misses, findings)
+}
+
+// repairInput is the input of a repair turn. The repair prompt names "the
+// deck you returned", and the call carries no history, so the input holds
+// that deck (REV-019). A first turn passes no deck.
+func (b *Builder) repairInput(req Request, returned *mtgv1.Deck, misses []Miss, findings []*mtgv1.Finding) string {
 	var s strings.Builder
 	fmt.Fprintf(&s, "## Limits\n\n%s\n", strings.TrimSpace(req.Limits))
 	fmt.Fprintf(&s, "\n## The deck the user asked for\n\n%s\n", strings.TrimSpace(req.Plan))
@@ -226,6 +233,19 @@ func (b *Builder) input(req Request, misses []Miss, findings []*mtgv1.Finding) s
 			}
 			if req.Precon != "" {
 				s.WriteString("\nThe precon decides the cards. Come as close to these limits as the swaps allow, and never rebuild the deck to reach one.\n")
+			}
+		}
+	}
+	if returned != nil && len(returned.GetCards()) > 0 {
+		s.WriteString("\n## The deck you returned\n\n")
+		s.WriteString("Keep every card that no finding names.\n\n")
+		for _, c := range returned.GetCards() {
+			fmt.Fprintf(&s, "- %d %s (%s)\n", c.GetCount(), c.GetName(), roleWord(c.GetRole()))
+		}
+		if side := returned.GetSideboard(); len(side) > 0 {
+			s.WriteString("\nSideboard:\n\n")
+			for _, c := range side {
+				fmt.Fprintf(&s, "- %d %s\n", c.GetCount(), c.GetName())
 			}
 		}
 	}

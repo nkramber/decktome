@@ -348,8 +348,10 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 	// An upgrade keeps the precon's own cards and its own spells, so its
 	// steps are the land trades alone (D-628, D-249).
 	upgrade := req.Precon != ""
+	// A card that the user locked never leaves either: the engine blocks
+	// a deck that lacks it (D-242, REV-018).
 	keep := map[string]bool{}
-	for _, id := range req.PreconOracleIDs {
+	for _, id := range append(append([]string(nil), req.PreconOracleIDs...), req.Locked...) {
 		keep[id] = true
 	}
 	tapped, untapped := b.landsOf(deck, req)
@@ -399,7 +401,7 @@ func (b *Builder) manaCandidates(req Request, deck *mtgv1.Deck, basics []*mtgv1.
 	// A basic land for the costliest spell, and the reverse. The land
 	// band bounds both: a step that leaves the band scores worse and the
 	// caller refuses it, so no rule here repeats the band.
-	dear, dearRole, dearMV := costliestSpell(deck, b.cards)
+	dear, dearRole, dearMV := costliestSpell(deck, b.cards, keep)
 	if dear != "" {
 		out = append(out, manaStep{add: basics[0], drop: dear, role: mtgv1.CardRole_CARD_ROLE_LAND,
 			owned: req.Pool.OwnedCount(basics[0].GetOracleId())})
@@ -876,14 +878,14 @@ func (b *Builder) basicsOf(deck *mtgv1.Deck) []*mtgv1.Card {
 	return out
 }
 
-// costliestSpell is the Oracle id of the deck's dearest nonland card. It
-// is the card a step trades for a land, because the curve band and the
-// mana bands both read it.
-func costliestSpell(deck *mtgv1.Deck, src cardSource) (id string, role mtgv1.CardRole, mv float64) {
+// costliestSpell is the Oracle id of the deck's dearest nonland card
+// outside keep. It is the card a step trades for a land, because the
+// curve band and the mana bands both read it.
+func costliestSpell(deck *mtgv1.Deck, src cardSource, keep map[string]bool) (id string, role mtgv1.CardRole, mv float64) {
 	mv = -1
 	for _, dc := range deck.GetCards() {
 		c, ok := src.ByOracleID(dc.GetOracleId())
-		if !ok || profile.IsLand(c) {
+		if !ok || profile.IsLand(c) || keep[dc.GetOracleId()] {
 			continue
 		}
 		if v := c.GetManaValue(); v > mv {

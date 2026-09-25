@@ -27,6 +27,9 @@ import (
 func (f *fakeDecks) ReadImport(_ context.Context, deck *mtgv1.Deck, owned map[string]int32, acc *llm.Accumulator) {
 	f.imports++
 	f.owned = owned
+	if f.during != nil {
+		f.during()
+	}
 	if deck.GetFormat().GetId() != mtgv1.FormatId_FORMAT_ID_COMMANDER {
 		deck.Power = nil
 		if f.step != mtgv1.SixtyStep_SIXTY_STEP_UNSPECIFIED {
@@ -183,6 +186,61 @@ func TestImportAsksForTheCommander(t *testing.T) {
 	}
 }
 
+// TestASecondCompanionIsReported is REV-055 of the review of 2026-09-24.
+// The import kept the first companion line and dropped the second one in
+// silence.
+func TestASecondCompanionIsReported(t *testing.T) {
+	client, _ := importServer(t, &fakeDecks{}, &fakeDeckStore{}, &fakeNoter{})
+	list := "Companion\n1 Ajani's Welcome\n1 Lightning Bolt\n\nDeck\n4 Lightning Bolt\n56 Plains\n"
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list, Format: mtgv1.FormatId_FORMAT_ID_MODERN})
+	found := false
+	for _, u := range res.GetUnresolved() {
+		found = found || strings.Contains(u.GetRaw(), "a second companion: Lightning Bolt")
+	}
+	if !found {
+		t.Errorf("unresolved = %v, want the second companion named", res.GetUnresolved())
+	}
+}
+
+// TestAMarkedCommanderThatMatchesNoCardAsks is REV-054 of the review of
+// 2026-09-24. A Commander heading set the mark before the resolution, so
+// a misspelled commander imported a deck with no commander and no
+// question.
+func TestAMarkedCommanderThatMatchesNoCardAsks(t *testing.T) {
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	client, _ := importServer(t, fd, ds, &fakeNoter{})
+	list := "Commander\n1 Karlov of the Ghost Counsel\n\nDeck\n1 Karlov of the Ghost Council\n1 Ajani's Welcome\n97 Plains\n"
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list})
+	if res.GetDeck() != nil || len(res.GetCommanderOptions()) != 1 || res.GetCommanderOptions()[0].GetOracleId() != "o-karlov" {
+		t.Fatalf("response = %v, want the commander question", res)
+	}
+	if len(ds.put) != 0 {
+		t.Errorf("a list with no commander stored a deck")
+	}
+}
+
+// TestImportTakesAPickedCommanderFormat is REV-027 of the review of
+// 2026-09-24. A Commander list of 99 cards reads no format of its own.
+// A pick of Commander asks for the leader, and the deck stores as
+// Commander.
+func TestImportTakesAPickedCommanderFormat(t *testing.T) {
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	client, _ := importServer(t, fd, ds, &fakeNoter{})
+	list := "1 Karlov of the Ghost Council\n1 Ajani's Welcome\n97 Plains\n"
+	if res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list}); !res.GetNeedsFormat() {
+		t.Fatalf("a list of 99 cards read a format of its own: %v", res)
+	}
+	commander := mtgv1.FormatId_FORMAT_ID_COMMANDER
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list, Format: commander})
+	if len(res.GetCommanderOptions()) != 1 || res.GetCommanderOptions()[0].GetOracleId() != "o-karlov" {
+		t.Fatalf("response = %v, want Karlov as the one leader", res)
+	}
+	res = importList(t, client, &mtgv1.ImportDeckRequest{Text: list, Format: commander, CommanderOracleIds: []string{"o-karlov"}})
+	if d := res.GetDeck(); d.GetFormat().GetId() != commander || d.GetCommanderOracleIds()[0] != "o-karlov" {
+		t.Errorf("deck format %v, commanders %v, want Commander led by Karlov", d.GetFormat().GetId(), d.GetCommanderOracleIds())
+	}
+}
+
 // TestImportAsksForTheFormat is D-857: a list that is not Commander asks
 // Standard, Modern, or neither, and neither stores the house format.
 func TestImportAsksForTheFormat(t *testing.T) {
@@ -243,6 +301,25 @@ func TestReadImportBracketAsksAgain(t *testing.T) {
 	}
 	if _, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: res.GetDeck().GetId()})); err != nil || fd.imports != 2 {
 		t.Errorf("a judged bracket was read again: reads = %d, err = %v", fd.imports, err)
+	}
+}
+
+// TestReadImportBracketLeavesADeletedDeckDeleted is REV-007 of the
+// review of 2026-09-24. The new read rewrites the stored deck. A deck
+// that the user deleted during the judge call stays deleted, so its share
+// link does not come back with it.
+func TestReadImportBracketLeavesADeletedDeckDeleted(t *testing.T) {
+	fd, ds := &fakeDecks{estimate: true}, &fakeDeckStore{}
+	client, _ := importServer(t, fd, ds, &fakeNoter{})
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: markedList})
+	fd.estimate = false
+	fd.during = func() { ds.put = nil }
+	_, err := client.ReadImportBracket(context.Background(), connect.NewRequest(&mtgv1.ReadImportBracketRequest{DeckId: res.GetDeck().GetId()}))
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Errorf("err = %v, want NotFound", err)
+	}
+	if len(ds.put) != 0 {
+		t.Errorf("the deleted deck came back: %d decks", len(ds.put))
 	}
 }
 
@@ -336,13 +413,31 @@ func TestReadImportBracketKeepsConcurrentUsage(t *testing.T) {
 func TestImportRefusesALongList(t *testing.T) {
 	fd, ds := &fakeDecks{}, &fakeDeckStore{}
 	client, store := importServer(t, fd, ds, &fakeNoter{})
-	text := "1 Karlov of the Ghost Council\n" + strings.Repeat("1 Plains\n", 1000)
+	text := "1 Karlov of the Ghost Council\n" + strings.Repeat("// a note\n", 1000)
 	_, err := client.ImportDeck(context.Background(), connect.NewRequest(&mtgv1.ImportDeckRequest{Text: text}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("err = %v, want InvalidArgument", err)
 	}
 	if len(ds.put) != 0 || len(store.sessions) != 0 || fd.imports != 0 {
 		t.Errorf("a refused list stored %d decks and %d sessions", len(ds.put), len(store.sessions))
+	}
+}
+
+// TestImportRefusesAListOfTooManyCards is REV-006 of the review of
+// 2026-09-24. About 13 KB of text asked the profile for ten million
+// copies. The list fails before the read of the import. With its four
+// heading lines, a list of 998 card lines meets the line cap, so this
+// list holds 990.
+func TestImportRefusesAListOfTooManyCards(t *testing.T) {
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	client, store := importServer(t, fd, ds, &fakeNoter{})
+	text := "Commander\n1 Karlov of the Ghost Council\n\nDeck\n" + strings.Repeat("10000 Forest\n", 990)
+	_, err := client.ImportDeck(context.Background(), connect.NewRequest(&mtgv1.ImportDeckRequest{Text: text}))
+	if connect.CodeOf(err) != connect.CodeInvalidArgument || importfault.IsUnreadable(err) {
+		t.Fatalf("err = %v, want InvalidArgument and no report form", err)
+	}
+	if len(ds.put) != 0 || len(store.sessions) != 0 || fd.imports != 0 {
+		t.Errorf("a refused list stored %d decks and %d sessions, and read %d imports", len(ds.put), len(store.sessions), fd.imports)
 	}
 }
 
@@ -356,7 +451,8 @@ func TestImportMarksAListThatDoesNotRead(t *testing.T) {
 	}{
 		{"no card line", "hello\nworld\n", true},
 		{"no known card", "1 Nosuch Cardname\n", false},
-		{"over the line cap", strings.Repeat("1 Plains\n", 1001), false},
+		{"over the line cap", strings.Repeat("// a note\n", 1001), false},
+		{"over the card cap", strings.Repeat("1 Plains\n", 251), false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

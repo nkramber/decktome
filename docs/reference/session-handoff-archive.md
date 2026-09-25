@@ -12,6 +12,44 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-24f
+
+**Pull request #227 corrects the five P1 findings of the repository review of 2026-09-24 (PR-77, D-901 to D-904).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: the next finding of the review report, REV-006.
+
+**The base.** `main` is `dfdf995`, from #226.
+
+**The change.** The owner put all five P1 findings in one pull request (D-901). Each has a regression test that fails on the base.
+
+- REV-001: the feedback review reads the threads of `gitar-bot` and the owner alone, and it replies with `-f` (D-902).
+- REV-002: a deck import checks the spend cap for each format, not for Commander alone (D-421).
+- REV-003: with the allowlist on, the API refuses an invited email with no proof (D-903). The web app sends the link, and it offers a resend and a password reset.
+- REV-003: `make mark-verified` lists the accounts with no proof, and marks the accounts that the owner names.
+- REV-004: an option answer maps through the options the reader saw. A declined format after a 60-card request takes Modern (D-904).
+- REV-005: an import session names its commander, so a revision keeps it. A changed commander shows in the note (D-851).
+- No paid target ran.
+
+**The checks.** `make verify` passed on the tree of the first commit, exit 0. Each new regression test failed on the base and passes here.
+
+**The review.** Codex reviewed effective head `9679454b8854ff74b236518ff740e582ac80cf2a`. Ready for owner merge. No open findings. The first record read Blocked on the account step of D-903, and `docs/reviews/pr-227-response.md` answers it. Gitar approved `5b43645` and `9679454`, with no thread. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy, one sign-up with a new invited address reads the proof screen.
+- Next step 3 (D-750). M-19, the free replay of the owned-only shortlist (F-174), comes after it.
+- One deployed bracket 5 session reads the commander rates now.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-24d: the notice of each verdict, PR-75
+
+**The owner started PR-75 from the transitional prompt of #224.** Both deploys of `930d1a6` ended SUCCESS, and the owner filed an import report that `make feedback-list` read. The owner answered the five questions of D-890 in three batches (D-892 to D-897). The owner asked for the email in the notice, and the session quoted D-890 against it. The owner chose the email of the token (D-895). The session created the two secrets and mounted them with the approval of the owner. The owner added a new thank-you text to the report form (D-898).
+
 ## The resume section of 2026-09-24e
 
 **Pull request #226 ends the Gitar pause, and sets a push wait of one minute (PR-76, D-899, D-900).**
