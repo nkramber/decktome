@@ -25,7 +25,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar found one issue on `47fbf15`: the checks after a deploy needed the exact commit. `64a4891` fixes it, and Gitar approved `64a4891`. Codex found P1-1 on `64a4891`: an older build can deploy over a newer one. The owner kept the window of D-943, and each such build now fails (D-945). `docs/reviews/pr-231-response.md` holds the answer. Pending the repeat review.
+**The review.** Gitar approved the current effective head, `da75656`. Codex reads Ready for owner merge at `da75656`. P1-1 is an accepted risk under D-945. It is the only finding, and it is not open. `make verify` passed. No paid target ran, and no deploy ran.
 
 **What waits on the owner.**
 
