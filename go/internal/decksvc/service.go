@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 	"google.golang.org/grpc/codes"
@@ -89,7 +90,9 @@ func WithCollections(src CollectionSource) Option {
 // deck of the chat with it (D-456).
 type SessionSource interface {
 	Get(ctx context.Context, uid, id string) (*mtgv1.Session, error)
-	Delete(ctx context.Context, uid, id string) error
+	// Delete returns sessions.ErrLeased while a build of the chat holds
+	// its lease at now, and then removes nothing (D-922).
+	Delete(ctx context.Context, uid, id string, now time.Time) error
 }
 
 // WithSessions wires the chat store for the delete.
@@ -365,6 +368,12 @@ func (s *Server) DeleteDeck(ctx context.Context, req *connect.Request[mtgv1.Dele
 	ids := []string{id}
 	if s.sessions != nil && deck.GetSessionId() != "" {
 		siblings, err := s.deleteChat(ctx, uid, deck.GetSessionId())
+		// A build of the chat runs, so the deck and the chat stay until it
+		// ends (D-922).
+		if errors.Is(err, sessions.ErrLeased) {
+			return nil, connect.NewError(connect.CodeAborted,
+				errors.New("a build of this chat is in progress, delete the deck again when it ends"))
+		}
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -398,7 +407,7 @@ func (s *Server) deleteChat(ctx context.Context, uid, sessionID string) ([]strin
 	if err != nil {
 		return nil, err
 	}
-	if err := s.sessions.Delete(ctx, uid, sessionID); err != nil && !errors.Is(err, sessions.ErrNotFound) {
+	if err := s.sessions.Delete(ctx, uid, sessionID, time.Now()); err != nil && !errors.Is(err, sessions.ErrNotFound) {
 		return nil, err
 	}
 	return session.GetDeckIds(), nil

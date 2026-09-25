@@ -58,8 +58,10 @@ type Store interface {
 	List(ctx context.Context, uid string) ([]*mtgv1.SessionSummary, error)
 	// Rename writes the name of one session and returns its summary.
 	Rename(ctx context.Context, uid, id, name string) (*mtgv1.SessionSummary, error)
-	// Delete removes a session and its private state.
-	Delete(ctx context.Context, uid, id string) error
+	// Delete removes a session and its private state. It returns
+	// sessions.ErrLeased while a build holds a lease that has not ended at
+	// now, and then removes nothing (D-922).
+	Delete(ctx context.Context, uid, id string, now time.Time) error
 	// Lease gives the build lease of a session to token until the given
 	// time. It returns sessions.ErrLeased while another token holds a
 	// lease that has not ended at now (D-922).

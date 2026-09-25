@@ -369,7 +369,7 @@ func TestEmulatorListRenameDelete(t *testing.T) {
 		t.Errorf("a rename of a missing session gave %v, want ErrNotFound", err)
 	}
 
-	if err := repo.Delete(t.Context(), uid, "s-old"); err != nil {
+	if err := repo.Delete(t.Context(), uid, "s-old", time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := repo.Get(t.Context(), uid, "s-old"); !isNotFound(err) {
@@ -378,7 +378,7 @@ func TestEmulatorListRenameDelete(t *testing.T) {
 	if _, _, _, err := repo.GetState(t.Context(), uid, "s-old"); err == nil {
 		t.Error("after a delete, the private state must be gone")
 	}
-	if err := repo.Delete(t.Context(), uid, "s-old"); !isNotFound(err) {
+	if err := repo.Delete(t.Context(), uid, "s-old", time.Now()); !isNotFound(err) {
 		t.Errorf("a second delete gave %v, want ErrNotFound", err)
 	}
 	list, err = repo.List(t.Context(), uid)
@@ -434,7 +434,15 @@ func TestEmulatorBuildLease(t *testing.T) {
 	if err := repo.Put(ctx, uid, &mtgv1.Session{Id: "s1"}, sampleState(), 1); err != nil {
 		t.Errorf("a Put after a lease gave %v", err)
 	}
-	if err := repo.Delete(ctx, uid, "s1"); err != nil {
+	// The delete reads the lease in its own transaction, so a lease that
+	// a build took after any earlier read still stops it (Codex, #229).
+	if err := repo.Delete(ctx, uid, "s1", later); !errors.Is(err, ErrLeased) {
+		t.Errorf("a delete under a live lease gave %v, want ErrLeased", err)
+	}
+	if _, err := repo.Get(ctx, uid, "s1"); err != nil {
+		t.Errorf("the refused delete removed the session: %v", err)
+	}
+	if err := repo.Delete(ctx, uid, "s1", later.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if leased, _ := repo.Leased(ctx, uid, "s1", later); leased {

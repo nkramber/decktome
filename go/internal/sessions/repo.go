@@ -398,13 +398,23 @@ func (r *Repo) Rename(ctx context.Context, uid, id, name string) (*mtgv1.Session
 // Delete removes a session and its private state for good (roadmap
 // PR-19). The decks it built stay: a deck carries its own id, and the
 // deck library reads it without the session.
-func (r *Repo) Delete(ctx context.Context, uid, id string) error {
+func (r *Repo) Delete(ctx context.Context, uid, id string, now time.Time) error {
 	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
 		if _, err := tx.Get(r.doc(uid, id)); err != nil {
 			if status.Code(err) == codes.NotFound {
 				return fmt.Errorf("%w: %s", ErrNotFound, id)
 			}
 			return err
+		}
+		// The lease check sits in the transaction of the delete, so a
+		// build that took the lease after any earlier read still stops it
+		// (D-922).
+		l, err := readLease(tx, r.leaseDoc(uid, id))
+		if err != nil {
+			return err
+		}
+		if now.Before(l.Until) {
+			return fmt.Errorf("%w: %s", ErrLeased, id)
 		}
 		if err := tx.Delete(r.doc(uid, id)); err != nil {
 			return err

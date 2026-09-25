@@ -50,6 +50,9 @@ type fakeStore struct {
 	leases map[string]fakeLease
 	// leaseErr fails each read of a lease.
 	leaseErr error
+	// beforeDelete runs before each Delete, so a test can slip a lease in
+	// between the reads of DeleteSession and its delete.
+	beforeDelete func()
 }
 
 type fakeLease struct {
@@ -1161,11 +1164,19 @@ func (f *fakeStore) Rename(_ context.Context, _, id, name string) (*mtgv1.Sessio
 	return sessions.Summarize(s), nil
 }
 
-func (f *fakeStore) Delete(_ context.Context, _, id string) error {
+func (f *fakeStore) Delete(_ context.Context, _, id string, now time.Time) error {
+	if f.beforeDelete != nil {
+		f.beforeDelete()
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if _, ok := f.sessions[id]; !ok {
 		return sessions.ErrNotFound
+	}
+	// The lease check and the delete are one step, as the transaction of
+	// the repo makes them (D-922).
+	if l, ok := f.leases[id]; ok && now.Before(l.until) {
+		return sessions.ErrLeased
 	}
 	delete(f.sessions, id)
 	delete(f.states, id)
@@ -1221,5 +1232,31 @@ func TestTheLeaseOutlivesTheClient(t *testing.T) {
 	release()
 	if leased, _ := store.Leased(context.Background(), "u1", "sess-1", time.Unix(1000, 0).UTC()); leased {
 		t.Error("the release after the client left kept the lease")
+	}
+}
+
+// TestADeleteRefusesALeaseTakenAfterItsRead is D-922 (Codex, #229). A
+// build on another instance takes the lease after DeleteSession read the
+// store, and the delete must still leave the session and the lease.
+func TestADeleteRefusesALeaseTakenAfterItsRead(t *testing.T) {
+	store := newFakeStore()
+	client, _ := testServer(t, store, firstTurn(t)...)
+	id := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"}).started
+	now := time.Unix(1000, 0).UTC()
+	store.beforeDelete = func() {
+		store.beforeDelete = nil
+		if err := store.Lease(context.Background(), "u1", id, "other", now, now.Add(time.Minute)); err != nil {
+			t.Error(err)
+		}
+	}
+	_, err := client.DeleteSession(context.Background(), connect.NewRequest(&mtgv1.DeleteSessionRequest{SessionId: id}))
+	if connect.CodeOf(err) != connect.CodeAborted {
+		t.Errorf("a delete under a new lease gave %v, want Aborted", err)
+	}
+	if _, err := store.Get(context.Background(), "u1", id); err != nil {
+		t.Errorf("the session is gone: %v", err)
+	}
+	if leased, _ := store.Leased(context.Background(), "u1", id, now); !leased {
+		t.Error("the lease is gone")
 	}
 }

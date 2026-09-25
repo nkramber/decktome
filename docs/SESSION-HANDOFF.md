@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. `TestEmulatorListRenameDelete` fails on a reused emulator on the base too: it never deletes one of its sessions.
 
-**The review.** Gitar found one issue on `32c6267`: the lease ran on the client context, so a client that left lost the paid turn. The next commit takes it detached, and `TestTheLeaseOutlivesTheClient` failed before it. Gitar reviewed `4d51d4c`. The Codex review found open P2-1: a delete can race with lease acquisition. Verdict: Changes required. See `docs/reviews/pr-229.md`.
+**The review.** Gitar found one issue on `32c6267`: the lease ran on the client context, so a client that left lost the paid turn. The next commit takes it detached, and `TestTheLeaseOutlivesTheClient` failed before it. Gitar approved `4d51d4c`. The Codex review of `4d51d4c` found P2-1: a delete read the lease outside its transaction. The next commit reads it inside, for the chat delete and the deck delete. `docs/reviews/pr-229-response.md` holds the answer. Pending the Gitar review and the repeat Codex review.
 
 **What waits on the owner.**
 

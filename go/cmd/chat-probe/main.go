@@ -265,7 +265,7 @@ func (m *memStore) Rename(_ context.Context, _, id, name string) (*mtgv1.Session
 	return sessions.Summarize(s), nil
 }
 
-func (m *memStore) Delete(_ context.Context, _, id string) error {
+func (m *memStore) Delete(_ context.Context, _, id string, _ time.Time) error {
 	if _, ok := m.sess[id]; !ok {
 		return sessions.ErrNotFound
 	}
