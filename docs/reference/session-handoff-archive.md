@@ -12,6 +12,45 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-25f
+
+**Pull request #233, PR-82, fixes F-175: the web build runs on 2 CPUs, so the two builds of one merge run together (D-948).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: read the next deploy of a merge that changes the API and the web. Then end the review report of D-901.
+
+**The base.** `main` is `8d4b017`, from #232.
+
+**The cause.** The regional default pool of `us-central1` runs 10 build CPUs at a time, read 2026-09-25 in the Service Usage API. Each build asked for 8, so the second build of each merge waited in the queue. Every pair of builds since 2026-09-24 started one after the other. For b65ca6a, the API build started at 20:18:20 UTC, one minute after the web guard failed.
+
+**The change.**
+
+- The web build uses `E2_STANDARD_2`, and the API build keeps `E2_HIGHCPU_8`. The sum is 10 CPUs (D-948).
+- `BuildMachinesTest` of `docs/tools/test_deploy_order.py` fails when the two build files ask for more than 10 CPUs. It failed on the base with 16.
+- The text "Cloud Build has no queue" was wrong. The build files, the guard script, and `docs/deploy-and-rollback.md` now say that the two builds run apart.
+- This merge starts no build, because no trigger reads `cloudbuild/` or `docs/tools/`. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approves head `c1ca25b`. The review record reads Ready for owner merge. No finding stays open. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-25d: two findings of the review, PR-81
+
+**The owner asked for the next corrections of the review report, with no rule of one concern.** The owner then added REV-069 and approved its three remote writes. The owner chose guards in the two build files for REV-072, because one pipeline runs `pnpm install` as an account with `roles/run.admin` again (D-943). The API image carried no commit, so `/readyz` read `dev` in production. On the deck page, a second read of the chat ended the build flag first. So the watch holds until its own read (D-942).
+
 ## The resume section of 2026-09-25e
 
 **Pull request #232, M-20, measures five sessions on the new files, and adds the checkpoint rule (D-946, D-947).**

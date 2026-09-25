@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-25 correction pass 231 (M-19, F-174, D-949 to D-951): a free replay found no better owned land for the deck of the thumbs down. The balance phase now gives spare sources to the color with the least margin. Changes: F-174, PR-39, M-19, sequencing step 75.
+
 2026-09-25 correction pass 230 (PR-82, F-175, D-948): the default pool of Cloud Build runs 10 build CPUs at a time, and each build asked for 8. So the web build now takes 2, and the two builds of one merge run together. Changes: F-175, PR-82, sequencing step 74.
 
 2026-09-25 correction pass 229 (F-155, F-175, M-20, D-946, D-947): M-20 measured five sessions on the files of D-749. The owner adopted the checkpoint rule at 300K tokens, and a hook tells the session. The deploy of b65ca6a found F-175. Changes: F-155, F-175, M-19, M-20, sequencing step 73.
@@ -524,7 +526,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-171 | **The backfill of the user record counts no revision.** `cmd/users-backfill` reads the flat field `revised_from_deck_id`, and no stored deck held it. So a backfill counts each revision as a first build. The one backfill of 2026-09-09 read no deck, so no record holds a wrong count. Found 2026-09-23. | ✅ closes with PR-70 (D-861). A stored deck holds the flat field, and the backfill reads the packed deck of an older document. |
 | F-172 | **A new read of an imported deck leaves the power of its session behind.** `ReadImportBracket` stores the new power on the deck alone. A revise turn reads the power slot of the session, so it reads the floor of a Commander estimate, or no step of a 60-card import. Found 2026-09-23 in the work of PR-71. | ✅ closes with PR-71 (D-870). A new read writes the power into the power slot of the session. |
 | F-173 | **A confirm run with no failing case still starts the fixer.** `case-check` exits 1 when one case or more does not read fail, and `scripts/feedback-loop.sh` sent that gate to the fixer. So the live cycle of PR-73 ran the fixer and a measure run on case 16, which passed before the fix. The cycle ended with 0, and its evidence read that every case passes. The measure run cost $0.0726 for nothing. Found 2026-09-24 in the live cycle. | ✅ closes with PR-73 (D-880). `case-check` exits 3 when no case fails before the fix, and the cycle stops before the fixer with 1. |
-| F-174 | **An owned-only Commander deck at bracket 4 holds 24 basic lands, and a bracket case can not show the fault.** The thumbs down of 2026-09-24 names Island with the reason `wrong_power`. The deck of Hope Estheim holds 14 Island, 10 Plains, and 9 fixing lands, at the fixing floor of 9 (D-799). The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. A bracket case builds with any card, and its two builds held 20 fixing lands. So the triage wrote a case that passed before the fix. Found 2026-09-24 in PR-73. | 🔧 planned. M-19 replays the owned-only shortlist for free, before any fix (D-881). |
+| F-174 | **An owned-only Commander deck at bracket 4 holds 24 basic lands, and a bracket case can not show the fault.** The thumbs down of 2026-09-24 names Island with the reason `wrong_power`. The deck of Hope Estheim holds 14 Island, 10 Plains, and 9 fixing lands, at the fixing floor of 9 (D-799). The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. A bracket case builds with any card, and its two builds held 20 fixing lands. So the triage wrote a case that passed before the fix. Found 2026-09-24 in PR-73. | ✅ fixed by M-19 as #234. The replay found no better owned land, and the fault was the split of the basics. The balance phase now gives spare sources to the color with the least margin (D-950, D-951). |
 | F-175 | **The web guard of a merge that changes the API can wait for an API build that can not start.** The builds of this project start one at a time: in each of the four merges of 2026-09-25 before b65ca6a, the second build started after the first ended. The guard of D-943 assumes that both run together. For b65ca6a the web build started first, and its guard polled 100 times for the API. It failed at its limit of 1,500 seconds at 20:17 UTC. The API build then started, and it ended SUCCESS at 20:22:57 UTC. A second run of `deploy-web` released the web at 20:26 UTC (D-947). So each merge that changes the API loses its web deploy when the web build starts first. The guard did read the change with git, so the Cloud SDK image holds git. Found 2026-09-25 in M-20. | ✅ PR-82, #233 (D-948). The regional default pool runs 10 build CPUs at a time, and each build asked for 8. The web build now takes 2. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -1398,7 +1400,7 @@ Gate: the gate of M-10 holds on the stored model, and `make verify` passes.
 **PR-39: The basic lands follow the need of each color (F-102, F-103, D-659 to D-661).** ✅ merged 2026-09-10 (#135).
 The model writes the basic counts, and the mana pass moved them only while a band was off (F-102). Run 18 ran four of 16 multicolor decks opposite to their pips, inside their bands. The owner chose the basics before the detector (D-660), because a reader feels a mana base in every game.
 
-**The pass balances the basics after the bands hold.** It trades one basic land for another while each color's sources over its need rise, the worst color first. The pass caps each ratio at one, so a deck whose colors all meet their need keeps the split the model chose. The pass keeps a trade only when the band score does not rise. The trade keeps the land count, every nonbasic land, and every spell. A color never gives up its last basic, and twelve trades bound the phase.
+**The pass balances the basics after the bands hold.** It trades one basic land for another while each color's sources over its need rise, the worst color first. The pass caps each ratio at one, so a deck whose colors all meet their need kept the split the model chose. Since M-19, a tie of the capped ratios reads the ratios with no cap (D-951). The pass keeps a trade only when the band score does not rise. The trade keeps the land count, every nonbasic land, and every spell. A color never gives up its last basic, and twelve trades bound the phase.
 
 **The source count came first** (D-661, F-103). The first measurement of the balance cut two Forests from deck 22. Its green read 20 of 20 sources, with five green mana creatures in the count. A nonland card counts as a source now only through a tap mana ability whose cost sacrifices nothing. It never counts for a color its own cost needs. So Elvish Mystic credits no green, a Signet credits both of its colors, and a Treasure maker and a sacrifice altar credit nothing.
 
@@ -2341,15 +2343,25 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a merge starts one build for the site and one for the server. The two builds did not fit together, so the site build waited for a server build that did not start. Now the site build uses a smaller machine, and the two builds fit together.
 
-**M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waited for the measurement of five sessions (D-750, D-890), and M-20 made it.
-The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
+**M-19: The owned-only shortlist of the thumbs down of 2026-09-24, and the balance of the basics (F-174, D-881, D-950, D-951).** ✅ merged as #234. The mark comes before any review (D-822).
+The deck of Hope Estheim holds 24 basic lands at bracket 4. D-881 counted 30 owned lands that make white and blue mana, and the deck holds none of them. A free replay looked for the step that left them out.
 
-- **The input.** The session and the deck of the snapshot (D-635), and the local collection export (D-756). The export stays out of git.
-- **The method.** A scratch build test prints the lands of the owned-only shortlist and the land places of `capLands` (F-168), the method of M-17. It calls no model.
-- **A lead.** The fixing floor of two colors reads 11 at bracket 3 and 9 at bracket 4 (D-799).
+- **The input.** The session and the deck of the snapshot (D-635), and the ManaBox export of 2026-09-02. No local export matches the deployed collection. The exports stay out of git (D-756).
+- **The replay.** The shortlist holds 28 of the 30 lands. The deck holds all 6 owned lands of classes 0 to 2, so `swapBasics` has nothing to add. The deck meets its fixing floor of 9 (D-799).
+- **The count of D-881.** The 30 lands hold 19 lands that make colored mana on a condition, and 10 tapped lands. None is an untapped dual (D-950).
+- **The fault.** Blue holds 29 sources for a need of 19, and white holds 25 for 23. The balance phase read capped ratios alone, so it kept the split of the model.
+- **The fix.** When the capped ratios tie, `balanceBasics` keeps a trade that raises the ratios with no cap. The deck then holds 15 Plains and 9 Island (D-951).
+- **The test.** `TestTheBalancePhaseGivesSpareSourcesToTheLeastMargin` fails on the base and passes on this branch.
+- **The lane.** `make manapass-check` over deck gate run 29 moves 11 of 25 decks. No deck gains an off-band feature. `docs/reference/m19-owned-shortlist-2026-09-25.md` holds the numbers.
 
-Gate: the replay names the step that dropped the owned lands, the shortlist or the model. The owner reads it before any fix.
-> *In plain English:* the reader owned good lands for the deck, and the deck used basic lands in their place. A free replay finds out which step left the good lands out.
+Gate:
+
+- The replay names the step that dropped the owned lands. Met: no step dropped a better land, and the owner read the replay before the fix.
+- The new test fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* the reader owned no better lands than the deck used. The real fault was the split: too many Islands for the blue cards. Now the app moves spare basics to the color that needs them more.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -2722,6 +2734,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 72. **PR-81** REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-945). No paid target ran.
 73. **M-20** five sessions on the new files, and the checkpoint rule (D-750, D-946). No paid target ran.
 74. **PR-82** the two builds of one merge run together (F-175, D-948). No paid target ran.
+75. **M-19** the owned-only shortlist of the thumbs down, and the balance of the basics (F-174, D-949 to D-951). No paid target ran.
 
 ## 9. Open questions
 

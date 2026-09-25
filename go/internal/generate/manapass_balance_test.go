@@ -89,14 +89,30 @@ func TestTheBalancePhaseMovesBasicsToTheColorThatFallsShort(t *testing.T) {
 	}
 }
 
-// TestTheBalancePhaseKeepsASplitThatMeetsEveryNeed is the cap of F-102. A
-// deck whose colors all meet their need keeps the split the model chose.
-func TestTheBalancePhaseKeepsASplitThatMeetsEveryNeed(t *testing.T) {
+// TestTheBalancePhaseGivesSpareSourcesToTheLeastMargin is F-174 (D-951).
+// Both colors of 18 Plains and 18 Swamps meet their need, and white has
+// two sources to spare. The pass trades one Plains for a Swamp, and a
+// second trade would leave white with the least margin, so it stops.
+func TestTheBalancePhaseGivesSpareSourcesToTheLeastMargin(t *testing.T) {
 	b, deck, req := balanceDeck(t, 18, 18)
-	if steps := b.balanceBasics(req, deck, b.basicsOf(deck), b.manaScore(deck)); steps != 0 {
-		t.Errorf("the balance phase made %d trades on a deck whose colors meet their need", steps)
+	if steps := b.balanceBasics(req, deck, b.basicsOf(deck), b.manaScore(deck)); steps != 1 {
+		t.Errorf("the balance phase made %d trades, want 1", steps)
 	}
-	if countOf(deck, "o-plains") != 18 || countOf(deck, "o-swamp") != 18 {
-		t.Error("the balance phase moved a basic of a split that meets every need")
+	if countOf(deck, "o-plains") != 17 || countOf(deck, "o-swamp") != 19 {
+		t.Errorf("the deck holds %d Plains and %d Swamps, want 17 and 19",
+			countOf(deck, "o-plains"), countOf(deck, "o-swamp"))
+	}
+}
+
+// TestTheBalancePhaseKeepsASplitOfEvenMargins is the stop of F-174. With
+// 17 Plains and 19 Swamps each trade lowers the least margin, so the
+// deck keeps the split the model chose.
+func TestTheBalancePhaseKeepsASplitOfEvenMargins(t *testing.T) {
+	b, deck, req := balanceDeck(t, 17, 19)
+	if steps := b.balanceBasics(req, deck, b.basicsOf(deck), b.manaScore(deck)); steps != 0 {
+		t.Errorf("the balance phase made %d trades on a split of even margins", steps)
+	}
+	if countOf(deck, "o-plains") != 17 || countOf(deck, "o-swamp") != 19 {
+		t.Error("the balance phase moved a basic of a split of even margins")
 	}
 }
