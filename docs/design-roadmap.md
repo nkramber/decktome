@@ -2200,7 +2200,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* for a day the first review bot wrote no reviews, so the owner let changes merge without it. The bot works again, so each change waits for it again. A later pause needs one file and a few notes.
 
-**PR-77: The five P1 findings of the repository review of 2026-09-24 (D-901 to D-904).** ✅ merged as #PRNUM. The mark comes before any review (D-822).
+**PR-77: The five P1 findings of the repository review of 2026-09-24 (D-901 to D-904).** ✅ merged as #227. The mark comes before any review (D-822).
 The review report sits in the local folder of each session, outside git. The owner put all five P1 findings in one pull request (D-901). Each finding has a regression test that fails before its correction.
 
 - **REV-001, the fix cycle.** The review step reads the threads of `gitar-bot` and the owner alone, and it posts each reply as raw text (D-902).
