@@ -2289,7 +2289,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the fourth batch of review findings. A wrong setting can no longer open the live app or turn off its spend limit, and one user can no longer take every seat. The owner can close an account and keep its data. A bad day of source data no longer changes the deck grades, and a few pages read more clearly.
 
-**PR-81: REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-944).** 🔧 planned.
+**PR-81: REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-944).** ✅ merged as #231. The mark comes before any review (D-822).
 The owner asked for as many corrections as one session can finish (D-944). Each code finding has a regression test that fails before its correction.
 
 - **REV-046, the chat during a build.** `GetSession` reports a build that runs. After a Stop or a reload, the chat says that the build continues, and it reads the chat until the build ends (D-942).
