@@ -27,7 +27,7 @@ The ruleset enforces conditions 1 and 2, and the thread part of condition 3. A t
 
 The nine jobs of `verify` are `skip`, `go`, `vuln`, `emulator`, `web`, `proto`, `shell`, `eval`, and `docker`. The ruleset omits `verify:changes`, because that job runs on a dispatch alone (D-832). A test of `docs/tools/test_ruleset_check.py` compares the list with the job names of `.github/workflows/verify.yml`. So a new job fails `make lint` until the ruleset file names it.
 
-The check policy is not strict. A pull request does not need the newest `main` before it merges. The second ruleset, `naub`, refuses a deletion and a force push of `main`, and this file does not hold it.
+The check policy is strict (D-932). A pull request needs the newest `main` before it merges, so each required check measures the tree that merges. A branch behind `main` takes an update and a new run of each check, and the auto-merge waits for that update. The second ruleset, `naub`, refuses a deletion and a force push of `main`, and this file does not hold it.
 
 ## The merge settings
 
