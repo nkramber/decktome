@@ -2,7 +2,7 @@ import type { Card } from "@mtg/api-client/mtg/v1/card_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { describe, expect, it, vi } from "vitest";
 
-import { buyRows, downloadText, scryfallCardUrl } from "./buy-list";
+import { buyRows, downloadText, revokeDelayMs, scryfallCardUrl } from "./buy-list";
 
 const byId = new Map<string, Card>([
   ["o-sw", { oracleId: "o-sw", name: "Soul Warden", defaultPrinting: { setCode: "MM3", collectorNumber: "24" } } as Card],
@@ -79,11 +79,16 @@ describe("downloadText", () => {
     const revoke = vi.fn();
     vi.stubGlobal("URL", { ...URL, createObjectURL: create, revokeObjectURL: revoke });
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    vi.useFakeTimers();
     downloadText("deck.txt", "Deck\n1 Sol Ring\n");
     expect(create).toHaveBeenCalledTimes(1);
     expect(click).toHaveBeenCalledTimes(1);
+    // Safari reads the URL after the click, so the release waits (D-935).
+    expect(revoke).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(revokeDelayMs);
     expect(revoke).toHaveBeenCalledWith("blob:x");
     expect(document.querySelector("a[download]")).toBeNull();
+    vi.useRealTimers();
     vi.unstubAllGlobals();
     click.mockRestore();
   });
