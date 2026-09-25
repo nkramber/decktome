@@ -46,7 +46,8 @@ HERE="0"
 # FROZEN holds what the fixer may not touch. The cases are the
 # measurement: a fixer that edits one makes the gate agree with the code
 # instead of with the reader. The rest is the scorer, the accept rules,
-# and the loop itself (T-10).
+# the loop itself (T-10), the gates, the review, the checks, and the
+# deploy (D-930).
 FROZEN="
 go/cmd/questions-gate/conversations.json
 go/cmd/deck-gate/prompts.json
@@ -70,6 +71,26 @@ docs/reference/feedback-fixer-prompt.md
 docs/reference/autotune-fixer-prompt.md
 docs/reference/autotune-lessons.md
 docs/reference/eval/baselines.json
+go/cmd/bracket-gate
+go/cmd/deck-gate
+go/cmd/questions-gate
+go/cmd/revise-gate
+go/cmd/sixty-gate
+go/cmd/quality-gate
+go/cmd/summary-judge
+go/cmd/eval
+go/internal/gatekit
+go/internal/evalrun
+scripts/feedback-review.sh
+docs/tools
+docs/reviews
+.github
+.claude
+cloudbuild
+Makefile
+firebase.json
+firestore.rules
+firestore.indexes.json
 "
 
 usage() {
