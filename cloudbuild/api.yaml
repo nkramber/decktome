@@ -61,8 +61,11 @@ steps:
       - |
         set -euo pipefail
         if [ -f /workspace/.deploy-skip ]; then echo "a later build deployed the API"; exit 0; fi
+        # The revision names its commit, so a later build can read the
+        # order of the deploys (D-943).
         gcloud run deploy mtg-api --region "${_REGION}" --quiet \
-          --image "${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/api:$SHORT_SHA"
+          --image "${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/api:$SHORT_SHA" \
+          --update-env-vars "DEPLOY_COMMIT=$COMMIT_SHA"
 
   - id: update-jobs
     name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
@@ -95,6 +98,11 @@ steps:
         gcloud run services describe mtg-api --region "${_REGION}" --format=json | python3 docs/tools/traffic_check.py
         url=$$(gcloud run services describe mtg-api --region "${_REGION}" --format='value(status.url)')
         python3 docs/tools/deploy_order.py api-ready --commit "$COMMIT_SHA" --readyz "$$url/readyz"
+        # A build that deployed over a later one fails, and the log names
+        # the build to run again. That build also restores the jobs.
+        gcloud run revisions list --service mtg-api --region "${_REGION}" \
+          --sort-by=~metadata.creationTimestamp --limit 10 --format=json \
+          | python3 docs/tools/deploy_order.py api-order --commit "$COMMIT_SHA"
 
 substitutions:
   _REGION: us-central1

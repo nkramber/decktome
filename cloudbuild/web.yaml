@@ -60,8 +60,10 @@ steps:
         # named the collection group index of the feedback read, and no
         # step deployed it, so the read failed on the deployed project
         # while every test passed.
+        # The release names its commit, so a later build can read the
+        # order of the releases (D-943).
         npx --yes firebase-tools@14.14.0 deploy --only hosting,firestore:indexes \
-          --project "$PROJECT_ID" --non-interactive
+          --project "$PROJECT_ID" --non-interactive --message "commit $COMMIT_SHA"
 
   - id: check
     name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
@@ -79,6 +81,11 @@ steps:
         # first, so a later commit passes too.
         python3 docs/tools/deploy_order.py web-ready --commit "$COMMIT_SHA" \
           --web "https://decktome.com/version.json?cb=$SHORT_SHA"
+        # A build that released over a later one fails, and the log names
+        # the build to run again.
+        curl -s -m 60 -H "Authorization: Bearer $$(gcloud auth print-access-token)" \
+          "https://firebasehosting.googleapis.com/v1beta1/sites/${_FIREBASE_PROJECT_ID}/releases?pageSize=10" \
+          | python3 docs/tools/deploy_order.py web-order --commit "$COMMIT_SHA"
 
 substitutions:
   _API_BASE_URL: https://mtg-api-qk2ackpb3q-uc.a.run.app

@@ -1,5 +1,6 @@
 """Tests for deploy_order.py (REV-072)."""
 import io
+import json
 import os
 import shutil
 import subprocess
@@ -168,6 +169,56 @@ class DeployOrderTest(unittest.TestCase):
                 rc = d.web_ready(self.args(self.web), self.history, fetch=self.fetch(web=live), sleep=clock.sleep, clock=clock, out=io.StringIO())
                 self.assertEqual(rc, want)
 
+    @staticmethod
+    def revisions(*commits):
+        """A revision list of Cloud Run, newest first. Each revision holds a secret too."""
+        env = lambda c: [{"name": "KEY", "valueFrom": {"secretKeyRef": {"name": "k"}}}] + ([{"name": "DEPLOY_COMMIT", "value": c}] if c else [])
+        return io.StringIO(json.dumps([{"spec": {"containers": [{"env": env(c)}]}} for c in commits]))
+
+    @staticmethod
+    def releases(*commits):
+        """A release list of Hosting, newest first."""
+        return io.StringIO(json.dumps({"releases": [{"message": f"commit {c}" if c else None} for c in commits]}))
+
+    def test_two_builds_that_overlap(self):
+        """Codex P1-1 of #231: build A and build B both pass the guard, B deploys, then A deploys over B."""
+        older, newer = self.api, self.docs
+        for mine in (older, newer):
+            with self.subTest(guard=mine):
+                d.api_guard(self.args(mine), self.history, fetch=self.fetch(api=[self.base]), out=io.StringIO())
+                self.assertFalse(os.path.exists(self.skip_file))
+        # A deployed last, so its revision is the newest. Its check reads ok.
+        clock = Clock()
+        self.assertEqual(d.api_ready(self.args(older), self.history, fetch=self.fetch(api=[older]), sleep=clock.sleep, clock=clock, out=io.StringIO()), 0)
+        # The order check of A fails, and it names the build to run again.
+        out = io.StringIO()
+        self.assertEqual(d.api_order(self.args(older), self.history, stdin=self.revisions(older, newer, self.base), out=out), 1)
+        self.assertIn(f"Run the build of {newer} again", out.getvalue())
+        out = io.StringIO()
+        self.assertEqual(d.web_order(self.args(older), self.history, stdin=self.releases(older, newer, self.base), out=out), 1)
+        self.assertIn(f"Run the build of {newer} again", out.getvalue())
+
+    def test_order_checks_pass_on_a_right_order(self):
+        cases = [
+            ("a later deploy after this one", self.api, (self.docs, self.api, self.base)),
+            ("this deploy is the newest", self.docs, (self.docs, self.api, self.base)),
+            ("a deploy again of the same commit", self.api, (self.api, self.api, self.base)),
+            ("no deploy names a commit", self.api, ("", "")),
+            ("no deploy names this commit", self.api, (self.docs, self.base)),
+            ("a commit that git lacks", self.api, (self.api, "f" * 40)),
+        ]
+        for name, mine, commits in cases:
+            with self.subTest(name):
+                self.assertEqual(d.api_order(self.args(mine), self.history, stdin=self.revisions(*commits), out=io.StringIO()), 0)
+                self.assertEqual(d.web_order(self.args(mine), self.history, stdin=self.releases(*commits), out=io.StringIO()), 0)
+
+    def test_order_checks_read_bad_input_as_nothing(self):
+        for stdin in (io.StringIO("not json"), io.StringIO("{}"), io.StringIO("[]")):
+            with self.subTest(stdin.getvalue()):
+                self.assertEqual(d.api_order(self.args(self.api), self.history, stdin=stdin, out=io.StringIO()), 0)
+                stdin.seek(0)
+                self.assertEqual(d.web_order(self.args(self.api), self.history, stdin=stdin, out=io.StringIO()), 0)
+
     def test_fetch_json_reads_the_body_of_a_503(self):
         import http.server
         import threading
@@ -244,11 +295,15 @@ class BuildFilesTest(unittest.TestCase):
         got = self.check("cloudbuild/api.yaml", "deploy-api")
         self.assertIn("--build-arg=VERSION=$COMMIT_SHA", got["build-api"])
         self.assertIn("deploy_order.py api-ready", got["check"])
+        self.assertIn("DEPLOY_COMMIT=$COMMIT_SHA", got["deploy-api"])
+        self.assertIn("deploy_order.py api-order", got["check"])
 
     def test_web(self):
         got = self.check("cloudbuild/web.yaml", "release")
         self.assertIn("dist/version.json", got["build"])
         self.assertIn("deploy_order.py web-ready", got["check"])
+        self.assertIn('--message "commit $COMMIT_SHA"', got["release"])
+        self.assertIn("deploy_order.py web-order", got["check"])
 
 
 if __name__ == "__main__":

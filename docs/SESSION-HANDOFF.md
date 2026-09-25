@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-25d)
 
-**Pull request #231, PR-81, corrects REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-944).**
+**Pull request #231, PR-81, corrects REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-945).**
 
 Author provider: Claude Code
 
@@ -25,7 +25,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Head: `64a4891`. Verdict: Changes required. Open finding: P1-1.
+**The review.** Gitar found one issue on `47fbf15`: the checks after a deploy needed the exact commit. `64a4891` fixes it, and Gitar approved `64a4891`. Codex found P1-1 on `64a4891`: an older build can deploy over a newer one. The owner kept the window of D-943, and each such build now fails (D-945). `docs/reviews/pr-231-response.md` holds the answer. Pending the repeat review.
 
 **What waits on the owner.**
 
@@ -110,7 +110,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-81: REV-046 and REV-072 of the repository review of 2026-09-24** (D-942 to D-944). This pull request is #231.
+1. **PR-81: REV-046, REV-069, and REV-072 of the repository review of 2026-09-24** (D-942 to D-945). This pull request is #231.
 2. **The first web build as `web-deployer`, then the end of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-77 to PR-81 corrected each finding. Read the first `deploy-web` build after the merge of PR-81, because it proves REV-069. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.

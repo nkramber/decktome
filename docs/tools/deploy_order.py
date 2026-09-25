@@ -13,6 +13,10 @@ its deploy step:
 - `api-ready` and `web-ready`: after its deploy, each build waits until
   the live part names the commit of the build or a later one. The API
   must also read ok.
+- `api-order` and `web-order`: two builds can still overlap for the one
+  minute of a deploy. The build that deployed last fails when a deploy
+  before its own names a later commit. The API list covers the jobs too,
+  because one build updates both.
 
 The API reports its commit in the `version` field of `/readyz`, and the
 web in `/version.json`. A live commit that no read gives, or that git can
@@ -199,14 +203,75 @@ def web_ready(args, history, fetch=fetch_json, sleep=time.sleep, clock=time.mono
     return live_ready(args, history, args.web, "commit", False, "web", fetch, sleep, clock, out)
 
 
+def revision_commits(data):
+    """Return the DEPLOY_COMMIT of each Cloud Run revision, newest first. A revision with none gives ""."""
+    out = []
+    for rev in data if isinstance(data, list) else []:
+        env = ((rev.get("spec") or {}).get("containers") or [{}])[0].get("env") or []
+        out.append(next((e.get("value", "") for e in env if e.get("name") == "DEPLOY_COMMIT"), ""))
+    return out
+
+
+RELEASE = re.compile(r"commit ([0-9a-f]{40})")
+
+
+def release_commits(data):
+    """Return the commit that each Hosting release message names, newest first."""
+    out = []
+    for rel in (data or {}).get("releases", []) if isinstance(data, dict) else []:
+        m = RELEASE.search(rel.get("message") or "")
+        out.append(m.group(1) if m else "")
+    return out
+
+
+def replaced_later(args, history, commits, name, out):
+    """Fail when a deploy made before this one names a later commit.
+
+    Two builds can overlap for the one minute of a deploy (D-943). The
+    build that deployed last then replaced a newer one, and only that
+    build can see it: its own deploy is the newest one of its commit, and
+    a deploy before it names a later commit.
+    """
+    try:
+        own = commits.index(args.commit)
+    except ValueError:
+        print(f"deploy_order: no recent {name} deploy names {args.commit}, so the order check reads nothing", file=out)
+        return 0
+    for c in commits[own + 1:]:
+        if c and c != args.commit and history.at_or_after(args.commit, c):
+            print(f"deploy_order: this build deployed the {name} of {args.commit} over {c}, which is later."
+                  f" Run the build of {c} again", file=out)
+            return 1
+    print(f"deploy_order: no {name} deploy before this one names a later commit", file=out)
+    return 0
+
+
+def read_stdin_json(stdin, out):
+    try:
+        return json.load(stdin)
+    except ValueError:
+        print("deploy_order: the list of deploys is not JSON, so the order check reads nothing", file=out)
+        return None
+
+
+def api_order(args, history, stdin=sys.stdin, out=sys.stdout):
+    return replaced_later(args, history, revision_commits(read_stdin_json(stdin, out)), "API", out)
+
+
+def web_order(args, history, stdin=sys.stdin, out=sys.stdout):
+    return replaced_later(args, history, release_commits(read_stdin_json(stdin, out)), "web", out)
+
+
 def parse(argv):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="cmd", required=True)
-    for name in ("api-guard", "web-guard", "api-ready", "web-ready"):
+    for name in ("api-guard", "web-guard", "api-ready", "web-ready", "api-order", "web-order"):
         s = sub.add_parser(name)
         s.add_argument("--commit", required=True)
         s.add_argument("--repo", default=REPO)
         s.add_argument("--interval", type=float, default=15)
+        if name.endswith("-order"):
+            continue
         if name != "web-ready":
             s.add_argument("--readyz", required=True)
         if name.endswith("-guard"):
@@ -223,7 +288,8 @@ def main(argv=None):
         print(f"deploy_order: {args.commit!r} is not a full commit id", file=sys.stdout)
         return 2
     history = History(args.repo)
-    run = {"api-guard": api_guard, "web-guard": web_guard, "api-ready": api_ready, "web-ready": web_ready}
+    run = {"api-guard": api_guard, "web-guard": web_guard, "api-ready": api_ready, "web-ready": web_ready,
+           "api-order": api_order, "web-order": web_order}
     return run[args.cmd](args, history)
 
 

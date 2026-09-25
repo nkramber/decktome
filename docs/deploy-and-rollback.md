@@ -22,7 +22,9 @@ Cloud Build has no queue, and the two triggers run apart. So each build reads th
 - The web build skips its release when the live web runs a later commit.
 - The API check waits until `/readyz` reads `ok` with the commit of the build or a later one. The web check reads `/version.json` with the same rule, because a later merge can deploy first.
 
-A live commit that no read gives, or that git can not place, never stops a deploy. The log then says so. Two builds can still overlap during the one minute of one deploy.
+- Each API revision names its commit in `DEPLOY_COMMIT`, and each Hosting release names it in its message. After its deploy, a build fails when a deploy made before its own names a later commit (D-945).
+
+A live commit that no read gives, or that git can not place, never stops a deploy. The log then says so. Two builds can still overlap during the one minute of one deploy. The build that deployed last then fails, and its log names the build to run again. Run that build again from the Cloud Build history. It restores the API, the jobs, or the web.
 
 Cloud Build runs the deploy, and not GitHub Actions, to keep the free Actions minutes for the checks (D-584). Cloud Build gives 2,500 build-minutes a month, and a minute costs $0.006 after that. GitHub gives 2,000 minutes a month for a private repository, and a minute costs $0.008. The two pools are apart, so a deploy never takes a minute the checks need.
 
