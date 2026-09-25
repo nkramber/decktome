@@ -645,3 +645,75 @@ func TestBackfillSetsOnAnEmptyStore(t *testing.T) {
 		t.Fatalf("BackfillSets = %v, %v, want false, nil", wrote, err)
 	}
 }
+
+// TestABadVersionNeverServes is REV-012 of the review of 2026-09-24. The
+// worker finalized a version that it never parsed, and the API loaded the
+// newest version alone. A new instance then served no card data until a
+// later version came.
+func TestABadVersionNeverServes(t *testing.T) {
+	ctx := context.Background()
+	day1 := time.Date(2026, 8, 23, 9, 1, 0, 0, time.UTC)
+	good := cardLine("a", map[string]string{"commander": "legal"}) + "\n"
+
+	t.Run("the worker does not finalize a version that does not parse", func(t *testing.T) {
+		f := newFakeScryfall(t, day1)
+		f.bodies["oracle_cards"] = good
+		store := DirStore{Root: t.TempDir()}
+		if _, err := Refresh(ctx, f.client(), store, slog.Default()); err != nil {
+			t.Fatal(err)
+		}
+		for typ := range f.updatedAt {
+			f.updatedAt[typ] = day1.Add(24 * time.Hour)
+		}
+		f.bodies["oracle_cards"] = `{"oracle_id":"b","name":"Card b","legalities":{"commander":1}}` + "\n"
+		if _, err := Refresh(ctx, f.client(), store, slog.Default()); err == nil {
+			t.Fatal("a version that does not parse was stored with no error")
+		}
+		if latest, _ := store.LatestVersion(ctx); latest != VersionFor(day1) {
+			t.Errorf("latest = %q, want the good version %q", latest, VersionFor(day1))
+		}
+	})
+
+	t.Run("the loader serves the version before a bad one", func(t *testing.T) {
+		store := DirStore{Root: t.TempDir()}
+		write := func(version, oracle string) {
+			for file, body := range map[string]string{
+				"oracle_cards.jsonl.gz": oracle, "default_cards.jsonl.gz": "", "oracle_tags.jsonl.gz": "",
+			} {
+				w, err := store.Create(ctx, version, file)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if _, err := w.Write(gzipBytes(t, body)); err != nil {
+					t.Fatal(err)
+				}
+				if err := w.Close(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := store.Finalize(ctx, version); err != nil {
+				t.Fatal(err)
+			}
+		}
+		write(VersionFor(day1), good)
+		write(VersionFor(day1.Add(24*time.Hour)), "not json\n")
+		idx, err := LoadIndex(ctx, store, slog.Default())
+		if err != nil || idx == nil {
+			t.Fatalf("load = %v, %v, want the good version", idx, err)
+		}
+		if _, ok := idx.ByOracleID("a"); !ok || idx.Len() != 1 {
+			t.Errorf("the index holds %d cards, want card a of the good version", idx.Len())
+		}
+	})
+
+	t.Run("no version loads", func(t *testing.T) {
+		store := DirStore{Root: t.TempDir()}
+		w, _ := store.Create(ctx, VersionFor(day1), "oracle_cards.jsonl.gz")
+		_, _ = w.Write(gzipBytes(t, "not json\n"))
+		_ = w.Close()
+		_ = store.Finalize(ctx, VersionFor(day1))
+		if idx, err := LoadIndex(ctx, store, slog.Default()); err == nil || idx != nil {
+			t.Errorf("load = %v, %v, want an error", idx, err)
+		}
+	})
+}

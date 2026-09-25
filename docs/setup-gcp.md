@@ -196,7 +196,11 @@ gcloud secrets add-iam-policy-binding anthropic-api-key --member=serviceAccount:
 gcloud secrets add-iam-policy-binding topdeck-api-key --member=serviceAccount:SA_WORKER --role=roles/secretmanager.secretAccessor
 gcloud secrets add-iam-policy-binding pushover-app-token --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
 gcloud secrets add-iam-policy-binding pushover-user-key --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
+gcloud secrets add-iam-policy-binding pushover-app-token --member=serviceAccount:SA_WORKER --role=roles/secretmanager.secretAccessor
+gcloud secrets add-iam-policy-binding pushover-user-key --member=serviceAccount:SA_WORKER --role=roles/secretmanager.secretAccessor
 ```
+
+The worker reads the Pushover pair too. A failed job and a card snapshot older than 30 hours send the owner a notice (REV-011, D-911).
 
 The API verifies Firebase ID tokens with Google's public keys, so it needs no Firebase role. The scheduler account gets the Cloud Run Invoker role on each job in section 12.
 
@@ -268,12 +272,13 @@ gcloud run jobs create mtg-snapshot \
   --image REGION-docker.pkg.dev/PROJECT_ID/mtg/worker:$TAG --args=-once \
   --region REGION --service-account SA_WORKER \
   --set-env-vars PROJECT_ID=PROJECT_ID,CARDS_BUCKET=PROJECT_ID-cards \
+  --set-secrets PUSHOVER_APP_TOKEN=pushover-app-token:1,PUSHOVER_USER_KEY=pushover-user-key:1 \
   --memory 1Gi --cpu 1 --task-timeout 30m --max-retries 0
 gcloud run jobs create mtg-meta \
   --image REGION-docker.pkg.dev/PROJECT_ID/mtg/worker:$TAG --args=-meta \
   --region REGION --service-account SA_WORKER \
   --set-env-vars PROJECT_ID=PROJECT_ID,CARDS_BUCKET=PROJECT_ID-cards \
-  --set-secrets TOPDECK_API_KEY=topdeck-api-key:1 \
+  --set-secrets TOPDECK_API_KEY=topdeck-api-key:1,PUSHOVER_APP_TOKEN=pushover-app-token:1,PUSHOVER_USER_KEY=pushover-user-key:1 \
   --memory 8Gi --cpu 2 --task-timeout 150m --max-retries 0
 ```
 

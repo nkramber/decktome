@@ -165,6 +165,34 @@ func TestRevisionDeclineIsNotSilent(t *testing.T) {
 	}
 }
 
+// TestRevisionCallCountsWhenItBuildsNothing is REV-020 of the review of
+// 2026-09-24. A revise call that asks or declines spent its tokens, and
+// the session total missed them. The turn holds two calls: the classify
+// call and the revise call.
+func TestRevisionCallCountsWhenItBuildsNothing(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		brief map[string]any
+	}{
+		{"a question", map[string]any{"question": "Do you mean faster mana, utility lands, or more colors?"}},
+		{"a decline", map[string]any{"declined": []map[string]string{{"request": "Replace the lands", "reason": "all basic lands is fine here"}}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			store := newFakeStore()
+			fd := &fakeDecks{res: &generate.Result{Deck: &mtgv1.Deck{Validation: &mtgv1.ValidationResult{}, Cards: []*mtgv1.DeckCard{{OracleId: "o-plains", Name: "Plains", Count: 30}}}}}
+			steps := append(builtSteps(t), classifyJSON(t, nil), reviseJSON(t, tc.brief))
+			client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(&fakeDeckStore{})), steps...)
+			first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
+			chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+			before := store.sessions[first.started].GetUsage().GetCalls()
+			chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Replace the lands"})
+			if got := store.sessions[first.started].GetUsage().GetCalls() - before; got != 2 {
+				t.Errorf("the turn added %d calls to the session, want 2 (classify and revise)", got)
+			}
+		})
+	}
+}
+
 // TestSlotChangeAfterBuildRebuilds is D-241: a changed setting means a
 // full build, and the user reads why.
 func TestSlotChangeAfterBuildRebuilds(t *testing.T) {

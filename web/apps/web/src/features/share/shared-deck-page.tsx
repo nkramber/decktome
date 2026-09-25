@@ -14,6 +14,8 @@ import { powerLabel } from "../deck/deck-stats";
 import { downloadText } from "../export/buy-list";
 import { identityOfCards, identityOfCommanders } from "../deck/color-identity";
 import { ManaPips } from "../deck/mana-pips";
+import { cardQueryRetry } from "../../lib/card-retry";
+import { DataCredit } from "../credit/data-credit";
 
 // The public deck page of a share link (D-315): the name, the format,
 // the power, the summary, the cards by role with art, and the export.
@@ -31,7 +33,7 @@ export function entriesOf(cards: SharedCard[]): DeckCard[] {
 
 export function cardsOf(deck: SharedDeck): Map<string, Card> {
   const byId = new Map<string, Card>();
-  for (const c of [...deck.cards, ...deck.sideboard]) {
+  for (const c of [...deck.commanders, ...deck.cards, ...deck.sideboard]) {
     if (c.card) byId.set(c.oracleId, c.card);
   }
   return byId;
@@ -44,7 +46,9 @@ export function SharedDeckPage() {
     queryFn: () => deckClient.getSharedDeck({ token }),
     enabled: token !== "",
     staleTime: Infinity,
-    retry: false,
+    // A cold start answers Unavailable until the card index loads, and
+    // the page retries through it (REV-022). NotFound fails at once.
+    ...cardQueryRetry,
   });
   if (query.isPending) {
     return (
@@ -84,7 +88,9 @@ export function SharedDeckView({ deck, token }: { deck: SharedDeck; token: strin
   const byId = cardsOf(deck);
   const commanders = new Set(deck.commanderOracleIds);
   const main = entriesOf(deck.cards.filter((c) => !commanders.has(c.oracleId)));
-  const commanderEntries = entriesOf(deck.cards.filter((c) => commanders.has(c.oracleId)));
+  // The server sends each commander in its own list (REV-021). A deck
+  // stored before F-124 also holds its commander in cards.
+  const commanderEntries = entriesOf(deck.commanders.length > 0 ? deck.commanders : deck.cards.filter((c) => commanders.has(c.oracleId)));
   const side = entriesOf(deck.sideboard);
   const groups = groupByRole(main);
   const fromCommanders = identityOfCommanders(deck.commanderOracleIds, byId);
@@ -114,10 +120,7 @@ export function SharedDeckView({ deck, token }: { deck: SharedDeck; token: strin
         <SharedExport token={token} />
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Card images and card text are unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. They are
-        copyright Wizards of the Coast, LLC, and come from Scryfall.
-      </p>
+      <DataCredit />
 
       {commanderEntries.length > 0 && <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership />}
       {groups.map((g) => (

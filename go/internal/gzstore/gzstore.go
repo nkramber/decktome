@@ -93,13 +93,17 @@ func MarshalProto(m proto.Message) ([]byte, error) {
 	return Marshal(raw)
 }
 
-// UnmarshalProto decodes a gzip protojson payload into m.
+// UnmarshalProto decodes a gzip protojson payload into m. A field that
+// the proto of this build does not know is dropped, and no error. So an
+// older build after a rollback still reads a document that a newer build
+// wrote. A write of that older build then loses the fields that it does
+// not know (REV-014).
 func UnmarshalProto(payload []byte, m proto.Message) error {
 	raw, err := Unmarshal(payload)
 	if err != nil {
 		return err
 	}
-	return protojson.Unmarshal(raw, m)
+	return protojson.UnmarshalOptions{DiscardUnknown: true}.Unmarshal(raw, m)
 }
 
 // ErrBadID reports an id that can not name one Firestore document.

@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -28,6 +29,7 @@ import (
 
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/notify"
 	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
@@ -47,11 +49,27 @@ func main() {
 
 	logger := gcpenv.NewLogger(os.Stdout)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	// A job that fails, and a snapshot that grows stale, reach the owner
+	// through Pushover (REV-011). A run with no Pushover secrets sends
+	// nothing.
+	var alert func(notify.Notice)
+	if p := notify.FromEnv(os.Getenv); p != nil {
+		alert = func(n notify.Notice) {
+			sctx, cancel := context.WithTimeout(context.Background(), notify.Timeout)
+			defer cancel()
+			if err := p.Send(sctx, n); err != nil {
+				logger.Warn("worker: the alert did not send", "err", err)
+			}
+		}
+	}
 	var err error
 	if *metaJob {
 		err = runMeta(ctx, metaOptions{months: *metaMonths, pages: *metaPages, reparse: *metaReparse}, logger)
+		if err != nil && alert != nil {
+			alert(notify.Notice{Title: "decktome: the meta job failed", Message: err.Error()})
+		}
 	} else {
-		err = run(ctx, *once, logger)
+		err = run(ctx, *once, logger, alert)
 	}
 	stop()
 	if err != nil {
@@ -60,7 +78,67 @@ func main() {
 	}
 }
 
-func run(ctx context.Context, once bool, logger *slog.Logger) error {
+// staleAfter is the snapshot age that alerts the owner (REV-011).
+// Scryfall writes the bulk files once a day, so a snapshot 30 hours old
+// missed at least one day.
+const staleAfter = 30 * time.Hour
+
+// snapshotNotice answers the alert of one run of the snapshot job, and
+// false when the run sends none. A snapshot past staleAfter alerts, and
+// so does a run that could not read the store. The job runs many times
+// an hour, so an alert goes out at the first run of every sixth UTC hour
+// alone: four notices a day at most.
+func snapshotNotice(latest string, now time.Time, runErr error) (notify.Notice, bool) {
+	if now.Hour()%6 != 0 || now.Minute() >= 15 {
+		return notify.Notice{}, false
+	}
+	tail := ""
+	if runErr != nil {
+		tail = " The last run failed: " + runErr.Error()
+	}
+	if latest == "" {
+		if runErr == nil {
+			return notify.Notice{}, false
+		}
+		return notify.Notice{Title: "decktome: the snapshot job failed", Message: "No card snapshot age could be read." + tail}, true
+	}
+	at, err := cards.VersionTime(latest)
+	if err != nil {
+		return notify.Notice{Title: "decktome: the snapshot job failed", Message: fmt.Sprintf("The version %q does not read as a time.%s", latest, tail)}, true
+	}
+	age := now.Sub(at)
+	if age < staleAfter {
+		return notify.Notice{}, false
+	}
+	return notify.Notice{
+		Title:   "decktome: the card snapshot is stale",
+		Message: fmt.Sprintf("The newest card snapshot %s is %d hours old. A ban or a new set does not reach the app.%s", latest, int(age.Hours()), tail),
+	}, true
+}
+
+// runOnce is one run of the Cloud Run job: it skips while the snapshot
+// is fresh and no announcement is pending, and refreshes otherwise.
+func runOnce(ctx context.Context, store cards.Store, calendar cards.AnnouncementCalendar, lastDiff time.Time, refresh func() error, logger *slog.Logger) error {
+	now := time.Now().UTC()
+	latest, err := store.LatestVersion(ctx)
+	if err != nil {
+		return err
+	}
+	var latestAt time.Time
+	if latest != "" {
+		if latestAt, err = cards.VersionTime(latest); err != nil {
+			return err
+		}
+	}
+	_, pending := calendar.Pending(now, lastDiff)
+	if skipRefresh(now, latestAt, pending) {
+		logger.Info("refresh skipped: snapshot fresh and no announcement pending", "version", latest)
+		return nil
+	}
+	return refresh()
+}
+
+func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.Notice)) error {
 	project, err := gcpenv.ProjectID()
 	if err != nil {
 		return err
@@ -139,23 +217,18 @@ func run(ctx context.Context, once bool, logger *slog.Logger) error {
 	}
 
 	if once {
-		now := time.Now().UTC()
-		latest, err := store.LatestVersion(ctx)
-		if err != nil {
-			return err
-		}
-		var latestAt time.Time
-		if latest != "" {
-			if latestAt, err = cards.VersionTime(latest); err != nil {
-				return err
+		err := runOnce(ctx, store, calendar, lastDiff, refresh, logger)
+		if alert != nil {
+			latest, lerr := store.LatestVersion(ctx)
+			seen := err
+			if lerr != nil {
+				latest, seen = "", errors.Join(err, lerr)
+			}
+			if n, ok := snapshotNotice(latest, time.Now().UTC(), seen); ok {
+				alert(n)
 			}
 		}
-		_, pending := calendar.Pending(now, lastDiff)
-		if skipRefresh(now, latestAt, pending) {
-			logger.Info("refresh skipped: snapshot fresh and no announcement pending", "version", latest)
-			return nil
-		}
-		return refresh()
+		return err
 	}
 
 	logger.Info("worker started in loop mode", "version", version)

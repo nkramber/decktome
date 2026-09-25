@@ -46,8 +46,10 @@ gcloud builds triggers create github --name=deploy-api --region=us-central1 \
   --build-config=cloudbuild/api.yaml --included-files='go/**,docker/**'
 gcloud builds triggers create github --name=deploy-web --region=us-central1 \
   --repository=$REPO --branch-pattern='^main$' --service-account=$SA \
-  --build-config=cloudbuild/web.yaml --included-files='web/**,firebase.json'
+  --build-config=cloudbuild/web.yaml --included-files='web/**,firebase.json,firestore.indexes.json'
 ```
+
+Note: the web build deploys `hosting,firestore:indexes`, so `deploy-web` also watches `firestore.indexes.json` (D-603). Without that path, a change to the index file deploys nothing, and F-73 comes back.
 
 CAUTION: a trigger of a 2nd-gen repository needs `--service-account`. Without it the API answers `INVALID_ARGUMENT` and names no field. `--repo-owner` and `--repo-name` name a 1st-gen repository, and they never reach a 2nd-gen connection. A trigger with no `--region` lands in `global`, and it finds no connection of `us-central1`. Read `gcloud builds triggers list --region=us-central1` after each one.
 
@@ -58,13 +60,16 @@ Note: `us-central1` matches Artifact Registry, Cloud Run, Firestore, and the buc
 ```
 GH=gh-deployer@decktome-prod.iam.gserviceaccount.com
 for role in roles/run.admin roles/artifactregistry.writer \
-            roles/firebasehosting.admin roles/logging.logWriter; do
+            roles/firebasehosting.admin roles/logging.logWriter \
+            roles/firebaserules.admin roles/datastore.indexAdmin; do
   gcloud projects add-iam-policy-binding decktome-prod \
     --member=serviceAccount:$GH --role=$role --condition=None
 done
 ```
 
 CAUTION: a build takes a service account you made, and never the one Google manages. A trigger that names `PROJECT_NUMBER@cloudbuild.gserviceaccount.com` fails before its first step. The message reads "provide a user-managed service account or leave unset". `roles/logging.logWriter` belongs on the list, because the build writes its log with `CLOUD_LOGGING_ONLY`.
+
+CAUTION: the web build fails with a 403 without the last two roles (D-605). The index deploy reads `firestore.rules` through the Firebase Rules API, and then it writes the indexes. `roles/firebaserules.admin` can also write the rules of the project, so it widens the account.
 
 Note: the project policy of `decktome-prod` holds a condition, so a binding without `--condition=None` fails in a script. The message names the flag.
 
@@ -212,6 +217,8 @@ Cloud Run keeps every revision. A rollback moves the traffic, and it needs no bu
 
 The change takes seconds. Run `--to-latest` to return the traffic to the newest revision.
 
+CAUTION: the pin holds until `--to-latest`. A deploy during the pin makes a new revision that takes no traffic. The deploy then fails at its check step, because `docs/tools/traffic_check.py` reads the traffic of the newest revision (REV-013). Run `--to-latest` after the fix merges, then run the deploy again.
+
 A revision older than `mtg-api-00077-vwp` holds no Pushover secret, so a rollback to it sends no notice of a verdict. The store still keeps each verdict.
 
 ### 8.2 The jobs
@@ -239,6 +246,8 @@ firebase-tools 14.14.0 has no `hosting:rollback` command. Two paths return the s
 3. Run `git checkout main -- firestore.rules` to restore the tree.
 
 CAUTION: a rollback of the code does not undo a change of the data. A new version can write a document that an old version cannot read. Read the store code of the merge before a rollback. Check the package under `go/internal` that writes the document for a schema change.
+
+Note: a stored deck or chat session is gzip JSON of a proto message. The decoder of `go/internal/gzstore` drops each field that the proto of the old version does not know, so the old version reads the document (REV-014). A write of the old version then loses those fields. A new proto field alone needs no other step.
 
 ## 9. What a rollback does not repair
 

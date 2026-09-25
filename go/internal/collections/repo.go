@@ -2,7 +2,6 @@ package collections
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -31,8 +30,18 @@ type Repo struct {
 	index func() *cards.Index
 }
 
+// MaxEntries is the stated limit of one collection: the distinct rows
+// by printing, finish, condition, and language (REV-026). A measure of
+// real printings on 2026-09-25 stored about 90 gzip bytes a row, so
+// 10,000 rows filled 895,882 of the 921,600 bytes. 9,000 leaves room.
+const MaxEntries = 9000
+
+// ErrTooManyEntries refuses a collection over MaxEntries before the
+// write.
+var ErrTooManyEntries = fmt.Errorf("a collection holds at most %d distinct rows (by printing, finish, condition, and language)", MaxEntries)
+
 // ErrTooLarge reports a collection that does not fit one document.
-var ErrTooLarge = errors.New("collection too large for one document (max 900 KiB gzip): sharding is a later step")
+var ErrTooLarge = fmt.Errorf("the collection does not fit one document: a collection holds at most about %d distinct rows", MaxEntries)
 
 // NewRepo wraps a Firestore client. The caller owns the client.
 func NewRepo(client *firestore.Client) *Repo { return &Repo{client: client} }

@@ -392,6 +392,26 @@ var swapSigns = []string{
 	"someone else as my commander", "a different one",
 }
 
+// joinSigns add a second commander to the first one with no pair word:
+// "add Tymna as the second commander".
+var joinSigns = []string{"second commander", "as well", "also", "alongside", "add"}
+
+// joinsCommander reports whether the message adds a commander to the one
+// the state holds, not in its place (REV-024).
+func joinsCommander(message string) bool { return anyPhrase(message, joinSigns) }
+
+// messageNamesCommander reports whether the message names one of the
+// commanders, by its full name or by the part before its comma.
+func messageNamesCommander(message string, names []string) bool {
+	msg := normName(message)
+	for _, n := range names {
+		if b := baseName(normName(n)); b != "" && strings.Contains(msg, b) {
+			return true
+		}
+	}
+	return false
+}
+
 // swapsCommander reports whether the user wants to replace a commander
 // they already chose. Every commander row is closed by then, so nothing
 // else could ask (D-130).
@@ -710,10 +730,54 @@ func occasionTheme(theme string) bool { return anyPhrase(theme, occasionSigns) }
 // and it does not name bracket 5, and the two are three brackets apart.
 var cedhSigns = []string{"cedh", "competitive edh"}
 
+// cedhAway are the words that turn a mention of cEDH away from the
+// request: "tired of cEDH", "anything but cEDH", "weaker than cEDH".
+var cedhAway = map[string]bool{
+	"but": true, "except": true, "than": true, "tired": true, "sick": true,
+	"hate": true, "avoid": true, "unlike": true, "below": true, "under": true,
+	"besides": true, "instead": true, "of": true,
+}
+
+// cedhBefore and cedhAfter are the words around a sign that make it a
+// request form: "a cEDH deck", "for cEDH", "cEDH level".
+var (
+	cedhBefore = map[string]bool{"a": true, "an": true, "for": true, "at": true, "my": true}
+	cedhAfter  = map[string]bool{
+		"deck": true, "decks": true, "list": true, "build": true, "level": true,
+		"power": true, "bracket": true, "pod": true, "table": true, "game": true, "games": true,
+	}
+)
+
 // cedhRequest reports whether the user asked for a cEDH deck. "A cEDH
 // deck" names the bracket, so the bracket question has its answer
-// (D-164).
-func cedhRequest(text string) bool { return anyPhrase(text, cedhSigns) }
+// (D-164). A mention alone is not a request: the sign must stand in a
+// request form, with no negator and no word of cedhAway before it. A
+// reply to the power question needs no request form, so "cEDH" alone
+// answers it. A mention that fails the test leaves the power question to
+// ask (REV-025).
+func cedhRequest(text string, answering bool) bool {
+	toks := tokens(text)
+	for _, sign := range cedhSigns {
+		want := tokens(sign)
+		for i := range toks {
+			if !matchAt(toks, want, i) || negatedAt(toks, i) {
+				continue
+			}
+			away := false
+			for j := max(0, i-negatorWindow); j < i; j++ {
+				away = away || cedhAway[toks[j]]
+			}
+			if away {
+				continue
+			}
+			end := i + len(want)
+			if answering || (i > 0 && cedhBefore[toks[i-1]]) || (end < len(toks) && cedhAfter[toks[end]]) {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 // buyListSigns name the cards the user must acquire. A budget beside one
 // of these caps the buy list, so the scope question has its answer

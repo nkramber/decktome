@@ -312,6 +312,45 @@ describe("SessionPage", () => {
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
   });
 
+  // REV-023: React sends the submit of a dialog portal up to the chat
+  // form around its trigger, so a thumbs down sent the answers too.
+  it("a thumbs down on an answered question sends no answers", async () => {
+    submitFeedback.mockReset();
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: "Question: Which format?" });
+    await user.click(within(card).getByRole("button", { name: "Modern" }));
+    expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
+    await user.click(within(card).getByRole("button", { name: "This missed" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByLabelText("The wording is unclear."));
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(1));
+    expect(chat).toHaveBeenCalledTimes(1);
+  });
+
+  it("a problem report sends no draft message", async () => {
+    submitFeedback.mockReset();
+    submitFeedback.mockResolvedValue({ feedbackId: "fb1" });
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1")]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    await screen.findByText("Session id: s1");
+    await user.type(await screen.findByLabelText("Your message"), "a draft");
+    await user.click(screen.getByRole("button", { name: "Report a problem" }));
+    const dialog = await screen.findByRole("dialog");
+    await user.type(within(dialog).getByLabelText("Other"), "the page froze");
+    await user.click(within(dialog).getByRole("button", { name: "Submit" }));
+    await waitFor(() => expect(submitFeedback).toHaveBeenCalledTimes(1));
+    expect(chat).toHaveBeenCalledTimes(1);
+  });
+
   it("a thrown send gives the answered questions and their drafts back", async () => {
     chat
       .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]))

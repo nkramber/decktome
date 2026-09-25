@@ -1,8 +1,12 @@
 package main
 
 import (
+	"errors"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/nkramber/decktome/go/internal/cards"
 )
 
 func TestSkipRefresh(t *testing.T) {
@@ -25,6 +29,43 @@ func TestSkipRefresh(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := skipRefresh(now, tt.latestAt, tt.pending); got != tt.want {
 				t.Errorf("skipRefresh = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// TestSnapshotNotice is REV-011 of the review of 2026-09-24. A refresh
+// that failed again and again reached no one, so a ban could miss the app
+// with no signal. A stale snapshot and an unreadable store now alert, at
+// the first run of every sixth UTC hour alone.
+func TestSnapshotNotice(t *testing.T) {
+	at := time.Date(2026, 10, 12, 9, 1, 0, 0, time.UTC)
+	version := cards.VersionFor(at)
+	failed := errors.New("storage: permission denied")
+	tests := []struct {
+		name   string
+		latest string
+		now    time.Time
+		err    error
+		want   string
+	}{
+		{"fresh", version, at.Add(5 * time.Hour), nil, ""},
+		{"26 hours at an alert hour, a failed run", version, time.Date(2026, 10, 13, 12, 0, 5, 0, time.UTC), failed, ""},
+		{"stale at an alert hour", version, time.Date(2026, 10, 13, 18, 0, 5, 0, time.UTC), nil, "32 hours old"},
+		{"stale with the error", version, time.Date(2026, 10, 13, 18, 0, 5, 0, time.UTC), failed, "permission denied"},
+		{"stale between alert hours", version, time.Date(2026, 10, 13, 19, 0, 5, 0, time.UTC), nil, ""},
+		{"stale at minute 15", version, time.Date(2026, 10, 13, 18, 15, 0, 0, time.UTC), nil, ""},
+		{"no store read", "", time.Date(2026, 10, 13, 0, 0, 5, 0, time.UTC), failed, "No card snapshot age"},
+		{"empty store and no error", "", time.Date(2026, 10, 13, 0, 0, 5, 0, time.UTC), nil, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			n, ok := snapshotNotice(tt.latest, tt.now, tt.err)
+			if ok != (tt.want != "") {
+				t.Fatalf("sent = %v, want %v: %+v", ok, tt.want != "", n)
+			}
+			if ok && !strings.Contains(n.Message, tt.want) {
+				t.Errorf("message = %q, want %q in it", n.Message, tt.want)
 			}
 		})
 	}

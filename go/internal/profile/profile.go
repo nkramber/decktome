@@ -640,9 +640,22 @@ func resolveDeck(deck *mtgv1.Deck, src rules.CardSource) ([]entry, []*mtgv1.Card
 	return entries, commanders
 }
 
+// maxSimCards bounds the list of the simulation. Each hand copies and
+// shuffles the whole list, so a stored list of millions of copies would
+// hold an instance for minutes. A list over the bound gets no goldfish
+// numbers (REV-006).
+const maxSimCards = 1000
+
 // goldfish runs the simulation and records its three numbers.
 func (f *features) goldfish(entries []entry, commanders []*mtgv1.Card, commander bool, hands int, seed uint64) {
-	var list []simCard
+	total := 0
+	for _, e := range entries {
+		total += e.count
+	}
+	if total > maxSimCards {
+		return
+	}
+	list := make([]simCard, 0, total)
 	for _, e := range entries {
 		sc := simCardOf(e.card)
 		for range e.count {

@@ -125,7 +125,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
   const title = step === "format" ? "Which format?" : step === "commander" ? "Which card leads the deck?" : step === "done" ? "Lines the import skipped" : "Import a deck";
   const note =
     step === "format"
-      ? "This list is not a Commander deck. Pick its format, or neither for a list with no format check."
+      ? "The list marks no commander and does not hold 100 cards. Pick its format, or neither for a list with no format check."
       : step === "commander"
         ? "The list marks no commander. Pick the card that leads it."
         : step === "done"
@@ -216,6 +216,9 @@ function ImportBody({ onClose }: { onClose: () => void }) {
         <Choice
           name="deck-format"
           options={[
+            // A Commander list of 99 or 101 cards, or with one line that
+            // matched no card, reads no format of its own (REV-027).
+            { value: String(FormatId.COMMANDER), label: "Commander" },
             { value: String(FormatId.STANDARD), label: "Standard" },
             { value: String(FormatId.MODERN), label: "Modern" },
             { value: String(FormatId.HOUSE), label: "Neither: no format check" },

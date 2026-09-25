@@ -70,6 +70,9 @@ steps:
       - -c
       - |
         set -euo pipefail
+        # A traffic pin of a rollback keeps the new revision off the
+        # traffic, and /readyz would read the old one (REV-013).
+        gcloud run services describe mtg-api --region "${_REGION}" --format=json | python3 docs/tools/traffic_check.py
         url=$$(gcloud run services describe mtg-api --region "${_REGION}" --format='value(status.url)')
         for i in $$(seq 1 20); do
           body=$$(curl -s -m 60 "$$url/readyz" || true)

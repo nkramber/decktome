@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cards"
@@ -506,5 +507,36 @@ func TestReadWithNoTagSource(t *testing.T) {
 	}
 	if prof.GetGoldfish() == nil {
 		t.Error("the rest of the profile must still read")
+	}
+}
+
+func TestReadClipsTheGoldfishOfAHugeList(t *testing.T) {
+	cfg, err := rules.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name   string
+		copies int32
+		want   bool
+	}{
+		{"a million copies", 1_000_000, false},
+		{"one past the bound", maxSimCards + 1, false},
+		{"the bound exactly", maxSimCards, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p, err := New(cfg, nil, nil)
+			if err != nil {
+				t.Fatal(err)
+			}
+			start := time.Now()
+			prof, _ := p.Read(context.Background(), deckOf(2, row{plains, tc.copies, mtgv1.CardRole_CARD_ROLE_LAND}), source(testCards))
+			if got := prof.GetGoldfish() != nil; got != tc.want {
+				t.Errorf("goldfish = %v, want %v", got, tc.want)
+			}
+			if d := time.Since(start); d > 10*time.Second {
+				t.Errorf("the read took %v", d)
+			}
+		})
 	}
 }

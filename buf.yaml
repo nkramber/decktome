@@ -10,6 +10,8 @@ breaking:
   # of the product surface. D-155 removed four FormatId values, and this
   # app has no external consumer that FILE would protect. WIRE_JSON still
   # refuses every change that would break the wire format or the JSON
-  # encoding, which is what a stored session and a running client need.
+  # encoding, which is what a running client needs. A stored document
+  # needs one more rule: gzstore drops a field that the proto of the
+  # build does not know, so an older build reads a newer document.
   use:
     - WIRE_JSON

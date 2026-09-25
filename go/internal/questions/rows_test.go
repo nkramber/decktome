@@ -666,11 +666,11 @@ func TestAKnownCommanderReplacesAnUnknownOne(t *testing.T) {
 	}
 	a, _ := testAgentHints(t, h)
 	st := NewState(false)
-	a.applyNames(st, classifyOut{CommanderNames: []string{"Atraxa, Praetor's Voice"}})
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Atraxa, Praetor's Voice"}}, "")
 	if len(st.CommanderNames) != 1 || st.CommanderNames[0] != "Atraxa, Praetor's Voice" {
 		t.Fatalf("names = %v, want the unknown name kept until a known one arrives", st.CommanderNames)
 	}
-	a.applyNames(st, classifyOut{CommanderNames: []string{"Atraxa, Praetors' Voice"}})
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Atraxa, Praetors' Voice"}}, "")
 	if len(st.CommanderNames) != 1 || st.CommanderNames[0] != "Atraxa, Praetors' Voice" {
 		t.Errorf("names = %v, want the known name alone", st.CommanderNames)
 	}
@@ -678,7 +678,7 @@ func TestAKnownCommanderReplacesAnUnknownOne(t *testing.T) {
 		t.Errorf("named cards = %v, the misspelled name must go too", st.NamedCards)
 	}
 	st = NewState(false)
-	a.applyNames(st, classifyOut{CommanderNames: []string{"Krark, the Thumbless", "Sakashima of a Thousand Faces"}})
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Krark, the Thumbless", "Sakashima of a Thousand Faces"}}, "")
 	if len(st.CommanderNames) != 2 {
 		t.Errorf("partners = %v, want both", st.CommanderNames)
 	}
@@ -689,7 +689,7 @@ func TestAKnownCommanderReplacesAnUnknownOne(t *testing.T) {
 		{"Atraxa, Praetor's Voice", "Atraxa, Praetors' Voice"},
 	} {
 		st = NewState(false)
-		a.applyNames(st, classifyOut{CommanderNames: names})
+		a.applyNames(st, classifyOut{CommanderNames: names}, "")
 		if len(st.CommanderNames) != 1 || st.CommanderNames[0] != "Atraxa, Praetors' Voice" {
 			t.Errorf("names %v -> %v, want the known name alone", names, st.CommanderNames)
 		}

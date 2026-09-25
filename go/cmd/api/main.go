@@ -614,9 +614,10 @@ func spendCapOverrides(logger *slog.Logger) map[string]float64 {
 	return out
 }
 
-// loadSnapshot installs the newest stored snapshot when its version
-// differs from lastVersion. A load error keeps the old index and the
-// old version, so the next tick tries again.
+// loadSnapshot installs the newest stored snapshot that loads, when the
+// newest version differs from lastVersion. LoadIndex falls back past a
+// version that does not load (REV-012). A load error keeps the old index
+// and the old version, so the next tick tries again.
 func loadSnapshot(ctx context.Context, store cards.Store, server *cardsvc.Server, lastVersion string, logger *slog.Logger) string {
 	current, err := store.LatestVersion(ctx)
 	if err != nil {

@@ -92,9 +92,10 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 	}
 
 	// A list that does not read offers the report form on the page
-	// (D-887). A list over the line cap is a size limit and no fault.
+	// (D-887). A list over the line cap or the card cap is a size limit
+	// and no fault (REV-006).
 	list, err := decklist.Parse(strings.NewReader(msg.GetText()))
-	if errors.Is(err, decklist.ErrTooManyLines) {
+	if errors.Is(err, decklist.ErrTooManyLines) || errors.Is(err, decklist.ErrTooManyCards) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if err != nil {
@@ -226,7 +227,7 @@ func (s *Server) ReadImportBracket(ctx context.Context, req *connect.Request[mtg
 	}
 	sctx, cancel := detached(ctx, storeLimit)
 	defer cancel()
-	if err := s.deckStore.Put(sctx, uid, deck); err != nil {
+	if err := s.deckStore.Rewrite(sctx, uid, deck); err != nil {
 		return nil, storeError(err)
 	}
 	s.storeImportPower(sctx, uid, session.GetId(), deck, report)

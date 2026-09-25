@@ -105,6 +105,12 @@ func (s *Server) GetSharedDeck(ctx context.Context, req *connect.Request[mtgv1.G
 	if err != nil {
 		return nil, err
 	}
+	// The page shows the card data inline, and a page with none stays
+	// blank. Before the index loads, the call answers Unavailable, and
+	// the page retries (REV-022, F-164).
+	if s.index == nil || s.index.Current() == nil {
+		return nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
+	}
 	return connect.NewResponse(&mtgv1.GetSharedDeckResponse{Deck: sharedDeck(d, s.lookup())}), nil
 }
 
@@ -150,11 +156,31 @@ func sharedDeck(d *mtgv1.Deck, cards export.Lookup) *mtgv1.SharedDeck {
 		Power:              d.GetPower(),
 		Summary:            d.GetSummary(),
 		CommanderOracleIds: d.GetCommanderOracleIds(),
+		Commanders:         sharedCommanders(d, cards),
 		Cards:              sharedCards(d.GetCards(), cards),
 		Sideboard:          sharedCards(d.GetSideboard(), cards),
 		LegalityAsOf:       d.GetLegalityAsOf(),
 		CardCount:          d.GetCardCount(),
 	}
+}
+
+// sharedCommanders is one shared card for each commander id, in the order
+// of the ids (REV-021). The name comes from the card index, else from the
+// commanders the deck stored, else from its cards.
+func sharedCommanders(d *mtgv1.Deck, cards export.Lookup) []*mtgv1.SharedCard {
+	names := map[string]string{}
+	for _, dc := range append(append([]*mtgv1.DeckCard(nil), d.GetCards()...), d.GetCommanders()...) {
+		names[dc.GetOracleId()] = dc.GetName()
+	}
+	list := make([]*mtgv1.DeckCard, 0, len(d.GetCommanderOracleIds()))
+	for _, id := range d.GetCommanderOracleIds() {
+		name := names[id]
+		if c, ok := cards.ByOracleID(id); ok && c != nil {
+			name = c.GetName()
+		}
+		list = append(list, &mtgv1.DeckCard{OracleId: id, Name: name, Count: 1})
+	}
+	return sharedCards(list, cards)
 }
 
 func sharedCards(list []*mtgv1.DeckCard, cards export.Lookup) []*mtgv1.SharedCard {

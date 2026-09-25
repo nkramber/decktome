@@ -355,7 +355,7 @@ Three structural facts drive the plan:
 - **LLM.** One deck-build session runs 2 to 4 question turns on the small model, at about 2k tokens each. It then runs 1 to 3 generation turns on the strong model, at about 15k input with the candidate card list and 3k output. Estimate: under $0.10 per session on 2026 list prices. Unknown until M-1 measures it. Prompt caching of the format rules and the candidate list cuts the input cost. The role layer must expose the provider's caching knob (D-1, D-21).
 - **Card data.** Scryfall bulk: 24.5 MB compressed per day for Oracle cards, 77.5 MB for all English printings. Free. Images hotlinked (D-6), zero storage. GCS: one snapshot per day, about 100 MB, cheap lifecycle to 30 days.
 - **Meta data.** The source terms passed the legal check (D-5). MTGO decklists are official and free, and one event page is about 330 KB. A year holds about 3,600 events, so the raw pages are about 1.2 GB, and the normalized lists are a few megabytes. A fit runs in seconds in Go and costs no LLM call.
-- **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, about 500 KB for a 5,000-card binder, D-16), sessions, decks. Low.
+- **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, D-16), sessions, decks. Low. A measure of 2026-09-25 stored about 90 gzip bytes for each distinct row, so one document holds about 10,000 rows. The import refuses a collection over 9,000 distinct rows, and the message names the limit (D-910).
 - **Cloud Run.** Two services plus a worker, scale to zero. Low until users exist.
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
 - **Deck import (PR-70, 2026-09-23).** One judge read on each Commander import, about $0.014 to $0.017 from bracket gate runs 9 and 12. The floor and the profile call Commander Spellbook up to three times. REFUTED 2026-09-23 by PR-71: "a 60-card import calls no model". A 60-card import makes one judge read, about $0.022 from `make sixty-gate` run 2.
@@ -2220,6 +2220,32 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a review of the whole code found five serious faults. The robot that fixes review comments read the comments of strangers, and a 60-card import skipped the monthly spend limit. An invited email went to the first person who claimed it. A click on "Standard" built a Commander deck, and a change to an imported deck swapped its commander. This change fixes all five.
 
+**PR-78: Twenty P2 findings of the repository review of 2026-09-24 (D-905 to D-914).** 🔧 in review. The mark comes before any review (D-822).
+The owner asked for as many corrections as one session can finish, and then for more (D-905). Each code finding has a regression test that fails before its correction.
+
+- **REV-006, the size of an import.** A deck list takes at most 250 cards, and the goldfish simulation reads at most 1,000 (D-908).
+- **REV-007, the share link.** A link opens only while its deck names its hash. A new read of an import keeps the link, and a delete ends it (D-909).
+- **REV-009, the fallback deploy.** Each job of the workflow runs on `main` alone, and the provider condition names `main` too (D-906).
+- **REV-010, the rate limit.** The key is the rightmost client address of `X-Forwarded-For` (D-907).
+- **REV-011 and REV-012, the card snapshot.** A failed job and a stale snapshot alert the owner. A version that does not parse never serves (D-911).
+- **REV-013 and REV-014, the rollback.** A deploy under a traffic pin fails its check. A stored proto drops an unknown field (D-912).
+- **REV-015, the deploy guide.** The repair steps name the index file and the two roles of D-603 and D-605.
+- **REV-016, the meld results.** The loader drops each one (D-909).
+- **REV-018, the mana pass.** The pass never removes a card that the user locked (D-242).
+- **REV-020, the revise cost.** The session total and the ledger hold the revise call when it asks, declines, or fails (D-447).
+- **REV-021, REV-022, REV-027, and REV-028, the pages.** The share page names its commander and waits for the index. The import offers Commander, and the deck pages credit TopDeck.gg (D-914).
+- **REV-023, the feedback dialog.** A thumbs down or a problem report no longer sends the chat form around it.
+- **REV-024 and REV-025, the questions.** A new commander name replaces the old one, and a mention of cEDH is no request (D-913).
+- **REV-026, the collection size.** An import over 9,000 distinct rows fails with the limit in its message (D-910).
+
+Gate:
+
+- Each new regression test fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* the second batch of review findings. A pasted list can stall the server, a stopped share link stayed live, and the fallback deploy took any branch. A false address beat the rate limit, and a bad or stale card file reached no one. The share page lost its commander, and a mention of cEDH set the top power level. Twenty such faults are fixed here.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2589,6 +2615,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 65. **PR-76** the end of the Gitar pause, and a push wait of one minute (D-899, D-900). No paid target ran.
 
 66. **PR-77** the five P1 findings of the repository review of 2026-09-24 (D-901 to D-904). No paid target ran.
+
+67. **PR-78** twenty P2 findings of the repository review of 2026-09-24 (D-905 to D-914). No paid target ran.
 
 ## 9. Open questions
 

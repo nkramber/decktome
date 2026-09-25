@@ -353,3 +353,75 @@ func TestEmulatorShareRevokeLookup(t *testing.T) {
 		t.Errorf("share of an unknown deck = %v, want ErrNotFound", err)
 	}
 }
+
+// TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck is REV-007 of the
+// review of 2026-09-24. A new power read of an imported deck wrote the
+// whole document with Put, and the share hash went. A revoke then found
+// no hash and left the link live, and a delete left it live too.
+func TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	ctx := t.Context()
+
+	uid := "u-rewrite-" + repo.NewID("seed")
+	id := repo.NewID(uid)
+	if err := repo.Put(ctx, uid, sampleDeck(id, time.Now().UTC())); err != nil {
+		t.Fatalf("put: %v", err)
+	}
+	if err := repo.Share(ctx, uid, id, "h-rw-one"); err != nil {
+		t.Fatalf("share: %v", err)
+	}
+	name := "renamed"
+	if _, err := repo.Update(ctx, uid, id, &name, nil); err != nil {
+		t.Fatalf("update: %v", err)
+	}
+	// The read started before the rename, so it carries the old name and
+	// no share flag.
+	read := sampleDeck(id, time.Now().UTC())
+	read.Summary = "a new read"
+	if err := repo.Rewrite(ctx, uid, read); err != nil {
+		t.Fatalf("rewrite: %v", err)
+	}
+	d, err := repo.Get(ctx, uid, id)
+	if err != nil || d.GetSummary() != "a new read" || d.GetName() != name || !d.GetShared() {
+		t.Fatalf("after the rewrite: summary %q, name %q, shared %v, err %v", d.GetSummary(), d.GetName(), d.GetShared(), err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-rw-one"); err != nil {
+		t.Errorf("a rewrite dropped the link: %v", err)
+	}
+	if err := repo.Revoke(ctx, uid, id); err != nil {
+		t.Fatalf("revoke: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-rw-one"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("a revoked link still opens after a rewrite: %v", err)
+	}
+
+	// A whole Put after a share leaves the share document, and the deck
+	// no longer names its hash. The link must not open.
+	if err := repo.Share(ctx, uid, id, "h-rw-two"); err != nil {
+		t.Fatalf("second share: %v", err)
+	}
+	if err := repo.Put(ctx, uid, sampleDeck(id, time.Now().UTC())); err != nil {
+		t.Fatalf("put over a share: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-rw-two"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("a link that its deck does not name still opens: %v", err)
+	}
+
+	// A delete ends the link, and a rewrite does not bring the deck back.
+	if err := repo.Share(ctx, uid, id, "h-rw-three"); err != nil {
+		t.Fatalf("third share: %v", err)
+	}
+	if err := repo.Delete(ctx, uid, id); err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+	if _, _, err := repo.LookupShare(ctx, "h-rw-three"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("the link of a deleted deck still opens: %v", err)
+	}
+	if err := repo.Rewrite(ctx, uid, read); !errors.Is(err, ErrNotFound) {
+		t.Errorf("rewrite of a deleted deck = %v, want ErrNotFound", err)
+	}
+	if _, err := repo.Get(ctx, uid, id); !errors.Is(err, ErrNotFound) {
+		t.Errorf("the deleted deck came back: %v", err)
+	}
+}

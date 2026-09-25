@@ -5,7 +5,9 @@ name: deploy
 # spends no Actions minute until somebody starts it by hand.
 #
 # Nothing starts it on its own. Main alone reaches production (D-579),
-# so run it from the main branch and no other.
+# so each job runs on the main branch and no other (REV-009). A start
+# from another ref skips every job. docs/tools/test_deploy_workflow.py
+# refuses a job with no such guard.
 on:
   workflow_dispatch:
 
@@ -30,6 +32,7 @@ env:
 jobs:
   changes:
     name: "deploy:changes"
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -49,7 +52,7 @@ jobs:
   api:
     name: "deploy:api"
     needs: [changes]
-    if: needs.changes.outputs.go == 'true'
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.go == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -107,7 +110,7 @@ jobs:
   web:
     name: "deploy:web"
     needs: [changes]
-    if: needs.changes.outputs.web == 'true'
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:

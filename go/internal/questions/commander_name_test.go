@@ -211,11 +211,11 @@ func TestAKnownCommanderAnswersTheRow(t *testing.T) {
 	a := &Agent{cat: load(t), threshold: DefaultFitThreshold, hints: h,
 		log: slog.New(slog.NewTextHandler(io.Discard, nil))}
 	st := NewState(false)
-	a.applyNames(st, classifyOut{CommanderNames: []string{"Aragorn"}})
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Aragorn"}}, "")
 	if !st.Ctx.CommanderUnresolved {
 		t.Fatal("the first turn did not raise the row")
 	}
-	a.applyNames(st, classifyOut{CommanderNames: []string{"Aragorn, King of Gondor"}})
+	a.applyNames(st, classifyOut{CommanderNames: []string{"Aragorn, King of Gondor"}}, "")
 	if st.Ctx.CommanderUnresolved || st.UnresolvedCommander != "" {
 		t.Error("the row still asks with the commander settled")
 	}

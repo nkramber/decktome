@@ -5,6 +5,7 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 
 import { deckClient } from "../../lib/api";
 import { fetchCards } from "./use-cards";
+import { cardQueryRetry } from "../../lib/card-retry";
 
 // The library reads one page of decks and the cards of that page's
 // commanders (PR-17). The commander card gives the grid its art and its
@@ -80,6 +81,7 @@ export function useCommanderCards(decks: Deck[]) {
     enabled: ids.length > 0,
     staleTime: Infinity,
     placeholderData: (prev) => prev,
+    ...cardQueryRetry,
   });
   return query.data?.byId ?? new Map<string, Card>();
 }

@@ -785,6 +785,10 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		Power:     powerWord(slots.GetPower()),
 		Cards:     cards,
 	}, acc)
+	// The revise call is paid on each exit: a question, a decline, and a
+	// failure too. The session total and the ledger hold it (D-447, D-421,
+	// REV-020).
+	session.Usage = addUsage(cloneUsage(usageBefore), acc.Report())
 	if err != nil {
 		s.log.ErrorContext(ctx, "the revise call failed", "session", session.GetId(), "err", err)
 		return stream.Send(&mtgv1.ChatResponse{

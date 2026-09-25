@@ -59,11 +59,13 @@ func readLines(r io.Reader, name string, fn func(line []byte) error) error {
 // SkipLayouts are non-playable layouts, dropped at load time. A front
 // card is the art-only front of a reversible card. It carries the name
 // of a real card, so it must never answer a name lookup. Checked against
-// the snapshot of 2026-08-24: every other layout there is playable.
+// the snapshot of 2026-08-24: every other layout there is playable. A
+// meld result is the back of one half of a meld, so no deck holds it
+// (REV-016). The parser names it MeldResult.
 var SkipLayouts = map[string]bool{
 	"token": true, "double_faced_token": true, "emblem": true,
 	"art_series": true, "vanguard": true, "scheme": true, "planar": true,
-	"front_card": true,
+	"front_card": true, MeldResult: true,
 }
 
 // LoadStats counts what LoadCardsStats dropped.

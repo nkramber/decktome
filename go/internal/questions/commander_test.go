@@ -1096,3 +1096,72 @@ func TestRefusalWithNoMoreNames(t *testing.T) {
 		t.Logf("  asked slot=%s text=%q", q.GetSlot(), q.GetText())
 	}
 }
+
+// TestANewCommanderNameReplacesTheOldOne is REV-024 of the review of
+// 2026-09-24. "Use Atraxa as my commander instead" kept both names, and
+// the build then led with a pair that is not legal. "Change the
+// commander to Atraxa" removed both names and asked again.
+func TestANewCommanderNameReplacesTheOldOne(t *testing.T) {
+	const karlov, atraxa = "Karlov of the Ghost Council", "Atraxa, Praetors' Voice"
+	for _, msg := range []string{
+		"Use Atraxa as my commander instead.",
+		"Change the commander to Atraxa.",
+	} {
+		t.Run(msg, func(t *testing.T) {
+			named := commanderClassify()
+			named.CommanderNames = []string{karlov}
+			named.Power = "bracket 3"
+			swap := commanderClassify()
+			swap.CommanderNames = []string{karlov, atraxa}
+			swap.Power = "bracket 3"
+			h := leaderHints{
+				Hints:   &fakeHints{commanders: []string{"Heliod, Sun-Crowned"}},
+				canLead: map[string]bool{karlov: true, atraxa: true},
+				known:   map[string]bool{karlov: true, atraxa: true},
+			}
+			a, _ := testAgentHints(t, h,
+				classifyStep(t, named), fits(t, "power_commander"), askStep(t),
+				classifyStep(t, swap), fits(t, "power_commander"), askStep(t))
+			st := NewState(false)
+			if _, err := a.Turn(context.Background(), st, "A white-black lifegain Commander deck. Karlov of the Ghost Council is the commander.", nil); err != nil {
+				t.Fatalf("turn 1: %v", err)
+			}
+			if _, err := a.Turn(context.Background(), st, msg, nil); err != nil {
+				t.Fatalf("turn 2: %v", err)
+			}
+			if len(st.CommanderNames) != 1 || st.CommanderNames[0] != atraxa || !st.Ctx.CommanderSet {
+				t.Errorf("commanders = %v, set %v, want Atraxa alone", st.CommanderNames, st.Ctx.CommanderSet)
+			}
+		})
+	}
+}
+
+// TestASecondPartnerJoinsTheFirst is the boundary of REV-024: a pair
+// word keeps both commanders.
+func TestASecondPartnerJoinsTheFirst(t *testing.T) {
+	const krark, sakashima = "Krark, the Thumbless", "Sakashima of a Thousand Faces"
+	first := commanderClassify()
+	first.CommanderNames = []string{krark}
+	first.Power = "bracket 3"
+	second := commanderClassify()
+	second.CommanderNames = []string{sakashima}
+	second.Power = "bracket 3"
+	h := leaderHints{
+		Hints:   &fakeHints{commanders: []string{"Heliod, Sun-Crowned"}},
+		canLead: map[string]bool{krark: true, sakashima: true},
+		known:   map[string]bool{krark: true, sakashima: true},
+	}
+	a, _ := testAgentHints(t, h,
+		classifyStep(t, first), fits(t, "power_commander"), askStep(t),
+		classifyStep(t, second), fits(t, "power_commander"), askStep(t))
+	st := NewState(false)
+	if _, err := a.Turn(context.Background(), st, "A Commander deck led by Krark, the Thumbless.", nil); err != nil {
+		t.Fatalf("turn 1: %v", err)
+	}
+	if _, err := a.Turn(context.Background(), st, "Add Sakashima of a Thousand Faces as its partner.", nil); err != nil {
+		t.Fatalf("turn 2: %v", err)
+	}
+	if len(st.CommanderNames) != 2 {
+		t.Errorf("commanders = %v, want both partners", st.CommanderNames)
+	}
+}

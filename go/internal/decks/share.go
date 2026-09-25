@@ -84,7 +84,10 @@ func (r *Repo) Revoke(ctx context.Context, uid, id string) error {
 	})
 }
 
-// LookupShare answers the deck a token hash opens, or ErrNotFound.
+// LookupShare answers the deck a token hash opens, or ErrNotFound. The
+// deck must hold the same hash. A share document that its deck no longer
+// names opens nothing, so a revoke or a delete always ends the link
+// (D-315, REV-007).
 func (r *Repo) LookupShare(ctx context.Context, hash string) (uid, id string, err error) {
 	if hash == "" {
 		return "", "", ErrNotFound
@@ -101,6 +104,16 @@ func (r *Repo) LookupShare(ctx context.Context, hash string) (uid, id string, er
 		return "", "", err
 	}
 	if s.UID == "" || s.DeckID == "" {
+		return "", "", ErrNotFound
+	}
+	deck, err := r.doc(s.UID, s.DeckID).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return "", "", ErrNotFound
+	}
+	if err != nil {
+		return "", "", err
+	}
+	if h, err := deck.DataAt("share_token_hash"); err != nil || h != hash {
 		return "", "", ErrNotFound
 	}
 	return s.UID, s.DeckID, nil

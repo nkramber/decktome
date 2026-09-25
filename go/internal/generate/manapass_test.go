@@ -636,3 +636,50 @@ func TestTheManaPassNeverAddsTheCommander(t *testing.T) {
 		t.Error("the pass moved no card, so the test reads nothing")
 	}
 }
+
+// TestManaCandidatesNeverDropALockedCard is REV-018 of the review of
+// 2026-09-24. The pass traded the costliest spell for a land, and the
+// locked card of mana value 8 was that spell. The engine then blocked
+// the deck for the absence of the card (D-242).
+func TestManaCandidatesNeverDropALockedCard(t *testing.T) {
+	plains := manaCard("o-plains", "Plains", 0, []string{"Land"}, "", mtgv1.Color_COLOR_W)
+	plains.Supertypes = []string{"Basic"}
+	locked := manaCard("o-locked", "Locked Titan", 8, []string{"Creature"}, "")
+	big := manaCard("o-big", "Big Spell", 6, []string{"Creature"}, "")
+	cheap := manaCard("o-cheap", "Cheap Spell", 2, []string{"Creature"}, "")
+	src := source{plains.GetOracleId(): plains, locked.GetOracleId(): locked, big.GetOracleId(): big, cheap.GetOracleId(): cheap}
+	b := manaBuilder(t, src)
+	for _, tc := range []struct {
+		name     string
+		cards    []*mtgv1.DeckCard
+		wantDear string
+	}{
+		{"the next costliest spell leaves", []*mtgv1.DeckCard{
+			{OracleId: "o-plains", Name: "Plains", Count: 30, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+			{OracleId: "o-locked", Name: "Locked Titan", Count: 1, Role: mtgv1.CardRole_CARD_ROLE_THREAT},
+			{OracleId: "o-big", Name: "Big Spell", Count: 1, Role: mtgv1.CardRole_CARD_ROLE_THREAT},
+		}, "o-big"},
+		{"the locked card is the only spell", []*mtgv1.DeckCard{
+			{OracleId: "o-plains", Name: "Plains", Count: 30, Role: mtgv1.CardRole_CARD_ROLE_LAND},
+			{OracleId: "o-locked", Name: "Locked Titan", Count: 1, Role: mtgv1.CardRole_CARD_ROLE_THREAT},
+		}, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			req := Request{
+				Format: mtgv1.FormatId_FORMAT_ID_COMMANDER,
+				Locked: []string{"o-locked"},
+				Pool:   NewPool([]*mtgv1.Card{plains, locked, big, cheap}, nil),
+			}
+			deck := &mtgv1.Deck{Cards: tc.cards}
+			for _, s := range b.manaCandidates(req, deck, []*mtgv1.Card{plains}) {
+				if s.drop == "o-locked" {
+					t.Errorf("a %s step drops the locked card for %s", s.role, s.add.GetName())
+				}
+			}
+			keep := map[string]bool{"o-locked": true}
+			if dear, _, _ := costliestSpell(deck, src, keep); dear != tc.wantDear {
+				t.Errorf("costliest spell = %q, want %q", dear, tc.wantDear)
+			}
+		})
+	}
+}

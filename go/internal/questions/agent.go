@@ -1169,9 +1169,10 @@ func ruleColorless(a *Agent, st *State, in turnWords) {
 }
 
 // ruleCEDH fills bracket 5 for cEDH. It is bracket 5 by definition, so
-// the bracket question has its answer (D-164).
-func ruleCEDH(a *Agent, st *State, _ turnWords) {
-	if !cedhRequest(st.Ctx.Words) || st.Slots.GetPower() != nil {
+// the bracket question has its answer (D-164). It reads the message of
+// this turn alone, so an old mention never closes the slot (REV-025).
+func ruleCEDH(a *Agent, st *State, in turnWords) {
+	if !cedhRequest(in.Message, slices.Contains(in.Open, "power")) || st.Slots.GetPower() != nil {
 		return
 	}
 	st.Slots.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: cedhBracket}}
@@ -1246,6 +1247,13 @@ func ruleNamedCardAsCommander(a *Agent, st *State, in turnWords) {
 // so nothing could ask (D-130).
 func ruleSwapCommander(a *Agent, st *State, in turnWords) {
 	if !st.Ctx.CommanderSet || !swapsCommander(in.Message) {
+		return
+	}
+	// "Change the commander to Atraxa" names the new one, and the names
+	// step already set it. The choice stays (REV-024).
+	if messageNamesCommander(in.Message, st.CommanderNames) {
+		a.log.Info("the swap words name the new commander, so the choice stays",
+			"session", st.SessionID, "commander", strings.Join(st.CommanderNames, " + "))
 		return
 	}
 	a.log.Info("the user asked for another commander, so the choice reopens",
@@ -1469,7 +1477,7 @@ func (a *Agent) apply(ctx context.Context, st *State, out classifyOut, open []st
 	if !colorlessRequest(message) {
 		a.applyColors(st, out, message)
 	}
-	a.applyNames(st, out)
+	a.applyNames(st, out, message)
 	a.applySets(ctx, st, out, acc)
 	a.applyPrecons(st, out)
 	if rule, ok := poolRules[slotWord(out.PoolRule)]; ok {
@@ -1844,7 +1852,7 @@ func dedupeSets(codes, names []string) ([]string, []string) {
 // applyNames writes the three card lists. The lists are kept apart.
 // Merged, one name that becomes the commander also reads as a card to
 // keep (D-70).
-func (a *Agent) applyNames(st *State, out classifyOut) {
+func (a *Agent) applyNames(st *State, out classifyOut, message string) {
 	named := append([]string(nil), out.CommanderNames...)
 	named = append(named, out.LockedNames...)
 	named = append(named, out.NamedCards...)
@@ -1889,7 +1897,19 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 			}
 		}
 	}
+	// A new commander name with no pair words replaces the commander that
+	// the state holds, and never joins it (REV-024). The classifier can
+	// repeat the old name beside the new one, so the old name then stays
+	// out.
+	replace := st.Ctx.CommanderSet && !st.Ctx.WantPair && !wantsCommanderPair(message) && !joinsCommander(message) &&
+		slices.ContainsFunc(out.CommanderNames, func(n string) bool {
+			return strings.TrimSpace(n) != "" && !hasName(st.CommanderNames, n)
+		})
+	old, cleared := st.CommanderNames, false
 	for _, name := range out.CommanderNames {
+		if replace && hasName(old, name) {
+			continue
+		}
 		// A card that can not lead a deck is not a commander (D-129).
 		if checks {
 			if canLead, known := ck.CanLead(name); known && !canLead {
@@ -1924,6 +1944,14 @@ func (a *Agent) applyNames(st *State, out classifyOut) {
 				// The name is not the commander until the reader picks a
 				// card (F-75, D-606).
 				continue
+			}
+		}
+		if replace && !cleared {
+			a.log.Info("a new commander name replaces the old one",
+				"session", st.SessionID, "old", strings.Join(old, " + "), "new", name)
+			st.CommanderNames, st.Slots.CommanderOracleIds, cleared = nil, nil, true
+			for _, n := range old {
+				st.NamedCards = withoutName(st.NamedCards, n)
 			}
 		}
 		st.SetCommander(name)

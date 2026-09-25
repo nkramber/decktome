@@ -18,6 +18,7 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -112,6 +113,30 @@ func (r *Repo) Put(ctx context.Context, uid string, d *mtgv1.Deck) error {
 	}
 	_, err = r.doc(uid, d.GetId()).Set(ctx, toStored(d, payload))
 	return err
+}
+
+// Rewrite writes a new read of a deck that the store holds. The fields
+// that the user owns stay as the store holds them: the name, the favorite
+// mark, and the share link (D-315). A deck that the user deleted stays
+// deleted, and the answer is ErrNotFound (REV-007).
+func (r *Repo) Rewrite(ctx context.Context, uid string, d *mtgv1.Deck) error {
+	if d.GetId() == "" || uid == "" {
+		return errors.New("decks: a rewrite needs a user and a deck id")
+	}
+	doc := r.doc(uid, d.GetId())
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		sd, cur, err := readStored(tx, doc)
+		if err != nil {
+			return err
+		}
+		next := proto.CloneOf(d)
+		next.Name, next.Favorite, next.Shared = cur.GetName(), cur.GetFavorite(), cur.GetShared()
+		updated, err := restore(next, sd)
+		if err != nil {
+			return err
+		}
+		return tx.Set(doc, updated)
+	})
 }
 
 // toStored builds the document from a deck and its packed payload.
@@ -319,15 +344,26 @@ func storedPower(sd storedDeck) *mtgv1.PowerLevel {
 }
 
 // Delete removes one deck for good (PR-17). A deck id no document answers
-// is ErrNotFound, so a second delete does not read as a success.
+// is ErrNotFound, so a second delete does not read as a success. The
+// share document of the deck goes with it, so its link ends (REV-007).
 func (r *Repo) Delete(ctx context.Context, uid, id string) error {
 	doc := r.doc(uid, id)
 	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
-		if _, err := tx.Get(doc); err != nil {
+		snap, err := tx.Get(doc)
+		if err != nil {
 			if status.Code(err) == codes.NotFound {
 				return ErrNotFound
 			}
 			return err
+		}
+		var sd storedDeck
+		if err := snap.DataTo(&sd); err != nil {
+			return err
+		}
+		if sd.ShareTokenHash != "" {
+			if err := tx.Delete(r.shareDoc(sd.ShareTokenHash)); err != nil {
+				return err
+			}
 		}
 		return tx.Delete(doc)
 	})

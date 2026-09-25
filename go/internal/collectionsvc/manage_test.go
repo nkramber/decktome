@@ -544,3 +544,21 @@ func TestAnOldFileNeverOverwritesAReplacedCollection(t *testing.T) {
 		t.Errorf("the same file made a third document: %q and %q", again.Msg.GetCollection().GetId(), res.Msg.GetCollection().GetId())
 	}
 }
+
+// TestTheBinderWaitsForTheIndex is REV-022 of the review of 2026-09-24.
+// Before the index loads, the rows hold no color, type, or price, so a
+// filter matched the wrong rows and the call succeeded. The page read
+// answers Unavailable, and the head read still answers.
+func TestTheBinderWaitsForTheIndex(t *testing.T) {
+	_, repo := stocked(t, 3)
+	s := newServer(repo, nil)
+	_, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{CollectionId: "col-1"}))
+	if connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Errorf("page read before the index = %v, want Unavailable", err)
+	}
+	if _, err := s.GetCollection(context.Background(), connect.NewRequest(&mtgv1.GetCollectionRequest{
+		CollectionId: "col-1", EntriesOmitted: true,
+	})); err != nil {
+		t.Errorf("the head read failed before the index: %v", err)
+	}
+}

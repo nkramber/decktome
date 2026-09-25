@@ -40,6 +40,7 @@ import {
 } from "./deck-stats";
 import { DiffList } from "./deck-diff";
 import { useDeckCards } from "./use-cards";
+import { DataCredit } from "../credit/data-credit";
 
 // The deck view (ui plan, step 4, and PR-20). Cards group by role, each
 // with its art and attribution (D-6), both faces for a DFC (F-9), the
@@ -387,10 +388,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
         <ExportPanel deck={deck} byId={byId} />
       </div>
 
-      <p className="text-xs text-muted-foreground">
-        Card images and card text are unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy. They are
-        copyright Wizards of the Coast, LLC, and come from Scryfall.
-      </p>
+      <DataCredit />
 
       <section aria-label="Filters and sort" className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-card p-3 text-sm print:hidden">
         <label htmlFor={`filter-role-${deck.id}`} className="flex flex-col gap-1">

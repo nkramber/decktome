@@ -75,6 +75,12 @@ func Refresh(ctx context.Context, client *scryfall.Client, store Store, logger *
 	if err := copySets(ctx, client, store, remote); err != nil {
 		return "", err
 	}
+	// A version that the API can not parse never becomes the newest one.
+	// The equal remote version then reads as current, so no later cycle
+	// would replace it (REV-012).
+	if err := CheckVersion(ctx, store, remote); err != nil {
+		return "", fmt.Errorf("check %s: %w", remote, err)
+	}
 	if err := store.Finalize(ctx, remote); err != nil {
 		return "", fmt.Errorf("finalize %s: %w", remote, err)
 	}
@@ -320,16 +326,73 @@ func loadLegalities(ctx context.Context, store Store, version string) (map[strin
 	return out, nil
 }
 
-// LoadIndex builds an Index from the newest stored snapshot.
-// It returns nil with no error when the store is empty.
+// CheckVersion parses each file of one version, one file at a time, so
+// the worker never holds the whole index. The set file and the rulings
+// file can be absent, as LoadIndex reads them, but a file that is there
+// must parse (REV-012).
+func CheckVersion(ctx context.Context, store Store, version string) error {
+	check := func(file string, optional bool, parse func(io.Reader) error) error {
+		r, err := store.Open(ctx, version, file)
+		if err != nil {
+			if optional {
+				return nil
+			}
+			return err
+		}
+		defer func() { _ = r.Close() }()
+		if err := parse(r); err != nil {
+			return fmt.Errorf("%s/%s: %w", version, file, err)
+		}
+		return nil
+	}
+	steps := []struct {
+		file     string
+		optional bool
+		parse    func(io.Reader, string) error
+	}{
+		{"oracle_cards.jsonl.gz", false, func(r io.Reader, n string) error { _, _, err := LoadCardsStats(r, n); return err }},
+		{"default_cards.jsonl.gz", false, func(r io.Reader, n string) error { _, err := LoadPrintings(r, n); return err }},
+		{"oracle_tags.jsonl.gz", false, func(r io.Reader, n string) error { _, err := LoadTags(r, n); return err }},
+		{SetsFile, true, func(r io.Reader, n string) error { _, err := LoadSets(r, n); return err }},
+		{RulingsFile, true, func(r io.Reader, n string) error { _, err := LoadRulings(r, n); return err }},
+	}
+	for _, st := range steps {
+		if err := check(st.file, st.optional, func(r io.Reader) error { return st.parse(r, st.file) }); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// LoadIndex builds an Index from the newest stored snapshot that loads.
+// A version that fails to load logs a warning, and the version before it
+// serves, so a new instance never starts with no card data while an
+// older complete version exists (REV-012). It returns nil with no error
+// when the store is empty, and the error of the newest version when no
+// version loads.
 func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, error) {
-	version, err := store.LatestVersion(ctx)
+	versions, err := store.ListVersions(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if version == "" {
-		return nil, nil
+	sortByVersionTime(versions)
+	var first error
+	for i := len(versions) - 1; i >= 0; i-- {
+		idx, err := loadVersion(ctx, store, versions[i], logger)
+		if err == nil {
+			return idx, nil
+		}
+		if first == nil {
+			first = err
+		}
+		logger.Warn("cards index: a stored version did not load, so the version before it serves",
+			"version", versions[i], "err", err)
 	}
+	return nil, first
+}
+
+// loadVersion builds an Index from one stored version.
+func loadVersion(ctx context.Context, store Store, version string, logger *slog.Logger) (*Index, error) {
 	start := time.Now()
 	asOf, err := VersionTime(version)
 	if err != nil {

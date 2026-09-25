@@ -35,6 +35,14 @@ const maxLines = 1000
 // no line past the cap goes missing with no report (D-846).
 var ErrTooManyLines = fmt.Errorf("a deck list takes at most %d lines", maxLines)
 
+// maxCards caps the copies of one list. A Commander deck is 100 cards,
+// and a 60-card deck with its sideboard is 75. A list over the cap asks
+// the profile for millions of copies, so the whole list fails (REV-006).
+const maxCards = 250
+
+// ErrTooManyCards refuses a list whose copies add up past maxCards.
+var ErrTooManyCards = fmt.Errorf("a deck list takes at most %d cards", maxCards)
+
 // maxRawBytes bounds the echoed line text in a report, as a collection
 // upload bounds it.
 const maxRawBytes = 200
@@ -74,8 +82,8 @@ var headers = map[string]Section{
 	"companion": Companion,
 }
 
-// Parse reads a list. It fails on a read error and on a list over
-// maxLines. A line that reads as no card goes to Bad, and the import
+// Parse reads a list. It fails on a read error, on a list over
+// maxLines, and on a list over maxCards. A line that reads as no card goes to Bad, and the import
 // reports it (D-846).
 func Parse(r io.Reader) (*List, error) {
 	out := &List{}
@@ -83,7 +91,7 @@ func Parse(r io.Reader) (*List, error) {
 	sc.Buffer(make([]byte, 64*1024), 64*1024)
 	section := Main
 	about := false
-	n := 0
+	n, copies := 0, 0
 	for sc.Scan() {
 		n++
 		if n > maxLines {
@@ -124,6 +132,9 @@ func Parse(r io.Reader) (*List, error) {
 				Line: int32(n), Raw: truncate(raw), Reason: mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW,
 			})
 			continue
+		}
+		if copies += line.Quantity; copies > maxCards {
+			return nil, ErrTooManyCards
 		}
 		line.Line, line.Raw = n, truncate(raw)
 		if line.Section == Main {
