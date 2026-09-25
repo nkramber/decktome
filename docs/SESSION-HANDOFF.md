@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on the tree of the first commit, exit 0. Each new regression test failed on the base and passes here.
 
-**The review.** Pending: the Gitar pass, then the Codex review.
+**The review.** The Codex review found no code defect at `6a247ac`, and is Blocked until the owner confirms and marks the existing accounts with `make mark-verified` (D-903). Gitar passed with no open threads. The current CI jobs passed, except `review-gate`, which waits for the published record.
 
 **What waits on the owner.**
 
