@@ -8,6 +8,7 @@ package agentsvc
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -59,6 +60,14 @@ type Store interface {
 	Rename(ctx context.Context, uid, id, name string) (*mtgv1.SessionSummary, error)
 	// Delete removes a session and its private state.
 	Delete(ctx context.Context, uid, id string) error
+	// Lease gives the build lease of a session to token until the given
+	// time. It returns sessions.ErrLeased while another token holds a
+	// lease that has not ended at now (D-922).
+	Lease(ctx context.Context, uid, id, token string, now, until time.Time) error
+	// Leased reports whether a build holds the lease of a session at now.
+	Leased(ctx context.Context, uid, id string, now time.Time) (bool, error)
+	// Release ends the lease that token holds.
+	Release(ctx context.Context, uid, id, token string) error
 }
 
 // PreconSource hands out the precon set for the current card index, or
@@ -435,6 +444,16 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		if _, busy := s.building.Load(buildKey(uid, id)); busy {
 			return connect.NewError(connect.CodeAborted, errBuildInProgress)
 		}
+		// A build on another instance holds the lease of the session in
+		// the store, so a reload or a second tab can not start a second
+		// paid build there (D-922).
+		leased, err := s.store.Leased(ctx, uid, id, s.now())
+		if err != nil {
+			return s.leaseUnreadable(ctx, id, err)
+		}
+		if leased {
+			return connect.NewError(connect.CodeAborted, errBuildInProgress)
+		}
 	}
 	// The gate is non-blocking: a caller past the limit hears it at once
 	// instead of a queue that holds the connection open.
@@ -445,6 +464,14 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return connect.NewError(connect.CodeResourceExhausted, errBusy)
 	}
 
+	// The spend cap of D-421 reads the ledger before the turn, and the
+	// refusal names the day the cap resets. A ledger that can not be read
+	// refuses the turn too: a cap nobody can read is no cap. It comes
+	// before load, so a refused first message makes and counts no
+	// session (D-922).
+	if err := s.checkSpendCap(ctx, uid); err != nil {
+		return err
+	}
 	session, snap, version, owned, collectionGone, err := s.load(ctx, uid, req.Msg)
 	if err != nil {
 		return err
@@ -497,12 +524,6 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	s.facts(session, st, hints)
 	agent, err := s.agent(hints)
 	if err != nil {
-		return err
-	}
-	// The spend cap of D-421 reads the ledger before the turn, and the
-	// refusal names the day the cap resets. A ledger that can not be read
-	// refuses the turn too: a cap nobody can read is no cap.
-	if err := s.checkSpendCap(ctx, uid); err != nil {
 		return err
 	}
 	// The options the reader picked reach the engine as data (D-597). The
@@ -576,6 +597,16 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		}
 	}
 	session.Turns = append(session.Turns, turn)
+	// A build takes the lease of its session before the write that
+	// starts it, and gives it back when the turn ends. A turn that lost
+	// the lease to a build on another instance stores nothing (D-922).
+	if turnErr == nil && res.Ready {
+		release, err := s.takeLease(ctx, uid, session.GetId())
+		if err != nil {
+			return err
+		}
+		defer release()
+	}
 	// The classify call is paid, so the write that records it runs
 	// detached from the client (D-303).
 	sctx, cancel := detached(ctx, storeLimit)
@@ -678,8 +709,42 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 // errCapReached is the refusal of D-421. The date is the first day of
 // the next month.
 func errCapReached(capUSD float64, reset string) error {
-	return connect.NewError(connect.CodeResourceExhausted,
+	return connect.NewError(connect.CodeFailedPrecondition,
 		fmt.Errorf("you have spent your $%.0f for this month, and the cap resets on %s", capUSD, reset))
+}
+
+// errLeaseUnreadable is the refusal when the lease can not be read. The
+// cause goes to the log alone (D-922, D-923).
+var errLeaseUnreadable = errors.New("the session could not be read, send the message again")
+
+// leaseUnreadable logs a failed read or write of the lease and answers
+// Unavailable, which the web retries.
+func (s *Server) leaseUnreadable(ctx context.Context, id string, err error) error {
+	s.log.ErrorContext(ctx, "the build lease could not be read", "session", id, "err", err)
+	return connect.NewError(connect.CodeUnavailable, errLeaseUnreadable)
+}
+
+// takeLease takes the build lease of a session for one build and its
+// store writes. The release runs detached, so a client that left still
+// frees the session (D-922).
+func (s *Server) takeLease(ctx context.Context, uid, id string) (func(), error) {
+	token := rand.Text()
+	now := s.now()
+	err := s.store.Lease(ctx, uid, id, token, now, now.Add(s.buildDeadline()+2*storeLimit))
+	if errors.Is(err, sessions.ErrLeased) {
+		return nil, connect.NewError(connect.CodeAborted, errBuildInProgress)
+	}
+	if err != nil {
+		return nil, s.leaseUnreadable(ctx, id, err)
+	}
+	return func() {
+		rctx, cancel := detached(ctx, storeLimit)
+		defer cancel()
+		if err := s.store.Release(rctx, uid, id, token); err != nil {
+			s.log.ErrorContext(ctx, "the build lease was not released, so it ends at its time limit",
+				"session", id, "err", err)
+		}
+	}, nil
 }
 
 // checkSpendCap refuses the turn of a user at or over the monthly cap.
@@ -1084,14 +1149,18 @@ func storeError(err error) error {
 	if errors.Is(err, sessions.ErrNotFound) || errors.Is(err, decks.ErrNotFound) {
 		return connect.NewError(connect.CodeNotFound, err)
 	}
+	// A conflict discarded this turn, so it is Unavailable and the web
+	// offers a retry. Aborted names a build that runs on (D-922).
 	if errors.Is(err, sessions.ErrConflict) {
-		return connect.NewError(connect.CodeAborted,
+		return connect.NewError(connect.CodeUnavailable,
 			fmt.Errorf("the session is busy with another turn, send the message again: %w", err))
 	}
 	if errors.Is(err, sessions.ErrTooLarge) {
 		// The document limit is a hard stop. The user hears it as a clear
-		// message, not as a session that fails every later turn.
-		return connect.NewError(connect.CodeResourceExhausted, fmt.Errorf("%w: %w", errSessionBig, err))
+		// message, not as a session that fails every later turn. A retry
+		// can not pass it, so the code is not one that the web retries
+		// (D-922).
+		return connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("%w: %w", errSessionBig, err))
 	}
 	return connect.NewError(connect.CodeInternal, err)
 }

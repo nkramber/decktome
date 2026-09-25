@@ -386,3 +386,58 @@ func TestEmulatorListRenameDelete(t *testing.T) {
 		t.Errorf("list after delete = %v (%v), want one", list, err)
 	}
 }
+
+// TestEmulatorBuildLease is D-922. A second build waits while the lease
+// of the first holds, takes it after the lease ends, and keeps it when
+// the first build releases late. A delete removes the lease.
+func TestEmulatorBuildLease(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	ctx := t.Context()
+	uid := "lease-" + time.Now().UTC().Format("150405.000000000")
+	if err := repo.Put(ctx, uid, &mtgv1.Session{Id: "s1"}, sampleState(), 0); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Unix(1000, 0).UTC()
+	if leased, err := repo.Leased(ctx, uid, "s1", now); err != nil || leased {
+		t.Fatalf("a new session reads leased=%v (%v), want free", leased, err)
+	}
+	if err := repo.Lease(ctx, uid, "s1", "a", now, now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if leased, err := repo.Leased(ctx, uid, "s1", now); err != nil || !leased {
+		t.Errorf("after a lease, leased=%v (%v), want true", leased, err)
+	}
+	if err := repo.Lease(ctx, uid, "s1", "b", now, now.Add(time.Minute)); !errors.Is(err, ErrLeased) {
+		t.Errorf("a second build during the lease gave %v, want ErrLeased", err)
+	}
+	later := now.Add(2 * time.Minute)
+	if err := repo.Lease(ctx, uid, "s1", "b", later, later.Add(time.Minute)); err != nil {
+		t.Errorf("a build after the lease ended gave %v", err)
+	}
+	if err := repo.Release(ctx, uid, "s1", "a"); err != nil {
+		t.Fatal(err)
+	}
+	if leased, _ := repo.Leased(ctx, uid, "s1", later); !leased {
+		t.Error("a late release of the first build removed the lease of the second")
+	}
+	if err := repo.Release(ctx, uid, "s1", "b"); err != nil {
+		t.Fatal(err)
+	}
+	if leased, _ := repo.Leased(ctx, uid, "s1", later); leased {
+		t.Error("the release left the lease")
+	}
+	// The lease never moves the version that Put compares.
+	if err := repo.Lease(ctx, uid, "s1", "c", later, later.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Put(ctx, uid, &mtgv1.Session{Id: "s1"}, sampleState(), 1); err != nil {
+		t.Errorf("a Put after a lease gave %v", err)
+	}
+	if err := repo.Delete(ctx, uid, "s1"); err != nil {
+		t.Fatal(err)
+	}
+	if leased, _ := repo.Leased(ctx, uid, "s1", later); leased {
+		t.Error("the delete left the lease")
+	}
+}

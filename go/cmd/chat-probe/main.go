@@ -272,3 +272,15 @@ func (m *memStore) Delete(_ context.Context, _, id string) error {
 	delete(m.sess, id)
 	return nil
 }
+
+// The probe runs one process and one turn at a time, so the build lease
+// of D-922 always holds.
+func (m *memStore) Lease(context.Context, string, string, string, time.Time, time.Time) error {
+	return nil
+}
+
+func (m *memStore) Leased(context.Context, string, string, time.Time) (bool, error) {
+	return false, nil
+}
+
+func (m *memStore) Release(context.Context, string, string, string) error { return nil }

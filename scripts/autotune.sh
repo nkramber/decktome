@@ -176,11 +176,26 @@ charge() {  # $1 = cost in USD, $2 = what it paid for
 }
 over_budget() { awk -v s="$(spent)" -v b="$BUDGET" 'BEGIN {exit !(s >= b)}'; }
 
-# cost_of reads the "- Cost: $0.1234." line a run document writes. It
-# prints nothing for a document with no priced line, and charge decides.
+# cost_of reads the cost of one paid run. A JSON summary holds cost_usd.
+# A run document holds the line "- Calls: N. Cost: $0.1234. Time: ...",
+# and an older one the line "- Cost: $0.1234.". Only a line that starts
+# with one of the two counts, so a price in a conversation never does.
+# It prints nothing for a run with no priced cost, and charge decides.
 # The value is printed in fixed notation: charge rejects an exponent.
 cost_of() {
-  grep -o -- '- Cost: \$[0-9.]*' "$1" 2>/dev/null | tail -1 | tr -d '$' | awk '{printf "%.6f", $3+0}'
+  case "$1" in
+    *.json)
+      python3 -c 'import json, sys
+try:
+    v = json.load(open(sys.argv[1], encoding="utf-8")).get("cost_usd")
+except Exception:
+    sys.exit(0)
+if isinstance(v, (int, float)) and not isinstance(v, bool):
+    print("%.6f" % v, end="")' "$1" 2>/dev/null ;;
+    *)
+      grep -oE -- '^- (Calls: [0-9]+\. )?Cost: \$[0-9.]+' "$1" 2>/dev/null | tail -1 \
+        | sed 's/.*\$//' | awk '{printf "%.6f", $1+0}' ;;
+  esac
 }
 
 green() {
@@ -484,7 +499,7 @@ else
   GATE="$(run_gate "$STAMP-000")" || die "the baseline gate produced nothing"
   charge "$(cost_of "$GATE")" "gate-$STAMP-000"
   BEST="$(run_eval "$STAMP-000" "$GATE")" || die "the baseline eval produced nothing"
-  charge "$(cost_of "$(eval_doc_of "$STAMP-000")")" "eval-$STAMP-000"
+  charge "$(cost_of "$BEST")" "eval-$STAMP-000"
   BEST_LABEL="$STAMP-000"
   PREV_DOC="$(eval_doc_of "$STAMP-000")"
   PREV_JSON="$BEST"
@@ -579,7 +594,7 @@ while [ "$i" -lt "$MAX_ITERATIONS" ]; do
   rc=$?
   [ "$rc" = "2" ] && { preserve "$LABEL" "the eval was partial"; die "the eval of $LABEL is partial, and a partial run decides nothing"; }
   [ "$rc" = "0" ] || { reject "$LABEL" "the eval produced nothing"; continue; }
-  charge "$(cost_of "$(eval_doc_of "$LABEL")")" "eval-$LABEL"
+  charge "$(cost_of "$NEXT")" "eval-$LABEL"
 
   VERDICT="$STATE_DIR/$LABEL-verdict.txt"
   rm -f "$STATE_DIR/$LABEL-lesson.md"
@@ -619,7 +634,7 @@ while [ "$i" -lt "$MAX_ITERATIONS" ]; do
       rc=$?
       [ "$rc" = "2" ] && { preserve "$RLABEL" "the re-measure eval was partial"; die "the eval of $RLABEL is partial, and a partial run decides nothing"; }
       [ "$rc" = "0" ] || { reject "$RLABEL" "the re-measure eval produced nothing"; continue; }
-      charge "$(cost_of "$(eval_doc_of "$RLABEL")")" "eval-$RLABEL"
+      charge "$(cost_of "$RNEXT")" "eval-$RLABEL"
       MERGED="$STATE_DIR/$RLABEL-merged.json"
       MERGED_DOC="$(eval_doc_of "$RLABEL-merged")"
       if ! ( cd "$ROOT/go" && "$TUNE_CHECK" -merge -prev "$PREV_JSON" -prev-doc "$PREV_GATE" \

@@ -39,6 +39,10 @@ var ErrTooLarge = errors.New("session too large for one document (max 900 KiB gz
 // stored the session first, and this turn must not overwrite it.
 var ErrConflict = errors.New("session changed since it was read")
 
+// ErrLeased means that another build holds the lease of the session
+// (D-922).
+var ErrLeased = errors.New("another build holds the session")
+
 // Repo stores sessions in Firestore. The caller owns the client.
 type Repo struct {
 	client *firestore.Client
@@ -75,6 +79,83 @@ func (r *Repo) doc(uid, id string) *firestore.DocumentRef {
 
 func (r *Repo) stateDoc(uid, id string) *firestore.DocumentRef {
 	return r.doc(uid, id).Collection("private").Doc("state")
+}
+
+// leaseDoc holds the build lease of one session. It sits apart from the
+// session, so a lease never changes the version that Put compares.
+func (r *Repo) leaseDoc(uid, id string) *firestore.DocumentRef {
+	return r.doc(uid, id).Collection("private").Doc("lease")
+}
+
+// storedLease is the lease shape. The token names the build that holds
+// it, and the lease ends at until.
+type storedLease struct {
+	Token string    `firestore:"token"`
+	Until time.Time `firestore:"until"`
+}
+
+// readLease reads the lease inside a transaction. A missing lease reads
+// as the zero lease, which has ended.
+func readLease(tx *firestore.Transaction, ref *firestore.DocumentRef) (storedLease, error) {
+	snap, err := tx.Get(ref)
+	if status.Code(err) == codes.NotFound {
+		return storedLease{}, nil
+	}
+	if err != nil {
+		return storedLease{}, err
+	}
+	var l storedLease
+	if err := snap.DataTo(&l); err != nil {
+		return storedLease{}, err
+	}
+	return l, nil
+}
+
+// Lease gives the build lease of a session to token until the given
+// time. It returns ErrLeased while another token holds a lease that has
+// not ended at now. A build on each instance takes it, so a turn on
+// another instance can not start a second paid build (D-922).
+func (r *Repo) Lease(ctx context.Context, uid, id, token string, now, until time.Time) error {
+	ref := r.leaseDoc(uid, id)
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		l, err := readLease(tx, ref)
+		if err != nil {
+			return err
+		}
+		if l.Token != token && now.Before(l.Until) {
+			return fmt.Errorf("%w: %s", ErrLeased, id)
+		}
+		return tx.Set(ref, storedLease{Token: token, Until: until})
+	})
+}
+
+// Leased reports whether a build holds the lease of a session at now.
+func (r *Repo) Leased(ctx context.Context, uid, id string, now time.Time) (bool, error) {
+	snap, err := r.leaseDoc(uid, id).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	var l storedLease
+	if err := snap.DataTo(&l); err != nil {
+		return false, err
+	}
+	return now.Before(l.Until), nil
+}
+
+// Release ends the lease that token holds. The lease of another token
+// stays, because that build took it after this lease ended.
+func (r *Repo) Release(ctx context.Context, uid, id, token string) error {
+	ref := r.leaseDoc(uid, id)
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		l, err := readLease(tx, ref)
+		if err != nil || l.Token != token {
+			return err
+		}
+		return tx.Delete(ref)
+	})
 }
 
 // NewID reserves a session id without a write.
@@ -326,6 +407,9 @@ func (r *Repo) Delete(ctx context.Context, uid, id string) error {
 			return err
 		}
 		if err := tx.Delete(r.doc(uid, id)); err != nil {
+			return err
+		}
+		if err := tx.Delete(r.leaseDoc(uid, id)); err != nil {
 			return err
 		}
 		return tx.Delete(r.stateDoc(uid, id))

@@ -439,9 +439,13 @@ fi
 
 # --- Step 6: the baselines ---------------------------------------------
 
-say "step 6: eval-check, so no baseline flipped"
+# eval-check reads the committed whole runs alone, and the cycle ran the
+# cases alone. So this step proves that the fixer changed no committed
+# baseline, and not that the other gate rows still pass. A whole run of
+# each gate that the fix touches comes before the merge (D-921).
+say "step 6: eval-check, so the fixer changed no committed baseline"
 if ! make eval-check >>"$LOG" 2>&1; then
-  say "a baseline flipped. The fixer traded one reader's complaint for a regression. The cycle reverts it."
+  say "a committed baseline no longer passes eval-check. The cycle reverts the fix."
   git reset -q --hard "$CASES_COMMIT"
   exit 1
 fi
@@ -455,7 +459,8 @@ git add -A
 git commit -q -m "The evidence of the feedback fix cycle, $STAMP
 
 Every case failed before the fix and passes after it. make eval-check
-shows no flip on the baselines (D-645)." || die "could not commit the evidence"
+passes on the committed baselines. No whole gate run measured the other
+rows (D-921)." || die "could not commit the evidence"
 
 say "spent \$$(spent) of \$$CAP over $(wc -l < "$LEDGER" | tr -d ' ') gate run(s)"
 if [ "$HERE" = "1" ]; then
@@ -478,6 +483,8 @@ PR_BODY="$STATE_DIR/pr-body.md"
   echo "It reads the harvest, writes one case per thumbs down, proves each case fails, fixes the causes, and proves each case passes. The case and its fix are in one pull request, so the gate on \`main\` is never red."
   echo
   echo "Cap \$$CAP. Spent \$$(spent)."
+  echo
+  echo "The cycle ran the failing cases alone, so no run measured the other gate rows. Ask the owner for a whole run of each gate that the fix touches before the merge (D-921)."
   echo
   sed -n '/^## The measure run/,$p' "$REPORT"
   echo

@@ -1294,7 +1294,7 @@ Every guard of `docs/reference/autotune-design.md` holds. They are the branch of
 
 **The cycle pushes, opens the pull request, and answers the review** (D-645, D-637). `scripts/feedback-review.sh` hands every open finding of `gitar-bot` to the fixer, runs the free checks, pushes, and replies on each thread. It stops after three rounds. No step runs in CI (D-286).
 
-Gate: one live cycle on the owner's word ends with a pull request and a passing gate on its new cases. `make eval-check` shows no flip on the baselines. The free half holds. `make feedback-loop-dry` plans a cycle over the fixture for nothing, and it names the three gates and the case ids of each one.
+Gate: one live cycle on the owner's word ends with a pull request and a passing gate on its new cases. `make eval-check` passes on the committed baselines. That check reads no row of the cycle, so a whole run of each gate that the fix touches comes before the merge (D-921). The free half holds. `make feedback-loop-dry` plans a cycle over the fixture for nothing, and it names the three gates and the case ids of each one.
 > *In plain English:* an assistant tries to fix what the complaints show. It proves the complaint is real first, then fixes it, then proves the fix worked. It opens the change for you to approve and answers the automatic reviewer. Nothing ships without you.
 
 **PR-34: More collection platforms (F-91, F-92, F-93, D-647).** ✅ merged 2026-09-10 (#123). Moxfield reads, and the app names the format itself.
@@ -2252,6 +2252,22 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the second batch of review findings. A pasted list can stall the server, a stopped share link stayed live, and the fallback deploy took any branch. A false address beat the rate limit, and a bad or stale card file reached no one. The share page lost its commander, and a mention of cEDH set the top power level. Forty-four such faults are fixed here.
 
+**PR-79: Fourteen findings of the repository review of 2026-09-24 (D-920 to D-923).** 🔨 in progress. The mark comes before any review (D-822).
+The owner asked for as many corrections as one session can finish (D-920). Each code finding has a regression test that fails before its correction.
+
+- **REV-008, the review gate.** A record on a head from a fork fails RG 3. The owner chose no signed record for now (D-920).
+- **REV-029, the fix cycle.** Step 6 says that it proves no committed baseline changed, and the body asks for a whole run before the merge (D-921).
+- **REV-030, REV-043, and REV-044, the chat.** A build holds a lease on its chat in the store. The cap refusal comes before the chat exists, and each refusal code says whether a retry helps (D-922).
+- **Nine P3 findings.** REV-038, REV-039, REV-048, REV-056, REV-066, REV-074, REV-075, REV-084, and REV-086 (D-923).
+
+Gate:
+
+- Each new regression test fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* the third batch of review findings. Two tabs on two servers paid for two builds of one deck, and an account at its spend limit still started a chat. The review check now refuses a record from a copy of the repository, and a few scripts, pages, and checks got safer.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2623,6 +2639,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 66. **PR-77** the five P1 findings of the repository review of 2026-09-24 (D-901 to D-904). No paid target ran.
 
 67. **PR-78** forty-four findings of the repository review of 2026-09-24 (D-905 to D-919). No paid target ran.
+
+68. **PR-79** fourteen findings of the repository review of 2026-09-24 (D-920 to D-923). No paid target ran.
 
 ## 9. Open questions
 

@@ -726,6 +726,70 @@ func TestTurnDuringABuildIsRefused(t *testing.T) {
 	}
 }
 
+// TestTurnOnAnotherInstanceDuringABuildIsRefused is D-922. Two servers
+// share one store, as two instances share Firestore. A turn and a delete
+// on the second server while the first one builds must start no second
+// paid build and change nothing, and the lease ends with the build.
+func TestTurnOnAnotherInstanceDuringABuildIsRefused(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}, started: make(chan struct{}), release: make(chan struct{})}
+	first, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
+	other, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds)), readySteps(t)...)
+	started := chat(t, first, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"}).started
+
+	done := make(chan events, 1)
+	go func() {
+		done <- chat(t, first, &mtgv1.ChatRequest{SessionId: started, Message: "Karlov, bracket 3"})
+	}()
+	select {
+	case <-fd.started:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the build never started")
+	}
+	store.mu.Lock()
+	turns, version := len(store.sessions[started].GetTurns()), store.versions[started]
+	store.mu.Unlock()
+	// A deadline, because a second build waits on the same fake and
+	// would hold the call until the first build ends.
+	send := func(msg string) error {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		stream, err := other.Chat(ctx, connect.NewRequest(&mtgv1.ChatRequest{SessionId: started, Message: msg}))
+		if err == nil {
+			for stream.Receive() {
+			}
+			err = stream.Err()
+			_ = stream.Close()
+		}
+		return err
+	}
+	if err := send("another one"); connect.CodeOf(err) != connect.CodeAborted || !strings.Contains(err.Error(), "a build is in progress") {
+		t.Errorf("a turn on another instance during a build gave %v, want Aborted with the reason: %v", connect.CodeOf(err), err)
+	}
+	_, err := other.DeleteSession(context.Background(), connect.NewRequest(&mtgv1.DeleteSessionRequest{SessionId: started}))
+	if connect.CodeOf(err) != connect.CodeAborted {
+		t.Errorf("a delete on another instance during a build gave %v, want Aborted", err)
+	}
+	store.mu.Lock()
+	if n, v := len(store.sessions[started].GetTurns()), store.versions[started]; n != turns || v != version {
+		t.Errorf("the refused turn wrote the session: %d turns at version %d, want %d at %d", n, v, turns, version)
+	}
+	store.mu.Unlock()
+	close(fd.release)
+	built := <-done
+	if built.deck == nil || fd.runs != 1 {
+		t.Errorf("the first build did not finish alone: deck %v, runs %d", built.deck != nil, fd.runs)
+	}
+	if got := store.sessions[started].GetStatus(); got != mtgv1.SessionStatus_SESSION_STATUS_BUILT {
+		t.Errorf("the session status is %v, want BUILT", got)
+	}
+	if err := send("thanks"); connect.CodeOf(err) == connect.CodeAborted {
+		t.Errorf("the lease outlived the build: %v", err)
+	}
+}
+
 // TestDisconnectMidBuildStillStoresTheDeck is D-303. The client leaves
 // after the paid call started, and the deck is stored and recorded.
 func TestDisconnectMidBuildStillStoresTheDeck(t *testing.T) {

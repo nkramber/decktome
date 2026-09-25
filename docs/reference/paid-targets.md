@@ -69,7 +69,7 @@ The target reads no `.env`, so run `set -a && . ./.env && set +a` first. Set `CA
 
 `make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559).
 
-With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
+With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). It refuses a changed tree, and it stops when the branch moves (D-923). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
 
 `make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It counts a revision and an imported deck apart from a first build (D-861). It never lowers a count. It calls no model and costs nothing.
 

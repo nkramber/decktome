@@ -148,8 +148,8 @@ The reviewer never changes what the author says the pull request does, or why. I
 The check has five rules (D-810 to D-817):
 
 1. RG 1: when the `review-override` label is on, each changed path is in the documentation set.
-2. RG 2: Dependabot opened the pull request and wrote every commit. This rule passes the check alone.
-3. RG 3: `docs/reviews/pr-<number>.md` exists on the head.
+2. RG 2: Dependabot opened the pull request and wrote every commit, and GitHub committed each one (D-923). This rule passes the check alone.
+3. RG 3: `docs/reviews/pr-<number>.md` exists on the head, and the head is a branch of this repository, not a fork (D-920).
 4. RG 4: the verdict is `Ready for owner merge`.
 5. RG 5: the head field names the effective head, or an earlier commit that documents alone follow (D-837).
 

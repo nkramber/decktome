@@ -280,6 +280,8 @@ const fakeGit = `#!/usr/bin/env bash
 case "$1" in
   rev-parse) echo "abc123" ;;
   pull) echo "git $*" >> "$FAKE_GIT_LOG" ;;
+  # A clean tree, for the guard of D-923.
+  diff | ls-files) ;;
   *) exit 1 ;;
 esac
 `

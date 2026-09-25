@@ -13,5 +13,9 @@ breaking:
   # encoding, which is what a running client needs. A stored document
   # needs one more rule: gzstore drops a field that the proto of the
   # build does not know, so an older build reads a newer document.
+  # The two delete rules refuse the removal of an RPC or a service that a
+  # deployed web build still calls (D-923).
   use:
     - WIRE_JSON
+    - RPC_NO_DELETE
+    - SERVICE_NO_DELETE

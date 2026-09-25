@@ -53,12 +53,17 @@ func importCardIndex() *cards.Index {
 	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
 	wb := []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B}
 	w := []mtgv1.Color{mtgv1.Color_COLOR_W}
+	g := []mtgv1.Color{mtgv1.Color_COLOR_G}
 	return cards.NewIndex([]*mtgv1.Card{
 		{OracleId: "o-karlov", Name: "Karlov of the Ghost Council", TypeLine: "Legendary Creature - Spirit Advisor",
 			CanBeCommander: true, OracleText: karlovText, ColorIdentity: wb, Legalities: legal},
 		{OracleId: "o-welcome", Name: "Ajani's Welcome", TypeLine: "Enchantment", OracleText: welcomeText, ColorIdentity: w, Legalities: legal},
 		{OracleId: "o-plains", Name: "Plains", TypeLine: "Basic Land - Plains", Legalities: legal},
 		{OracleId: "o-bolt", Name: "Lightning Bolt", TypeLine: "Instant", ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_R}, Legalities: legal},
+		{OracleId: "o-wilson", Name: "Wilson, Refined Grizzly", TypeLine: "Legendary Creature - Bear Warrior",
+			CanBeCommander: true, Partner: mtgv1.PartnerKind_PARTNER_KIND_CHOOSE_BACKGROUND, ColorIdentity: g, Legalities: legal},
+		{OracleId: "o-giants", Name: "Raised by Giants", TypeLine: "Legendary Enchantment - Background",
+			Subtypes: []string{"Background"}, IsBackground: true, ColorIdentity: g, Legalities: legal},
 	}, nil, nil, time.Unix(1000, 0).UTC())
 }
 
@@ -238,6 +243,57 @@ func TestImportTakesAPickedCommanderFormat(t *testing.T) {
 	res = importList(t, client, &mtgv1.ImportDeckRequest{Text: list, Format: commander, CommanderOracleIds: []string{"o-karlov"}})
 	if d := res.GetDeck(); d.GetFormat().GetId() != commander || d.GetCommanderOracleIds()[0] != "o-karlov" {
 		t.Errorf("deck format %v, commanders %v, want Commander led by Karlov", d.GetFormat().GetId(), d.GetCommanderOracleIds())
+	}
+}
+
+// TestImportPicksABackgroundPair is REV-056: a Background leads only
+// beside a commander with "choose a Background" (CR 702.124k). The
+// import offers it and takes the pair, and it refuses a Background alone
+// or beside any other commander.
+func TestImportPicksABackgroundPair(t *testing.T) {
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	client, _ := importServer(t, fd, ds, &fakeNoter{})
+	list := "1 Karlov of the Ghost Council\n1 Wilson, Refined Grizzly\n1 Raised by Giants\n1 Ajani's Welcome\n96 Plains\n"
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list})
+	var offered []string
+	for _, o := range res.GetCommanderOptions() {
+		offered = append(offered, o.GetOracleId())
+	}
+	if fmt.Sprint(offered) != "[o-karlov o-wilson o-giants]" {
+		t.Fatalf("options = %v, want Karlov, Wilson, and the Background", offered)
+	}
+	noChooser := "1 Karlov of the Ghost Council\n1 Raised by Giants\n1 Ajani's Welcome\n97 Plains\n"
+	res = importList(t, client, &mtgv1.ImportDeckRequest{Text: noChooser})
+	if len(res.GetCommanderOptions()) != 1 || res.GetCommanderOptions()[0].GetOracleId() != "o-karlov" {
+		t.Errorf("options = %v, want Karlov alone: no card here can choose a Background", res.GetCommanderOptions())
+	}
+
+	res = importList(t, client, &mtgv1.ImportDeckRequest{Text: list, CommanderOracleIds: []string{"o-wilson", "o-giants"}})
+	deck := res.GetDeck()
+	if got := deck.GetCommanderOracleIds(); fmt.Sprint(got) != "[o-wilson o-giants]" {
+		t.Fatalf("commanders = %v, want Wilson and the Background", got)
+	}
+	for _, c := range deck.GetCards() {
+		if c.GetOracleId() == "o-giants" || c.GetOracleId() == "o-wilson" {
+			t.Errorf("%s stayed in the 99", c.GetName())
+		}
+	}
+
+	for _, tc := range []struct {
+		name string
+		list string
+		pick []string
+	}{
+		{"a Background alone", list, []string{"o-giants"}},
+		{"a Background beside a commander without the ability", list, []string{"o-karlov", "o-giants"}},
+		{"a Background of a list without a chooser", noChooser, []string{"o-giants"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := client.ImportDeck(context.Background(), connect.NewRequest(&mtgv1.ImportDeckRequest{Text: tc.list, CommanderOracleIds: tc.pick}))
+			if connect.CodeOf(err) != connect.CodeInvalidArgument {
+				t.Errorf("pick %v was taken: %v", tc.pick, err)
+			}
+		})
 	}
 }
 
@@ -470,7 +526,7 @@ func TestImportMarksAListThatDoesNotRead(t *testing.T) {
 
 // TestImportAtTheCapRefusesEveryFormat is REV-002 of the review of
 // 2026-09-24. The judge reads a 60-card list as it reads a Commander
-// list, so a user at the cap gets ResourceExhausted and no judge call
+// list, so a user at the cap gets FailedPrecondition and no judge call
 // for each format (D-421).
 func TestImportAtTheCapRefusesEveryFormat(t *testing.T) {
 	sixty := "Deck\n4 Lightning Bolt\n56 Plains\n"
@@ -502,8 +558,8 @@ func TestImportAtTheCapRefusesEveryFormat(t *testing.T) {
 				}
 				return
 			}
-			if connect.CodeOf(err) != connect.CodeResourceExhausted {
-				t.Fatalf("err = %v, want ResourceExhausted", err)
+			if connect.CodeOf(err) != connect.CodeFailedPrecondition {
+				t.Fatalf("err = %v, want FailedPrecondition", err)
 			}
 			if fd.imports != 0 || len(ds.put) != 0 {
 				t.Errorf("a refused import read %d decks and stored %d", fd.imports, len(ds.put))

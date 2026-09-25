@@ -151,6 +151,14 @@ func (s *Server) DeleteSession(ctx context.Context, req *connect.Request[mtgv1.D
 	if _, busy := s.building.Load(buildKey(uid, id)); busy {
 		return nil, connect.NewError(connect.CodeAborted, errDeleteMidBuild)
 	}
+	// A build on another instance holds the lease in the store (D-922).
+	leased, err := s.store.Leased(ctx, uid, id, s.now())
+	if err != nil {
+		return nil, s.leaseUnreadable(ctx, id, err)
+	}
+	if leased {
+		return nil, connect.NewError(connect.CodeAborted, errDeleteMidBuild)
+	}
 	// A chat and its decks are one thing (D-456). The chat goes first,
 	// so a deck that outlives a failure is visible and can be deleted
 	// again from its tile.

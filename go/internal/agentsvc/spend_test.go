@@ -53,21 +53,31 @@ func (f *fakeLedger) Add(_ context.Context, uid, month string, cost float64, cal
 }
 
 // TestSpendCapRefusesATurnAtTheCap is D-421: a user at the cap gets
-// ResourceExhausted, and the refusal names the day the cap resets. The
-// test clock is 1970-01-01, so the reset is 1970-02-01.
+// FailedPrecondition, which the web does not retry, and the refusal names
+// the day the cap resets. The test clock is 1970-01-01, so the reset is
+// 1970-02-01. The refusal comes before the session: no session id
+// reaches the client, and no counter moves (D-922).
 func TestSpendCapRefusesATurnAtTheCap(t *testing.T) {
 	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 5}}
 	store := newFakeStore()
-	client, _ := testServerOpts(t, store, []Option{WithSpendCap(ledger, 5)}, firstTurn(t)...)
+	noter := &fakeNoter{}
+	client, _ := testServerOpts(t, store, []Option{WithSpendCap(ledger, 5), WithUsers(noter)}, firstTurn(t)...)
 	stream, err := client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"}))
 	if err != nil {
 		t.Fatalf("chat: %v", err)
 	}
+	var started string
 	for stream.Receive() {
+		if id := stream.Msg().GetSessionStarted(); id != "" {
+			started = id
+		}
 	}
 	err = stream.Err()
-	if connect.CodeOf(err) != connect.CodeResourceExhausted || !strings.Contains(err.Error(), "resets on 1970-02-01") {
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition || !strings.Contains(err.Error(), "resets on 1970-02-01") {
 		t.Fatalf("a turn at the cap: %v", err)
+	}
+	if started != "" || len(noter.counts) != 0 {
+		t.Errorf("a refused first message got session %q and counters %v, want none", started, noter.counts)
 	}
 	if len(ledger.adds) != 0 {
 		t.Errorf("a refused turn added to the ledger: %+v", ledger.adds)
@@ -154,7 +164,7 @@ func TestSpendCapOverrideKeepsTheCapForEveryOtherEmail(t *testing.T) {
 	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
 	ctx := auth.WithEmail(context.Background(), "guest@example.com")
 	err := srv.checkSpendCap(ctx, "u1")
-	if connect.CodeOf(err) != connect.CodeResourceExhausted {
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("a guest at the cap: %v", err)
 	}
 }
@@ -170,7 +180,7 @@ func TestSpendCapOverrideReadsItsOwnNumber(t *testing.T) {
 	}
 	srv = capServer(t, &fakeLedger{spent: map[string]float64{"u1/1970-01": 20}},
 		map[string]float64{"big@example.com": 20})
-	if err := srv.checkSpendCap(ctx, "u1"); connect.CodeOf(err) != connect.CodeResourceExhausted {
+	if err := srv.checkSpendCap(ctx, "u1"); connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("at the override: %v", err)
 	}
 }
@@ -192,7 +202,7 @@ func TestSpendCapWithNoOverrideReadsTheCapOfEveryUser(t *testing.T) {
 	ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": 5}}
 	srv := capServer(t, ledger, map[string]float64{"owner@example.com": 0})
 	err := srv.checkSpendCap(context.Background(), "u1")
-	if connect.CodeOf(err) != connect.CodeResourceExhausted {
+	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("a caller with no email: %v", err)
 	}
 }

@@ -1,6 +1,9 @@
 # Pinned generators. Go plugins come from go/go.mod tool directives.
 # The TypeScript plugin comes from web/node_modules (pinned in web/package.json).
 version: v2
+# Each run removes the output folders first, so the code of a deleted
+# proto file does not stay (D-923).
+clean: true
 plugins:
   - local: [go, -C, go, tool, protoc-gen-go]
     out: go/gen

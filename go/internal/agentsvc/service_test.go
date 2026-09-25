@@ -45,6 +45,48 @@ type fakeStore struct {
 	// onPut runs before each Put's version check, with the session about
 	// to be written.
 	onPut func(*mtgv1.Session)
+	// leases holds the build lease of each session, as the lease
+	// document does.
+	leases map[string]fakeLease
+	// leaseErr fails each read of a lease.
+	leaseErr error
+}
+
+type fakeLease struct {
+	token string
+	until time.Time
+}
+
+func (f *fakeStore) Lease(_ context.Context, _, id, token string, now, until time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if l, ok := f.leases[id]; ok && l.token != token && now.Before(l.until) {
+		return sessions.ErrLeased
+	}
+	if f.leases == nil {
+		f.leases = map[string]fakeLease{}
+	}
+	f.leases[id] = fakeLease{token: token, until: until}
+	return nil
+}
+
+func (f *fakeStore) Leased(_ context.Context, _, id string, now time.Time) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.leaseErr != nil {
+		return false, f.leaseErr
+	}
+	l, ok := f.leases[id]
+	return ok && now.Before(l.until), nil
+}
+
+func (f *fakeStore) Release(_ context.Context, _, id, token string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if l, ok := f.leases[id]; ok && l.token == token {
+		delete(f.leases, id)
+	}
+	return nil
 }
 
 func newFakeStore() *fakeStore {
@@ -492,10 +534,11 @@ func TestAfterBuildAsksNothingMore(t *testing.T) {
 	}
 }
 
-// TestChatStaleVersionIsAborted: a turn
-// reads the session, another write lands, and the turn's Put must fail
-// with CodeAborted and store nothing.
-func TestChatStaleVersionIsAborted(t *testing.T) {
+// TestChatStaleVersionIsUnavailable: a turn reads the session, another
+// write lands, and the turn's Put must fail with CodeUnavailable and
+// store nothing. Aborted names a build that runs on, and this turn ran
+// nothing (D-922).
+func TestChatStaleVersionIsUnavailable(t *testing.T) {
 	store := newFakeStore()
 	steps := append(firstTurn(t),
 		classifyJSON(t, map[string]any{"power": "bracket 3"}),
@@ -520,8 +563,8 @@ func TestChatStaleVersionIsAborted(t *testing.T) {
 		err = stream.Err()
 		_ = stream.Close()
 	}
-	if connect.CodeOf(err) != connect.CodeAborted {
-		t.Fatalf("a stale put gave %v, want Aborted: %v", connect.CodeOf(err), err)
+	if connect.CodeOf(err) != connect.CodeUnavailable {
+		t.Fatalf("a stale put gave %v, want Unavailable: %v", connect.CodeOf(err), err)
 	}
 	if !strings.Contains(err.Error(), "busy") {
 		t.Errorf("the message does not tell the client to retry: %v", err)
@@ -839,9 +882,9 @@ func TestStoreErrorCodes(t *testing.T) {
 		want connect.Code
 		text string
 	}{
-		{name: "too large", err: fmt.Errorf("store: %w", sessions.ErrTooLarge), want: connect.CodeResourceExhausted, text: "start a new session"},
+		{name: "too large", err: fmt.Errorf("store: %w", sessions.ErrTooLarge), want: connect.CodeFailedPrecondition, text: "start a new session"},
 		{name: "not found", err: sessions.ErrNotFound, want: connect.CodeNotFound},
-		{name: "conflict", err: sessions.ErrConflict, want: connect.CodeAborted, text: "busy"},
+		{name: "conflict", err: sessions.ErrConflict, want: connect.CodeUnavailable, text: "busy"},
 		{name: "other", err: errors.New("x"), want: connect.CodeInternal},
 	}
 	for _, tt := range tests {
@@ -1124,4 +1167,24 @@ func (f *fakeStore) Delete(_ context.Context, _, id string) error {
 	delete(f.states, id)
 	delete(f.versions, id)
 	return nil
+}
+
+// TestAnUnreadableLeaseHidesItsCause is D-922 and D-923. A turn whose
+// lease read fails gets Unavailable, which the web retries, and the
+// message holds no store text.
+func TestAnUnreadableLeaseHidesItsCause(t *testing.T) {
+	store := newFakeStore()
+	client, _ := testServer(t, store, firstTurn(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
+	store.leaseErr = errors.New("rpc error: projects/p/databases/(default) unavailable")
+	stream, err := client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{SessionId: first.started, Message: "bracket 3"}))
+	if err == nil {
+		for stream.Receive() {
+		}
+		err = stream.Err()
+		_ = stream.Close()
+	}
+	if connect.CodeOf(err) != connect.CodeUnavailable || strings.Contains(err.Error(), "projects/p") {
+		t.Errorf("an unreadable lease gave %v, want Unavailable with no store text", err)
+	}
 }
