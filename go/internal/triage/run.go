@@ -224,6 +224,11 @@ func Settle(root string, recs []harvest.Record, from []string, results []Result)
 		if r.Err != nil || r.Route.Need == NeedJudge || rec.ID == "" {
 			continue
 		}
+		// A case or an owner question that did not land keeps its verdict
+		// pending, so a failed write repeats no write that landed.
+		if r.NeedsWrite() && r.Applied == "" {
+			continue
+		}
 		lines = append(lines, verdictLine+rec.ID)
 	}
 	lines = filterNew(done, lines)
@@ -246,6 +251,18 @@ func Settle(root string, recs []harvest.Record, from []string, results []Result)
 		}
 	}
 	return appendRecord(root, append(lines, filterNew(done, names)...))
+}
+
+// NeedsWrite reports whether the apply step writes this result: a case
+// that a gate runs, or an owner question.
+func (r Result) NeedsWrite() bool {
+	if r.Err != nil {
+		return false
+	}
+	if r.Route.Owner {
+		return true
+	}
+	return len(r.Case.Body) > 0 && r.Case.Target != "" && r.Case.NoRun == ""
 }
 
 // Unapplied drops each record whose verdict a live run already applied,

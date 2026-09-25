@@ -22,3 +22,10 @@ The author answers the Codex record of `docs/reviews/pr-229.md`. That record rea
 - The evidence: `go/cmd/feedback-triage/main.go` called `MarkTriaged` on each input path after `applyCases`, with no read of `Result.Err`. A judge failure on one verdict marked its harvest read, so no later triage read that verdict again. A harvest that stays pending as a whole writes its good cases again on the next read, so the record names each verdict.
 - The correction: `triage.Settle` records each verdict that has no failure and no open judge need. It marks a harvest read only when each of its verdicts has a line. `triage.Unapplied` drops each verdict that an earlier live run applied, so a new read writes no case twice. D-924 holds the rule.
 - The regression check: `TestSettleKeepsAFailedVerdictPending` gives one good verdict in one harvest, and one good and one failed verdict in another. It requires the second harvest to stay pending, and the next read to hold the failed verdict alone. `go test ./internal/triage/ ./cmd/feedback-triage/` passes.
+
+## P2-3: A failed case write can duplicate earlier cases on retry
+
+- The result: full merit.
+- The evidence: `applyCases` returned on the first failed write, and the command then skipped `Settle`. A case that landed before the failure had no verdict line, so the next read wrote it again. The owner questions had the same gap, because the loop marked them all after the last write.
+- The correction: `Result.NeedsWrite` names a result that the apply step writes. `Settle` records such a verdict only when its write landed. `applyCases` marks each owner question as it lands, and the command runs `Settle` after a failed apply too, then returns the failure. D-924 holds the rule.
+- The regression check: `TestAFailedWriteKeepsTheWrittenCases` writes a parser fixture, then fails on a second target. It requires the next read to hold the failed verdict alone, and the harvest to stay pending. It fails with the check of `Settle` turned off: "the next read holds [], want v2 alone". `go test ./cmd/feedback-triage/ ./internal/triage/` passes.

@@ -29,6 +29,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -145,16 +146,18 @@ func run() error {
 	results := triage.Run(context.Background(), recs, judger, namer, nextID)
 
 	if *apply {
-		if err := applyCases(*root, results); err != nil {
-			return err
-		}
+		applyErr := applyCases(*root, results)
 		// A dry run writes no case for a verdict that needs the judge, so
-		// only a live run records what it applied. A failed verdict keeps
-		// its harvest pending (REV-082).
+		// only a live run records what it applied. A failed verdict or a
+		// failed write keeps its verdict pending, and the writes that landed
+		// stay on record (REV-082).
 		if !*dry {
 			if err := triage.Settle(*root, recs, from, results); err != nil {
-				return err
+				return errors.Join(applyErr, err)
 			}
+		}
+		if applyErr != nil {
+			return applyErr
 		}
 	}
 	// The manifest names the cases a gate measures, whether or not this
@@ -196,7 +199,7 @@ func run() error {
 // owner question into the decision queue.
 func applyCases(root string, results []triage.Result) error {
 	for i, r := range results {
-		if r.Err != nil || len(r.Case.Body) == 0 || r.Case.Target == "" || r.Case.NoRun != "" {
+		if !r.NeedsWrite() || r.Route.Owner {
 			continue
 		}
 		path := filepath.Join(root, r.Case.Target)
@@ -227,18 +230,19 @@ func applyCases(root string, results []triage.Result) error {
 	if err != nil {
 		return err
 	}
-	for _, o := range owners {
-		question, whyYou, blocks := triage.OwnerRow(o)
+	// Each question marks its own result as it lands, so a failed write
+	// leaves the earlier ones on record (REV-082).
+	for i, r := range results {
+		if r.Err != nil || !r.Route.Owner {
+			continue
+		}
+		question, whyYou, blocks := triage.OwnerRow(r.Route)
 		number := fmt.Sprintf("OQ-%d", next)
 		if err := triage.AppendOwnerQuestion(path, number, question, whyYou, blocks); err != nil {
 			return err
 		}
+		results[i].Applied = ownerQuestions
 		next++
-	}
-	for i, r := range results {
-		if r.Err == nil && r.Route.Owner {
-			results[i].Applied = ownerQuestions
-		}
 	}
 	return nil
 }
