@@ -230,8 +230,7 @@ func TestAuthOptions(t *testing.T) {
 	}{
 		{name: "local, no firebase", wantFallback: true, wantReject: true},
 		{name: "local with a debug id", env: map[string]string{"DEBUG_USER_ID": "nate"}, wantFallback: true, wantReject: true},
-		{name: "cloud run refuses the fallback", env: map[string]string{"K_SERVICE": "api"}, wantFallback: false},
-		{name: "cloud run with the override", env: map[string]string{"K_SERVICE": "api", "ALLOW_DEBUG_USER": "1"}, wantFallback: true},
+		{name: "local with the emulator", env: map[string]string{"FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:1"}, wantFallback: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -240,12 +239,6 @@ func TestAuthOptions(t *testing.T) {
 			}
 			for k, v := range tt.env {
 				t.Setenv(k, v)
-			}
-			if tt.env["K_SERVICE"] != "" {
-				// The Firebase client needs credentials on Cloud Run, which
-				// the test host has not. The fallback decision is what the
-				// test reads, so it stops before the verifier.
-				t.Setenv("FIREBASE_AUTH_EMULATOR_HOST", "127.0.0.1:1")
 			}
 			got, err := authOptions(context.Background(), "p", quiet)
 			if err != nil {
@@ -260,6 +253,117 @@ func TestAuthOptions(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestCloudRunRefusesLocalSwitches: on Cloud Run the debug user and the
+// emulator host stop the start, and never open the API (D-925).
+func TestCloudRunRefusesLocalSwitches(t *testing.T) {
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	tests := []struct {
+		name string
+		env  map[string]string
+	}{
+		{name: "the debug user", env: map[string]string{"ALLOW_DEBUG_USER": "1"}},
+		{name: "the emulator host", env: map[string]string{"FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:1"}},
+		{name: "any debug value", env: map[string]string{"ALLOW_DEBUG_USER": "true", "FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:1"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, k := range []string{"ALLOW_DEBUG_USER", "DEBUG_USER_ID", "FIREBASE_AUTH_EMULATOR_HOST", "GOOGLE_APPLICATION_CREDENTIALS"} {
+				t.Setenv(k, "")
+			}
+			t.Setenv("K_SERVICE", "api")
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			if _, err := authOptions(context.Background(), "p", quiet); err == nil {
+				t.Fatal("authOptions started on Cloud Run with a local switch")
+			}
+		})
+	}
+	t.Run("a clean Cloud Run env passes the guard", func(t *testing.T) {
+		if err := cloudRunAuthGuard(true, func(string) string { return "" }); err != nil {
+			t.Fatalf("guard: %v", err)
+		}
+	})
+	t.Run("local mode keeps both switches", func(t *testing.T) {
+		env := map[string]string{"ALLOW_DEBUG_USER": "1", "FIREBASE_AUTH_EMULATOR_HOST": "127.0.0.1:1"}
+		if err := cloudRunAuthGuard(false, func(k string) string { return env[k] }); err != nil {
+			t.Fatalf("guard: %v", err)
+		}
+	})
+}
+
+// TestSpendCap: a bad value stops the start, and never turns the cap
+// off (D-925).
+func TestSpendCap(t *testing.T) {
+	tests := []struct {
+		name    string
+		raw     string
+		cloud   bool
+		want    float64
+		wantErr bool
+	}{
+		{name: "unset on Cloud Run takes the default", cloud: true, want: defaultSpendCapUSD},
+		{name: "unset locally is off", want: 0},
+		{name: "zero is off", raw: "0", cloud: true, want: 0},
+		{name: "a number", raw: "7.5", cloud: true, want: 7.5},
+		{name: "a word", raw: "five", cloud: true, wantErr: true},
+		{name: "under zero", raw: "-1", cloud: true, wantErr: true},
+		{name: "not a number", raw: "NaN", cloud: true, wantErr: true},
+		{name: "infinite", raw: "Inf", cloud: true, wantErr: true},
+		{name: "a word locally", raw: "five", wantErr: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := spendCap(tt.cloud, func(k string) string {
+				if k == "SPEND_CAP_USD" {
+					return tt.raw
+				}
+				return ""
+			})
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("spendCap(%q) err = %v, wantErr %v", tt.raw, err, tt.wantErr)
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("spendCap(%q) = %v, want %v", tt.raw, got, tt.want)
+			}
+		})
+	}
+}
+
+// TestUnpricedRoles: a role whose model has no price row books no cost,
+// so the cap needs a row for each real role (D-925).
+func TestUnpricedRoles(t *testing.T) {
+	cfg, err := llm.LoadConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	prices, err := llm.LoadPrices()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := unpricedRoles(cfg, prices); len(got) != 0 {
+		t.Errorf("the shipped config has unpriced roles %v", got)
+	}
+	override := cfg.Clone()
+	spec := override.Roles[llm.RoleGenerate]
+	spec.Model = "a-model-with-no-row"
+	override.Roles[llm.RoleGenerate] = spec
+	if got := unpricedRoles(override, prices); len(got) != 1 || got[0] != llm.RoleGenerate {
+		t.Errorf("unpricedRoles = %v, want [%s]", got, llm.RoleGenerate)
+	}
+	if got := unpricedRoles(cfg, nil); len(got) == 0 {
+		t.Error("no price table left every role priced")
+	}
+	fake := cfg.Clone()
+	for r, s := range fake.Roles {
+		s.Provider = llm.FakeName
+		fake.Roles[r] = s
+	}
+	if got := unpricedRoles(fake, nil); len(got) != 0 {
+		t.Errorf("the fake provider needs no row, got %v", got)
 	}
 }
 
