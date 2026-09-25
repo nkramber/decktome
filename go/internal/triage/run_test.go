@@ -57,3 +57,41 @@ func TestPendingHarvestsReadsEveryUntriagedFile(t *testing.T) {
 		})
 	}
 }
+
+// TestSettleKeepsAFailedVerdictPending is REV-082 (Codex, #229). A live
+// run marks each verdict that it applied, and a harvest is read only when
+// each of its verdicts is. A failed verdict keeps its harvest pending, and
+// the next run skips the verdicts that already wrote a case.
+func TestSettleKeepsAFailedVerdictPending(t *testing.T) {
+	root := t.TempDir()
+	dir := filepath.Join(root, harvest.Dir)
+	if err := os.MkdirAll(dir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	a, b := filepath.Join(dir, "feedback-2026-09-20.jsonl"), filepath.Join(dir, "feedback-2026-09-21.jsonl")
+	for _, p := range []string{a, b} {
+		if err := os.WriteFile(p, nil, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	recs := []harvest.Record{{ID: "v1"}, {ID: "v2"}, {ID: "v3"}}
+	from := []string{a, b, b}
+	results := []Result{{}, {}, {Err: os.ErrDeadlineExceeded}}
+	if err := Settle(root, recs, from, results); err != nil {
+		t.Fatal(err)
+	}
+	pending, err := PendingHarvests(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(pending, []string{b}) {
+		t.Errorf("pending = %v, want the harvest with the failed verdict alone", pending)
+	}
+	left, err := Unapplied(root, recs)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) != 1 || left[0].ID != "v3" {
+		t.Errorf("the next run reads %v, want v3 alone", left)
+	}
+}

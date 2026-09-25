@@ -63,7 +63,7 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `make feedback-harvest` writes every verdict since the last harvest to `.local/feedback/`, as a dated document and a JSONL file (PR-28a, D-879). `SINCE=2026-09-01` sets the floor by hand, and `HARVEST_ARGS=-dry` counts and writes nothing. The watermark comes from the JSONL files, so the documents are the only record. It calls no model and costs nothing. The harvest stays on the Mac that ran it, and a case of the fix cycle still holds the words of the reader (D-642, D-879).
 
-`make feedback-triage-dry` routes every verdict of each harvest that no triage read into a class (PR-28b). A live run with `-apply` records each file that it read in `.local/feedback/triaged.txt` (D-924). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each.
+`make feedback-triage-dry` routes every verdict of each harvest that no triage read into a class (PR-28b). A live run with `-apply` records each verdict that it applied in `.local/feedback/triaged.txt`. A harvest counts as read when each of its verdicts applied, so a failed verdict keeps its harvest pending (D-924). It calls no model and costs nothing. `make feedback-triage TRIAGE_OUT=<document>` asks the judge for the verdicts the reason keys can not place, at a few cents each.
 
 The target reads no `.env`, so run `set -a && . ./.env && set +a` first. Set `CARDS_SNAPSHOT_DIR` to `.local/gcs/mtg-local-cards/scryfall`, or each card case names its gap. The run of 2026-09-23 cost $0.0122 for one judge call. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
 

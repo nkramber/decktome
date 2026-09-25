@@ -84,14 +84,25 @@ func run() error {
 		}
 		paths = pending
 	}
+	// from names the harvest of each record, so a live run marks a
+	// harvest read only when each of its verdicts applied (REV-082).
 	var recs []harvest.Record
+	var from []string
 	for _, path := range paths {
 		part, err := triage.ReadHarvest(path)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(os.Stderr, "harvest      %s, %d verdict(s)\n", path, len(part))
-		recs = append(recs, part...)
+		// A verdict that an earlier live run applied writes no case twice.
+		fresh, err := triage.Unapplied(*root, part)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "harvest      %s, %d verdict(s), %d not applied\n", path, len(part), len(fresh))
+		recs = append(recs, fresh...)
+		for range fresh {
+			from = append(from, path)
+		}
 	}
 
 	quiet := gatekit.Quiet()
@@ -138,9 +149,10 @@ func run() error {
 			return err
 		}
 		// A dry run writes no case for a verdict that needs the judge, so
-		// only a live run marks its harvests read (REV-082).
+		// only a live run records what it applied. A failed verdict keeps
+		// its harvest pending (REV-082).
 		if !*dry {
-			if err := triage.MarkTriaged(*root, paths); err != nil {
+			if err := triage.Settle(*root, recs, from, results); err != nil {
 				return err
 			}
 		}

@@ -158,12 +158,33 @@ func MarkTriaged(root string, paths []string) error {
 	if err != nil {
 		return err
 	}
-	var add strings.Builder
+	names := make([]string, 0, len(paths))
 	for _, p := range paths {
-		if name := filepath.Base(p); !done[name] {
-			done[name] = true
-			add.WriteString(name + "\n")
+		names = append(names, filepath.Base(p))
+	}
+	return appendRecord(root, filterNew(done, names))
+}
+
+// filterNew keeps each line that the record does not hold yet.
+func filterNew(done map[string]bool, lines []string) []string {
+	var out []string
+	for _, l := range lines {
+		if !done[l] {
+			done[l] = true
+			out = append(out, l)
 		}
+	}
+	return out
+}
+
+// appendRecord adds lines to the record. Each line of lines is new.
+func appendRecord(root string, lines []string) error {
+	if len(lines) == 0 {
+		return nil
+	}
+	var add strings.Builder
+	for _, l := range lines {
+		add.WriteString(l + "\n")
 	}
 	if err := os.MkdirAll(filepath.Join(root, harvest.Dir), 0o750); err != nil {
 		return fmt.Errorf("triage: %w", err)
@@ -178,6 +199,69 @@ func MarkTriaged(root string, paths []string) error {
 		return fmt.Errorf("triage: %s: %w", path, err)
 	}
 	return f.Close()
+}
+
+// verdictLine is the record line of one applied verdict. A harvest name
+// never starts with it.
+const verdictLine = "verdict "
+
+// Settle records what a live run applied. Each verdict with no failure
+// and a class gets a line, and a harvest is read once each of its
+// verdicts has one. A failed verdict keeps its harvest pending, and the
+// next run reads it again (REV-082). from names the harvest of each
+// record, and results come in the order of recs.
+func Settle(root string, recs []harvest.Record, from []string, results []Result) error {
+	if len(recs) != len(from) || len(recs) != len(results) {
+		return fmt.Errorf("triage: %d records, %d sources, %d results", len(recs), len(from), len(results))
+	}
+	done, err := triaged(root)
+	if err != nil {
+		return err
+	}
+	var lines []string
+	for i, rec := range recs {
+		r := results[i]
+		if r.Err != nil || r.Route.Need == NeedJudge || rec.ID == "" {
+			continue
+		}
+		lines = append(lines, verdictLine+rec.ID)
+	}
+	lines = filterNew(done, lines)
+	// A harvest is read when each of its verdicts has a line.
+	whole := map[string]bool{}
+	var order []string
+	for i, rec := range recs {
+		if _, seen := whole[from[i]]; !seen {
+			whole[from[i]] = true
+			order = append(order, from[i])
+		}
+		if !done[verdictLine+rec.ID] {
+			whole[from[i]] = false
+		}
+	}
+	var names []string
+	for _, path := range order {
+		if whole[path] {
+			names = append(names, filepath.Base(path))
+		}
+	}
+	return appendRecord(root, append(lines, filterNew(done, names)...))
+}
+
+// Unapplied drops each record whose verdict a live run already applied,
+// so a harvest read again writes no case twice.
+func Unapplied(root string, recs []harvest.Record) ([]harvest.Record, error) {
+	done, err := triaged(root)
+	if err != nil {
+		return nil, err
+	}
+	var out []harvest.Record
+	for _, rec := range recs {
+		if rec.ID == "" || !done[verdictLine+rec.ID] {
+			out = append(out, rec)
+		}
+	}
+	return out, nil
 }
 
 // triaged reads the record. An absent record names no file.
