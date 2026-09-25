@@ -2200,6 +2200,26 @@ Gate:
 - `make verify` passes.
 > *In plain English:* for a day the first review bot wrote no reviews, so the owner let changes merge without it. The bot works again, so each change waits for it again. A later pause needs one file and a few notes.
 
+**PR-77: The five P1 findings of the repository review of 2026-09-24 (D-901 to D-904).** ✅ merged as #PRNUM. The mark comes before any review (D-822).
+The review report sits in the local folder of each session, outside git. The owner put all five P1 findings in one pull request (D-901). Each finding has a regression test that fails before its correction.
+
+- **REV-001, the fix cycle.** The review step reads the threads of `gitar-bot` and the owner alone, and it posts each reply as raw text (D-902).
+- **REV-002, the spend cap.** A deck import checks the cap for each format. A 60-card list calls the paid judge too (D-421).
+- **REV-003, the proved email.** With the allowlist on, the API refuses an invited email with no proof (D-903). The web app sends the link at sign-up, and offers a resend and a password reset.
+- **REV-003, the current accounts.** `make mark-verified` lists each account with no proof. The owner confirms each person, and marks them before the merge.
+- **REV-004, the format option.** An option answer maps through the options the reader saw. A declined format after a 60-card request takes Modern (D-904).
+- **REV-005, the imported commander.** The import session names its commander, so a revision keeps it. The build also reads the commander id of an import session stored before this fix (D-851).
+- **REV-005, the note.** A revision that changes the commander says so, and it stores a new version of the deck.
+
+Gate:
+
+- Each new regression test fails on the base and passes on this branch.
+- The owner runs `make mark-verified` with `APPLY=1` before the merge.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* a review of the whole code found five serious faults. The robot that fixes review comments read the comments of strangers, and a 60-card import skipped the monthly spend limit. An invited email went to the first person who claimed it. A click on "Standard" built a Commander deck, and a change to an imported deck swapped its commander. This change fixes all five.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2567,6 +2587,8 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 64. **PR-75** a Pushover notice to the owner for each verdict (F-49, D-892 to D-898). No paid target ran.
 
 65. **PR-76** the end of the Gitar pause, and a push wait of one minute (D-899, D-900). No paid target ran.
+
+66. **PR-77** the five P1 findings of the repository review of 2026-09-24 (D-901 to D-904). No paid target ran.
 
 ## 9. Open questions
 

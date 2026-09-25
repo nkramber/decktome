@@ -22,6 +22,7 @@ go/case-check
 go/feedback-triage
 go/users-backfill
 go/allow
+go/mark-verified
 go/deck-gate
 go/eval
 go/bracket-gate

@@ -371,3 +371,81 @@ func TestImportMarksAListThatDoesNotRead(t *testing.T) {
 		})
 	}
 }
+
+// TestImportAtTheCapRefusesEveryFormat is REV-002 of the review of
+// 2026-09-24. The judge reads a 60-card list as it reads a Commander
+// list, so a user at the cap gets ResourceExhausted and no judge call
+// for each format (D-421).
+func TestImportAtTheCapRefusesEveryFormat(t *testing.T) {
+	sixty := "Deck\n4 Lightning Bolt\n56 Plains\n"
+	for _, tc := range []struct {
+		name   string
+		req    *mtgv1.ImportDeckRequest
+		spent  float64
+		refuse bool
+	}{
+		{"Standard at the cap", &mtgv1.ImportDeckRequest{Text: sixty, Format: mtgv1.FormatId_FORMAT_ID_STANDARD}, 5, true},
+		{"Modern at the cap", &mtgv1.ImportDeckRequest{Text: sixty, Format: mtgv1.FormatId_FORMAT_ID_MODERN}, 5, true},
+		{"house rules at the cap", &mtgv1.ImportDeckRequest{Text: sixty, Format: mtgv1.FormatId_FORMAT_ID_HOUSE}, 5, true},
+		{"Commander at the cap", &mtgv1.ImportDeckRequest{Text: markedList}, 5, true},
+		{"Standard under the cap", &mtgv1.ImportDeckRequest{Text: sixty, Format: mtgv1.FormatId_FORMAT_ID_STANDARD}, 4.99, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cb, err := candidates.New()
+			if err != nil {
+				t.Fatal(err)
+			}
+			fd, ds := &fakeDecks{}, &fakeDeckStore{}
+			ledger := &fakeLedger{spent: map[string]float64{"u1/1970-01": tc.spent}}
+			opts := []Option{WithDecks(fd), WithCandidates(fixedIndex{importCardIndex()}, cb), WithDeckStore(ds), WithUsers(&fakeNoter{}), WithSpendCap(ledger, 5)}
+			client, _ := testServerOpts(t, newFakeStore(), opts)
+			_, err = client.ImportDeck(context.Background(), connect.NewRequest(tc.req))
+			if !tc.refuse {
+				if err != nil || fd.imports != 1 {
+					t.Fatalf("an import under the cap: err = %v, reads = %d", err, fd.imports)
+				}
+				return
+			}
+			if connect.CodeOf(err) != connect.CodeResourceExhausted {
+				t.Fatalf("err = %v, want ResourceExhausted", err)
+			}
+			if fd.imports != 0 || len(ds.put) != 0 {
+				t.Errorf("a refused import read %d decks and stored %d", fd.imports, len(ds.put))
+			}
+		})
+	}
+}
+
+// TestImportThenReviseKeepsTheImportedCommander: the revision of an
+// imported Commander deck builds with the commander of the list. The
+// index holds a more popular legend of the same colors, and the build
+// picked it when the session named no commander (D-851).
+func TestImportThenReviseKeepsTheImportedCommander(t *testing.T) {
+	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
+	idx := cards.NewIndex(append(importCardIndex().All(), &mtgv1.Card{
+		OracleId: "o-teysa", Name: "Teysa Karlov", TypeLine: "Legendary Creature - Human Advisor",
+		CanBeCommander: true, ColorIdentity: []mtgv1.Color{mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B},
+		Legalities: legal, EdhrecRank: 1,
+	}), nil, nil, time.Unix(1000, 0).UTC())
+	cb, err := candidates.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	fd.res = &generate.Result{Deck: &mtgv1.Deck{
+		Name: "x", Summary: "a deck that draws", Validation: &mtgv1.ValidationResult{},
+		Cards: []*mtgv1.DeckCard{{OracleId: "o-welcome", Name: "Ajani's Welcome", Count: 2}, {OracleId: "o-plains", Name: "Plains", Count: 96}},
+	}}
+	opts := []Option{WithDecks(fd), WithCandidates(fixedIndex{idx}, cb), WithDeckStore(ds), WithUsers(&fakeNoter{})}
+	client, _ := testServerOpts(t, newFakeStore(), opts,
+		classifyJSON(t, nil),
+		reviseJSON(t, map[string]any{"changes": []string{"Cut one Plains and add a card that draws cards"}}))
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: markedList})
+	ev := chat(t, client, &mtgv1.ChatRequest{SessionId: res.GetSessionId(), Message: "Add more card draw."})
+	if fd.runs != 1 {
+		t.Fatalf("runs = %d, failure = %v", fd.runs, ev.failure)
+	}
+	if got := fd.got.Commanders; len(got) != 1 || got[0] != "o-karlov" {
+		t.Errorf("the revision built with commanders %v, want the imported [o-karlov]", got)
+	}
+}

@@ -7,12 +7,16 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { signInErrorMessage } from "../../lib/errors";
 import { inviteClient } from "../../lib/api";
-import { createAccount, signIn } from "../../lib/firebase";
+import { createAccount, resetPassword, signIn } from "../../lib/firebase";
 import { useAuth } from "./auth-context";
 
 // notAuthorized is what a person off the invite list reads, and the form
 // stays where it is (D-592).
 export const notAuthorized = "Your email has not been authorized for beta access at this time.";
+
+// resetSent is what a reader sees after a reset request. It reads the same
+// whether or not an account holds the email, so the form names no account.
+export const resetSent = "If an account holds this email, a link to set a new password is on its way.";
 
 // inviteAllows asks the API whether the email may make an account. A
 // check that fails to answer allows the attempt: the API refuses the
@@ -38,6 +42,7 @@ export function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
 
   if (!ready) return null;
@@ -49,6 +54,7 @@ export function SignInPage() {
     e.preventDefault();
     setBusy(true);
     setError("");
+    setInfo("");
     try {
       if (mode === "sign-up") {
         // The list answers before the account exists (D-592). Without
@@ -62,6 +68,26 @@ export function SignInPage() {
       } else {
         await signIn(email, password);
       }
+    } catch (err) {
+      setError(signInErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // An invited person whose address another person took first sets a new
+  // password with this link, and then proves the email (D-903).
+  async function onReset() {
+    setError("");
+    setInfo("");
+    if (!email.trim()) {
+      setError("Enter your email above, then press Forgot your password.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await resetPassword(email.trim());
+      setInfo(resetSent);
     } catch (err) {
       setError(signInErrorMessage(err));
     } finally {
@@ -104,13 +130,22 @@ export function SignInPage() {
             <div role="alert" className="min-h-6 text-sm text-danger">
               {error || authError}
             </div>
+            <p role="status" className="text-sm text-muted-foreground">
+              {info}
+            </p>
           </form>
+          {!creating && (
+            <Button variant="link" className="px-0" disabled={busy} onClick={() => void onReset()}>
+              Forgot your password?
+            </Button>
+          )}
           <Button
             variant="link"
             className="mt-2 px-0"
             onClick={() => {
               setMode(creating ? "sign-in" : "sign-up");
               setError("");
+              setInfo("");
             }}
           >
             {creating ? "I have an account. Sign in." : "New here? Create account"}

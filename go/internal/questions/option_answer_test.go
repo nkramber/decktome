@@ -1,6 +1,7 @@
 package questions
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"testing"
@@ -193,5 +194,105 @@ func TestReaskStalledAsksOnceThenGivesUp(t *testing.T) {
 	closed, _ := st.CloseStalled()
 	if len(closed) != 1 || closed[0] != "power" {
 		t.Errorf("CloseStalled closed %v, want [power]", closed)
+	}
+}
+
+// TestAFormatOptionAfterASixtyCardRequestIsTheOneTheReaderSaw is REV-004
+// of the review of 2026-09-24. A 60-card request drops Commander from the
+// format row, so the reader sees Standard first. The index went into the
+// catalog values, where index 0 is Commander, and the build made a
+// 100-card deck (D-904).
+func TestAFormatOptionAfterASixtyCardRequestIsTheOneTheReaderSaw(t *testing.T) {
+	a := optionAgent(t)
+	cat, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cases := []struct {
+		name   string
+		row    string
+		words  string
+		stored bool
+		index  int
+		want   mtgv1.FormatId
+	}{
+		{"60 cards, first option", "format", "i want a 60 card goblin deck", false, 0, mtgv1.FormatId_FORMAT_ID_STANDARD},
+		{"60 cards, second option", "format", "i want a 60 card goblin deck", false, 1, mtgv1.FormatId_FORMAT_ID_MODERN},
+		{"60 cards, stored values", "format", "i want a 60 card goblin deck", true, 0, mtgv1.FormatId_FORMAT_ID_STANDARD},
+		{"60 cards, open format row", "format_unsupported_open", "a 60 card pauper deck", false, 0, mtgv1.FormatId_FORMAT_ID_STANDARD},
+		{"60 cards, store row", "format_store", "i want a 60 card goblin deck", false, 1, mtgv1.FormatId_FORMAT_ID_MODERN},
+		{"no size, first option", "format", "a goblin deck", false, 0, mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		{"no size, stored values", "format", "a goblin deck", true, 0, mtgv1.FormatId_FORMAT_ID_COMMANDER},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			row, ok := cat.Row(tc.row)
+			if !ok {
+				t.Fatalf("no row %q", tc.row)
+			}
+			st := NewState(false)
+			st.Ctx.Words = tc.words
+			asked(st, "q1-"+row.ID, row.ID, row.Slot, row.StateKey())
+			if tc.stored {
+				// The planner stores what went out. A later message can not
+				// move the index, so the words go away before the answer.
+				_, shown, _ := resolve(row, st, nil)
+				st.Asks[len(st.Asks)-1].OptionValues = shownValues(row, shown)
+				st.Ctx.Words = ""
+			}
+			st.OptionAnswers = []OptionAnswer{{QuestionID: "q1-" + row.ID, Index: tc.index}}
+			a.applyOptionAnswers(st)
+			if got := st.Slots.GetFormat().GetId(); got != tc.want {
+				t.Errorf("format = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestADeclinedFormatAfterASixtyCardRequestIsModern is the decline half
+// of REV-004. Commander is 100 cards, so a 60-card reader who declines
+// the format gets Modern (D-388, D-904).
+func TestADeclinedFormatAfterASixtyCardRequestIsModern(t *testing.T) {
+	for _, tc := range []struct {
+		words string
+		want  mtgv1.FormatId
+	}{
+		{"i want a 60 card goblin deck", mtgv1.FormatId_FORMAT_ID_MODERN},
+		{"a goblin deck", mtgv1.FormatId_FORMAT_ID_COMMANDER},
+	} {
+		st := NewState(false)
+		st.Ctx.Words = tc.words
+		st.DeclineKey("format")
+		if got := st.Slots.GetFormat().GetId(); got != tc.want {
+			t.Errorf("%q: declined format = %v, want %v", tc.words, got, tc.want)
+		}
+	}
+}
+
+// TestTheFormatAskStoresTheOptionsTheReaderSaw drives one turn of the
+// planner for REV-004. The ask record holds the values of the options
+// that went out, so the answer of the next turn maps through them.
+func TestTheFormatAskStoresTheOptionsTheReaderSaw(t *testing.T) {
+	var out classifyOut
+	out.Theme, out.PoolRule = "goblins", "unknown"
+	a, _ := testAgent(t, classifyStep(t, out), fits(t, "format", "colors"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st, "i want a 60 card goblin deck", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	var id string
+	for _, q := range res.Questions {
+		if q.GetSlot() == "format" {
+			id = q.GetId()
+		}
+	}
+	if id == "" {
+		t.Fatalf("no format question went out: %v", res.Questions)
+	}
+	st.OptionAnswers = []OptionAnswer{{QuestionID: id, Index: 0}}
+	a.applyOptionAnswers(st)
+	if got := st.Slots.GetFormat().GetId(); got != mtgv1.FormatId_FORMAT_ID_STANDARD {
+		t.Errorf("format = %v, want Standard, the first option the reader saw", got)
 	}
 }

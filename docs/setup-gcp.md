@@ -32,7 +32,7 @@ PR-22 added four things on 2026-09-06, and this page reads them as they stand:
 
 - A `hosting` block in `firebase.json` for the static app (D-544). It names the Vite build directory, the single-page rewrite, and long cache headers on the hashed assets.
 - The Firebase web configuration through four build variables: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, and `VITE_FIREBASE_APP_ID`. Unset, the app talks to the emulator project.
-- The invite list (D-314, D-420). On Cloud Run the API reads `config/allowlist` before every signed-in request, with a cache of one minute. It refuses an email off the list with one sentence. `make allow EMAIL=... PROJECT_ID=...` writes the list, and `make disallow` takes an email off.
+- The invite list (D-314, D-420). On Cloud Run the API reads `config/allowlist` before every signed-in request, with a cache of one minute. It refuses an email off the list with one sentence. It also refuses an email on the list with no proof from its holder (D-903). `make allow EMAIL=... PROJECT_ID=...` writes the list, and `make disallow` takes an email off. `make mark-verified PROJECT_ID=...` lists each account with no proof.
 - The spend cap (D-421). One Firestore document per user and month, `users/<uid>/usage/<YYYY-MM>`, sums the cost of every turn and of each deck import (PR-70). On Cloud Run the cap is $5 a month, and `SPEND_CAP_USD` moves it. A turn at the cap gets a refusal that names the day the cap resets.
 
 ## 2. Before you start
@@ -345,9 +345,10 @@ The API keeps its `run.app` URL. Cloud Run domain mappings are a preview feature
 
 1. Run `gcloud auth application-default login` once, so the command writes with your own credentials. Then run `make allow EMAIL=user@example.com PROJECT_ID=PROJECT_ID`. It writes the email into `config/allowlist` (D-420), and the API reads the change inside a minute.
 2. Open `https://DOMAIN`, create the account with that email, and sign in.
-3. Upload a ManaBox export, build a deck, revise it, and export it. This is the PR-22 gate.
-4. Sign in with an email that is not on the list. The first RPC must answer `PermissionDenied` with one sentence.
-5. Read the Cloud Run logs: `gcloud run services logs read mtg-api --region REGION --limit 50`.
+3. Open the link in the email that Firebase sent, then press Continue on the app (D-903).
+4. Upload a ManaBox export, build a deck, revise it, and export it. This is the PR-22 gate.
+5. Sign in with an email that is not on the list. The first RPC must answer `PermissionDenied` with one sentence.
+6. Read the Cloud Run logs: `gcloud run services logs read mtg-api --region REGION --limit 50`.
 
 ## 16. Cost estimate for five users and three decks a week each
 

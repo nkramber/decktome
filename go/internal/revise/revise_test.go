@@ -131,3 +131,53 @@ func TestInputTellsTheModelThePriorWasAnswered(t *testing.T) {
 		t.Error("a first message carries the prior section")
 	}
 }
+
+type nameSource map[string]string
+
+func (n nameSource) ByOracleID(id string) (*mtgv1.Card, bool) {
+	name, ok := n[id]
+	return &mtgv1.Card{OracleId: id, Name: name}, ok
+}
+
+// TestCommanderChangeNamesTheCommandZone: the card list holds no
+// commander, so a changed commander made an empty diff and a note that
+// said nothing about it (D-851).
+func TestCommanderChangeNamesTheCommandZone(t *testing.T) {
+	src := nameSource{"o-karlov": "Karlov of the Ghost Council", "o-teysa": "Teysa Karlov"}
+	withCommanders := func(ids ...string) *mtgv1.Deck {
+		d := deck("98 Plains")
+		d.CommanderOracleIds = ids
+		return d
+	}
+	named := withCommanders("o-teysa")
+	named.Commanders = []*mtgv1.DeckCard{{OracleId: "o-teysa", Name: "Teysa Karlov", Count: 1}}
+	for _, tc := range []struct {
+		name          string
+		base, revised *mtgv1.Deck
+		cards         CardSource
+		want          string
+	}{
+		{"the same commander", withCommanders("o-karlov"), withCommanders("o-karlov"), src, ""},
+		{"the same partners in another order", withCommanders("a", "b"), withCommanders("b", "a"), src, ""},
+		{"an import by id to a generated deck", withCommanders("o-karlov"), named, src, "Karlov of the Ghost Council to Teysa Karlov"},
+		{"no card source", withCommanders("o-karlov"), named, nil, "o-karlov to Teysa Karlov"},
+		{"a commander added", withCommanders(), withCommanders("o-karlov"), src, "no commander to Karlov of the Ghost Council"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := CommanderChange(tc.base, tc.revised, tc.cards); got != tc.want {
+				t.Errorf("change = %q, want %q", got, tc.want)
+			}
+		})
+	}
+	d := DiffDecks(withCommanders("o-karlov"), named)
+	if !d.Empty() {
+		t.Fatalf("the card lists differ: %+v", d)
+	}
+	d.Commander = CommanderChange(withCommanders("o-karlov"), named, src)
+	if d.Empty() {
+		t.Error("a changed commander reads as an empty diff, so the revision keeps no new version")
+	}
+	if got := Note(&Brief{Changes: []string{"Add more card draw"}}, d); !strings.Contains(got, "I changed the commander from Karlov of the Ghost Council to Teysa Karlov.") {
+		t.Errorf("note = %q", got)
+	}
+}

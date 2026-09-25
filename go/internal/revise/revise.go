@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -214,12 +215,16 @@ type Diff struct {
 	Removed []string
 	// Changed names a card whose count moved, as "name: 2 to 4".
 	Changed []string
+	// Commander names a change of the command zone, as "A to B". The
+	// card list holds no commander, so the lists alone never show it
+	// (D-851).
+	Commander string
 }
 
 // Empty reports whether the two decks hold the same cards. A revision
 // that changes nothing stores no new version of the deck (F-81).
 func (d Diff) Empty() bool {
-	return len(d.Added) == 0 && len(d.Removed) == 0 && len(d.Changed) == 0
+	return len(d.Added) == 0 && len(d.Removed) == 0 && len(d.Changed) == 0 && d.Commander == ""
 }
 
 // DiffDecks compares two card lists by name.
@@ -247,6 +252,44 @@ func DiffDecks(base, revised *mtgv1.Deck) Diff {
 	return d
 }
 
+// CommanderChange names the change of the commanders from the base deck
+// to the revised one, as "A to B". It is "" when both hold the same
+// commanders. An imported deck holds its commander by id alone, so the
+// name comes from the deck, then from the cards, then the id stands.
+func CommanderChange(base, revised *mtgv1.Deck, cards CardSource) string {
+	before := slices.Sorted(slices.Values(base.GetCommanderOracleIds()))
+	after := slices.Sorted(slices.Values(revised.GetCommanderOracleIds()))
+	if slices.Equal(before, after) {
+		return ""
+	}
+	return commanderNames(base, cards) + " to " + commanderNames(revised, cards)
+}
+
+func commanderNames(d *mtgv1.Deck, cards CardSource) string {
+	names := make([]string, 0, len(d.GetCommanderOracleIds()))
+	for _, id := range d.GetCommanderOracleIds() {
+		names = append(names, commanderName(d, id, cards))
+	}
+	if len(names) == 0 {
+		return "no commander"
+	}
+	return strings.Join(names, " and ")
+}
+
+func commanderName(d *mtgv1.Deck, id string, cards CardSource) string {
+	for _, c := range d.GetCommanders() {
+		if c.GetOracleId() == id && c.GetName() != "" {
+			return c.GetName()
+		}
+	}
+	if cards != nil {
+		if c, ok := cards.ByOracleID(id); ok {
+			return c.GetName()
+		}
+	}
+	return id
+}
+
 func counts(d *mtgv1.Deck) map[string]int32 {
 	out := map[string]int32{}
 	for _, c := range d.GetCards() {
@@ -260,6 +303,9 @@ func counts(d *mtgv1.Deck) map[string]int32 {
 // happen (D-283). A decline is named with its reason (D-284).
 func Note(b *Brief, d Diff) string {
 	var lines []string
+	if d.Commander != "" {
+		lines = append(lines, "I changed the commander from "+d.Commander+".")
+	}
 	if len(d.Removed) > 0 {
 		lines = append(lines, "I removed "+list(d.Removed)+".")
 	}

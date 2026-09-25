@@ -23,9 +23,6 @@ var unreadSlots = map[string]string{
 	// cards from the private state, which holds the names the user wrote
 	// (D-242).
 	"locked_oracle_ids": "the build reads the locked cards from the private state",
-	// commander_oracle_ids is read through the private state as well,
-	// because the state holds the names and the index resolves them.
-	"commander_oracle_ids": "the build reads the commanders from the private state",
 }
 
 // slotFieldRe reads a field name from a proto message body.

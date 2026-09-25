@@ -1,22 +1,31 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { collectionClient } from "../../lib/api";
+import { refreshProof, sendProofAgain } from "../../lib/firebase";
 import { useAppStore } from "../../lib/store";
 import { useAuth } from "./auth-context";
 import { type InviteState, setInviteState, useInviteState } from "./invite-state";
 import { LoadingSession } from "./require-auth";
 import { signOutAndClear } from "./sign-out";
 
-// The header the API sets on a refusal, and the one value it takes
-// (F-59). It matches auth.RefusalHeader and auth.RefusalNotInvited on the
-// Go side. The state reads from the header alone, never from the
+// The header the API sets on a refusal, and its values (F-59). They match
+// auth.RefusalHeader, auth.RefusalNotInvited, and auth.RefusalUnverified
+// on the Go side. The state reads from the header alone, never from the
 // sentence, so the wording of the message stays free to change.
 const refusalHeader = "deck-tome-refusal";
 const refusalNotInvited = "not-invited";
+const refusalUnverified = "email-unverified";
+
+// isUnverified says whether the API refused this call because the email
+// is on the list and its holder has not proved it (D-903). The API
+// exposes the header, so this state needs it.
+export function isUnverified(err: unknown): boolean {
+  return err instanceof ConnectError && err.code === Code.PermissionDenied && err.metadata.get(refusalHeader) === refusalUnverified;
+}
 
 // isNotInvited says whether the API refused this call because the email
 // is off the invite list (D-314).
@@ -58,14 +67,15 @@ function useInviteProbe(): InviteState {
     queryFn: () => collectionClient.listCollections({}),
   });
   let answer: InviteState = "checking";
-  if (isNotInvited(error)) answer = "refused";
+  if (isUnverified(error)) answer = "unverified";
+  else if (isNotInvited(error)) answer = "refused";
   else if (data !== undefined) answer = "invited";
   else if (error) answer = "unavailable";
   // A refusal wins over everything. A "yes" latches, so a reader the API
   // already cleared keeps the app through a later refetch or blip. No
   // other state latches, so a retry can still open the app.
   let state = answer;
-  if (answer !== "refused" && known === "invited") state = "invited";
+  if (answer !== "refused" && answer !== "unverified" && known === "invited") state = "invited";
   useEffect(() => setInviteState(state), [state]);
   return state;
 }
@@ -77,6 +87,7 @@ export default function InviteGate({ children }: { children: ReactNode }) {
   const state = useInviteProbe();
   if (state === "checking") return <LoadingSession />;
   if (state === "refused") return <NotInvited />;
+  if (state === "unverified") return <VerifyEmail />;
   if (state === "unavailable") return <CannotCheck />;
   return <>{children}</>;
 }
@@ -132,6 +143,77 @@ export function NotInvited() {
           <Button variant="outline" className="self-start" onClick={onSignOut}>
             Sign out
           </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// VerifyEmail asks the reader to prove the email (D-903). Anyone can make
+// an account with an invited address, so the API opens the app to a
+// proved address alone. Continue takes a new token, so the proof reaches
+// the API with no sign-out.
+export function VerifyEmail() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const reset = useAppStore((s) => s.reset);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const onSignOut = () => void signOutAndClear(reset, () => queryClient.clear());
+  async function onContinue() {
+    setBusy(true);
+    setNote("");
+    try {
+      if (await refreshProof()) {
+        await queryClient.invalidateQueries({ queryKey: ["collections"] });
+      } else {
+        setNote("The address is not proved yet. Open the link in the email, then press Continue.");
+      }
+    } catch {
+      setNote("Deck Tome could not check the address. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function onResend() {
+    setBusy(true);
+    setNote("");
+    try {
+      await sendProofAgain();
+      setNote("A new link is on its way. Look in the spam folder too.");
+    } catch {
+      setNote("The link could not be sent. Wait a minute, then try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <div className="mx-auto flex min-h-[80vh] w-full max-w-md flex-col justify-center p-4 md:p-6">
+      <Card className="shadow-raised">
+        <CardHeader>
+          <CardTitle asChild className="text-2xl tracking-tight">
+            <h1>Confirm your email address</h1>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 text-sm text-muted-foreground">
+          <p>
+            Deck Tome sent a link to <span className="font-mono text-foreground">{user?.email ?? ""}</span>. Open the link to prove that the
+            address is yours, then press Continue.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button disabled={busy} onClick={() => void onContinue()}>
+              Continue
+            </Button>
+            <Button variant="outline" disabled={busy} onClick={() => void onResend()}>
+              Send the link again
+            </Button>
+            <Button variant="outline" onClick={onSignOut}>
+              Sign out
+            </Button>
+          </div>
+          <p role="status" className="min-h-5">
+            {note}
+          </p>
         </CardContent>
       </Card>
     </div>
