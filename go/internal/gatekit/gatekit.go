@@ -62,20 +62,28 @@ func NewSpendCap(getenv func(string) string) (SpendCap, error) {
 	return SpendCap{maxUSD: v}, nil
 }
 
-// Stop answers true when the run must start no more items, and marks
-// the run stopped. A report with calls and no priced cost stops the run
-// too, because the cap can not see its spend.
-func (c SpendCap) Stop(rec *evalrun.Run, rep llm.Report) bool {
+// Spent says whether the run reached its cap. It marks nothing, so a
+// run that finished its items stays whole. A report with calls and no
+// priced cost reads spent, because the cap can not see its spend.
+func (c SpendCap) Spent(rep llm.Report) bool {
 	if c.maxUSD == 0 {
+		return false
+	}
+	return rep.CostUSD == nil && rep.Calls > 0 || rep.CostUSD != nil && *rep.CostUSD >= c.maxUSD
+}
+
+// Stop answers true when the run must start no more items, and marks
+// the run stopped. Call it before an item alone. After the last item a
+// spent cap stops nothing, so use Spent there.
+func (c SpendCap) Stop(rec *evalrun.Run, rep llm.Report) bool {
+	if !c.Spent(rep) {
 		return false
 	}
 	switch {
 	case rep.CostUSD == nil && rep.Calls > 0:
 		rec.Header.Stopped = fmt.Sprintf("the run made %d unpriced calls under a cap of $%.2f", rep.Calls, c.maxUSD)
-	case rep.CostUSD != nil && *rep.CostUSD >= c.maxUSD:
-		rec.Header.Stopped = fmt.Sprintf("the run spent $%.4f of its cap of $%.2f", *rep.CostUSD, c.maxUSD)
 	default:
-		return false
+		rec.Header.Stopped = fmt.Sprintf("the run spent $%.4f of its cap of $%.2f", *rep.CostUSD, c.maxUSD)
 	}
 	return true
 }

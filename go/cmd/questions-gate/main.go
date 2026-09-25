@@ -313,9 +313,10 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 	// A counted miss plays again inside the run, so the document can tell a
 	// regression from a latent gap the classifier trips on some reads. The
 	// reruns move no count and no verdict (D-671).
-	// A stopped run plays no rerun, so the cap bounds the reruns too.
+	// A stopped or spent run plays no rerun, so the cap bounds the reruns
+	// too. A run that played each conversation stays whole (D-939).
 	rerun := rerunMisses
-	if rec.Header.Stopped != "" || spendCap.Stop(rec, acc.Report()) {
+	if skipReruns(rec, spendCap, acc.Report()) {
 		rerun = func([]result, func(conversation) result) {}
 	}
 	rerun(results, func(c conversation) result {
@@ -325,6 +326,12 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 	})
 	werr := write(w, file, results, cov, acc.Report(), client.Config(), ownedNote, time.Since(started), rec)
 	return writeRunThen(runOut, rec, werr)
+}
+
+// skipReruns says whether the reruns of the misses stay unplayed. It
+// never marks the run: every conversation played already (D-939).
+func skipReruns(rec *evalrun.Run, c gatekit.SpendCap, rep llm.Report) bool {
+	return rec.Header.Stopped != "" || c.Spent(rep)
 }
 
 // writeRunThen writes the run file and then returns the verdict error of
