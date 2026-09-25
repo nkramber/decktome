@@ -6,37 +6,42 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-25b)
+## RESUME HERE (2026-09-25c)
 
-**Pull request #229, PR-79, corrects twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924).**
+**Pull request #PRNUM, PR-80, corrects twenty P3 findings of the repository review of 2026-09-24 (D-925 to D-941).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2: the next findings of the review report. The P3 findings that remain come next.
+**The next step.** Next step 2: REV-046 and REV-072, the last findings of the review report. REV-069 waits for a grant of the owner.
 
-**The base.** `main` is `8aec379`, from #228.
+**The base.** `main` is `d9faa00`, from #229.
 
-**The change.** The owner asked for as many corrections as one session can finish (D-920). Each code finding has a regression test that fails on the base.
+**The change.** The owner asked for as many corrections as one session can finish, and then for three more (D-938). Each code finding has a regression test that fails on the base.
 
-- REV-008: a review record on a head from a fork fails RG 3. The owner chose the fork check alone, and no signed record (D-920).
-- REV-029: step 6 of the fix cycle says what `make eval-check` proves, and asks for a whole run before the merge (D-921).
-- REV-030, REV-043, REV-044: a build holds a lease on its chat in the store. The cap refusal comes before the chat exists. The cap and the size refusals use FailedPrecondition, and a conflict uses Unavailable (D-922).
-- P3: REV-038, REV-039, REV-048, REV-056, REV-066, REV-074, REV-075, REV-084, and REV-086 (D-923).
-- Seven more P3, on the owner's word: REV-065, REV-076, REV-077, REV-082, REV-087, REV-089, and REV-094 (D-924).
-- No paid target ran. No production write.
+- REV-033: Cloud Run refuses the local switches, a bad cap, and an unpriced model (D-925).
+- REV-079, REV-080, REV-081: the fixer copy hides the holdout rows, and the refit keeps the model on a failed bar (D-926, D-927).
+- REV-068, REV-070, REV-071, REV-073: strict checks, a gate run on each edit, the review rules of `main`, and a wider frozen list (D-928 to D-930, D-932).
+- REV-069 in part: each image names its digest. `web-deployer` holds three roles. The permission classifier refused the custom role of the rules test, so `deploy-web` still runs as `gh-deployer` (D-931).
+- REV-045, REV-049, REV-050: the web (D-933 to D-935). REV-035 is an accepted risk, and REV-037 has its restore steps (D-936, D-937).
+- REV-032, REV-036, REV-078: a turn limit of each user, the soft delete of an account, and a cap in each gate (D-939 to D-941).
+- REV-083, REV-088, REV-091 to REV-093: the index and the documents (D-938).
+- The owner allowed two remote writes: the strict ruleset of `main`, and the account `web-deployer`. No paid target ran. No deploy.
 
-**The checks.** See the pull request body. `TestEmulatorListRenameDelete` fails on a reused emulator on the base too: it never deletes one of its sessions.
+**The checks.** See the pull request body.
 
-**The review.** Gitar found one issue on `32c6267`: the lease ran on the client context, so a client that left lost the paid turn. The next commit takes it detached, and `TestTheLeaseOutlivesTheClient` failed before it. Gitar approved `4d51d4c` and confirmed the fix at `a8efdf3`. The Codex review of `4d51d4c` found P2-1: a delete read the lease outside its transaction. The next commit reads it inside, for the chat delete and the deck delete. The repeat review of `a8efdf3` closed P2-1 and read `Blocked` on D-921. That rule applies to a fix cycle alone, so the earlier verdict had no basis. The repeat review found P2-2 at `da63923`: a live triage can mark a harvest processed when a judge call fails. `c427583` records each verdict it applies, and a failed verdict keeps its harvest pending. The next review found P2-3: a later write failure duplicated a case on retry. `950a757` records each case and owner question after its write, then settles the landed verdicts after a failed write. The current review closes P2-3 and reads Ready for owner merge. The focused tests and `make verify` pass. The Gitar review is current, and all threads are resolved. The review gate needs a new run after this record reaches the branch. Pending the auto-merge.
+**The review.** Gitar and then Codex, after the push. Pending the auto-merge.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- After the deploy, eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- The custom role of the rules test, then the switch of `deploy-web` (`docs/deploy-and-rollback.md`, step 6).
+- After the deploy: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
 - Next step 3 (D-750). M-19 comes after it.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
-- A questions gate run for the rules of D-913, and a deck gate run for the repair input of D-916. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
 - Next steps 5 and 6, and OQ-67 and OQ-77.
 
@@ -95,8 +100,9 @@ Twenty-two things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-24: Cloud Build `58dfbace` of `deploy-api` built `930d1a6`, from #224, and ended SUCCESS at 19:53:44 UTC. Build `86152b16` of `deploy-web` built `930d1a6` and ended SUCCESS at 19:56:27 UTC. The session then made revisions `mtg-api-00077-vwp` and `mtg-api-00078-hv2` on the same image, to mount the Pushover secrets (D-893). The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
-- The deployed web app, read 2026-09-20 at 22:45 UTC: the release of #196, Hosting version `60c80b8c4ad2a689` of 22:44:09 UTC. `index.html` loads `assets/index-Fi2SZrwg.js`. The deck page chunk `deck-view-BQeBlu0i.js` holds the power counts, and `use-cards-DNxWsKmD.js` holds every label. The release before it, `b786ceb7f89bc4fc` of 2026-09-13, came from #158.
+- The deployed API, read 2026-09-25: Cloud Build `d62ba1b6` of `deploy-api` built `d9faa00`, from #229, and ended SUCCESS at 15:38:38 UTC. `mtg-api-00082-v87` serves all traffic. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed web app, read 2026-09-25: build `f75df7f4` of `deploy-web` built `d9faa00` and ended SUCCESS at 15:41:28 UTC. The site serves Hosting version `0e7d20a041249b8a` of 15:40:49 UTC, and `index.html` loads `assets/index-Bn4KiqaJ.js`. The release before it is `3cfed5b70d6dc3a1`, from #228.
+- The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The deployed quality model, read 2026-09-24: `20260924T061156Z`, from the meta job that ran from 06:00:50 to 06:19:52 UTC on `worker:fa05e3c`. Its Commander fit read 25,851 lists and used 9,244, with `immaterial` 224 and accuracy 0.5595. It holds the rates of 225 commanders, and Najeela reads 64 lists and 169 cards (D-839). The EDHREC pass read nothing, because it ran on 2026-09-21. The mtgjson source read no list, because its deck list version differs from the stored table.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
@@ -106,11 +112,11 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-79: twenty-one findings of the repository review of 2026-09-24** (D-920 to D-924). This pull request is #229.
-2. **The next finding of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-77 to PR-79 corrected each P1 and P2 finding. The P3 findings without the mark `COMPLETE` come next. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
+1. **PR-80: twenty P3 findings of the repository review of 2026-09-24** (D-925 to D-941). This pull request is #PRNUM.
+2. **The next finding of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-77 to PR-80 corrected each P1 and P2 finding and most P3 findings. REV-046 and REV-072 come next, and REV-069 waits for the grant of the owner. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
-5. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
+5. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. Session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses each read under `users/`. So a replay reads a local ManaBox export, which stays out of git (D-756).
 6. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 7. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 8. **M-19: replay the owned-only shortlist of the thumbs down of 2026-09-24** (F-174, D-881). It is free. Read the session and the deck of the snapshot, and the local collection export. Keep the export out of git.
@@ -130,10 +136,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-24f: the five P1 findings of the review, PR-77
-
-**The owner asked for the corrections of the review report of 2026-09-24, as many as one session can finish.** The session read the owner answers in the report first. The owner picked all five P1 findings (D-901). The two answers on REV-001 conflicted, and the owner chose the author filter and the raw reply (D-902). The owner chose an Admin script for the current accounts, run before the merge (D-903), and Modern for a declined 60-card format (D-904).
-
 ### 2026-09-25a: forty-four findings of the review, PR-78
 
 **The owner asked for the next corrections of the review report of 2026-09-24, and five times for more.** The exact trigger of REV-006 met the line cap on the base, so the test holds 990 lines (D-908). The owner approved the provider condition of REV-009 and the Pushover secrets of the jobs for REV-011 (D-906, D-911). No Google page states the shape of the forwarded header, so the key of REV-010 serves both shapes (D-907).
@@ -142,6 +144,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for the next corrections of the review report of 2026-09-24, with no rule of one concern.** The owner picked the fork check alone for REV-008, and no signed record (D-920). The base run of the new two-server test started a second paid build and wrote the chat, as the report said. A frame rule of the web host waits, because the auth domain frames its helper page from another origin (D-923).
 
+### 2026-09-25c: twenty findings of the review, PR-80
+
+**The owner asked for as many corrections of the review report as one session can finish, then for three more.** The owner accepted the hour of REV-035, chose strict checks and a narrow web account, and asked for the fix of REV-073. The permission classifier refused the custom role of the web account, so the trigger stays on `gh-deployer`. The owner chose a soft delete for REV-036. GitHub reads a skipped job as a pass, so the review gate job takes no condition (D-928).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25a, the records of 2026-08-31 to 2026-09-24e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25b, the records of 2026-08-31 to 2026-09-24f, and 104 more sections, word for word. Read it for the detail behind a decision.
