@@ -2220,7 +2220,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a review of the whole code found five serious faults. The robot that fixes review comments read the comments of strangers, and a 60-card import skipped the monthly spend limit. An invited email went to the first person who claimed it. A click on "Standard" built a Commander deck, and a change to an imported deck swapped its commander. This change fixes all five.
 
-**PR-78: Forty-four findings of the repository review of 2026-09-24 (D-905 to D-919).** 🔧 in review. The mark comes before any review (D-822).
+**PR-78: Forty-four findings of the repository review of 2026-09-24 (D-905 to D-919).** ✅ merged as #228. The mark comes before any review (D-822).
 The owner asked for as many corrections as one session can finish, and then for more (D-905). Each code finding has a regression test that fails before its correction.
 
 - **REV-006, the size of an import.** A deck list takes at most 250 cards, and the goldfish simulation reads at most 1,000 (D-908).
