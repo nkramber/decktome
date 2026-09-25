@@ -75,10 +75,10 @@ steps:
         echo "decktome.com: $$code"
         test "$$code" = "200"
         # The rewrite of Hosting answers 200 for any path, so the check
-        # also reads the commit of the live web.
-        live=$$(curl -s -m 60 "https://decktome.com/version.json?cb=$SHORT_SHA")
-        echo "version.json: $$live"
-        test "$$live" = "{\"commit\":\"$COMMIT_SHA\"}"
+        # also reads the commit of the live web. A later merge can release
+        # first, so a later commit passes too.
+        python3 docs/tools/deploy_order.py web-ready --commit "$COMMIT_SHA" \
+          --web "https://decktome.com/version.json?cb=$SHORT_SHA"
 
 substitutions:
   _API_BASE_URL: https://mtg-api-qk2ackpb3q-uc.a.run.app

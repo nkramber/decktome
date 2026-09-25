@@ -20,7 +20,7 @@ Cloud Build has no queue, and the two triggers run apart. So each build reads th
 - The API build skips its deploy, its jobs, and its check when the live API runs a later commit. The step `guard` writes `/workspace/.deploy-skip`, and each later step reads it.
 - The web build of a merge that changed `go/` or `docker/` waits for the API of that commit, or a later one. The wait stops at 25 minutes, and the web build then fails. So a failed API build also stops the web of its merge.
 - The web build skips its release when the live web runs a later commit.
-- The API check waits until `/readyz` reads `ok` with the commit of the build. The web check reads the commit of `/version.json`.
+- The API check waits until `/readyz` reads `ok` with the commit of the build or a later one. The web check reads `/version.json` with the same rule, because a later merge can deploy first.
 
 A live commit that no read gives, or that git can not place, never stops a deploy. The log then says so. Two builds can still overlap during the one minute of one deploy.
 

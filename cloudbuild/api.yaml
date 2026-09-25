@@ -80,7 +80,8 @@ steps:
   # /healthz never answers on a run.app URL, because the Google frontend
   # takes that path. /readyz reads `starting` for about 90 seconds after
   # a cold start, so the check waits for it. It also waits for the commit
-  # of this build, so an old revision that reads ok does not pass.
+  # of this build or a later one, so an old revision that reads ok does
+  # not pass.
   - id: check
     name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
     entrypoint: bash

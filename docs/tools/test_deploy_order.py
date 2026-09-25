@@ -138,7 +138,10 @@ class DeployOrderTest(unittest.TestCase):
     def test_api_ready(self):
         cases = [
             ("ok with the commit", [{"status": "starting", "version": self.api}, {"status": "ok", "version": self.api}], 0),
-            ("ok with another commit", [{"status": "ok", "version": self.base}], 1),
+            ("ok with a later commit", [{"status": "ok", "version": self.docs}], 0),
+            ("starting with a later commit", [{"status": "starting", "version": self.docs}], 1),
+            ("ok with an older commit", [{"status": "ok", "version": self.base}], 1),
+            ("ok with a local build", [{"status": "ok", "version": "dev"}], 1),
             ("no answer", [None], 1),
         ]
         for name, bodies, want in cases:
@@ -149,7 +152,20 @@ class DeployOrderTest(unittest.TestCase):
                 def fetch(_url, seq=seq):
                     return seq.pop(0) if len(seq) > 1 else seq[0]
 
-                rc = d.api_ready(self.args(self.api), fetch=fetch, sleep=clock.sleep, clock=clock, out=io.StringIO())
+                rc = d.api_ready(self.args(self.api), self.history, fetch=fetch, sleep=clock.sleep, clock=clock, out=io.StringIO())
+                self.assertEqual(rc, want)
+
+    def test_web_ready(self):
+        cases = [
+            ("the commit", self.web, 0),
+            ("a later commit", self.docs, 0),
+            ("an older commit", self.api, 1),
+            ("no commit", None, 1),
+        ]
+        for name, live, want in cases:
+            with self.subTest(name):
+                clock = Clock()
+                rc = d.web_ready(self.args(self.web), self.history, fetch=self.fetch(web=live), sleep=clock.sleep, clock=clock, out=io.StringIO())
                 self.assertEqual(rc, want)
 
     def test_fetch_json_reads_the_body_of_a_503(self):
@@ -232,7 +248,7 @@ class BuildFilesTest(unittest.TestCase):
     def test_web(self):
         got = self.check("cloudbuild/web.yaml", "release")
         self.assertIn("dist/version.json", got["build"])
-        self.assertIn("version.json", got["check"])
+        self.assertIn("deploy_order.py web-ready", got["check"])
 
 
 if __name__ == "__main__":

@@ -10,8 +10,9 @@ its deploy step:
 - `web-guard`: when the merge changed `go/` or `docker/`, the web build
   waits until the API runs the commit of the merge or a newer one. Then it
   skips its release when the live web runs a newer commit.
-- `api-ready`: the API build waits until `/readyz` reads ok and names the
-  commit of the build.
+- `api-ready` and `web-ready`: after its deploy, each build waits until
+  the live part names the commit of the build or a later one. The API
+  must also read ok.
 
 The API reports its commit in the `version` field of `/readyz`, and the
 web in `/version.json`. A live commit that no read gives, or that git can
@@ -171,34 +172,48 @@ def web_guard(args, history, fetch=fetch_json, sleep=time.sleep, clock=time.mono
     return 0
 
 
-def api_ready(args, fetch=fetch_json, sleep=time.sleep, clock=time.monotonic, out=sys.stdout):
+def live_ready(args, history, url, key, need_ok, name, fetch, sleep, clock, out):
+    """Wait until the live part runs the commit of the build or a later one.
+
+    A later merge can deploy before the check of an earlier build reads,
+    and the guards accept a later commit. So the check accepts it too.
+    """
     end = clock() + args.wait_seconds
     while True:
-        data = fetch(args.readyz) or {}
-        status, version = data.get("status", ""), data.get("version", "")
-        print(f"deploy_order: /readyz status {status or 'none'}, version {version or 'none'}", file=out)
-        if status == "ok" and version == args.commit:
+        data = fetch(url) or {}
+        status, version = data.get("status", ""), live_commit(data, key)
+        print(f"deploy_order: the live {name} reads status {status or 'none'}, commit {version or 'none'}", file=out)
+        if (status == "ok" or not need_ok) and version and history.at_or_after(args.commit, version):
             return 0
         if clock() >= end:
-            print(f"deploy_order: the API never read ok with {args.commit}", file=out)
+            print(f"deploy_order: the live {name} never ran {args.commit} or a later commit", file=out)
             return 1
         sleep(args.interval)
+
+
+def api_ready(args, history, fetch=fetch_json, sleep=time.sleep, clock=time.monotonic, out=sys.stdout):
+    return live_ready(args, history, args.readyz, "version", True, "API", fetch, sleep, clock, out)
+
+
+def web_ready(args, history, fetch=fetch_json, sleep=time.sleep, clock=time.monotonic, out=sys.stdout):
+    return live_ready(args, history, args.web, "commit", False, "web", fetch, sleep, clock, out)
 
 
 def parse(argv):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="cmd", required=True)
-    for name in ("api-guard", "web-guard", "api-ready"):
+    for name in ("api-guard", "web-guard", "api-ready", "web-ready"):
         s = sub.add_parser(name)
         s.add_argument("--commit", required=True)
-        s.add_argument("--readyz", required=True)
         s.add_argument("--repo", default=REPO)
         s.add_argument("--interval", type=float, default=15)
-        if name != "api-ready":
+        if name != "web-ready":
+            s.add_argument("--readyz", required=True)
+        if name.endswith("-guard"):
             s.add_argument("--skip-file", required=True)
-        if name == "web-guard":
+        if name in ("web-guard", "web-ready"):
             s.add_argument("--web", required=True)
-        s.add_argument("--wait-seconds", type=float, default=1500 if name == "web-guard" else 300)
+        s.add_argument("--wait-seconds", type=float, default={"web-guard": 1500, "web-ready": 120}.get(name, 300))
     return p.parse_args(argv)
 
 
@@ -207,12 +222,9 @@ def main(argv=None):
     if not SHA.match(args.commit):
         print(f"deploy_order: {args.commit!r} is not a full commit id", file=sys.stdout)
         return 2
-    if args.cmd == "api-ready":
-        return api_ready(args)
     history = History(args.repo)
-    if args.cmd == "api-guard":
-        return api_guard(args, history)
-    return web_guard(args, history)
+    run = {"api-guard": api_guard, "web-guard": web_guard, "api-ready": api_ready, "web-ready": web_ready}
+    return run[args.cmd](args, history)
 
 
 if __name__ == "__main__":
