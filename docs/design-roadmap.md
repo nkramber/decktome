@@ -2213,8 +2213,8 @@ The review report sits in the local folder of each session, outside git. The own
 
 Gate:
 
-- Each new regression test fails on the base and passes on this branch.
-- The owner runs `make mark-verified` with `APPLY=1` before the merge.
+- Each new regression test fails on the base and passes on this branch. Met.
+- The owner runs `make mark-verified` with `APPLY=1` before the merge. Met: after the run, the list of 2026-09-24 reads 0 accounts with no proof.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex record approves the effective head.
 - `make verify` passes.

@@ -28,11 +28,10 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on the tree of the first commit, exit 0. Each new regression test failed on the base and passes here.
 
-**The review.** The Codex review found no code defect at `6a247ac`, and is Blocked until the owner confirms and marks the existing accounts with `make mark-verified` (D-903). Gitar passed with no open threads. The published record says Blocked, so `review-gate` failed. Gitar is pending on the metadata push. `pr-contract` and the shell job passed, and the six heavy jobs skipped for a documents-only change.
+**The review.** Gitar approved `5b43645`, with no thread. The first Codex record found no code defect, and it read Blocked on the account step of D-903. The owner then ran `make mark-verified` with `APPLY=1`, and the list reads 0 accounts with no proof. `docs/reviews/pr-227-response.md` answers the record.
 
 **What waits on the owner.**
 
-- `make mark-verified PROJECT_ID=decktome-prod` before the merge. Confirm each account, then run it with `UIDS=...` and `APPLY=1` (D-903).
 - The merge of this pull request.
 - After the deploy, one sign-up with a new invited address reads the proof screen.
 - Next step 3 (D-750). M-19, the free replay of the owned-only shortlist (F-174), comes after it.
