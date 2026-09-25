@@ -6,38 +6,41 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-25d)
+## RESUME HERE (2026-09-25e)
 
-**Pull request #231, PR-81, corrects REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-945).**
+**Pull request #PRNUM, M-20, measures five sessions on the new files, and adds the checkpoint rule (D-946, D-947).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2: read the first `deploy-web` build after the merge. It runs as `web-deployer` and proves REV-069. Then next step 3.
+**The next step.** Next step 2: fix F-175, the web guard that waits for an API build that can not start. Then the end of the review report.
 
-**The base.** `main` is `3b26cde`, from #230.
+**The base.** `main` is `b65ca6a`, from #231.
 
-**The change.** The owner asked for as many corrections as one session can finish, with no rule of one concern (D-944). Each code finding has a regression test that fails on the base.
+**The change.**
 
-- REV-046: `GetSession` reports a build that runs. After a Stop during a build step, or on a load during a build, the chat says that the build continues. It reads the chat each five seconds until the build ends (D-942).
-- REV-072: the owner chose guards in the two build files over one pipeline (D-943). `/readyz` and `/version.json` name the live commits. A build skips a deploy when the live commit is later. The web of a merge that changed the API waits for that API.
-- REV-069: the owner approved three remote writes. The session made the custom role `webDeployRulesTest`, granted it to `web-deployer`, and moved `deploy-web` there (D-944).
-- No paid target ran. No deploy.
+- M-20 measured the author sessions of #227 to #231, and all 47 sessions since D-749. A new session at 300K saves 34.8 percent of the input tokens of the five, and 18.0 percent over all 47.
+- The owner adopted the checkpoint rule at 300K (D-946). The hook `.claude/hooks/context_checkpoint.py` tells the session, and section 4 of the `one-pr-one-session` skill holds the steps.
+- No paid target ran.
+
+**The deploy of b65ca6a, read 2026-09-25.**
+
+- The first `deploy-web` build ran as `web-deployer`, and no step read a 403. So REV-069 holds.
+- Its guard waited 1,500 seconds for the API build, which did not start, and failed at 20:17 UTC (F-175). The API build then ended SUCCESS.
+- The owner chose a second run of `deploy-web` (D-947). It released the web at 20:26 UTC.
+- `/readyz` and `/version.json` name b65ca6a. The guards read git, so the Cloud SDK image holds git.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approved the current effective head, `da75656`. Codex reads Ready for owner merge at `da75656`. P1-1 is an accepted risk under D-945. It is the only finding, and it is not open. `make verify` passed. No paid target ran, and no deploy ran. Pending the auto-merge.
+**The review.** Gitar and the Codex review are pending. `make verify` passed. No paid target ran.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- After the deploy of this merge: read the `guard` step of both builds. The web build must wait for the API, then release. `/readyz` and `/version.json` must name the commit of the merge.
-- UNVERIFIED: the Cloud SDK image of the build holds git. Without git, the guards place no commit, and each deploy runs as before.
-- The first `deploy-web` build after the merge runs as `web-deployer`. On a 403, put `gh-deployer` back (`docs/deploy-and-rollback.md`, step 6).
+- The fix of F-175, in its own pull request.
 - After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
-- Next step 3 (D-750). M-19 comes after it.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
@@ -98,8 +101,8 @@ Twenty-two things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-25: Cloud Build `d62ba1b6` of `deploy-api` built `d9faa00`, from #229, and ended SUCCESS at 15:38:38 UTC. `mtg-api-00082-v87` serves all traffic. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
-- The deployed web app, read 2026-09-25: build `f75df7f4` of `deploy-web` built `d9faa00` and ended SUCCESS at 15:41:28 UTC. The site serves Hosting version `0e7d20a041249b8a` of 15:40:49 UTC, and `index.html` loads `assets/index-Bn4KiqaJ.js`. The release before it is `3cfed5b70d6dc3a1`, from #228.
+- The deployed API, read 2026-09-25: Cloud Build `8ac189b0` of `deploy-api` built `b65ca6a`, from #231, and ended SUCCESS at 20:22:57 UTC. `mtg-api-00084-gjc` serves all traffic, and `/readyz` names the commit. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed web app, read 2026-09-25: build `1b9fbb10` of `deploy-web` built `b65ca6a` as `web-deployer`, and ended SUCCESS at 20:26:06 UTC. The site serves Hosting version `35b29aa5da9911f1` of 20:26:00 UTC, and `index.html` loads `assets/index-B2Ct3CUm.js`. `/version.json` names the commit. The release before it is `733ed6a0ffc1ef49`, from #230.
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The deployed quality model, read 2026-09-24: `20260924T061156Z`, from the meta job that ran from 06:00:50 to 06:19:52 UTC on `worker:fa05e3c`. Its Commander fit read 25,851 lists and used 9,244, with `immaterial` 224 and accuracy 0.5595. It holds the rates of 225 commanders, and Najeela reads 64 lists and 169 cards (D-839). The EDHREC pass read nothing, because it ran on 2026-09-21. The mtgjson source read no list, because its deck list version differs from the stored table.
@@ -110,19 +113,18 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-81: REV-046, REV-069, and REV-072 of the repository review of 2026-09-24** (D-942 to D-945). This pull request is #231.
-2. **The first web build as `web-deployer`, then the end of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-77 to PR-81 corrected each finding. Read the first `deploy-web` build after the merge of PR-81, because it proves REV-069. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
-3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
+1. **M-20: five sessions on the new files, and the checkpoint rule** (D-946). This pull request is #PRNUM.
+2. **F-175: the web guard waits for an API build that can not start.** The builds of this project start one at a time. Fix the guard in its own pull request, then read the next deploy of a merge that changes the API. Then end the review report of D-901. It sits at `.local/reviews/repository-review-2026-09-24.md`, outside git, and its section 8.2 gives the order. Builds `d4c2e100` and `1b9fbb10` prove REV-069. Mark each finding `COMPLETE - PR #N`.
+3. **M-19: replay the owned-only shortlist of the thumbs down of 2026-09-24** (F-174, D-881). It is free. Read the session and the deck of the snapshot, and the local collection export. Keep the export out of git.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. Session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses each read under `users/`. So a replay reads a local ManaBox export, which stays out of git (D-756).
 6. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 7. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-8. **M-19: replay the owned-only shortlist of the thumbs down of 2026-09-24** (F-174, D-881). It is free. Read the session and the deck of the snapshot, and the local collection export. Keep the export out of git.
-9. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
-10. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-11. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-12. **PR-26, the return channels**, waits on OQ-67.
-13. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+8. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
+9. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+10. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+11. **PR-26, the return channels**, waits on OQ-67.
+12. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
 
@@ -134,10 +136,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-25b: twenty-one findings of the review, PR-79
-
-**The owner asked for the next corrections of the review report of 2026-09-24, with no rule of one concern.** The owner picked the fork check alone for REV-008, and no signed record (D-920). The base run of the new two-server test started a second paid build and wrote the chat, as the report said. A frame rule of the web host waits, because the auth domain frames its helper page from another origin (D-923).
-
 ### 2026-09-25c: twenty-two findings of the review, PR-80
 
 **The owner asked for as many corrections of the review report as one session can finish, then for three more.** The owner accepted the hour of REV-035, chose strict checks and a narrow web account, and asked for the fix of REV-073. The permission classifier refused the custom role of the web account, so the trigger stays on `gh-deployer`. The owner chose a soft delete for REV-036. GitHub reads a skipped job as a pass, so the review gate job takes no condition (D-928).
@@ -146,6 +144,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for the next corrections of the review report, with no rule of one concern.** The owner then added REV-069 and approved its three remote writes. The owner chose guards in the two build files for REV-072, because one pipeline runs `pnpm install` as an account with `roles/run.admin` again (D-943). The API image carried no commit, so `/readyz` read `dev` in production. On the deck page, a second read of the chat ended the build flag first. So the watch holds until its own read (D-942).
 
+### 2026-09-25e: five sessions measured, and the checkpoint rule, M-20
+
+**The owner asked for next step 3: measure five sessions, then ask about the checkpoint rule.** The session read the deploy of b65ca6a first. Its web guard waited for an API build that did not start, and the owner chose a second web run (F-175, D-947). The measurement found 34.8 percent of the input saved on the five sessions, and the owner adopted the rule at 300K (D-946). The line of D-750 never fired, so a hook now tells the session.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25c, the records of 2026-08-31 to 2026-09-25a, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25d, the records of 2026-08-31 to 2026-09-25b, and 104 more sections, word for word. Read it for the detail behind a decision.

@@ -118,7 +118,7 @@ After the Gitar pass, start the Codex review with `make codex-review` (D-823). A
 
 ### The context checkpoint
 
-A session past 300K tokens of context ends, and a new clean session continues the same pull request (D-946). A session can not see the size of its context. So the hook `.claude/hooks/context_checkpoint.py` tells it at 300K, and again at each further 100K.
+A session past 300K tokens of context ends, and a new clean session continues the same pull request (D-946). A session can not see the size of its context. So the hook `.claude/hooks/context_checkpoint.py` tells it at 300K, and again at each further 100K. The hook runs in Claude Code alone, and a Codex session does the same steps past 300K.
 
 Do these steps after the message of the hook:
 
