@@ -60,7 +60,7 @@ func TestSnapshotNotice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n, ok := snapshotNotice(tt.latest, tt.now, tt.err)
+			n, ok := snapshotNotice(tt.latest, tt.now, tt.now, tt.err)
 			if ok != (tt.want != "") {
 				t.Fatalf("sent = %v, want %v: %+v", ok, tt.want != "", n)
 			}
@@ -68,5 +68,22 @@ func TestSnapshotNotice(t *testing.T) {
 				t.Errorf("message = %q, want %q in it", n.Message, tt.want)
 			}
 		})
+	}
+}
+
+// TestASlowFailedRunStillAlerts is P2-1 of the Codex review of #228. A
+// run that started at 06:00 and failed at 06:40 read the window at its
+// end, and sent no notice. The window reads the start of the run.
+func TestASlowFailedRunStillAlerts(t *testing.T) {
+	version := cards.VersionFor(time.Date(2026, 10, 12, 9, 1, 0, 0, time.UTC))
+	started := time.Date(2026, 10, 13, 18, 0, 5, 0, time.UTC)
+	ended := started.Add(40 * time.Minute)
+	failed := errors.New("download timed out")
+	n, ok := snapshotNotice(version, started, ended, failed)
+	if !ok || !strings.Contains(n.Message, "33 hours old") || !strings.Contains(n.Message, "timed out") {
+		t.Errorf("notice = %+v, sent %v, want the age at the end and the error", n, ok)
+	}
+	if _, ok := snapshotNotice(version, started.Add(time.Hour), ended.Add(time.Hour), failed); ok {
+		t.Error("a run that started outside the window sent a notice")
 	}
 }

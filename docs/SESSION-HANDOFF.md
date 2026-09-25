@@ -33,7 +33,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Codex found P2-1 and requires changes on effective head `44d2fb05e2f86cd22219f4c57361d8ab3b9b1ac8`.
+**The review.** Gitar found one issue on `89bd9b4`: bare join words kept the old commander. `44d2fb0` fixes it, and Gitar approved `44d2fb0`. Codex read `Changes required` on `44d2fb0`: a slow failed snapshot run skipped its alert (P2-1). `docs/reviews/pr-228-response.md` answers it, and the repeat review waits.
 
 **What waits on the owner.**
 

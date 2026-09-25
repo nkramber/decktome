@@ -86,10 +86,12 @@ const staleAfter = 30 * time.Hour
 // snapshotNotice answers the alert of one run of the snapshot job, and
 // false when the run sends none. A snapshot past staleAfter alerts, and
 // so does a run that could not read the store. The job runs many times
-// an hour, so an alert goes out at the first run of every sixth UTC hour
-// alone: four notices a day at most.
-func snapshotNotice(latest string, now time.Time, runErr error) (notify.Notice, bool) {
-	if now.Hour()%6 != 0 || now.Minute() >= 15 {
+// an hour, so an alert goes out for a run that started in the first
+// quarter of every sixth UTC hour alone: four notices a day at most. The
+// window reads the start of the run, because a refresh can fail long
+// after it (Codex P2-1 of #228). The age reads now.
+func snapshotNotice(latest string, started, now time.Time, runErr error) (notify.Notice, bool) {
+	if started.Hour()%6 != 0 || started.Minute() >= 15 {
 		return notify.Notice{}, false
 	}
 	tail := ""
@@ -217,6 +219,7 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 	}
 
 	if once {
+		started := time.Now().UTC()
 		err := runOnce(ctx, store, calendar, lastDiff, refresh, logger)
 		if alert != nil {
 			latest, lerr := store.LatestVersion(ctx)
@@ -224,7 +227,7 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 			if lerr != nil {
 				latest, seen = "", errors.Join(err, lerr)
 			}
-			if n, ok := snapshotNotice(latest, time.Now().UTC(), seen); ok {
+			if n, ok := snapshotNotice(latest, started, time.Now().UTC(), seen); ok {
 				alert(n)
 			}
 		}
