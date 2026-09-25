@@ -83,6 +83,9 @@ type Header struct {
 	// Note is provenance a compare never reads, for example the document
 	// an imported run came from.
 	Note string `json:"note,omitempty"`
+	// Stopped names the cap that stopped the run before its last item
+	// (D-939). A stopped run is partial.
+	Stopped string `json:"stopped,omitempty"`
 }
 
 // Row is one measurement of one item.
@@ -175,8 +178,9 @@ func (r *Run) Finish(rep llm.Report, took time.Duration, verdict string) {
 }
 
 // Partial reports whether the run covered a part of its suite, under
-// -only or a count. A partial run never stands for the suite.
-func (h Header) Partial() bool { return h.Only != "" }
+// -only, a count, or a spend cap. A partial run never stands for the
+// suite.
+func (h Header) Partial() bool { return h.Only != "" || h.Stopped != "" }
 
 // Experiment reports whether the run changed a role field from the
 // shipped defaults. Such a run measures a configuration the app does not

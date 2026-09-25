@@ -186,6 +186,11 @@ func run() error {
 	if err := gatekit.RefuseExisting(*runOut); err != nil {
 		return err
 	}
+	// A cap of the fix cycle stops the run before an item (D-939).
+	spendCap, err := gatekit.NewSpendCap(os.Getenv)
+	if err != nil {
+		return err
+	}
 	run := evalrun.New("decks", evalrun.RunID(*runOut))
 	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
@@ -264,6 +269,10 @@ func run() error {
 	start := time.Now()
 	var results []result
 	for _, p := range file.Prompts {
+		if spendCap.Stop(run, acc.Report()) {
+			fmt.Fprintf(os.Stderr, "stopped: %s\n", run.Header.Stopped)
+			break
+		}
 		r := build(context.Background(), b, cb, idx, scorer, binders, p, acc, *dry, preconSet, preconTbl)
 		// The judge lane is the real check for F-26, and the deterministic
 		// net can not read the truth of a rules claim (D-229).

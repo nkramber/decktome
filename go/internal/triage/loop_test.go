@@ -147,6 +147,30 @@ func TestTheCycleStopsWhenTheCapLeavesACaseUnmeasured(t *testing.T) {
 	}
 }
 
+// TestEachGateAndTheTriageSpendUnderTheCap holds REV-078 (D-939). The
+// cap was checked between gates alone, so one gate could pass it, and
+// the judge of the triage never entered the ledger.
+func TestEachGateAndTheTriageSpendUnderTheCap(t *testing.T) {
+	s := loopScript(t)
+	runGate := s[strings.Index(s, "run_gate() {"):]
+	runGate = runGate[:strings.Index(runGate, "\n}\n")]
+	if !strings.Contains(runGate, `export GATE_MAX_USD="$room"`) {
+		t.Error("run_gate gives the gate no room under the cap")
+	}
+	if !strings.Contains(runGate, "return 3") {
+		t.Error("run_gate does not report a gate the cap stopped")
+	}
+	confirm := s[strings.Index(s, "step 2: confirm"):strings.Index(s, "step 3: the fixer")]
+	if !strings.Contains(confirm, "3) capped=1; break ;;") {
+		t.Error("the confirm loop does not stop on a gate the cap stopped")
+	}
+	charge := strings.Index(s, `echo "${triage_cost:-0}" >> "$LEDGER"`)
+	firstGate := strings.Index(s, "step 2: confirm")
+	if charge < 0 || charge > firstGate {
+		t.Error("the cost of the triage does not enter the ledger before the first gate")
+	}
+}
+
 // TestTheCycleStopsWhenNoCaseFailsBeforeTheFix holds F-173. The live
 // cycle of PR-73 read one case that passed before the fix, and the cycle
 // still ran the fixer and a measure run, then exited 0. A case that passes

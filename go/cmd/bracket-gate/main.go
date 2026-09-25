@@ -119,6 +119,11 @@ func run() error {
 	if err := gatekit.RefuseExisting(*runOut); err != nil {
 		return err
 	}
+	// A cap of the fix cycle stops the run before an item (D-939).
+	spendCap, err := gatekit.NewSpendCap(os.Getenv)
+	if err != nil {
+		return err
+	}
 	run := evalrun.New("bracket", evalrun.RunID(*runOut))
 	run.Header.Only = *only
 	run.Header.Prompts["generate"] = generate.PromptVersion
@@ -171,6 +176,10 @@ func run() error {
 	start := time.Now()
 	var results []result
 	for _, p := range prompts {
+		if spendCap.Stop(run, acc.Report()) {
+			fmt.Fprintf(os.Stderr, "stopped: %s\n", run.Header.Stopped)
+			break
+		}
 		r := build(context.Background(), b, cb, idx, scorer, p, acc, *dry)
 		if !*dry && !*noJudge && r.deck != nil {
 			r.judged, r.judgeErr = generate.JudgeBracket(context.Background(), client, r.deck, idx, acc)

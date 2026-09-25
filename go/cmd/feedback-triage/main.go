@@ -165,6 +165,12 @@ func run() error {
 	// the same list the live one acts on.
 	if *manifest != "" {
 		m := triage.ManifestOf(strings.Join(paths, ", "), time.Now().UTC(), results)
+		zero := 0.0
+		m.CostUSD = &zero
+		if acc != nil {
+			rep := acc.Report()
+			m.Calls, m.CostUSD = rep.Calls, rep.CostUSD
+		}
 		if err := triage.WriteManifest(*manifest, m); err != nil {
 			return err
 		}

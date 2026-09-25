@@ -67,7 +67,11 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 The target reads no `.env`, so run `set -a && . ./.env && set +a` first. Set `CARDS_SNAPSHOT_DIR` to `.local/gcs/mtg-local-cards/scryfall`, or each card case names its gap. The run of 2026-09-23 cost $0.0122 for one judge call. `TRIAGE_ARGS=-apply` writes each case into the gate file that owns it. Ask the owner before every live run.
 
-`make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs (D-559).
+`make feedback-loop` prints the commands of the fix cycle and starts nothing (PR-28c). `make feedback-loop-dry` plans a cycle for nothing. `scripts/feedback-loop.sh` is the paid cycle, and it refuses to start without `FEEDBACK_LOOP_ALLOW=1` and `AUTOTUNE_FIXER_CMD`. One cycle stops at $2 of gate runs and the triage (D-559, D-939).
+
+The ledger charges the judge of the triage first. Each gate then gets the room left under the cap in `GATE_MAX_USD`, and it stops before its next item once it spent that room. So one gate can pass the cap by the cost of one item alone. A stopped run reads partial, and the cycle stops before the fixer.
+
+`GATE_MAX_USD` works on a hand run of `make questions-gate`, `make deck-gate`, or `make bracket-gate` too. A value that is not a number above zero stops the run before its first call.
 
 With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). It refuses a changed tree, and it stops when the branch moves (D-923). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
 
