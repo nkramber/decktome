@@ -2289,6 +2289,21 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the fourth batch of review findings. A wrong setting can no longer open the live app or turn off its spend limit, and one user can no longer take every seat. The owner can close an account and keep its data. A bad day of source data no longer changes the deck grades, and a few pages read more clearly.
 
+**PR-81: REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-944).** 🔧 planned.
+The owner asked for as many corrections as one session can finish (D-944). Each code finding has a regression test that fails before its correction.
+
+- **REV-046, the chat during a build.** `GetSession` reports a build that runs. After a Stop or a reload, the chat says that the build continues, and it reads the chat until the build ends (D-942).
+- **REV-072, the deploy order.** Each build reads the live commit, and it skips a deploy when the live commit is later. The web of a merge that changed the API waits for that API (D-943).
+- **REV-069, the web build account.** The custom role for the rules test exists, `web-deployer` holds it, and `deploy-web` runs as `web-deployer` (D-931, D-944).
+
+Gate:
+
+- Each new regression test fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* a user who stops a build or reloads during one reads that the deck comes. The page shows the deck when it lands. The live site and the live API also go live in the right order, and an old build can no longer replace a newer one.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waits for the measurement of five sessions (D-750, D-890).
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2667,6 +2682,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 
 70. **PR-79** twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924). No paid target ran.
 71. **PR-80** twenty-two P3 findings of the repository review of 2026-09-24 (D-925 to D-941). No paid target ran.
+72. **PR-81** REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-944). No paid target ran.
 
 ## 9. Open questions
 

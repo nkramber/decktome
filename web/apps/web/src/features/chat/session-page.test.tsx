@@ -1,16 +1,18 @@
 import { Code, ConnectError } from "@connectrpc/connect";
+import { BuildPhase } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { CardRole } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FeedbackKind, FeedbackVerdict } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { PoolRule } from "@mtg/api-client/mtg/v1/session_pb";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useAppStore } from "../../lib/store";
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
 import { poolLabel, poolRuleOf, pruneDrafts, sentence } from "./session-page";
+import { buildPollMs } from "./use-build-watch";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
@@ -275,6 +277,76 @@ describe("SessionPage", () => {
     expect(screen.queryByText("The agent is working...")).not.toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByLabelText("Your message")).toHaveValue("elves");
+    // A Stop before the build started ends the turn, so the page reads
+    // no session and names no build (REV-046).
+    expect(screen.queryByTestId("server-build")).not.toBeInTheDocument();
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
+  // REV-046: a Stop during a build cleared the working row with no word,
+  // and the build went on and stored its deck on the server.
+  describe("a build that runs on the server with no stream here", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("a Stop during a build says the build continues, reads the session, and moves to the deck", async () => {
+      chat.mockImplementationOnce(async function* (_req: unknown, opts: { signal: AbortSignal }) {
+        yield ev("sessionStarted", "s1");
+        yield ev("status", "building the deck");
+        yield ev("phase", BuildPhase.SHORTLIST);
+        await new Promise((_, reject) => opts.signal.addEventListener("abort", () => reject(new ConnectError("canceled", Code.Canceled))));
+      });
+      const stored = { id: "s1", collectionId: "", deckIds: [] as string[], turns: [{ userMessage: "elves", agentMessage: "", questions: [], answers: [] }] };
+      getSession.mockResolvedValueOnce({ session: stored, building: true });
+      getSession.mockResolvedValue({ session: { ...stored, deckIds: ["d1"] }, building: false });
+      getDeck.mockResolvedValue({ deck });
+      const { router } = await renderAt("/session/new");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      await user.click(await screen.findByRole("button", { name: "Stop" }));
+
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+      expect(screen.getByTestId("server-build").closest('[role="status"]')).not.toBeNull();
+      // A send now meets a build in progress, so the box stays away.
+      expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      expect(getSession).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId("server-build")).toBeInTheDocument();
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d1"));
+    });
+
+    it("a reload during a build says so, reads the session, and shows the turn the build stored", async () => {
+      const turn = { userMessage: "elves", agentMessage: "", questions: [], answers: [] };
+      getSession.mockResolvedValueOnce({ session: { id: "s1", collectionId: "", deckIds: [], turns: [turn] }, building: true });
+      getSession.mockResolvedValue({
+        session: { id: "s1", collectionId: "", deckIds: [], turns: [{ ...turn, agentMessage: "The deck build failed, please ask again." }] },
+        building: false,
+      });
+      await renderAt("/session/s1");
+      expect(await screen.findByTestId("server-build")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      expect(await screen.findAllByText("The deck build failed, please ask again.")).not.toHaveLength(0);
+      expect(screen.queryByTestId("server-build")).not.toBeInTheDocument();
+      expect(screen.getByLabelText("Your message")).toBeInTheDocument();
+    });
+
+    it("a gone session stops the reads", async () => {
+      getSession.mockResolvedValueOnce({ session: { id: "s1", collectionId: "", deckIds: [], turns: [] }, building: true });
+      getSession.mockRejectedValue(new ConnectError("no session", Code.NotFound));
+      await renderAt("/session/s1");
+      await screen.findByTestId("server-build");
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs * 3));
+      expect(getSession).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("the unmount aborts the stream", async () => {

@@ -8,7 +8,10 @@ WORKDIR /src
 # fetch every module in go.sum, and buf is one of them. golangci-lint is
 # not in go.mod: `make lint-go` runs it with `go run ...@version`.
 COPY go/ go/
-RUN cd go && CGO_ENABLED=0 go build -o /out/api ./cmd/api
+# The deploy passes the commit, and /readyz reports it, so a build can
+# tell which commit the live API runs (REV-072). A local build reads "dev".
+ARG VERSION=dev
+RUN cd go && CGO_ENABLED=0 go build -ldflags "-X main.version=${VERSION}" -o /out/api ./cmd/api
 # The runtime image has no shell and no curl. This static probe calls
 # GET /healthz for the Compose healthcheck. It exits 0 on HTTP 200.
 RUN mkdir -p /probe && cd /probe && printf '%s\n' \

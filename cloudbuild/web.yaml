@@ -9,6 +9,11 @@
 #
 # The four VITE_FIREBASE_ values reach the browser in the bundle, so they
 # are plain substitutions and never secrets.
+#
+# Cloud Build has no queue, and the API has its own trigger. So the guard
+# waits for the API of a merge that changed it, and it skips the release
+# when the live web runs a later commit (REV-072). /version.json names the
+# commit of the live web. docs/tools/deploy_order.py holds the rules.
 steps:
   - id: build
     name: node:22.23.2@sha256:dd5847a04b0deee391fa145f1f4c6d214196668b6bcc7988ebed67249f226844
@@ -28,6 +33,18 @@ steps:
         corepack prepare pnpm@9.2.0 --activate
         pnpm --dir web install --frozen-lockfile
         pnpm --dir web build
+        printf '{"commit":"%s"}\n' "$COMMIT_SHA" > web/apps/web/dist/version.json
+
+  - id: guard
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        python3 docs/tools/deploy_order.py web-guard --commit "$COMMIT_SHA" \
+          --readyz "${_API_BASE_URL}/readyz" --web "https://decktome.com/version.json?cb=$SHORT_SHA" \
+          --skip-file /workspace/.deploy-skip
 
   # firebase-tools reads the credentials of the build from the metadata
   # server, so no token of a person lives in this repository.
@@ -38,6 +55,7 @@ steps:
       - -c
       - |
         set -euo pipefail
+        if [ -f /workspace/.deploy-skip ]; then echo "a later build released the web"; exit 0; fi
         # The indexes deploy with the app (D-600). firestore.indexes.json
         # named the collection group index of the feedback read, and no
         # step deployed it, so the read failed on the deployed project
@@ -52,9 +70,15 @@ steps:
       - -c
       - |
         set -euo pipefail
+        if [ -f /workspace/.deploy-skip ]; then echo "a later build checks the web"; exit 0; fi
         code=$$(curl -s -o /dev/null -m 60 -w '%{http_code}' "https://decktome.com/?cb=$SHORT_SHA")
         echo "decktome.com: $$code"
         test "$$code" = "200"
+        # The rewrite of Hosting answers 200 for any path, so the check
+        # also reads the commit of the live web.
+        live=$$(curl -s -m 60 "https://decktome.com/version.json?cb=$SHORT_SHA")
+        echo "version.json: $$live"
+        test "$$live" = "{\"commit\":\"$COMMIT_SHA\"}"
 
 substitutions:
   _API_BASE_URL: https://mtg-api-qk2ackpb3q-uc.a.run.app
@@ -67,4 +91,5 @@ options:
   logging: CLOUD_LOGGING_ONLY
   machineType: E2_HIGHCPU_8
 
-timeout: 1800s
+# The guard can wait 25 minutes for the API of the merge.
+timeout: 3600s

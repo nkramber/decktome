@@ -498,6 +498,57 @@ func TestGetSession(t *testing.T) {
 	}
 }
 
+// TestGetSessionReportsABuild is REV-046. A page that reloads during a
+// build reads the flag and polls until the build ends. The flag reads a
+// build of this instance, and the lease of a build on another one.
+func TestGetSessionReportsABuild(t *testing.T) {
+	now := time.Unix(1000, 0).UTC()
+	cases := []struct {
+		name  string
+		setup func(*Server, *fakeStore)
+		want  bool
+	}{
+		{"idle", func(*Server, *fakeStore) {}, false},
+		{"a build of this instance", func(s *Server, _ *fakeStore) {
+			s.building.Store(buildKey("u1", "sess-1"), struct{}{})
+		}, true},
+		{"a lease of another instance", func(_ *Server, f *fakeStore) {
+			f.leases = map[string]fakeLease{"sess-1": {token: "other", until: now.Add(time.Minute)}}
+		}, true},
+		{"a lease that ended", func(_ *Server, f *fakeStore) {
+			f.leases = map[string]fakeLease{"sess-1": {token: "other", until: now}}
+		}, false},
+		{"a lease that can not be read", func(_ *Server, f *fakeStore) {
+			f.leaseErr = errors.New("unavailable")
+		}, false},
+	}
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			client, _ := fakeClient(t)
+			store := newFakeStore()
+			store.sessions["sess-1"] = &mtgv1.Session{Id: "sess-1"}
+			quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+			srv, err := New(cat, client, store, func(context.Context) string { return "u1" },
+				WithLogger(quiet), WithClock(func() time.Time { return now }))
+			if err != nil {
+				t.Fatalf("server: %v", err)
+			}
+			tc.setup(srv, store)
+			res, err := srv.GetSession(context.Background(), connect.NewRequest(&mtgv1.GetSessionRequest{SessionId: "sess-1"}))
+			if err != nil {
+				t.Fatalf("get session: %v", err)
+			}
+			if got := res.Msg.GetBuilding(); got != tc.want {
+				t.Errorf("building = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestEmptyRequestIsRefused(t *testing.T) {
 	client, _ := testServer(t, newFakeStore())
 	stream, err := client.Chat(context.Background(), connect.NewRequest(&mtgv1.ChatRequest{}))

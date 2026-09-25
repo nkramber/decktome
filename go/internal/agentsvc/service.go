@@ -403,7 +403,8 @@ func tooLong(req *mtgv1.ChatRequest) error {
 	return nil
 }
 
-// GetSession returns one stored conversation.
+// GetSession returns one stored conversation, and whether a build of it
+// runs now (REV-046).
 func (s *Server) GetSession(ctx context.Context, req *connect.Request[mtgv1.GetSessionRequest]) (*connect.Response[mtgv1.GetSessionResponse], error) {
 	uid := s.userFn(ctx)
 	if uid == "" {
@@ -420,7 +421,22 @@ func (s *Server) GetSession(ctx context.Context, req *connect.Request[mtgv1.GetS
 	if err != nil {
 		return nil, storeError(err)
 	}
-	return connect.NewResponse(&mtgv1.GetSessionResponse{Session: session}), nil
+	return connect.NewResponse(&mtgv1.GetSessionResponse{Session: session, Building: s.buildRuns(ctx, uid, id)}), nil
+}
+
+// buildRuns reports whether a build of the session runs, here or on
+// another instance (D-922). A lease that can not be read reports none,
+// so the page shows the stored session and does not poll.
+func (s *Server) buildRuns(ctx context.Context, uid, id string) bool {
+	if _, busy := s.building.Load(buildKey(uid, id)); busy {
+		return true
+	}
+	leased, err := s.store.Leased(ctx, uid, id, s.now())
+	if err != nil {
+		s.log.WarnContext(ctx, "the build lease could not be read, so the session reads as idle", "session", id, "err", err)
+		return false
+	}
+	return leased
 }
 
 // Chat runs one turn and streams what it produced.

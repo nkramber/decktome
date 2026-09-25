@@ -159,6 +159,10 @@ message GetSessionRequest {
 
 message GetSessionResponse {
   Session session = 1;
+  // building is true while a build of the session runs, on this instance
+  // or on another one that holds its lease (D-922). A page that reloads
+  // during a build reads it and polls until it ends (REV-046).
+  bool building = 2;
 }
 
 // ImportDeckRequest carries one deck list: an Archidekt text export or an

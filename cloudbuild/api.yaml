@@ -3,6 +3,10 @@
 #
 # Cloud Build has its own free tier of 2,500 build-minutes a month, apart
 # from the Actions minutes of GitHub, and a minute costs less there.
+#
+# Cloud Build has no queue, so the build of an older merge can finish
+# last. The guard skips each deploy step when the live API runs a later
+# commit (REV-072). docs/tools/deploy_order.py holds the rules.
 steps:
   - id: build-api
     name: gcr.io/cloud-builders/docker@sha256:bbb3d633c5c2813b2ce5245852979e1d637768f4acfc504d8ece288f91e9b60f
@@ -10,6 +14,7 @@ steps:
       - build
       - -f
       - docker/api.Dockerfile
+      - --build-arg=VERSION=$COMMIT_SHA
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/api:$SHORT_SHA
       - .
@@ -35,18 +40,29 @@ steps:
         docker push "$$base/api:$SHORT_SHA"
         docker push "$$base/worker:$SHORT_SHA"
 
+  - id: guard
+    name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -euo pipefail
+        url=$$(gcloud run services describe mtg-api --region "${_REGION}" --format='value(status.url)')
+        python3 docs/tools/deploy_order.py api-guard --commit "$COMMIT_SHA" \
+          --readyz "$$url/readyz" --skip-file /workspace/.deploy-skip
+
   # The deploy names the image alone. Every environment variable, every
   # secret, and every flag of the revision before it carries over.
   - id: deploy-api
     name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - run
-      - deploy
-      - mtg-api
-      - --image=${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/api:$SHORT_SHA
-      - --region=${_REGION}
-      - --quiet
+      - -c
+      - |
+        set -euo pipefail
+        if [ -f /workspace/.deploy-skip ]; then echo "a later build deployed the API"; exit 0; fi
+        gcloud run deploy mtg-api --region "${_REGION}" --quiet \
+          --image "${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/api:$SHORT_SHA"
 
   - id: update-jobs
     name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
@@ -55,6 +71,7 @@ steps:
       - -c
       - |
         set -euo pipefail
+        if [ -f /workspace/.deploy-skip ]; then echo "a later build updated the jobs"; exit 0; fi
         for job in mtg-snapshot mtg-meta; do
           gcloud run jobs update "$$job" --region "${_REGION}" \
             --image "${_REGION}-docker.pkg.dev/$PROJECT_ID/mtg/worker:$SHORT_SHA" --quiet
@@ -62,7 +79,8 @@ steps:
 
   # /healthz never answers on a run.app URL, because the Google frontend
   # takes that path. /readyz reads `starting` for about 90 seconds after
-  # a cold start, so the check waits for it.
+  # a cold start, so the check waits for it. It also waits for the commit
+  # of this build, so an old revision that reads ok does not pass.
   - id: check
     name: gcr.io/google.com/cloudsdktool/cloud-sdk@sha256:f91af03cbea86d4bd549ea070d3847478da0faac5bdb7b7675ab8b3cd50b19da
     entrypoint: bash
@@ -70,18 +88,12 @@ steps:
       - -c
       - |
         set -euo pipefail
+        if [ -f /workspace/.deploy-skip ]; then echo "a later build checks the API"; exit 0; fi
         # A traffic pin of a rollback keeps the new revision off the
         # traffic, and /readyz would read the old one (REV-013).
         gcloud run services describe mtg-api --region "${_REGION}" --format=json | python3 docs/tools/traffic_check.py
         url=$$(gcloud run services describe mtg-api --region "${_REGION}" --format='value(status.url)')
-        for i in $$(seq 1 20); do
-          body=$$(curl -s -m 60 "$$url/readyz" || true)
-          echo "$$i: $$body"
-          case "$$body" in *'"status":"ok"'*) exit 0 ;; esac
-          sleep 15
-        done
-        echo "the api never read ok"
-        exit 1
+        python3 docs/tools/deploy_order.py api-ready --commit "$COMMIT_SHA" --readyz "$$url/readyz"
 
 substitutions:
   _REGION: us-central1

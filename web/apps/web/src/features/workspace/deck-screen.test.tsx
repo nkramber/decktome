@@ -1,12 +1,13 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { FormatId, SixtyStep } from "@mtg/api-client/mtg/v1/format_pb";
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
+import { buildPollMs } from "../chat/use-build-watch";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
@@ -83,6 +84,36 @@ beforeEach(() => {
 });
 
 describe("DeckScreen", () => {
+  // REV-046: a reload during a revision showed the old deck with no word
+  // that the revision went on.
+  describe("a revision that runs on the server", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("says so, and moves to the new deck when it ends", async () => {
+      getSession.mockResolvedValueOnce({ session: { id: "s1", turns: [], deckIds: ["d1"] }, building: true });
+      getSession.mockResolvedValue({ session: { id: "s1", turns: [], deckIds: ["d1", "d2"] }, building: false });
+      const { router } = await renderAt("/decks/d1");
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d2"));
+    });
+
+    it("a build with no new deck stays on the deck and ends the line", async () => {
+      getSession.mockResolvedValueOnce({ session: { id: "s1", turns: [], deckIds: ["d1"] }, building: true });
+      getSession.mockResolvedValue({ session: { id: "s1", turns: [], deckIds: ["d1"] }, building: false });
+      const { router } = await renderAt("/decks/d1");
+      await screen.findByTestId("server-build");
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      await waitFor(() => expect(screen.queryByTestId("server-build")).not.toBeInTheDocument());
+      expect(router.state.location.pathname).toBe("/decks/d1");
+    });
+  });
+
   it("reads the deck of the path and shows it", async () => {
     await renderAt("/decks/d1");
     expect(await screen.findByRole("heading", { name: "Elf Ball" })).toBeInTheDocument();

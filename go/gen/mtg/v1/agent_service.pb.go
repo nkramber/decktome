@@ -904,8 +904,12 @@ func (x *GetSessionRequest) GetSessionId() string {
 }
 
 type GetSessionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Session       *Session               `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Session *Session               `protobuf:"bytes,1,opt,name=session,proto3" json:"session,omitempty"`
+	// building is true while a build of the session runs, on this instance
+	// or on another one that holds its lease (D-922). A page that reloads
+	// during a build reads it and polls until it ends (REV-046).
+	Building      bool `protobuf:"varint,2,opt,name=building,proto3" json:"building,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -945,6 +949,13 @@ func (x *GetSessionResponse) GetSession() *Session {
 		return x.Session
 	}
 	return nil
+}
+
+func (x *GetSessionResponse) GetBuilding() bool {
+	if x != nil {
+		return x.Building
+	}
+	return false
 }
 
 // ImportDeckRequest carries one deck list: an Archidekt text export or an
@@ -1267,9 +1278,10 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\x05event\"2\n" +
 	"\x11GetSessionRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\tR\tsessionId\"?\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\"[\n" +
 	"\x12GetSessionResponse\x12)\n" +
-	"\asession\x18\x01 \x01(\v2\x0f.mtg.v1.SessionR\asession\"\xbc\x01\n" +
+	"\asession\x18\x01 \x01(\v2\x0f.mtg.v1.SessionR\asession\x12\x1a\n" +
+	"\bbuilding\x18\x02 \x01(\bR\bbuilding\"\xbc\x01\n" +
 	"\x11ImportDeckRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
