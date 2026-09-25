@@ -2270,7 +2270,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the third batch of review findings. Two tabs on two servers paid for two builds of one deck, and an account at its spend limit still started a chat. The review check now refuses a record from a copy of the repository, and a few scripts, pages, and checks got safer.
 
-**PR-80: Twenty P3 findings of the repository review of 2026-09-24 (D-925 to D-941).** ✅ merged as #230. The mark comes before any review (D-822).
+**PR-80: Twenty-two P3 findings of the repository review of 2026-09-24, one of them in part (D-925 to D-941).** ✅ merged as #230. The mark comes before any review (D-822).
 The owner asked for as many corrections as one session can finish (D-938). Each code finding has a regression test that fails before its correction.
 
 - **REV-033, the API start.** Cloud Run refuses the debug user, the emulator host, a bad cap, and a model with no price (D-925).
@@ -2666,7 +2666,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 69. **PR-72** the feedback fix cycle follows the one-PR rule and the Codex review (F-49, D-877 to D-879). It merged as #222, before PR-73. This list named it first in PR-79 (D-924).
 
 70. **PR-79** twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924). No paid target ran.
-71. **PR-80** twenty P3 findings of the repository review of 2026-09-24 (D-925 to D-941). No paid target ran.
+71. **PR-80** twenty-two P3 findings of the repository review of 2026-09-24 (D-925 to D-941). No paid target ran.
 
 ## 9. Open questions
 
