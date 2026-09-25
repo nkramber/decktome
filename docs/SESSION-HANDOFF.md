@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on the tree of the first commit, exit 0. Each new regression test failed on the base and passes here.
 
-**The review.** Gitar approved `5b43645`, with no thread. The first Codex record found no code defect, and it read Blocked on the account step of D-903. The owner then ran `make mark-verified` with `APPLY=1`, and the list reads 0 accounts with no proof. `docs/reviews/pr-227-response.md` answers the record.
+**The review.** Gitar approved `9679454`, with no thread. The Codex review found no defect and reads Ready for owner merge. The owner confirmed and marked the accounts under D-903. The next list read 0 accounts with no proof.
 
 **What waits on the owner.**
 
