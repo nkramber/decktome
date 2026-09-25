@@ -263,11 +263,11 @@ func TestTheShareOfAClosedAccountAnswersNotFound(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			visitor := New(nil, fixedIndex{idx}, WithDecks(f), WithClosedUsers(tt.closed))
 			_, err := visitor.GetSharedDeck(ctx, connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: token}))
-			if connect.CodeOf(err) != tt.want && !(tt.want == 0 && err == nil) {
+			if !codeIs(err, tt.want) {
 				t.Errorf("GetSharedDeck = %v, want %v", err, tt.want)
 			}
 			_, err = visitor.ExportSharedDeck(ctx, connect.NewRequest(&mtgv1.ExportSharedDeckRequest{Token: token}))
-			if connect.CodeOf(err) != tt.want && !(tt.want == 0 && err == nil) {
+			if !codeIs(err, tt.want) {
 				t.Errorf("ExportSharedDeck = %v, want %v", err, tt.want)
 			}
 		})
@@ -275,4 +275,12 @@ func TestTheShareOfAClosedAccountAnswersNotFound(t *testing.T) {
 	if f.decks["d1"] == nil || len(f.shares) != 1 {
 		t.Error("a read of a closed account removed a document")
 	}
+}
+
+// codeIs says whether err carries want, and a want of zero is no error.
+func codeIs(err error, want connect.Code) bool {
+	if want == 0 {
+		return err == nil
+	}
+	return connect.CodeOf(err) == want
 }

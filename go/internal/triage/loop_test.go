@@ -152,8 +152,14 @@ func TestTheCycleStopsWhenTheCapLeavesACaseUnmeasured(t *testing.T) {
 // the judge of the triage never entered the ledger.
 func TestEachGateAndTheTriageSpendUnderTheCap(t *testing.T) {
 	s := loopScript(t)
-	runGate := s[strings.Index(s, "run_gate() {"):]
-	runGate = runGate[:strings.Index(runGate, "\n}\n")]
+	start := strings.Index(s, "run_gate() {")
+	if start < 0 {
+		t.Fatal("the cycle names no run_gate")
+	}
+	runGate := s[start:]
+	if end := strings.Index(runGate, "\n}\n"); end >= 0 {
+		runGate = runGate[:end]
+	}
 	if !strings.Contains(runGate, `export GATE_MAX_USD="$room"`) {
 		t.Error("run_gate gives the gate no room under the cap")
 	}

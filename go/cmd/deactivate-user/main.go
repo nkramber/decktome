@@ -61,7 +61,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("firebase auth: %w", err)
 	}
-	fmt.Fprintf(os.Stdout, "project %s\n", project)
+	_, _ = fmt.Fprintf(os.Stdout, "project %s\n", project)
 	return deactivate(ctx, users.NewRepo(fs), authUsers{ac}, *uid, *confirm, time.Now(), os.Stdout)
 }
 
@@ -94,6 +94,7 @@ func (a authUsers) Delete(ctx context.Context, uid string) error {
 // first, so the API refuses the user before the Auth delete. It deletes
 // no record of the user (D-941).
 func deactivate(ctx context.Context, recs Records, auth AuthUsers, uid string, confirm bool, now time.Time, w io.Writer) error {
+	say := func(format string, a ...any) { _, _ = fmt.Fprintf(w, format+"\n", a...) }
 	if uid == "" {
 		return errors.New("deactivate-user: -uid is required")
 	}
@@ -106,30 +107,30 @@ func deactivate(ctx context.Context, recs Records, auth AuthUsers, uid string, c
 	}
 	switch {
 	case rec.DeactivatedAt != nil:
-		fmt.Fprintf(w, "user %s is closed since %s\n", uid, rec.DeactivatedAt.UTC().Format(time.RFC3339))
+		say("user %s is closed since %s", uid, rec.DeactivatedAt.UTC().Format(time.RFC3339))
 	case rec.CreatedAt.IsZero():
-		fmt.Fprintf(w, "user %s has no user record. The close writes one that holds the mark\n", uid)
+		say("user %s has no user record. The close writes one that holds the mark", uid)
 	default:
-		fmt.Fprintf(w, "user %s, %s, created %s\n", uid, rec.Email, rec.CreatedAt.UTC().Format("2006-01-02"))
+		say("user %s, %s, created %s", uid, rec.Email, rec.CreatedAt.UTC().Format("2006-01-02"))
 	}
-	fmt.Fprintln(w, "plan: mark users/"+uid+" closed, then delete the Firebase Auth user. Every record of the user stays.")
+	say("plan: mark users/%s closed, then delete the Firebase Auth user. Every record of the user stays.", uid)
 	if !confirm {
-		fmt.Fprintln(w, "dry run: nothing changed. Add -confirm to close the account.")
+		say("dry run: nothing changed. Add -confirm to close the account.")
 		return nil
 	}
 	at, err := recs.Deactivate(ctx, uid, now)
 	if err != nil {
 		return fmt.Errorf("the record was not marked, and nothing changed: %w", err)
 	}
-	fmt.Fprintf(w, "marked closed at %s. The API refuses the user within %s\n", at.Format(time.RFC3339), users.ClosedTTL)
+	say("marked closed at %s. The API refuses the user within %s", at.Format(time.RFC3339), users.ClosedTTL)
 	switch err := auth.Delete(ctx, uid); {
 	case errors.Is(err, ErrNoAuthUser):
-		fmt.Fprintln(w, "the Firebase Auth user was gone already")
+		say("the Firebase Auth user was gone already")
 	case err != nil:
 		return fmt.Errorf("the record is closed, and the Auth delete failed, so run the command again: %w", err)
 	default:
-		fmt.Fprintln(w, "deleted the Firebase Auth user")
+		say("deleted the Firebase Auth user")
 	}
-	fmt.Fprintln(w, "note: the email stays on the invite list. Run make disallow to stop a new sign-up with it.")
+	say("note: the email stays on the invite list. Run make disallow to stop a new sign-up with it.")
 	return nil
 }
