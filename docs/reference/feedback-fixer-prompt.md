@@ -50,6 +50,10 @@ A case sometimes names a gap. A gap is what the triage failed to fill from the v
 - `docs/reference/autotune-lessons.md`: the memory of the tuning loop.
 - `docs/reference/eval/baselines.json`: the baselines `make eval-check` reads.
 - `docs/owner-questions.md`: the questions that are not yours.
+- `go/cmd/bracket-gate`, `go/cmd/deck-gate`, `go/cmd/questions-gate`, `go/cmd/revise-gate`, `go/cmd/sixty-gate`, `go/cmd/quality-gate`, `go/cmd/summary-judge`, and `go/cmd/eval`: the gates and the judges (D-930).
+- `go/internal/gatekit` and `go/internal/evalrun`: the code that each gate shares.
+- `scripts/feedback-review.sh`, `docs/reviews`, `docs/tools`, `.github`, and `.claude`: the review, the checks, the workflows, and the skills.
+- `cloudbuild`, `Makefile`, `firebase.json`, `firestore.rules`, and `firestore.indexes.json`: the build and the deploy.
 
 `docs/decisions.md` is append-only. Add rows. Never change or remove one.
 
