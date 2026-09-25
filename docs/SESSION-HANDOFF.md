@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-25a)
 
-**Pull request PR-78 corrects twenty-nine findings of the repository review of 2026-09-24 (D-905 to D-916).**
+**Pull request PR-78 corrects thirty-four findings of the repository review of 2026-09-24 (D-905 to D-917).**
 
 Author provider: Claude Code
 
@@ -27,7 +27,7 @@ Author provider: Claude Code
 - REV-016, REV-018, REV-020: no meld result, no lost locked card, and the revise cost counts (D-909).
 - REV-023, REV-024, REV-025, REV-027, REV-028: the feedback dialog, the commander swap, cEDH, the Commander import pick, and the TopDeck.gg credit (D-913, D-914).
 - REV-017, REV-019: a colorless deck, and the repair input (D-915, D-916).
-- P3: REV-034, REV-040, REV-041, REV-047, REV-053, REV-058, and REV-067 (D-916).
+- P3: REV-034, REV-040, REV-041, REV-047, REV-052 to REV-054, REV-058, REV-061, REV-063, REV-064, and REV-067 (D-916, D-917).
 - The owner approved three production writes: the provider condition (D-906), and the Pushover secrets of both jobs (D-911).
 - No paid target ran.
 
@@ -111,8 +111,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-78: twenty-nine findings of the repository review of 2026-09-24** (D-905 to D-916). This pull request carries them.
-2. **The next finding of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-78 corrected REV-006, REV-007, REV-009 to REV-028, and seven P3 findings. REV-008, REV-029, REV-030, and the other P3 findings come next. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
+1. **PR-78: thirty-four findings of the repository review of 2026-09-24** (D-905 to D-917). This pull request carries them.
+2. **The next finding of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-78 corrected REV-006, REV-007, REV-009 to REV-028, and twelve P3 findings. REV-008, REV-029, REV-030, and the other P3 findings come next. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. A new session holds no copy of the collection export. The collection sits at `users/<uid>/collections/<id>` in `decktome-prod`. `scripts/read-session.sh z1hshyY6Npig1FN2NuV7` prints the user id and the collection id. Its field `entries_gz` holds gzip JSON of the entries. Keep the exported collection out of git.
@@ -143,9 +143,9 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for the corrections of the review report of 2026-09-24, as many as one session can finish.** The session read the owner answers in the report first. The owner picked all five P1 findings (D-901). The two answers on REV-001 conflicted, and the owner chose the author filter and the raw reply (D-902). The owner chose an Admin script for the current accounts, run before the merge (D-903), and Modern for a declined 60-card format (D-904).
 
-### 2026-09-25a: twenty-nine findings of the review, PR-78
+### 2026-09-25a: thirty-four findings of the review, PR-78
 
-**The owner asked for the next corrections of the review report of 2026-09-24, as many as one session can finish, and then twice for more.** The exact trigger of REV-006 met the line cap on the base, so the test holds 990 lines (D-908). The owner approved the provider condition of REV-009 and the Pushover secrets of the jobs for REV-011 (D-906, D-911). No Google page states the shape of the forwarded header, so the key of REV-010 serves both shapes (D-907).
+**The owner asked for the next corrections of the review report of 2026-09-24, and three times for more.** The exact trigger of REV-006 met the line cap on the base, so the test holds 990 lines (D-908). The owner approved the provider condition of REV-009 and the Pushover secrets of the jobs for REV-011 (D-906, D-911). No Google page states the shape of the forwarded header, so the key of REV-010 serves both shapes (D-907).
 
 ## The archive
 

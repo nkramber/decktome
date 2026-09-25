@@ -186,6 +186,23 @@ func TestImportAsksForTheCommander(t *testing.T) {
 	}
 }
 
+// TestAMarkedCommanderThatMatchesNoCardAsks is REV-054 of the review of
+// 2026-09-24. A Commander heading set the mark before the resolution, so
+// a misspelled commander imported a deck with no commander and no
+// question.
+func TestAMarkedCommanderThatMatchesNoCardAsks(t *testing.T) {
+	fd, ds := &fakeDecks{}, &fakeDeckStore{}
+	client, _ := importServer(t, fd, ds, &fakeNoter{})
+	list := "Commander\n1 Karlov of the Ghost Counsel\n\nDeck\n1 Karlov of the Ghost Council\n1 Ajani's Welcome\n97 Plains\n"
+	res := importList(t, client, &mtgv1.ImportDeckRequest{Text: list})
+	if res.GetDeck() != nil || len(res.GetCommanderOptions()) != 1 || res.GetCommanderOptions()[0].GetOracleId() != "o-karlov" {
+		t.Fatalf("response = %v, want the commander question", res)
+	}
+	if len(ds.put) != 0 {
+		t.Errorf("a list with no commander stored a deck")
+	}
+}
+
 // TestImportTakesAPickedCommanderFormat is REV-027 of the review of
 // 2026-09-24. A Commander list of 99 cards reads no format of its own.
 // A pick of Commander asks for the leader, and the deck stores as

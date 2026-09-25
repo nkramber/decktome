@@ -180,3 +180,17 @@ func TestTrimToSizeSkipsAFormatWithNoExactSize(t *testing.T) {
 		t.Errorf("trimmed %v, want none for a format with no exact size", got)
 	}
 }
+
+// TestTrimToSizeKeepsWhatARevisionKeeps is REV-061 of the review of
+// 2026-09-24. A card that the reader asked to add in a revision, and that
+// the classifier did not lock, was not in the keep set of the trim. The
+// trim cut it, and the engine then blocked the deck.
+func TestTrimToSizeKeepsWhatARevisionKeeps(t *testing.T) {
+	req := Request{Format: mtgv1.FormatId_FORMAT_ID_COMMANDER, Pool: trimPool(),
+		Commanders: []string{"o-cmd"}, Revision: &Revision{Keep: []string{"Bag End Banquet"}}}
+	// One over: the trim cuts the dearest card, and the revision keeps it.
+	got := trimToSize(deckOfSize(100), req)
+	if len(got) != 1 || got[0] == "Bag End Banquet" {
+		t.Errorf("trimmed %v, want one card and not the kept Bag End Banquet", got)
+	}
+}

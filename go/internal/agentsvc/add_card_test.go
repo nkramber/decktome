@@ -3,6 +3,7 @@ package agentsvc
 import (
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 	"time"
 
@@ -142,5 +143,37 @@ func TestOwnedPrintingPrefersTheNamedSets(t *testing.T) {
 	s.markOwnedPrintings(t.Context(), "u-1", session, idx, other, []string{"blb"})
 	if got := other.GetCards()[0].GetOwnedPrinting().GetSetCode(); got != "SLD" {
 		t.Errorf("the printing is from %q, want the dearest of the collection", got)
+	}
+}
+
+// TestKeepableRefusesACardOutsideTheIdentity is REV-064 of the review of
+// 2026-09-24. "Add Lightning Bolt" to a white-black Commander deck passed,
+// and the engine then blocked the deck for a card outside the identity.
+func TestKeepableRefusesACardOutsideTheIdentity(t *testing.T) {
+	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
+	W, B, R := mtgv1.Color_COLOR_W, mtgv1.Color_COLOR_B, mtgv1.Color_COLOR_R
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{OracleId: "o-karlov", Name: "Karlov of the Ghost Council", ColorIdentity: []mtgv1.Color{W, B}, Legalities: legal},
+		{OracleId: "o-bolt", Name: "Lightning Bolt", ColorIdentity: []mtgv1.Color{R}, Legalities: legal},
+		{OracleId: "o-sol", Name: "Sol Ring", Legalities: legal},
+		{OracleId: "o-welcome", Name: "Ajani's Welcome", ColorIdentity: []mtgv1.Color{W}, Legalities: legal},
+	}, nil, nil, time.Unix(1000, 0).UTC())
+	s := &Server{index: fixedIndex{idx}}
+	base := &mtgv1.Deck{
+		Format:             &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER},
+		CommanderOracleIds: []string{"o-karlov"},
+		Cards:              []*mtgv1.DeckCard{{OracleId: "o-welcome", Name: "Ajani's Welcome", Count: 1}},
+	}
+	keep, refused := s.keepable(base, []string{"Lightning Bolt", "Sol Ring"}, nil, mtgv1.PoolRule_POOL_RULE_ANY_CARD)
+	if len(keep) != 1 || keep[0] != "Sol Ring" {
+		t.Errorf("keep = %v, want Sol Ring alone", keep)
+	}
+	if len(refused) != 1 || !strings.Contains(refused[0], "Lightning Bolt") || !strings.Contains(refused[0], "color identity") {
+		t.Errorf("refused = %v, want a line for Lightning Bolt", refused)
+	}
+	// A 60-card deck has no commander identity, and the card passes.
+	base.Format, base.CommanderOracleIds = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}, nil
+	if keep, _ := s.keepable(base, []string{"Lightning Bolt"}, nil, mtgv1.PoolRule_POOL_RULE_ANY_CARD); len(keep) != 1 {
+		t.Errorf("a Modern deck refused Lightning Bolt: keep = %v", keep)
 	}
 }

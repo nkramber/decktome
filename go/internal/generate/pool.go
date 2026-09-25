@@ -516,6 +516,13 @@ func trimToSize(deck *mtgv1.Deck, req Request) []string {
 		keep[id] = true
 	}
 	if req.Revision != nil {
+		// A card the user asked to keep or to add is a kept card, and
+		// the engine blocks a deck that lacks it (REV-061).
+		for _, name := range req.Revision.Keep {
+			if c, ok := req.Pool.Card(name); ok {
+				keep[c.GetOracleId()] = true
+			}
+		}
 		for _, id := range req.Revision.Exempt {
 			keep[id] = true
 		}

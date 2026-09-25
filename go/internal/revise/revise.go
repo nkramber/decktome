@@ -227,7 +227,8 @@ func (d Diff) Empty() bool {
 	return len(d.Added) == 0 && len(d.Removed) == 0 && len(d.Changed) == 0 && d.Commander == ""
 }
 
-// DiffDecks compares two card lists by name.
+// DiffDecks compares two card lists by name: the main deck and the
+// sideboard. CommanderChange reads the command zone.
 func DiffDecks(base, revised *mtgv1.Deck) Diff {
 	before := counts(base)
 	after := counts(revised)
@@ -294,6 +295,11 @@ func counts(d *mtgv1.Deck) map[string]int32 {
 	out := map[string]int32{}
 	for _, c := range d.GetCards() {
 		out[c.GetName()] += c.GetCount()
+	}
+	// A change of the sideboard alone is a change, and the note names it
+	// (REV-063).
+	for _, c := range d.GetSideboard() {
+		out[c.GetName()+" (sideboard)"] += c.GetCount()
 	}
 	return out
 }

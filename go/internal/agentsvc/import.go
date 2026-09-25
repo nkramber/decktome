@@ -118,7 +118,9 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 		out.NeedsFormat = true
 		return connect.NewResponse(out), nil
 	}
-	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && !list.Marked {
+	// A Commander heading whose line matched no card leaves the list
+	// with no commander, so it asks as an unmarked list does (REV-054).
+	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER && !slices.ContainsFunc(entries, func(e decklist.Entry) bool { return e.Section == decklist.Commander }) {
 		if len(msg.GetCommanderOracleIds()) == 0 {
 			out.CommanderOptions = leaders(entries)
 			if len(out.CommanderOptions) == 0 {

@@ -607,6 +607,31 @@ func deckName(slots *mtgv1.Slots) string {
 	return theme
 }
 
+// outsideIdentity reports a card whose color identity holds a color that
+// no commander of a Commander deck holds. The engine blocks such a card,
+// so a request to add it gets a line, and no build (REV-064).
+func outsideIdentity(idx *cards.Index, base *mtgv1.Deck, c *mtgv1.Card) bool {
+	if base.GetFormat().GetId() != mtgv1.FormatId_FORMAT_ID_COMMANDER || len(base.GetCommanderOracleIds()) == 0 {
+		return false
+	}
+	allowed := map[mtgv1.Color]bool{}
+	for _, id := range base.GetCommanderOracleIds() {
+		cmd, ok := idx.ByOracleID(id)
+		if !ok {
+			return false
+		}
+		for _, col := range cmd.GetColorIdentity() {
+			allowed[col] = true
+		}
+	}
+	for _, col := range c.GetColorIdentity() {
+		if col != mtgv1.Color_COLOR_C && !allowed[col] {
+			return true
+		}
+	}
+	return false
+}
+
 // keepable splits the cards the reader asked to keep or to add into the
 // ones this app can put in the deck, and a line for each one it refuses
 // (F-80). A card of the base deck always passes: it is already there.
@@ -642,6 +667,11 @@ func (s *Server) keepable(base *mtgv1.Deck, names []string, owned map[string]int
 		c, ok := idx.ByName(name)
 		if !ok {
 			refused = append(refused, fmt.Sprintf("I did not add %s: no card I know carries that name.", name))
+			continue
+		}
+		if outside := outsideIdentity(idx, base, c); outside {
+			refused = append(refused, fmt.Sprintf(
+				"I did not add %s: its colors fall outside the color identity of your commander.", c.GetName()))
 			continue
 		}
 		if rule == mtgv1.PoolRule_POOL_RULE_OWNED_ONLY && owned[c.GetOracleId()] == 0 &&

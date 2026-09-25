@@ -6,6 +6,7 @@
 package collections
 
 import (
+	"bytes"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -80,7 +81,14 @@ var conditionByValue = map[string]mtgv1.Condition{
 func csvRows(r io.Reader, format string, alts [][]string,
 	build func(get func(string) string) (Row, mtgv1.UnresolvedReason),
 ) ([]Row, []*mtgv1.UnresolvedRow, error) {
-	cr := csv.NewReader(r)
+	// The whole file is in memory, because a record with an unclosed
+	// quote swallows the lines after it, and the walker reads those lines
+	// again one at a time (REV-052). An upload is at most 5 MiB.
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%s csv: read: %w", format, err)
+	}
+	cr := csv.NewReader(bytes.NewReader(data))
 	cr.FieldsPerRecord = -1
 	header, err := cr.Read()
 	if err != nil {
@@ -115,25 +123,7 @@ func csvRows(r io.Reader, format string, alts [][]string,
 
 	var rows []Row
 	var bad []*mtgv1.UnresolvedRow
-	for {
-		rec, err := cr.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			// A broken record has no fields to echo. ParseError carries
-			// the line, and the report names it.
-			line := 0
-			var pe *csv.ParseError
-			if errors.As(err, &pe) {
-				line = pe.Line
-			}
-			bad = append(bad, unresolved(line, fmt.Sprintf("unparseable record at line %d", line), mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
-			continue
-		}
-		// FieldPos gives the physical line of the record. A quoted
-		// field can span lines, so a record counter is not enough.
-		line, _ := cr.FieldPos(0)
+	take := func(rec []string, line int) {
 		raw := strings.Join(rec, ",")
 		get := func(name string) string {
 			i, has := col[name]
@@ -145,10 +135,54 @@ func csvRows(r io.Reader, format string, alts [][]string,
 		row, reason := build(get)
 		if reason != mtgv1.UnresolvedReason_UNRESOLVED_REASON_UNSPECIFIED {
 			bad = append(bad, unresolved(line, raw, reason))
-			continue
+			return
 		}
 		row.Line, row.Raw = line, raw
 		rows = append(rows, row)
+	}
+	var lines []string
+	for {
+		rec, err := cr.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			// A broken record has no fields to echo. ParseError carries
+			// the line that opened the record, and the report names it.
+			line := 0
+			var pe *csv.ParseError
+			if errors.As(err, &pe) {
+				line = pe.StartLine
+			}
+			bad = append(bad, unresolved(line, fmt.Sprintf("unparseable record at line %d", line), mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
+			// An unclosed quote reads on to a later quote or to the end
+			// of the file. Each line it swallowed is read again as a
+			// record of its own, so no row goes missing (REV-052).
+			if pe != nil && pe.Line > pe.StartLine {
+				if lines == nil {
+					lines = strings.Split(string(data), "\n")
+				}
+				for n := pe.StartLine + 1; n <= pe.Line && n <= len(lines); n++ {
+					text := strings.TrimRight(lines[n-1], "\r")
+					if strings.TrimSpace(text) == "" {
+						continue
+					}
+					one := csv.NewReader(strings.NewReader(text))
+					one.FieldsPerRecord = -1
+					again, err := one.Read()
+					if err != nil {
+						bad = append(bad, unresolved(n, fmt.Sprintf("unparseable record at line %d", n), mtgv1.UnresolvedReason_UNRESOLVED_REASON_BAD_ROW))
+						continue
+					}
+					take(again, n)
+				}
+			}
+			continue
+		}
+		// FieldPos gives the physical line of the record. A quoted
+		// field can span lines, so a record counter is not enough.
+		line, _ := cr.FieldPos(0)
+		take(rec, line)
 	}
 	return rows, bad, nil
 }
