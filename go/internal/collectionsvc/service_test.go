@@ -560,7 +560,10 @@ func TestImportRefusesACollectionOverTheRowLimit(t *testing.T) {
 	} {
 		repo := newFakeRepo()
 		_, err := newServer(repo, idx).ImportCollection(context.Background(), importReq("Binder", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, csv(tc.rows)))
-		if connect.CodeOf(err) != tc.want && !(tc.want == 0 && err == nil) {
+		switch {
+		case tc.want == 0 && err != nil:
+			t.Errorf("%d rows: err = %v, want none", tc.rows, err)
+		case tc.want != 0 && connect.CodeOf(err) != tc.want:
 			t.Errorf("%d rows: err = %v, want code %v", tc.rows, err, tc.want)
 		}
 		if tc.want != 0 && !strings.Contains(fmt.Sprint(err), strconv.Itoa(collections.MaxEntries)) {

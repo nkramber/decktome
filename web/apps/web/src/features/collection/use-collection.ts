@@ -113,6 +113,9 @@ export function useBinderPages(collectionId: string, choice: BinderChoice, sort:
     initialPageParam: "",
     // An empty token is the last page.
     getNextPageParam: (last) => last.nextPageToken || undefined,
+    // The page read answers Unavailable until the card index loads, so
+    // a cold start retries (REV-022).
+    ...cardQueryRetry,
     enabled: collectionId !== "",
     staleTime: Infinity,
     // The last answer stays on screen while a new choice loads, so the
