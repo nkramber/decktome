@@ -33,7 +33,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar found one issue on `89bd9b4`: bare join words kept the old commander. `44d2fb0` fixes it, and Gitar approved `44d2fb0`. Codex found that a slow failed snapshot run skipped its alert (P2-1). `3673ca4` fixes it, and the regression test and `make verify` pass. Codex records `Ready for owner merge` at `3673ca4`. The owner merge waits.
+**The review.** Gitar found one issue on `89bd9b4`: bare join words kept the old commander. `44d2fb0` fixes it, and Gitar approved `44d2fb0`. Codex found that a slow failed snapshot run skipped its alert (P2-1). `3673ca4` fixes it, and the regression test and `make verify` pass. Gitar approved `3673ca4`. Codex records `Ready for owner merge` at `3673ca4`. Pending the auto-merge.
 
 **What waits on the owner.**
 
