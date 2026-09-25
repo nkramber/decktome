@@ -15,6 +15,17 @@ Cloud Build builds and releases every merge to `main` (D-584). No step of sectio
 
 A merge of documents alone starts no build at all.
 
+Cloud Build has no queue, and the two triggers run apart. So each build reads the live commit before its deploy (REV-072, D-943). `/readyz` names the commit of the API in `version`, and `/version.json` names the commit of the web. `docs/tools/deploy_order.py` holds the rules:
+
+- The API build skips its deploy, its jobs, and its check when the live API runs a later commit. The step `guard` writes `/workspace/.deploy-skip`, and each later step reads it.
+- The web build of a merge that changed `go/` or `docker/` waits for the API of that commit, or a later one. The wait stops at 25 minutes, and the web build then fails. So a failed API build also stops the web of its merge.
+- The web build skips its release when the live web runs a later commit.
+- The API check waits until `/readyz` reads `ok` with the commit of the build or a later one. The web check reads `/version.json` with the same rule, because a later merge can deploy first.
+
+- Each API revision names its commit in `DEPLOY_COMMIT`, and each Hosting release names it in its message. After its deploy, a build fails when a deploy made before its own names a later commit (D-945).
+
+A live commit that no read gives, or that git can not place, never stops a deploy. The log then says so. Two builds can still overlap during the one minute of one deploy. The build that deployed last then fails, and its log names the build to run again. Run that build again from the Cloud Build history. It restores the API, the jobs, or the web.
+
 Cloud Build runs the deploy, and not GitHub Actions, to keep the free Actions minutes for the checks (D-584). Cloud Build gives 2,500 build-minutes a month, and a minute costs $0.006 after that. GitHub gives 2,000 minutes a month for a private repository, and a minute costs $0.008. The two pools are apart, so a deploy never takes a minute the checks need.
 
 The workflow `deploy` of GitHub Actions stays as the way back. Nothing starts it on its own, and a dispatch runs the same steps.
@@ -85,7 +96,7 @@ done
 
 6. Give the web build its own account (D-931). The web build runs `pnpm install`, and an install script runs as the build account. `gh-deployer` holds `roles/run.admin` and `roles/firebaserules.admin`, so a bad package can deploy an API revision or open the rules. `web-deployer` releases Hosting and the indexes, and it can not write a rule.
 
-State on 2026-09-25: `web-deployer` exists, and it holds `roles/firebasehosting.admin`, `roles/datastore.indexAdmin`, and `roles/logging.logWriter`. The trigger `deploy-web` still runs as `gh-deployer`. The owner runs the steps below.
+State on 2026-09-25: `web-deployer` holds `roles/firebasehosting.admin`, `roles/datastore.indexAdmin`, `roles/logging.logWriter`, and the custom role `webDeployRulesTest`. The trigger `deploy-web` runs as `web-deployer` (PR-81, D-944). The steps below stand for a new project, and for a repair of this one.
 
 ```
 WEB=web-deployer@decktome-prod.iam.gserviceaccount.com
@@ -98,16 +109,18 @@ gcloud projects add-iam-policy-binding decktome-prod --member=serviceAccount:$WE
 
 CAUTION: do not switch the trigger before the custom role holds. The index deploy calls the `:test` method of the Rules API (D-605). `roles/firebaserules.viewer` holds no `firebaserules.rulesets.test`, so the web build then fails with a 403, and Hosting does not deploy.
 
-Then switch the trigger. `gcloud builds triggers update github` refuses a trigger of a 2nd-gen repository, and a PATCH of the whole trigger body works (D-603). UNVERIFIED: the export and import pair below, which sends the whole body too.
+Then switch the trigger. `gcloud builds triggers update github` refuses a trigger of a 2nd-gen repository, and a PATCH of the whole trigger body works (D-603). Version 533.0.0 of gcloud has no `builds triggers export` outside the beta group. The PATCH below ran on 2026-09-25, and it changed `serviceAccount` alone.
 
 ```
-gcloud builds triggers export deploy-web --region=us-central1 --destination=/tmp/deploy-web.yaml
-sed -i '' 's#serviceAccounts/gh-deployer@#serviceAccounts/web-deployer@#' /tmp/deploy-web.yaml
-gcloud builds triggers import --region=us-central1 --source=/tmp/deploy-web.yaml
+gcloud builds triggers describe deploy-web --region=us-central1 --format=json > /tmp/deploy-web.json
+sed -i '' 's#serviceAccounts/gh-deployer@#serviceAccounts/web-deployer@#' /tmp/deploy-web.json
+curl -s -X PATCH -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json" --data @/tmp/deploy-web.json \
+  https://cloudbuild.googleapis.com/v1/projects/decktome-prod/locations/us-central1/triggers/deploy-web
 gcloud builds triggers describe deploy-web --region=us-central1 --format='value(serviceAccount)'
 ```
 
-Read the next `deploy-web` build with `gcloud builds list --region=us-central1 --limit=2`. When it fails with a 403, put `gh-deployer` back with the same three commands, and read the log for the permission it named.
+Read the next `deploy-web` build with `gcloud builds list --region=us-central1 --limit=2`. When it fails with a 403, put `gh-deployer` back with the same commands and the opposite `sed`. Then read the log for the permission it named.
 
 Note: the Workload Identity Federation setup of D-582 stays. The GitHub workflow reads it when somebody runs the deploy by hand.
 
@@ -159,6 +172,7 @@ Build the two images from the repo root. Cloud Run runs `linux/amd64` images onl
 
 ```
 docker build --platform linux/amd64 -f docker/api.Dockerfile \
+  --build-arg VERSION=$(git rev-parse HEAD) \
   -t us-central1-docker.pkg.dev/decktome-prod/mtg/api:$TAG .
 docker build --platform linux/amd64 -f docker/worker.Dockerfile \
   -t us-central1-docker.pkg.dev/decktome-prod/mtg/worker:$TAG .
@@ -202,7 +216,8 @@ The four `VITE_FIREBASE_` values never change. `docs/setup-gcp.md` section 13 ho
 
 1. Run `nvm use 22`. The Vite build needs Node 22.
 2. Run the build with the variables of section 13.
-3. Run `firebase deploy --only hosting` from the repo root.
+3. Write the commit to the release: `printf '{"commit":"%s"}\n' "$(git rev-parse HEAD)" > web/apps/web/dist/version.json`.
+4. Run `firebase deploy --only hosting` from the repo root.
 
 The site is live on `https://decktome.com` and on `https://decktome-prod.web.app`. Firebase Hosting keeps every earlier version, and section 8 returns to one.
 
@@ -216,7 +231,7 @@ Note: this command adds a new index. It removes no index that the repo dropped. 
 
 ## 7. Check the deployment
 
-1. Run `curl -s "$(gcloud run services describe mtg-api --region us-central1 --format='value(status.url)')/readyz"`. It must read `"status":"ok"`.
+1. Run `curl -s "$(gcloud run services describe mtg-api --region us-central1 --format='value(status.url)')/readyz"`. It must read `"status":"ok"`, and `version` must name the commit of the merge.
 2. Open `https://decktome.com` and sign in.
 3. Build one small deck. The build proves the model keys and the card snapshot.
 4. Read the logs for an error:
@@ -244,6 +259,8 @@ Cloud Run keeps every revision. A rollback moves the traffic, and it needs no bu
 The change takes seconds. Run `--to-latest` to return the traffic to the newest revision.
 
 CAUTION: the pin holds until `--to-latest`. A deploy during the pin makes a new revision that takes no traffic. The deploy then fails at its check step, because `docs/tools/traffic_check.py` reads the traffic of the newest revision (REV-013). Run `--to-latest` after the fix merges, then run the deploy again.
+
+CAUTION: during the pin, `/readyz` names the commit of the old revision. So the web build of a merge that changed `go/` or `docker/` waits for its API, and it fails after 25 minutes (D-943). Run the web build again after `--to-latest`.
 
 A revision older than `mtg-api-00077-vwp` holds no Pushover secret, so a rollback to it sends no notice of a verdict. The store still keeps each verdict.
 

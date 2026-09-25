@@ -1,0 +1,297 @@
+"""Order the deploys of the API and the web, and skip a stale deploy (REV-072).
+
+Two Cloud Build triggers deploy the API and the web (D-584). Cloud Build
+has no queue, so the build of an older merge can finish last, and the web
+of a merge can go live before its API. Each build runs this script before
+its deploy step:
+
+- `api-guard`: the API build skips its deploy when the live API runs a
+  newer commit.
+- `web-guard`: when the merge changed `go/` or `docker/`, the web build
+  waits until the API runs the commit of the merge or a newer one. Then it
+  skips its release when the live web runs a newer commit.
+- `api-ready` and `web-ready`: after its deploy, each build waits until
+  the live part names the commit of the build or a later one. The API
+  must also read ok.
+- `api-order` and `web-order`: two builds can still overlap for the one
+  minute of a deploy. The build that deployed last fails when a deploy
+  before its own names a later commit. The API list covers the jobs too,
+  because one build updates both.
+
+The API reports its commit in the `version` field of `/readyz`, and the
+web in `/version.json`. A live commit that no read gives, or that git can
+not place, never stops a deploy. The script says so in the log, and the
+deploy runs as before.
+
+Run: python3 docs/tools/deploy_order.py api-guard --commit SHA --readyz URL --skip-file F
+"""
+import argparse
+import json
+import re
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
+
+# The repository is public (D-639), so a build reads its history with no
+# credential.
+REPO = "https://github.com/nkramber/decktome.git"
+
+# A change under these paths starts the API trigger (D-584).
+API_PATHS = ("go/", "docker/")
+
+SHA = re.compile(r"^[0-9a-f]{40}$")
+
+
+def fetch_json(url, timeout=60):
+    """Return the JSON object at url, or None. A 503 of /readyz still holds a body."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as res:
+            body = res.read()
+    except urllib.error.HTTPError as err:
+        with err:
+            body = err.read()
+    except (urllib.error.URLError, OSError):
+        return None
+    try:
+        data = json.loads(body)
+    except ValueError:
+        return None
+    return data if isinstance(data, dict) else None
+
+
+def live_commit(data, key):
+    """Return the commit that a status body names, or "" when it names none."""
+    value = (data or {}).get(key, "")
+    return value if isinstance(value, str) and SHA.match(value) else ""
+
+
+class History:
+    """The history of `main`, fetched with no file content."""
+
+    def __init__(self, repo=REPO, run=subprocess.run):
+        self.repo = repo
+        self.run = run
+        self.dir = tempfile.mkdtemp(prefix="deploy-order-")
+        self.git("init", "-q")
+        self.fetch()
+
+    def git(self, *args):
+        cmd = ["git", "-C", self.dir, *args]
+        try:
+            return self.run(cmd, capture_output=True, text=True)
+        except OSError as err:
+            # An image with no git places no commit, and the deploy runs.
+            return subprocess.CompletedProcess(cmd, 127, "", str(err))
+
+    def fetch(self):
+        return self.git("fetch", "-q", "--no-tags", "--filter=blob:none", self.repo, "main").returncode == 0
+
+    def known(self, sha):
+        return self.git("cat-file", "-e", f"{sha}^{{commit}}").returncode == 0
+
+    def at_or_after(self, mine, live):
+        """Return True when live is mine or a later commit, False when not, and None when git can not tell."""
+        if mine == live:
+            return True
+        # A merge after the first fetch gives a commit that the fetch lacks.
+        if not self.known(live) and not (self.fetch() and self.known(live)):
+            return None
+        if not self.known(mine):
+            return None
+        rc = self.git("merge-base", "--is-ancestor", mine, live).returncode
+        return {0: True, 1: False}.get(rc)
+
+    def changed(self, sha):
+        """Return the paths that the commit changed against its first parent, or None."""
+        res = self.git("diff", "--name-only", f"{sha}^1", sha)
+        if res.returncode != 0:
+            return None
+        return [line for line in res.stdout.splitlines() if line]
+
+
+def newer_live(history, mine, live, name, out):
+    """Report whether the live commit is later than mine. An unknown commit is not later."""
+    if not live:
+        print(f"deploy_order: the live {name} names no commit, so the deploy runs", file=out)
+        return False
+    later = history.at_or_after(mine, live)
+    if later is None:
+        print(f"deploy_order: git can not place the live {name} commit {live}, so the deploy runs", file=out)
+        return False
+    if later and live != mine:
+        print(f"deploy_order: the live {name} runs {live}, which is later than {mine}. A later build deployed it", file=out)
+        return True
+    return False
+
+
+def skip(skip_file, out):
+    with open(skip_file, "w", encoding="utf-8") as f:
+        f.write("a later build deployed\n")
+    print(f"deploy_order: the deploy steps skip, and {skip_file} marks it", file=out)
+
+
+def api_guard(args, history, fetch=fetch_json, out=sys.stdout):
+    live = live_commit(fetch(args.readyz), "version")
+    if newer_live(history, args.commit, live, "API", out):
+        skip(args.skip_file, out)
+    else:
+        print(f"deploy_order: the API deploys {args.commit}", file=out)
+    return 0
+
+
+def wait_for_api(args, history, fetch, sleep, clock, out):
+    """Wait until the API runs the commit of the merge or a later one. Return False at the time limit."""
+    end = clock() + args.wait_seconds
+    while True:
+        live = live_commit(fetch(args.readyz), "version")
+        if live and history.at_or_after(args.commit, live):
+            print(f"deploy_order: the API runs {live}, so the web can follow", file=out)
+            return True
+        if clock() >= end:
+            return False
+        print(f"deploy_order: the API runs {live or 'no known commit'}, and the web waits for {args.commit}", file=out)
+        sleep(args.interval)
+
+
+def web_guard(args, history, fetch=fetch_json, sleep=time.sleep, clock=time.monotonic, out=sys.stdout):
+    changed = history.changed(args.commit)
+    if changed is None:
+        print(f"deploy_order: git can not read the change of {args.commit}, so the web does not wait", file=out)
+    elif any(p.startswith(API_PATHS) for p in changed):
+        if not wait_for_api(args, history, fetch, sleep, clock, out):
+            print(f"deploy_order: the API never ran {args.commit} in {args.wait_seconds} seconds."
+                  " The web does not go live before its API. Read the deploy-api build of this commit", file=out)
+            return 1
+    else:
+        print("deploy_order: the merge changed no API path, so the web does not wait", file=out)
+    # The wait can be long, so the check of the live web comes after it.
+    live = live_commit(fetch(args.web), "commit")
+    if newer_live(history, args.commit, live, "web", out):
+        skip(args.skip_file, out)
+    else:
+        print(f"deploy_order: the web releases {args.commit}", file=out)
+    return 0
+
+
+def live_ready(args, history, url, key, need_ok, name, fetch, sleep, clock, out):
+    """Wait until the live part runs the commit of the build or a later one.
+
+    A later merge can deploy before the check of an earlier build reads,
+    and the guards accept a later commit. So the check accepts it too.
+    """
+    end = clock() + args.wait_seconds
+    while True:
+        data = fetch(url) or {}
+        status, version = data.get("status", ""), live_commit(data, key)
+        print(f"deploy_order: the live {name} reads status {status or 'none'}, commit {version or 'none'}", file=out)
+        if (status == "ok" or not need_ok) and version and history.at_or_after(args.commit, version):
+            return 0
+        if clock() >= end:
+            print(f"deploy_order: the live {name} never ran {args.commit} or a later commit", file=out)
+            return 1
+        sleep(args.interval)
+
+
+def api_ready(args, history, fetch=fetch_json, sleep=time.sleep, clock=time.monotonic, out=sys.stdout):
+    return live_ready(args, history, args.readyz, "version", True, "API", fetch, sleep, clock, out)
+
+
+def web_ready(args, history, fetch=fetch_json, sleep=time.sleep, clock=time.monotonic, out=sys.stdout):
+    return live_ready(args, history, args.web, "commit", False, "web", fetch, sleep, clock, out)
+
+
+def revision_commits(data):
+    """Return the DEPLOY_COMMIT of each Cloud Run revision, newest first. A revision with none gives ""."""
+    out = []
+    for rev in data if isinstance(data, list) else []:
+        env = ((rev.get("spec") or {}).get("containers") or [{}])[0].get("env") or []
+        out.append(next((e.get("value", "") for e in env if e.get("name") == "DEPLOY_COMMIT"), ""))
+    return out
+
+
+RELEASE = re.compile(r"commit ([0-9a-f]{40})")
+
+
+def release_commits(data):
+    """Return the commit that each Hosting release message names, newest first."""
+    out = []
+    for rel in (data or {}).get("releases", []) if isinstance(data, dict) else []:
+        m = RELEASE.search(rel.get("message") or "")
+        out.append(m.group(1) if m else "")
+    return out
+
+
+def replaced_later(args, history, commits, name, out):
+    """Fail when a deploy made before this one names a later commit.
+
+    Two builds can overlap for the one minute of a deploy (D-943). The
+    build that deployed last then replaced a newer one, and only that
+    build can see it: its own deploy is the newest one of its commit, and
+    a deploy before it names a later commit.
+    """
+    try:
+        own = commits.index(args.commit)
+    except ValueError:
+        print(f"deploy_order: no recent {name} deploy names {args.commit}, so the order check reads nothing", file=out)
+        return 0
+    for c in commits[own + 1:]:
+        if c and c != args.commit and history.at_or_after(args.commit, c):
+            print(f"deploy_order: this build deployed the {name} of {args.commit} over {c}, which is later."
+                  f" Run the build of {c} again", file=out)
+            return 1
+    print(f"deploy_order: no {name} deploy before this one names a later commit", file=out)
+    return 0
+
+
+def read_stdin_json(stdin, out):
+    try:
+        return json.load(stdin)
+    except ValueError:
+        print("deploy_order: the list of deploys is not JSON, so the order check reads nothing", file=out)
+        return None
+
+
+def api_order(args, history, stdin=sys.stdin, out=sys.stdout):
+    return replaced_later(args, history, revision_commits(read_stdin_json(stdin, out)), "API", out)
+
+
+def web_order(args, history, stdin=sys.stdin, out=sys.stdout):
+    return replaced_later(args, history, release_commits(read_stdin_json(stdin, out)), "web", out)
+
+
+def parse(argv):
+    p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    sub = p.add_subparsers(dest="cmd", required=True)
+    for name in ("api-guard", "web-guard", "api-ready", "web-ready", "api-order", "web-order"):
+        s = sub.add_parser(name)
+        s.add_argument("--commit", required=True)
+        s.add_argument("--repo", default=REPO)
+        s.add_argument("--interval", type=float, default=15)
+        if name.endswith("-order"):
+            continue
+        if name != "web-ready":
+            s.add_argument("--readyz", required=True)
+        if name.endswith("-guard"):
+            s.add_argument("--skip-file", required=True)
+        if name in ("web-guard", "web-ready"):
+            s.add_argument("--web", required=True)
+        s.add_argument("--wait-seconds", type=float, default={"web-guard": 1500, "web-ready": 120}.get(name, 300))
+    return p.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse(sys.argv[1:] if argv is None else argv)
+    if not SHA.match(args.commit):
+        print(f"deploy_order: {args.commit!r} is not a full commit id", file=sys.stdout)
+        return 2
+    history = History(args.repo)
+    run = {"api-guard": api_guard, "web-guard": web_guard, "api-ready": api_ready, "web-ready": web_ready,
+           "api-order": api_order, "web-order": web_order}
+    return run[args.cmd](args, history)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -73,7 +73,8 @@ jobs:
           TAG=$(git rev-parse --short HEAD)
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           base="$REGION-docker.pkg.dev/$PROJECT_ID/mtg"
-          docker build -f docker/api.Dockerfile -t "$base/api:$TAG" .
+          # /readyz reports the commit, and the guards of Cloud Build read it (REV-072).
+          docker build -f docker/api.Dockerfile --build-arg "VERSION=$GITHUB_SHA" -t "$base/api:$TAG" .
           docker build -f docker/worker.Dockerfile -t "$base/worker:$TAG" .
           docker push "$base/api:$TAG"
           docker push "$base/worker:$TAG"
@@ -84,6 +85,7 @@ jobs:
           set -euo pipefail
           gcloud run deploy mtg-api \
             --image "$REGION-docker.pkg.dev/$PROJECT_ID/mtg/api:$TAG" \
+            --update-env-vars "DEPLOY_COMMIT=$GITHUB_SHA" \
             --region "$REGION" --quiet
       - name: point the jobs at the new image
         run: |
@@ -141,11 +143,15 @@ jobs:
           VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
           VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
-        run: pnpm --dir web build
+        run: |
+          set -euo pipefail
+          pnpm --dir web build
+          # /version.json names the commit of the live web (REV-072).
+          printf '{"commit":"%s"}\n' "$GITHUB_SHA" > web/apps/web/dist/version.json
       # firebase-tools reads the credentials the auth step wrote, through
       # GOOGLE_APPLICATION_CREDENTIALS. No CI token lives in this repo.
       - name: release the web app
-        run: npx --yes firebase-tools@14.14.0 deploy --only hosting --project "$PROJECT_ID" --non-interactive
+        run: npx --yes firebase-tools@14.14.0 deploy --only hosting --project "$PROJECT_ID" --non-interactive --message "commit $GITHUB_SHA"
       - name: check the release
         run: |
           set -euo pipefail

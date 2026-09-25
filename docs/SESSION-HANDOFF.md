@@ -6,36 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-25c)
+## RESUME HERE (2026-09-25d)
 
-**Pull request #230, PR-80, corrects twenty-two P3 findings of the repository review of 2026-09-24, one of them in part (D-925 to D-941).**
+**Pull request #231, PR-81, corrects REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-945).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2: REV-046 and REV-072, the last findings of the review report. REV-069 waits for a grant of the owner.
+**The next step.** Next step 2: read the first `deploy-web` build after the merge. It runs as `web-deployer` and proves REV-069. Then next step 3.
 
-**The base.** `main` is `d9faa00`, from #229.
+**The base.** `main` is `3b26cde`, from #230.
 
-**The change.** The owner asked for as many corrections as one session can finish, and then for three more (D-938). Each code finding has a regression test that fails on the base.
+**The change.** The owner asked for as many corrections as one session can finish, with no rule of one concern (D-944). Each code finding has a regression test that fails on the base.
 
-- REV-033: Cloud Run refuses the local switches, a bad cap, and an unpriced model (D-925).
-- REV-079, REV-080, REV-081: the fixer copy hides the holdout rows, and the refit keeps the model on a failed bar (D-926, D-927).
-- REV-068, REV-070, REV-071, REV-073: strict checks, a gate run on each edit, the review rules of `main`, and a wider frozen list (D-928 to D-930, D-932).
-- REV-069 in part: each image names its digest. `web-deployer` holds three roles. The permission classifier refused the custom role of the rules test, so `deploy-web` still runs as `gh-deployer` (D-931).
-- REV-045, REV-049, REV-050: the web (D-933 to D-935). REV-035 is an accepted risk, and REV-037 has its restore steps (D-936, D-937).
-- REV-032, REV-036, REV-078: a turn limit of each user, the soft delete of an account, and a cap in each gate (D-939 to D-941).
-- REV-083, REV-088, REV-091 to REV-093: the index and the documents (D-938).
-- The owner allowed two remote writes: the strict ruleset of `main`, and the account `web-deployer`. No paid target ran. No deploy.
+- REV-046: `GetSession` reports a build that runs. After a Stop during a build step, or on a load during a build, the chat says that the build continues. It reads the chat each five seconds until the build ends (D-942).
+- REV-072: the owner chose guards in the two build files over one pipeline (D-943). `/readyz` and `/version.json` name the live commits. A build skips a deploy when the live commit is later. The web of a merge that changed the API waits for that API.
+- REV-069: the owner approved three remote writes. The session made the custom role `webDeployRulesTest`, granted it to `web-deployer`, and moved `deploy-web` there (D-944).
+- No paid target ran. No deploy.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar found one issue on `42861d0`: the rerun guard of the question gate marked a whole run stopped. `a782dfa` fixes it, and Gitar approved `a782dfa`. The Codex review of `a782dfa` reads Ready for owner merge, with no finding. A later commit corrects the count of findings in the documents alone (D-837). Pending the auto-merge.
+**The review.** Gitar approved the current effective head, `da75656`. Codex reads Ready for owner merge at `da75656`. P1-1 is an accepted risk under D-945. It is the only finding, and it is not open. `make verify` passed. No paid target ran, and no deploy ran. Pending the auto-merge.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- The custom role of the rules test, then the switch of `deploy-web` (`docs/deploy-and-rollback.md`, step 6).
-- After the deploy: `make feedback-list VERDICT=` reads the new index.
+- After the deploy of this merge: read the `guard` step of both builds. The web build must wait for the API, then release. `/readyz` and `/version.json` must name the commit of the merge.
+- UNVERIFIED: the Cloud SDK image of the build holds git. Without git, the guards place no commit, and each deploy runs as before.
+- The first `deploy-web` build after the merge runs as `web-deployer`. On a 403, put `gh-deployer` back (`docs/deploy-and-rollback.md`, step 6).
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
@@ -112,8 +110,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-80: twenty-two P3 findings of the repository review of 2026-09-24** (D-925 to D-941). This pull request is #230.
-2. **The next finding of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-77 to PR-80 corrected each P1 and P2 finding and most P3 findings. REV-046 and REV-072 come next, and REV-069 waits for the grant of the owner. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
+1. **PR-81: REV-046, REV-069, and REV-072 of the repository review of 2026-09-24** (D-942 to D-945). This pull request is #231.
+2. **The first web build as `web-deployer`, then the end of the review report** (D-901). The report sits at `.local/reviews/repository-review-2026-09-24.md`, outside git. Its section 8.2 gives the order. PR-77 to PR-81 corrected each finding. Read the first `deploy-web` build after the merge of PR-81, because it proves REV-069. Mark each finding `COMPLETE - PR #N` after the Codex approval. The owner answers of its section 9 hold for each finding.
 3. **Measure five sessions on the new files, then ask the owner about the checkpoint rule** (D-750). The method sits in `docs/reference/context-budget-2026-09-16.md`. The rule moves a session past about 300K tokens of context to a new clean session. That session continues the same pull request. It comes after PR-75 (D-890). It waits, because the ten sessions of the audit ran before #184 and before D-749.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. Session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses each read under `users/`. So a replay reads a local ManaBox export, which stays out of git (D-756).
@@ -136,10 +134,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-25a: forty-four findings of the review, PR-78
-
-**The owner asked for the next corrections of the review report of 2026-09-24, and five times for more.** The exact trigger of REV-006 met the line cap on the base, so the test holds 990 lines (D-908). The owner approved the provider condition of REV-009 and the Pushover secrets of the jobs for REV-011 (D-906, D-911). No Google page states the shape of the forwarded header, so the key of REV-010 serves both shapes (D-907).
-
 ### 2026-09-25b: twenty-one findings of the review, PR-79
 
 **The owner asked for the next corrections of the review report of 2026-09-24, with no rule of one concern.** The owner picked the fork check alone for REV-008, and no signed record (D-920). The base run of the new two-server test started a second paid build and wrote the chat, as the report said. A frame rule of the web host waits, because the auth domain frames its helper page from another origin (D-923).
@@ -148,6 +142,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for as many corrections of the review report as one session can finish, then for three more.** The owner accepted the hour of REV-035, chose strict checks and a narrow web account, and asked for the fix of REV-073. The permission classifier refused the custom role of the web account, so the trigger stays on `gh-deployer`. The owner chose a soft delete for REV-036. GitHub reads a skipped job as a pass, so the review gate job takes no condition (D-928).
 
+### 2026-09-25d: two findings of the review, PR-81
+
+**The owner asked for the next corrections of the review report, with no rule of one concern.** The owner then added REV-069 and approved its three remote writes. The owner chose guards in the two build files for REV-072, because one pipeline runs `pnpm install` as an account with `roles/run.admin` again (D-943). The API image carried no commit, so `/readyz` read `dev` in production. On the deck page, a second read of the chat ended the build flag first. So the watch holds until its own read (D-942).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25b, the records of 2026-08-31 to 2026-09-24f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25c, the records of 2026-08-31 to 2026-09-25a, and 104 more sections, word for word. Read it for the detail behind a decision.

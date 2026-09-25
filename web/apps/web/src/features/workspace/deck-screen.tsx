@@ -1,6 +1,7 @@
 import { Code, ConnectError } from "@connectrpc/connect";
+import type { GetSessionResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 
 import { ErrorState } from "../../app/components/error-state";
@@ -69,6 +70,23 @@ export function DeckScreen() {
   // render would reset the conversation under the reader's hands.
   const initial = useMemo(() => (session && deck ? fromSession(session, deck, base) : emptyState), [session, deck, base]);
 
+  // A revision that ended on the server, after a reload or a Stop, gives
+  // the fresh session (REV-046). A new deck moves the page to its address.
+  // A build with no new deck mounts the panel again on the fresh session.
+  const [reloads, setReloads] = useState(0);
+  const onBuildEnded = useCallback(
+    (res: GetSessionResponse) => {
+      queryClient.setQueryData(["session", sessionId], res);
+      const newest = res.session?.deckIds.at(-1) ?? "";
+      if (newest !== "" && newest !== id) {
+        void navigate(`/decks/${newest}`, { replace: true });
+        return;
+      }
+      setReloads((n) => n + 1);
+    },
+    [queryClient, sessionId, id, navigate],
+  );
+
 
   // The screen mounts once, when the deck and its conversation are both
   // in hand. Two mounts would tear the deck down and build it again in
@@ -107,13 +125,16 @@ export function DeckScreen() {
 
   // The panel carries the conversation and its dock. It shows the deck
   // this address names, never the latest of the session. The key is the
-  // deck alone: the deck view reads the power note from the deck, so a new
-  // note needs no mount, and a mount would stop a turn (D-933).
+  // deck and the reloads: the deck view reads the power note from the
+  // deck, so a new note needs no mount, and a mount would stop a turn
+  // (D-933). A reload comes only after a build that no stream here reads.
   return (
     <ChatPanel
-      key={deck.id}
+      key={`${deck.id}:${reloads}`}
       initial={initial}
       session={session}
+      building={sessionQuery.data?.building}
+      onBuildEnded={onBuildEnded}
       deckOverride={deck}
       baseOverride={base}
       actions={

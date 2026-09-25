@@ -12,6 +12,49 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-25c
+
+**Pull request #230, PR-80, corrects twenty-two P3 findings of the repository review of 2026-09-24, one of them in part (D-925 to D-941).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: REV-046 and REV-072, the last findings of the review report. REV-069 waits for a grant of the owner.
+
+**The base.** `main` is `d9faa00`, from #229.
+
+**The change.** The owner asked for as many corrections as one session can finish, and then for three more (D-938). Each code finding has a regression test that fails on the base.
+
+- REV-033: Cloud Run refuses the local switches, a bad cap, and an unpriced model (D-925).
+- REV-079, REV-080, REV-081: the fixer copy hides the holdout rows, and the refit keeps the model on a failed bar (D-926, D-927).
+- REV-068, REV-070, REV-071, REV-073: strict checks, a gate run on each edit, the review rules of `main`, and a wider frozen list (D-928 to D-930, D-932).
+- REV-069 in part: each image names its digest. `web-deployer` holds three roles. The permission classifier refused the custom role of the rules test, so `deploy-web` still runs as `gh-deployer` (D-931).
+- REV-045, REV-049, REV-050: the web (D-933 to D-935). REV-035 is an accepted risk, and REV-037 has its restore steps (D-936, D-937).
+- REV-032, REV-036, REV-078: a turn limit of each user, the soft delete of an account, and a cap in each gate (D-939 to D-941).
+- REV-083, REV-088, REV-091 to REV-093: the index and the documents (D-938).
+- The owner allowed two remote writes: the strict ruleset of `main`, and the account `web-deployer`. No paid target ran. No deploy.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar found one issue on `42861d0`: the rerun guard of the question gate marked a whole run stopped. `a782dfa` fixes it, and Gitar approved `a782dfa`. The Codex review of `a782dfa` reads Ready for owner merge, with no finding. A later commit corrects the count of findings in the documents alone (D-837). Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The custom role of the rules test, then the switch of `deploy-web` (`docs/deploy-and-rollback.md`, step 6).
+- After the deploy: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- Next step 3 (D-750). M-19 comes after it.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-25a: forty-four findings of the review, PR-78
+
+**The owner asked for the next corrections of the review report of 2026-09-24, and five times for more.** The exact trigger of REV-006 met the line cap on the base, so the test holds 990 lines (D-908). The owner approved the provider condition of REV-009 and the Pushover secrets of the jobs for REV-011 (D-906, D-911). No Google page states the shape of the forwarded header, so the key of REV-010 serves both shapes (D-907).
+
 ## The resume section of 2026-09-25b
 
 **Pull request #229, PR-79, corrects twenty-one findings of the repository review of 2026-09-24 (D-920 to D-924).**

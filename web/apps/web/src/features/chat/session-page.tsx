@@ -1,4 +1,5 @@
 import { Code, ConnectError } from "@connectrpc/connect";
+import { BuildPhase, type GetSessionResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
@@ -23,6 +24,7 @@ import { RecentDecks, useRecentDecks } from "./recent-decks";
 import { UnfinishedChats } from "./unfinished-chats";
 import { Thumbs } from "../feedback/thumbs";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
+import { useBuildWatch } from "./use-build-watch";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type SendInput, type ThreadItem, useChat } from "./use-chat";
 
 // The chat screen (ui plan, step 3). The id "new" means no session yet.
@@ -68,6 +70,17 @@ export function SessionPage() {
     void queryClient.invalidateQueries({ queryKey: ["session", id] });
   }, [queryClient, id]);
   const onStarted = useCallback((sid: string) => setStarted({ id: sid, key: newKey }), [newKey]);
+  // A build that ended on the server, after a reload or a Stop, gives the
+  // fresh session. The panel mounts again on it, and a new deck then
+  // moves the page to its address (REV-046).
+  const onBuildEnded = useCallback(
+    (res: GetSessionResponse) => {
+      queryClient.setQueryData(["session", id], res);
+      setStarted(null);
+      setReloads((n) => n + 1);
+    },
+    [queryClient, id],
+  );
 
   const session = useQuery({
     queryKey: ["session", id],
@@ -99,7 +112,16 @@ export function SessionPage() {
   const toDeck = useCallback((deckId: string) => void navigate(`/decks/${deckId}`, { replace: true }), [navigate]);
 
   if (live) {
-    return <ChatPanel key={panelKey} initial={emptyState} onStarted={onStarted} onDeckBuilt={toDeck} onResume={isNew ? undefined : onResume} />;
+    return (
+      <ChatPanel
+        key={panelKey}
+        initial={emptyState}
+        onStarted={onStarted}
+        onDeckBuilt={toDeck}
+        onResume={isNew ? undefined : onResume}
+        onBuildEnded={onBuildEnded}
+      />
+    );
   }
   if (session.isPending || (deckId && deck.isPending) || (baseId && base.isPending)) {
     return (
@@ -143,9 +165,11 @@ export function SessionPage() {
       key={panelKey}
       initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)}
       session={session.data.session}
+      building={session.data.building}
       deckError={deckError}
       onDeckBuilt={toDeck}
       onResume={onResume}
+      onBuildEnded={onBuildEnded}
     />
   );
 }
@@ -188,6 +212,8 @@ export function ChatPanel({
   actions,
   onDeckBuilt,
   onResume,
+  building = false,
+  onBuildEnded,
 }: {
   initial: ChatState;
   session?: Session;
@@ -199,6 +225,10 @@ export function ChatPanel({
   onDeckBuilt?: (deckId: string) => void;
   // onResume reads the stored session again after a lost stream.
   onResume?: () => void;
+  // building says that a build of the stored session runs on the server.
+  building?: boolean;
+  // onBuildEnded takes the fresh session when that build ends (REV-046).
+  onBuildEnded?: (res: GetSessionResponse) => void;
 }) {
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
@@ -231,6 +261,29 @@ export function ChatPanel({
     [setSessionId, onStarted],
   );
   const { state, send, stop } = useChat(initial, sendCollection, sendPoolRule, onSessionStarted);
+  // A build runs on the server after a Stop or a reload, and the server
+  // stores its deck (D-303). The page reads the session until the build
+  // ends (REV-046). The watch holds until its own read sees the end,
+  // because another read of the session can end the flag first.
+  const [watching, setWatching] = useState(building);
+  const [seenBuilding, setSeenBuilding] = useState(building);
+  if (building !== seenBuilding) {
+    setSeenBuilding(building);
+    if (building && !state.busy) setWatching(true);
+  }
+  const onStop = useCallback(() => {
+    if (state.phase !== BuildPhase.UNSPECIFIED) setWatching(true);
+    stop();
+  }, [state.phase, stop]);
+  const serverBuild = watching && !state.busy && state.sessionId !== "";
+  const onServerBuildEnded = useCallback(
+    (res: GetSessionResponse) => {
+      setWatching(false);
+      onBuildEnded?.(res);
+    },
+    [onBuildEnded],
+  );
+  useBuildWatch(state.sessionId, serverBuild, onServerBuildEnded);
   const [message, setMessage] = useState("");
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const bytes = byteLength(message);
@@ -240,7 +293,7 @@ export function ChatPanel({
   // turn ends with no question open (D-282). It also leaves while the
   // agent works: a disabled box beside "the agent is working" reads as a
   // dead control (PR-16B). The working row and its Stop take its place.
-  const showComposer = state.openQuestions.length === 0 && !state.busy;
+  const showComposer = state.openQuestions.length === 0 && !state.busy && !serverBuild;
 
   // A build runs on after the page leaves, and the deck shows on reload
   // (D-303). The page says so before a navigation or an unload mid-turn.
@@ -481,12 +534,17 @@ export function ChatPanel({
               </span>
               <span className="font-display text-[15px] font-semibold text-foreground">{sentence(step) || "The agent is working..."}</span>
             </span>
-            <Button type="button" variant="outline" size="sm" onClick={stop}>
+            <Button type="button" variant="outline" size="sm" onClick={onStop}>
               Stop
             </Button>
           </div>
           <BuildStepper phase={state.phase} repaired={state.repaired} />
         </>
+      )}
+      {serverBuild && (
+        <p className="text-sm text-muted-foreground" data-testid="server-build">
+          The build continues on the server. The deck shows here when it is ready.
+        </p>
       )}
     </div>
   );
