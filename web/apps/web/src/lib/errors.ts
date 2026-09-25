@@ -31,7 +31,7 @@ const authErrors: Record<string, string> = {
   "auth/invalid-credential": "The email or the password is wrong.",
   "auth/wrong-password": "The email or the password is wrong.",
   "auth/user-not-found": "No account has this email. Create one below.",
-  "auth/email-already-in-use": "An account with this email exists. Sign in instead.",
+  "auth/email-already-in-use": "An account with this email exists. Sign in, or use Forgot your password to set a new one.",
   "auth/weak-password": "The password needs at least six characters.",
   "auth/invalid-email": "The email address is not valid.",
   "auth/network-request-failed": "The auth server did not answer. Is the emulator up?",

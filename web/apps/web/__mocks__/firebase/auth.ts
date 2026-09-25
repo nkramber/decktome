@@ -14,6 +14,8 @@ export const initializeAuth = () => ({
 });
 export const signInWithEmailAndPassword = vi.fn();
 export const createUserWithEmailAndPassword = vi.fn();
+export const sendEmailVerification = vi.fn(() => Promise.resolve());
+export const sendPasswordResetEmail = vi.fn(() => Promise.resolve());
 export const signOut = vi.fn(() => Promise.resolve());
 export const onAuthStateChanged = vi.fn((_auth: unknown, next: (u: User | null) => void, error?: (e: Error) => void) => {
   const listener = { next, error };

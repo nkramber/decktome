@@ -75,7 +75,36 @@ export async function signIn(email: string, password: string): Promise<void> {
   await mod.signInWithEmailAndPassword(auth, email, password);
 }
 
+// createAccount makes the account and sends the link that proves the
+// email. The invite gate trusts a proved email alone (D-903). A link that
+// fails to send leaves the account as it is, and the gate offers a resend.
 export async function createAccount(email: string, password: string): Promise<void> {
   const { auth, mod } = await loadAuth();
-  await mod.createUserWithEmailAndPassword(auth, email, password);
+  const cred = await mod.createUserWithEmailAndPassword(auth, email, password);
+  await mod.sendEmailVerification(cred.user).catch(() => undefined);
+}
+
+// sendProofAgain sends the link that proves the email once more (D-903).
+export async function sendProofAgain(): Promise<void> {
+  const { auth, mod } = await loadAuth();
+  if (auth.currentUser) await mod.sendEmailVerification(auth.currentUser);
+}
+
+// refreshProof reads the account again and takes a new token, so a proved
+// email reaches the API at once. It answers whether the email is proved.
+export async function refreshProof(): Promise<boolean> {
+  const { auth } = await loadAuth();
+  const user = auth.currentUser;
+  if (!user) return false;
+  await user.reload();
+  await user.getIdToken(true);
+  return user.emailVerified;
+}
+
+// resetPassword sends the link that sets a new password. An invited
+// person whose address another person took first gets the account back
+// this way (D-903).
+export async function resetPassword(email: string): Promise<void> {
+  const { auth, mod } = await loadAuth();
+  await mod.sendPasswordResetEmail(auth, email);
 }

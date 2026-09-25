@@ -14,15 +14,21 @@ import (
 	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
 )
 
-// fakeVerifier accepts one token and names one user.
+// fakeVerifier accepts one token and names one user with a proved
+// email. The token unproved, when set, names the same user before the
+// email is proved (D-903).
 type fakeVerifier struct {
-	token string
-	uid   string
-	email string
+	token    string
+	unproved string
+	uid      string
+	email    string
 }
 
 func (f fakeVerifier) Verify(_ context.Context, idToken string) (Identity, error) {
-	if idToken == f.token {
+	switch {
+	case idToken == f.token:
+		return Identity{UID: f.uid, Email: f.email, EmailVerified: true}, nil
+	case f.unproved != "" && idToken == f.unproved:
 		return Identity{UID: f.uid, Email: f.email}, nil
 	}
 	return Identity{}, errors.New("unknown token")
@@ -59,7 +65,7 @@ func (echo) Chat(ctx context.Context, _ *connect.Request[mtgv1.ChatRequest], str
 
 func newServer(t *testing.T, opts ...Option) (mtgv1connect.HealthServiceClient, mtgv1connect.AgentServiceClient) {
 	t.Helper()
-	ic := connect.WithInterceptors(Interceptor(fakeVerifier{token: "good", uid: "u-42", email: "ann@example.com"}, opts...))
+	ic := connect.WithInterceptors(Interceptor(fakeVerifier{token: "good", unproved: "unproved", uid: "u-42", email: "ann@example.com"}, opts...))
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(echo{}, ic))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(echo{}, ic))
@@ -314,6 +320,47 @@ func TestAllowlistRefusesAnEmailOffTheList(t *testing.T) {
 	}
 	if uid, err := call(t, "", WithFallback("local-dev"), WithAllowlist(fakeList{})); err != nil || uid != "local-dev" {
 		t.Errorf("the fallback user never meets the list: %q %v", uid, err)
+	}
+}
+
+// TestAllowlistRefusesAnEmailThatIsNotProved is D-903. Anyone can make
+// an account with an invited address, so the list trusts an email that
+// its holder proved. The refusal names its own state, so the web shows
+// the step that proves the email and not the invite screen.
+func TestAllowlistRefusesAnEmailThatIsNotProved(t *testing.T) {
+	listed := WithAllowlist(fakeList{emails: map[string]bool{"ann@example.com": true}})
+	unlisted := WithAllowlist(fakeList{emails: map[string]bool{"bob@example.com": true}})
+	for _, tc := range []struct {
+		name    string
+		token   string
+		opts    []Option
+		code    connect.Code
+		refusal string
+	}{
+		{"a listed email that is not proved", "unproved", []Option{listed}, connect.CodePermissionDenied, RefusalUnverified},
+		{"an email off the list that is not proved", "unproved", []Option{unlisted}, connect.CodePermissionDenied, RefusalNotInvited},
+		{"a listed email that is proved", "good", []Option{listed}, 0, ""},
+		{"local mode has no list", "unproved", nil, 0, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			health, _ := newServer(t, tc.opts...)
+			req := connect.NewRequest(&mtgv1.CheckRequest{})
+			req.Header().Set("Authorization", "Bearer "+tc.token)
+			res, err := health.Check(context.Background(), req)
+			if tc.code == 0 {
+				if err != nil || res.Msg.GetVersion() != "u-42" {
+					t.Fatalf("want the user in: %v", err)
+				}
+				return
+			}
+			var connErr *connect.Error
+			if !errors.As(err, &connErr) || connErr.Code() != tc.code {
+				t.Fatalf("err = %v, want %v", err, tc.code)
+			}
+			if got := connErr.Meta().Get(RefusalHeader); got != tc.refusal {
+				t.Errorf("%s = %q, want %q", RefusalHeader, got, tc.refusal)
+			}
+		})
 	}
 }
 

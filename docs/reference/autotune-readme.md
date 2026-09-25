@@ -316,6 +316,8 @@ The steps of one cycle:
 9. `scripts/feedback-review.sh` waits for CI and reads Gitar. It runs the Codex review, and the fixer answers each finding (D-878).
 10. A Codex approval ends the review step. The session then asks the owner, and the owner decides the merge.
 
+The review step reads the threads of `gitar-bot` and the owner alone, because the repository is public (D-902). `FEEDBACK_FINDING_AUTHORS` replaces that list of logins. Each reply goes out as raw text.
+
 Without `--here`, the cycle pushes and opens its own pull request at step 7, and it runs step 9 itself. That body holds the rows the cycle can prove, and `pr-contract` stays red until an author session completes the rest (D-748).
 
 The review step stops with 3 on a Gitar finding during a Gitar pause (D-838). It stops with 4 when a Codex finding is open at its third head (D-826). The fixer runs with no GitHub login, and no script of the cycle merges or turns on the auto-merge (D-878).

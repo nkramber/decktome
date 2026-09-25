@@ -137,11 +137,10 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	// The judge reads a Commander list, so the spend cap applies (D-421).
-	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
-		if err := s.checkSpendCap(ctx, uid); err != nil {
-			return nil, err
-		}
+	// The judge reads every list, the bracket of a Commander list and the
+	// step of a 60-card list, so the spend cap applies to each (D-421).
+	if err := s.checkSpendCap(ctx, uid); err != nil {
+		return nil, err
 	}
 
 	now := timestamppb.New(s.now())
@@ -402,6 +401,13 @@ func (s *Server) importState(idx *cards.Index, deck *mtgv1.Deck, hasCollection b
 	}
 	if ids := deck.GetCommanderOracleIds(); len(ids) > 0 {
 		st.Slots.CommanderOracleIds = ids
+		// A revision reads the commander by name, so the list names it.
+		// Without the names the build picks a new commander (D-851).
+		for _, id := range ids {
+			if c, ok := idx.ByOracleID(id); ok {
+				st.SetCommander(c.GetName())
+			}
+		}
 		st.Close("commander")
 	}
 	// The colors of the list bound the cards a revision adds.

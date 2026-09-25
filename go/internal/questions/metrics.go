@@ -41,6 +41,10 @@ type Ask struct {
 	// went out. The M-5 sheet shows it beside the phrasing, so an exact
 	// copy of the row can be told from a new question (D-116).
 	ResolvedText string `json:"resolved_text,omitempty"`
+	// OptionValues are the typed values of the options that went out, in
+	// their order. An option answer is an index into what the reader saw,
+	// and a 60-card request drops Commander from the format row (D-904).
+	OptionValues []string `json:"option_values,omitempty"`
 	// Turn is the turn number, counted from 1.
 	Turn int `json:"turn"`
 }

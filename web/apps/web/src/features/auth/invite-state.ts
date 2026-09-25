@@ -4,9 +4,10 @@ import { useSyncExternalStore } from "react";
 // authority on the list (D-314, D-420), so this holds what it answered.
 // "unknown" is the state on a page that asks nothing, "checking" is the
 // state while the gate waits for the answer, and "unavailable" is the
-// state when the API gave none. The app draws for "invited" alone
+// state when the API gave none. "unverified" is an invited email that
+// its holder has not proved (D-903). The app draws for "invited" alone
 // (D-590).
-export type InviteState = "unknown" | "checking" | "invited" | "refused" | "unavailable";
+export type InviteState = "unknown" | "checking" | "invited" | "refused" | "unverified" | "unavailable";
 
 // The state lives outside React, because the header and the route guard
 // read it and neither owns it. It stays in this module and not in the

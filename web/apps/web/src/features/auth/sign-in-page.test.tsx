@@ -1,11 +1,11 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { state } from "../../test-auth-state";
-import { notAuthorized } from "./sign-in-page";
+import { notAuthorized, resetSent } from "./sign-in-page";
 import { renderAt } from "../../test-utils";
 
 vi.mock("firebase/app");
@@ -56,6 +56,36 @@ describe("SignInPage", () => {
     await user.type(screen.getByLabelText("Password"), "secret1");
     await user.click(screen.getByRole("button", { name: "Create account" }));
     expect(signUp).toHaveBeenCalledWith(expect.anything(), "new@example.com", "secret1");
+  });
+
+  // D-903: the API trusts a proved email alone, so a new account gets the
+  // link that proves it.
+  it("sends the link that proves the email after it makes the account", async () => {
+    const created = { uid: "u9" };
+    signUp.mockResolvedValue({ user: created } as never);
+    vi.mocked(sendEmailVerification).mockClear();
+    await renderAt("/sign-in");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Create account/ }));
+    await user.type(screen.getByLabelText("Email"), "new@example.com");
+    await user.type(screen.getByLabelText("Password"), "secret1");
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+    expect(vi.mocked(sendEmailVerification)).toHaveBeenCalledWith(created);
+  });
+
+  // D-903: an invited person whose address another person took first sets
+  // a new password through the email, so the account comes back to them.
+  it("sends a reset link for the typed email, and names no account", async () => {
+    vi.mocked(sendPasswordResetEmail).mockClear();
+    await renderAt("/sign-in");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Forgot your password?" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Enter your email above");
+    expect(vi.mocked(sendPasswordResetEmail)).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText("Email"), "ann@example.com");
+    await user.click(screen.getByRole("button", { name: "Forgot your password?" }));
+    expect(vi.mocked(sendPasswordResetEmail)).toHaveBeenCalledWith(expect.anything(), "ann@example.com");
+    expect(await screen.findByRole("status")).toHaveTextContent(resetSent);
   });
 
   // D-592: an email off the invite list never becomes an account. The

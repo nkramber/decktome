@@ -90,7 +90,12 @@ pause_stop() {
   exit 3
 }
 
-# open_threads writes every unresolved thread of the pull request as one
+# FINDING_AUTHORS are the logins whose threads are findings: gitar-bot
+# and the owner of the repository. The repository is public, so a thread
+# of any other account never reaches the fixer (D-902).
+FINDING_AUTHORS="${FEEDBACK_FINDING_AUTHORS:-gitar-bot ${REPO%%/*}}"
+
+# open_threads writes every unresolved thread of FINDING_AUTHORS as one
 # JSON object a line: the thread id, the path, and the body of the first
 # comment. A thread the cycle already answered is resolved by gitar on
 # its next pass, so an answered finding leaves this list on its own.
@@ -115,7 +120,21 @@ open_threads() {
           | select(.isResolved == false)
           | {id: .id, path: .path, line: .line,
              author: .comments.nodes[0].author.login,
-             body: .comments.nodes[0].body}' 2>/dev/null
+             body: .comments.nodes[0].body}' 2>/dev/null \
+    | python3 -c '
+import json, sys
+keep = set(sys.argv[1].split())
+for line in sys.stdin:
+    line = line.strip()
+    if not line:
+        continue
+    try:
+        author = json.loads(line).get("author")
+    except ValueError:
+        continue
+    if author in keep:
+        print(line)
+' "$FINDING_AUTHORS"
 }
 
 # reviewed answers whether gitar has written anything on this commit yet.
@@ -311,7 +330,7 @@ print((m.group(1).strip() if m else "")[:3500])
         addPullRequestReviewThreadReply(input:{pullRequestReviewThreadId:$tid, body:$body}){
           comment{ id }
         }
-      }' -F tid="$tid" -F body="$reply" >/dev/null 2>&1 </dev/null \
+      }' -f tid="$tid" -f body="$reply" >/dev/null 2>&1 </dev/null \
       || say "could not reply on thread $tid"
   done < "$threads"
   say "replied to $count thread(s)"

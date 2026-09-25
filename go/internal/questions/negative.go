@@ -105,9 +105,20 @@ func (s *State) DeclineKey(key string) {
 		s.CurrentOffer = nil
 	}
 	if key == "format" && s.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
-		s.Slots.Format = &mtgv1.Format{Id: DefaultFormat}
-		s.Ctx.Format = DefaultFormat
+		f := s.DeclinedFormat()
+		s.Slots.Format = &mtgv1.Format{Id: f}
+		s.Ctx.Format = f
 	}
+}
+
+// DeclinedFormat is the format a declined format slot takes. A reader
+// who asked for 60 cards gets Modern, because Commander is 100 cards
+// (D-388, D-904).
+func (s *State) DeclinedFormat() mtgv1.FormatId {
+	if sixtyCardRequest(s.Ctx.Words) {
+		return DefaultSixtyFormat
+	}
+	return DefaultFormat
 }
 
 // keyOfQuestion reads the state key of a question the session sent.

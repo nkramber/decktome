@@ -12,6 +12,46 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-24e
+
+**Pull request #226 ends the Gitar pause, and sets a push wait of one minute (PR-76, D-899, D-900).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: measure five sessions, then ask the owner about the checkpoint rule (D-750).
+
+**The base.** `main` is `284c601`, from #225.
+
+**The change.**
+
+- Each pull request waits for a current Gitar review again, documents alone too (D-637, D-679, D-745).
+- A session waits one minute after a push, before it asks Gitar for a manual review (D-900). The `gitar-review` skill held three minutes.
+- Each pause note and the pause file of D-838 are gone, by the steps of the end in that file (D-899).
+- The flag `--skip-gitar-review` and the pause branch of `scripts/feedback-review.sh` stay (D-838). With no pause file, the feedback cycle waits for Gitar.
+- Gitar finished no review on #215 to #225. The owner showed a Gitar review of 2026-09-24 on #76 of `nkramber/the-thing-below`.
+- `docs/tools/ref_check.py` gives the path of the pause file no rule, because the records still name it.
+- No paid target ran.
+
+**The checks.** `make verify` passed on the tree of `0c4fe16`, exit 0. Every check on `7567fc3` passed. `make pr-check` passed on the body.
+
+**The review.** Codex reviewed effective head `7567fc3a8f3ca3e3e41eec2f539a7e51e210a3d5`. Ready for owner merge. No open findings. Gitar approved the same head.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- One notice from the deployed app after the deploy of #225. Give one verdict, and read the notice.
+- Next step 2 (D-750). M-19, the free replay of the owned-only shortlist (F-174), comes after it.
+- One deployed bracket 5 session reads the commander rates now.
+- The Ulalek, Fused Atrocity shortlist holds 20 fixing lands, against a floor of 21.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- D-794 makes the app less strict than the Wizards infographic at Bracket 2.
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-24c: the plain upload page, PR-74
+
+**The owner started PR-74 from the transitional prompt of #223.** The deploy of `d4b8daf` ended SUCCESS. The owner answered the five questions of D-882 and three more, in three batches (D-883 to D-889, D-891). The session named the risk of user rows in a public repository, and the owner chose a fixture from the stored rows (D-888). The owner named PR-75, a notice for each thumbs down (D-890).
+
 ## The resume section of 2026-09-24d
 
 **Pull request #225 sends the owner a Pushover notice of each verdict (PR-75, F-49, D-892 to D-898).**

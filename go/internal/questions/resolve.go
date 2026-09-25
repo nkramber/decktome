@@ -260,6 +260,25 @@ func withoutCommander(options []string) []string {
 	return out
 }
 
+// shownValues maps the options that went out to the typed values of the
+// row, by the option text. An option the catalog does not hold, such as
+// a phrased one, maps to "" and stays with the classifier (D-904).
+func shownValues(row Row, shown []string) []string {
+	if len(row.OptionValues) == 0 {
+		return nil
+	}
+	out := make([]string, len(shown))
+	for i, s := range shown {
+		for j, o := range row.Options {
+			if j < len(row.OptionValues) && strings.EqualFold(strings.TrimSpace(o), strings.TrimSpace(s)) {
+				out[i] = row.OptionValues[j]
+				break
+			}
+		}
+	}
+	return out
+}
+
 // everySetOption drops the set limit. A reader who meant no set at all
 // needs a way to say so, and the row is closed to free text.
 const everySetOption = "Use every set"

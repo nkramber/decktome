@@ -1,13 +1,13 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { act, renderHook, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { signOut } from "firebase/auth";
+import { sendEmailVerification, signOut } from "firebase/auth";
 import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
-import { isNotInvited } from "./invite-gate";
+import { isNotInvited, isUnverified } from "./invite-gate";
 import { resetInviteState, setInviteState, useInviteState } from "./invite-state";
 import { signOutAndClear } from "./sign-out";
 
@@ -154,6 +154,71 @@ describe("the invite gate", () => {
     listCollections.mockRejectedValue(refusal());
     const { container } = await renderAt("/session/new");
     await screen.findByRole("heading", { level: 1, name: "You are not on the invite list" });
+    expect(await axe(container)).toHaveNoViolations();
+  });
+});
+
+// unproved is what the API answers an invited caller whose email is not
+// proved (D-903).
+function unproved() {
+  return new ConnectError("open the link in the email that Deck Tome sent", Code.PermissionDenied, {
+    "Deck-Tome-Refusal": "email-unverified",
+  });
+}
+
+// D-903: anyone can make an account with an invited address, so the API
+// opens the app to a proved address alone. The reader proves it here.
+describe("the proof of the email", () => {
+  it("reads its own header, and the invite refusal stays apart", () => {
+    expect(isUnverified(unproved())).toBe(true);
+    expect(isNotInvited(unproved())).toBe(false);
+    expect(isUnverified(refusal())).toBe(false);
+    expect(isUnverified(new ConnectError("no", Code.PermissionDenied))).toBe(false);
+  });
+
+  it("asks for the proof, with no app and no navigation", async () => {
+    listCollections.mockRejectedValue(unproved());
+    await renderAt("/session/new");
+    expect(await screen.findByRole("heading", { level: 1, name: "Confirm your email address" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1, name: "You are not on the invite list" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
+  });
+
+  it("opens the app after the reader proves the email and presses Continue", async () => {
+    const reader = { ...fakeUser, emailVerified: false, reload: vi.fn(), getIdToken: vi.fn(() => Promise.resolve("token-2")) };
+    reader.reload.mockImplementation(() => {
+      reader.emailVerified = true;
+      return Promise.resolve();
+    });
+    state.user = reader as unknown as typeof fakeUser;
+    listCollections.mockRejectedValueOnce(unproved());
+    await renderAt("/session/new");
+    await screen.findByRole("heading", { level: 1, name: "Confirm your email address" });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
+    // A new token carries the proof to the API with no sign-out.
+    expect(reader.getIdToken).toHaveBeenCalledWith(true);
+  });
+
+  it("keeps the screen, and says why, while the email is not proved", async () => {
+    state.user = { ...fakeUser, emailVerified: false, reload: () => Promise.resolve() } as unknown as typeof fakeUser;
+    listCollections.mockRejectedValue(unproved());
+    await renderAt("/session/new");
+    await screen.findByRole("heading", { level: 1, name: "Confirm your email address" });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+    expect(await screen.findByText(/not proved yet/)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Send the link again" }));
+    expect(vi.mocked(sendEmailVerification)).toHaveBeenCalled();
+    expect(await screen.findByText(/A new link is on its way/)).toBeInTheDocument();
+  });
+
+  it("has no axe violations", async () => {
+    listCollections.mockRejectedValue(unproved());
+    const { container } = await renderAt("/session/new");
+    await screen.findByRole("heading", { level: 1, name: "Confirm your email address" });
     expect(await axe(container)).toHaveNoViolations();
   });
 });

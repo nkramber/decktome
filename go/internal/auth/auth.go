@@ -21,9 +21,12 @@ import (
 
 // Identity is what a verified token names: the user id, and the email
 // the allowlist reads (D-314). The email is empty for a token with none.
+// EmailVerified says the holder proved the email, and the allowlist
+// trusts a proved email alone (D-903).
 type Identity struct {
-	UID   string
-	Email string
+	UID           string
+	Email         string
+	EmailVerified bool
 }
 
 // Verifier checks one ID token and returns the identity it names.
@@ -75,8 +78,9 @@ func NewFirebase(ctx context.Context, projectID string) (*Firebase, error) {
 	return &Firebase{client: client}, nil
 }
 
-// Verify implements Verifier. The email comes from the token's claims,
-// and Firebase sets it for an email and password account.
+// Verify implements Verifier. The email and its email_verified claim come
+// from the token, and Firebase sets both for an email and password
+// account.
 func (f *Firebase) Verify(ctx context.Context, idToken string) (Identity, error) {
 	tok, err := f.client.VerifyIDToken(ctx, idToken)
 	if err != nil {
@@ -86,7 +90,8 @@ func (f *Firebase) Verify(ctx context.Context, idToken string) (Identity, error)
 		return Identity{}, errors.New("token carries no uid")
 	}
 	email, _ := tok.Claims["email"].(string)
-	return Identity{UID: tok.UID, Email: email}, nil
+	verified, _ := tok.Claims["email_verified"].(bool)
+	return Identity{UID: tok.UID, Email: email, EmailVerified: verified}, nil
 }
 
 type ctxKey struct{}
@@ -131,7 +136,9 @@ func WithFallback(uid string) Option {
 }
 
 // WithAllowlist refuses every verified user whose email is not on the
-// list, with PermissionDenied and one sentence (D-314). The deployed API
+// list, with PermissionDenied and one sentence (D-314). It also refuses
+// an email on the list that its holder has not proved, because anyone
+// can make an account with an invited address (D-903). The deployed API
 // sets it, and local mode does not, so every emulator user gets in.
 func WithAllowlist(a Allowlist) Option {
 	return func(i *interceptor) { i.allow = a }
@@ -174,15 +181,20 @@ var (
 	errBadToken = errors.New("the bearer token was refused")
 	// errNotInvited is the one sentence a user off the list reads (D-314).
 	errNotInvited = errors.New("this app is open to invited users alone, and your email is not on the list")
+	// errUnverified is the one sentence an invited user with an email
+	// that is not proved reads (D-903).
+	errUnverified = errors.New("open the link in the email that Deck Tome sent to prove your address, then sign in again")
 )
 
-// RefusalHeader names the state behind a refusal, and RefusalNotInvited
-// is the one value it takes (F-59). A client reads the state from this
-// header alone, and never from the sentence, so the wording of the
+// RefusalHeader names the state behind a refusal (F-59). RefusalNotInvited
+// is an email off the list, and RefusalUnverified is an email on the list
+// that its holder has not proved (D-903). A client reads the state from
+// this header alone, and never from the sentence, so the wording of the
 // message stays free to change.
 const (
 	RefusalHeader     = "Deck-Tome-Refusal"
 	RefusalNotInvited = "not-invited"
+	RefusalUnverified = "email-unverified"
 )
 
 // notInvited is the refusal a caller off the list reads (D-314). The
@@ -190,6 +202,14 @@ const (
 func notInvited() *connect.Error {
 	err := connect.NewError(connect.CodePermissionDenied, errNotInvited)
 	err.Meta().Set(RefusalHeader, RefusalNotInvited)
+	return err
+}
+
+// unverified is the refusal an invited caller reads before it proves the
+// email (D-903).
+func unverified() *connect.Error {
+	err := connect.NewError(connect.CodePermissionDenied, errUnverified)
+	err.Meta().Set(RefusalHeader, RefusalUnverified)
 	return err
 }
 
@@ -222,6 +242,9 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 		}
 		if !ok {
 			return nil, notInvited()
+		}
+		if !id.EmailVerified {
+			return nil, unverified()
 		}
 	}
 	return WithEmail(WithUserID(ctx, id.UID), id.Email), nil

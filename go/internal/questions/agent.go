@@ -528,6 +528,7 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 		rec := Ask{
 			QuestionID: q.Id, RowID: c.Row.ID, Slot: c.Row.Slot, Key: c.Row.StateKey(),
 			Invented: c.Invented, Fit: c.Fit, Threshold: a.threshold, Turn: st.Turn,
+			OptionValues: shownValues(c.Row, q.GetOptions()),
 		}
 		if c.Invented {
 			rec.CatalogText = resolved.text[c.Row.ID]
@@ -708,10 +709,16 @@ func (a *Agent) applyOptionAnswers(st *State) {
 			a.applyCommanderOption(st, ans.Index)
 			continue
 		}
-		if ans.Index < 0 || ans.Index >= len(row.OptionValues) {
+		// The index names an option the reader saw. An ask stored before
+		// D-904 holds no values, so the list is built again by the same rule.
+		values := ask.OptionValues
+		if len(values) == 0 {
+			values = shownValues(row, rowOptions(row, st, nil))
+		}
+		if ans.Index < 0 || ans.Index >= len(values) {
 			continue
 		}
-		value := row.OptionValues[ans.Index]
+		value := values[ans.Index]
 		if value == "" || !a.setSlotValue(st, row, ask.Key, value) {
 			continue
 		}
@@ -2079,7 +2086,7 @@ func (a *Agent) applyKeys(st *State, out classifyOut, open []string, message str
 		formatWasUnset := st.Ctx.Format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED
 		st.DeclineKey(k)
 		if k == "format" && formatWasUnset {
-			a.log.Info("a declined format took the corpus default", "format", DefaultFormat.String())
+			a.log.Info("a declined format took the corpus default", "format", st.Ctx.Format.String())
 		}
 	}
 }

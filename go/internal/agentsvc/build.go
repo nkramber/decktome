@@ -174,6 +174,17 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		commanders = append(commanders, c)
 		commanderIDs = append(commanderIDs, c.GetOracleId())
 	}
+	// An import holds its commander by id. A session stored before the
+	// import named it keeps that commander on a revision (D-851).
+	if len(st.CommanderNames) == 0 {
+		for _, id := range slots.GetCommanderOracleIds() {
+			if c, ok := idx.ByOracleID(id); ok {
+				commanders = append(commanders, c)
+				commanderIDs = append(commanderIDs, id)
+				commanderSource = "named"
+			}
+		}
+	}
 
 	// A user who says "you pick" delegates the commander, and D-147 and
 	// D-208 skip the slot for the generator. The generator must then pick
@@ -860,6 +871,7 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		res.Deck.Name = base.GetName()
 	}
 	diff := revise.DiffDecks(base, res.Deck)
+	diff.Commander = revise.CommanderChange(base, res.Deck, cards)
 	note := revise.Note(brief, diff)
 	for _, line := range refused {
 		note = strings.TrimSpace(note + " " + line)

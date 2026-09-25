@@ -883,6 +883,11 @@ func slotWord(s string) string {
 // a default from a choice (D-98).
 const DefaultFormat = mtgv1.FormatId_FORMAT_ID_COMMANDER
 
+// DefaultSixtyFormat is the format a declined format slot takes after a
+// 60-card request. It has the larger pool of the two 60-card formats
+// (D-904).
+const DefaultSixtyFormat = mtgv1.FormatId_FORMAT_ID_MODERN
+
 // formatIDs maps the classifier's format word to the proto enum.
 var formatIDs = map[string]mtgv1.FormatId{
 	"commander": mtgv1.FormatId_FORMAT_ID_COMMANDER,
