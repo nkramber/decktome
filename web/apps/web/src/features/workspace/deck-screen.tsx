@@ -10,7 +10,7 @@ import { agentClient, deckClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
 import { ChatPanel } from "../chat/session-page";
 import { emptyState, fromSession } from "../chat/use-chat";
-import { importPowerNote, needsPowerRead } from "../deck/deck-view";
+import { needsPowerRead } from "../deck/deck-view";
 import { DeckActions } from "./deck-actions";
 import { DeckVersions } from "./deck-versions";
 
@@ -31,11 +31,12 @@ export function DeckScreen() {
 
   // An imported deck whose bracket is the floor of the rules alone, or a
   // 60-card import with no power step, asks the judge again, once per
-  // open (D-854, D-864). The answer replaces the deck in the cache, and
-  // the panel below mounts again with it.
+  // open (D-854, D-864). The answer replaces the deck in the cache. The
+  // key sits outside the "deck" prefix, so a write that refreshes the deck
+  // never pays for the judge again (D-933).
   const queryClient = useQueryClient();
   useQuery({
-    queryKey: ["deck", id, "bracket"],
+    queryKey: ["deck-bracket", id],
     queryFn: async () => {
       const res = await agentClient.readImportBracket({ deckId: id });
       queryClient.setQueryData(["deck", id], (old: typeof deckQuery.data) => (old ? { ...old, deck: res.deck } : old));
@@ -105,10 +106,12 @@ export function DeckScreen() {
 
 
   // The panel carries the conversation and its dock. It shows the deck
-  // this address names, never the latest of the session.
+  // this address names, never the latest of the session. The key is the
+  // deck alone: the deck view reads the power note from the deck, so a new
+  // note needs no mount, and a mount would stop a turn (D-933).
   return (
     <ChatPanel
-      key={`${deck.id}:${importPowerNote(deck)}`}
+      key={deck.id}
       initial={initial}
       session={session}
       deckOverride={deck}
