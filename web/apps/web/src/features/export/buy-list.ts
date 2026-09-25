@@ -71,8 +71,8 @@ export function buyRows(deck: Deck, byId: Map<string, Card>): { needed: BuyRow[]
   return { needed, upgrades };
 }
 
-// downloadText hands the browser a file to save. The object URL is
-// released after the click.
+// downloadText hands the browser a file to save. Safari reads the object
+// URL after the click returns, so the release waits (D-935).
 export function downloadText(fileName: string, text: string): void {
   const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
   const a = document.createElement("a");
@@ -81,5 +81,8 @@ export function downloadText(fileName: string, text: string): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), revokeDelayMs);
 }
+
+// revokeDelayMs is the wait before the object URL of a download goes.
+export const revokeDelayMs = 30_000;

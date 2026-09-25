@@ -59,16 +59,33 @@ describe("ExportPanel", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("Copied the deck list: 2 lines.");
   });
 
+  it("starts the copy inside the click, before the export answers (REV-050)", async () => {
+    let answer: (v: { text: string; fileName: string }) => void = () => {};
+    exportDeck.mockReturnValue(new Promise((r) => (answer = r)));
+    vi.stubGlobal("ClipboardItem", class {});
+    const write = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { write, writeText: vi.fn() } });
+    render(<ExportPanel deck={deck} byId={byId} />);
+    await userEvent.click(screen.getByRole("button", { name: "Copy deck list" }));
+    expect(write).toHaveBeenCalledTimes(1);
+    answer({ text: "Deck\n1 Plains\n", fileName: "deck.txt" });
+    expect(await screen.findByRole("status")).toHaveTextContent("Copied the deck list: 2 lines.");
+    vi.unstubAllGlobals();
+  });
+
   it("downloads the buy list under the file name the API gives (D-309)", async () => {
     exportDeck.mockResolvedValue({ text: "3 Soul Warden\n", fileName: "deck-buy-list.txt" });
     const create = vi.fn(() => "blob:x");
-    vi.stubGlobal("URL", { ...URL, createObjectURL: create, revokeObjectURL: vi.fn() });
+    const revoke = vi.fn();
+    vi.stubGlobal("URL", { ...URL, createObjectURL: create, revokeObjectURL: revoke });
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
     render(<ExportPanel deck={deck} byId={byId} />);
     await userEvent.click(screen.getByRole("button", { name: "Download buy list" }));
     expect(exportDeck).toHaveBeenCalledWith({ deckId: "d1", format: ExportFormat.BUY_LIST_TEXT }, expect.objectContaining({ timeoutMs: expect.any(Number) }));
     expect(await screen.findByRole("status")).toHaveTextContent("Saved deck-buy-list.txt: 1 lines.");
     expect(click).toHaveBeenCalledTimes(1);
+    // Safari reads the URL after the click, so the release waits (D-935).
+    expect(revoke).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
     click.mockRestore();
   });

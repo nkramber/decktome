@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import { deckClient } from "../../lib/api";
+import { copyText } from "../../lib/clipboard";
 import { errorMessage } from "../../lib/errors";
 import { type BuyRow, buyRows, downloadText } from "./buy-list";
 
@@ -45,10 +46,15 @@ export function ExportPanel({ deck, byId }: { deck: Deck; byId: Map<string, Card
     try {
       // The wait is bounded. An export that never answers releases the
       // panel and says so, rather than leave every button dead (F-83).
-      const res = await deckClient.exportDeck({ deckId: deck.id, format }, { timeoutMs: exportTimeoutMs });
+      const req = deckClient.exportDeck({ deckId: deck.id, format }, { timeoutMs: exportTimeoutMs });
+      // The copy starts inside the click, before the answer (D-935).
+      const copied = action === "copy" ? copyText(req.then((r) => r.text)) : undefined;
+      // A failed request rejects the copy too, and the catch below reports it once.
+      copied?.catch(() => undefined);
+      const res = await req;
       const lines = res.text.split("\n").filter((l) => l.trim() !== "").length;
-      if (action === "copy") {
-        await navigator.clipboard.writeText(res.text);
+      if (copied) {
+        await copied;
         setStatus(`Copied the ${formatLabel[format]}: ${lines} lines.`);
       } else {
         downloadText(res.fileName, res.text);

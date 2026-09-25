@@ -7,6 +7,7 @@ import { useParams } from "react-router";
 
 import { Button } from "../../components/ui/button";
 import { deckClient } from "../../lib/api";
+import { copyText } from "../../lib/clipboard";
 import { errorMessage } from "../../lib/errors";
 import { CardGroup } from "../deck/deck-view";
 import { formatLabel, groupByRole, roleLabel } from "../deck/deck-stats";
@@ -145,10 +146,15 @@ function SharedExport({ token }: { token: string }) {
     setError("");
     setStatus("");
     try {
-      const res = await deckClient.exportSharedDeck({ token });
+      const req = deckClient.exportSharedDeck({ token });
+      // The copy starts inside the click, before the answer (D-935).
+      const copied = action === "copy" ? copyText(req.then((r) => r.text)) : undefined;
+      // A failed request rejects the copy too, and the catch below reports it once.
+      copied?.catch(() => undefined);
+      const res = await req;
       const lines = res.text.split("\n").filter((l) => l.trim() !== "").length;
-      if (action === "copy") {
-        await navigator.clipboard.writeText(res.text);
+      if (copied) {
+        await copied;
         setStatus(`Copied the deck list: ${lines} lines.`);
       } else {
         downloadText(res.fileName, res.text);
