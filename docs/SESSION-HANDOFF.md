@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Codex records Ready for owner merge at `36dd4e9`. No finding stays open. The review-gate check must pass after the record reaches the branch.
+**The review.** Gitar approves head `36dd4e9` with no finding and no review thread. The review record `docs/reviews/pr-234.md` reads Ready for owner merge at `36dd4e9`, with no finding. Pending the auto-merge.
 
 **What waits on the owner.**
 
