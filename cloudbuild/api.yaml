@@ -4,7 +4,7 @@
 # Cloud Build has its own free tier of 2,500 build-minutes a month, apart
 # from the Actions minutes of GitHub, and a minute costs less there.
 #
-# Cloud Build has no queue, so the build of an older merge can finish
+# The two triggers run apart, so the build of an older merge can finish
 # last. The guard skips each deploy step when the live API runs a later
 # commit (REV-072). docs/tools/deploy_order.py holds the rules.
 steps:
@@ -107,6 +107,8 @@ steps:
 substitutions:
   _REGION: us-central1
 
+# The default pool runs 10 build CPUs at a time. The web build takes the
+# other 2, so the two builds run together (F-175, D-948).
 options:
   logging: CLOUD_LOGGING_ONLY
   machineType: E2_HIGHCPU_8

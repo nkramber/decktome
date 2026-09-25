@@ -10,7 +10,7 @@
 # The four VITE_FIREBASE_ values reach the browser in the bundle, so they
 # are plain substitutions and never secrets.
 #
-# Cloud Build has no queue, and the API has its own trigger. So the guard
+# The API has its own trigger, so the two builds run apart. The guard
 # waits for the API of a merge that changed it, and it skips the release
 # when the live web runs a later commit (REV-072). /version.json names the
 # commit of the live web. docs/tools/deploy_order.py holds the rules.
@@ -94,9 +94,12 @@ substitutions:
   _FIREBASE_PROJECT_ID: decktome-prod
   _FIREBASE_APP_ID: "1:492774632746:web:6908f4f365bf98766e8253"
 
+# The default pool runs 10 build CPUs at a time, and the API build takes 8.
+# So the web takes 2, and the two builds run together. With 8 here, the
+# guard waited for an API build that did not start (F-175, D-948).
 options:
   logging: CLOUD_LOGGING_ONLY
-  machineType: E2_HIGHCPU_8
+  machineType: E2_STANDARD_2
 
 # The guard can wait 25 minutes for the API of the merge.
 timeout: 3600s

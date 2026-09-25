@@ -12,6 +12,50 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-25e
+
+**Pull request #232, M-20, measures five sessions on the new files, and adds the checkpoint rule (D-946, D-947).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: fix F-175, the web guard that waits for an API build that can not start. Then the end of the review report.
+
+**The base.** `main` is `b65ca6a`, from #231.
+
+**The change.**
+
+- M-20 measured the author sessions of #227 to #231, and all 47 sessions since D-749. A new session at 300K saves 34.8 percent of the input tokens of the five, and 18.0 percent over all 47.
+- The owner adopted the checkpoint rule at 300K (D-946). The hook `.claude/hooks/context_checkpoint.py` tells the session, and section 4 of the `one-pr-one-session` skill holds the steps.
+- No paid target ran.
+
+**The deploy of b65ca6a, read 2026-09-25.**
+
+- The first `deploy-web` build ran as `web-deployer`, and no step read a 403. So REV-069 holds.
+- Its guard waited 1,500 seconds for the API build, which did not start, and failed at 20:17 UTC (F-175). The API build then ended SUCCESS.
+- The owner chose a second run of `deploy-web` (D-947). It released the web at 20:26 UTC.
+- `/readyz` and `/version.json` name b65ca6a. The guards read git, so the Cloud SDK image holds git.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approved the current head, `4e5cb69`. Codex reads Ready for owner merge at that head. `make verify` passed with Node 22.23.2. No paid target ran. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The fix of F-175, in its own pull request.
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 5 and 6, and OQ-67 and OQ-77.
+
+### 2026-09-25c: twenty-two findings of the review, PR-80
+
+**The owner asked for as many corrections of the review report as one session can finish, then for three more.** The owner accepted the hour of REV-035, chose strict checks and a narrow web account, and asked for the fix of REV-073. The permission classifier refused the custom role of the web account, so the trigger stays on `gh-deployer`. The owner chose a soft delete for REV-036. GitHub reads a skipped job as a pass, so the review gate job takes no condition (D-928).
+
 ## The resume section of 2026-09-25d
 
 **Pull request #231, PR-81, corrects REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-945).**

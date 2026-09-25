@@ -1,9 +1,10 @@
 """Order the deploys of the API and the web, and skip a stale deploy (REV-072).
 
-Two Cloud Build triggers deploy the API and the web (D-584). Cloud Build
-has no queue, so the build of an older merge can finish last, and the web
-of a merge can go live before its API. Each build runs this script before
-its deploy step:
+Two Cloud Build triggers deploy the API and the web (D-584). The two
+builds run apart, so the build of an older merge can finish last, and the
+web of a merge can go live before its API. The default pool runs 10 build
+CPUs at a time, so the web build takes 2 and the API build 8 (D-948).
+Each build runs this script before its deploy step:
 
 - `api-guard`: the API build skips its deploy when the live API runs a
   newer commit.
