@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar and Codex wait for the first push. Pending the auto-merge.
+**The review.** Gitar approves head `c1ca25b`. The review record reads Ready for owner merge. No finding stays open. Pending the auto-merge.
 
 **What waits on the owner.**
 
