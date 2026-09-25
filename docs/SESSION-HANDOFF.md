@@ -33,7 +33,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Waits for Gitar and Codex.
+**The review.** Codex found P2-1 and requires changes on effective head `44d2fb05e2f86cd22219f4c57361d8ab3b9b1ac8`.
 
 **What waits on the owner.**
 
