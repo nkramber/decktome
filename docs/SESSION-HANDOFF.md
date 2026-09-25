@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-25e)
 
-**Pull request #PRNUM, M-20, measures five sessions on the new files, and adds the checkpoint rule (D-946, D-947).**
+**Pull request #232, M-20, measures five sessions on the new files, and adds the checkpoint rule (D-946, D-947).**
 
 Author provider: Claude Code
 
@@ -113,7 +113,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **M-20: five sessions on the new files, and the checkpoint rule** (D-946). This pull request is #PRNUM.
+1. **M-20: five sessions on the new files, and the checkpoint rule** (D-946). This pull request is #232.
 2. **F-175: the web guard waits for an API build that can not start.** The builds of this project start one at a time. Fix the guard in its own pull request, then read the next deploy of a merge that changes the API. Then end the review report of D-901. It sits at `.local/reviews/repository-review-2026-09-24.md`, outside git, and its section 8.2 gives the order. Builds `d4c2e100` and `1b9fbb10` prove REV-069. Mark each finding `COMPLETE - PR #N`.
 3. **M-19: replay the owned-only shortlist of the thumbs down of 2026-09-24** (F-174, D-881). It is free. Read the session and the deck of the snapshot, and the local collection export. Keep the export out of git.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.

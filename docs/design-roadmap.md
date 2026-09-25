@@ -2307,7 +2307,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a user who stops a build or reloads during one reads that the deck comes. The page shows the deck when it lands. The live site and the live API also go live in the right order. When an old build replaces a newer one, the old build fails and says which build to run again.
 
-**M-20: Five sessions on the new files, and the checkpoint rule (F-155, D-750, D-946).** ✅ merged as #PRNUM. The mark comes before any review (D-822).
+**M-20: Five sessions on the new files, and the checkpoint rule (F-155, D-750, D-946).** ✅ merged as #232. The mark comes before any review (D-822).
 The audit of F-155 read ten sessions before D-749. This measurement repeats its method on the five author sessions of #227 to #231, and on all 47 sessions since D-749. `docs/reference/context-budget-2026-09-25.md` holds the numbers.
 
 - **The result.** The median context of one call fell from 397K to 259K tokens. A new session at 300K saves 34.8 percent of the input tokens of the five sessions, and 18.0 percent over all 47.
