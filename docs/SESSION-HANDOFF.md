@@ -25,7 +25,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approved the current effective head, `da75656`. Codex reads Ready for owner merge at `da75656`. P1-1 is an accepted risk under D-945. It is the only finding, and it is not open. `make verify` passed. No paid target ran, and no deploy ran.
+**The review.** Gitar approved the current effective head, `da75656`. Codex reads Ready for owner merge at `da75656`. P1-1 is an accepted risk under D-945. It is the only finding, and it is not open. `make verify` passed. No paid target ran, and no deploy ran. Pending the auto-merge.
 
 **What waits on the owner.**
 
