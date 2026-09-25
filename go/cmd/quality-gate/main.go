@@ -34,6 +34,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -53,10 +54,10 @@ import (
 	"github.com/nkramber/decktome/go/internal/quality"
 )
 
-// The bars.
+// The bars, which the daily refit reads too (D-927).
 const (
-	barGreatOverBaseline = 0.90
-	barBaselineOverBad   = 0.95
+	barGreatOverBaseline = quality.BarGreatOverBaseline
+	barBaselineOverBad   = quality.BarBaselineOverOwn
 	commanderOffer       = 3
 )
 
@@ -114,18 +115,14 @@ func run() error {
 	} else {
 		model, rep, err = quality.FitStore(ctx, store, idx, start.UTC(), log, *floor)
 	}
-	if err != nil && model == nil {
+	// A bar refusal of -write keeps the model for the report, which
+	// reads FAIL. Any other error ends the run (D-927).
+	if err != nil && (model == nil || !errors.Is(err, quality.ErrBarFailed)) {
 		return fmt.Errorf("quality gate: %w", err)
 	}
-	day, err := meta.LatestCommandersDay(ctx, store)
+	day, reads, err := meta.CommandersForFit(ctx, store)
 	if err != nil {
 		return err
-	}
-	var reads []meta.Commander
-	if day != "" {
-		if reads, err = meta.ReadCommanders(ctx, store, day); err != nil {
-			return err
-		}
 	}
 	offer, offerErr := offerAtBracketFive(idx, model)
 	var reader *readerRead
@@ -213,7 +210,7 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 	p("\n")
 
 	// The pair bars per format.
-	words := []string{meta.FormatCommander, meta.FormatStandard, meta.FormatModern}
+	words := quality.BarFormats
 	p("## Separation on the holdout" + "\n")
 	p("\n")
 	folds := 0
