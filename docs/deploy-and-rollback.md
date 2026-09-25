@@ -15,10 +15,11 @@ Cloud Build builds and releases every merge to `main` (D-584). No step of sectio
 
 A merge of documents alone starts no build at all.
 
-Cloud Build has no queue, and the two triggers run apart. So each build reads the live commit before its deploy (REV-072, D-943). `/readyz` names the commit of the API in `version`, and `/version.json` names the commit of the web. `docs/tools/deploy_order.py` holds the rules:
+The two triggers run apart, so the build of an older merge can finish last. So each build reads the live commit before its deploy (REV-072, D-943). `/readyz` names the commit of the API in `version`, and `/version.json` names the commit of the web. `docs/tools/deploy_order.py` holds the rules:
 
 - The API build skips its deploy, its jobs, and its check when the live API runs a later commit. The step `guard` writes `/workspace/.deploy-skip`, and each later step reads it.
 - The web build of a merge that changed `go/` or `docker/` waits for the API of that commit, or a later one. The wait stops at 25 minutes, and the web build then fails. So a failed API build also stops the web of its merge.
+- The regional default pool runs 10 build CPUs at a time, and Cloud Build queues a build above that quota. The API build takes 8 CPUs and the web build takes 2, so the two builds of one merge run together (F-175, D-948). A test of `docs/tools/test_deploy_order.py` fails when the two build files ask for more.
 - The web build skips its release when the live web runs a later commit.
 - The API check waits until `/readyz` reads `ok` with the commit of the build or a later one. The web check reads `/version.json` with the same rule, because a later merge can deploy first.
 

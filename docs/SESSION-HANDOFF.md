@@ -6,37 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-25e)
+## RESUME HERE (2026-09-25f)
 
-**Pull request #232, M-20, measures five sessions on the new files, and adds the checkpoint rule (D-946, D-947).**
+**Pull request #233, PR-82, fixes F-175: the web build runs on 2 CPUs, so the two builds of one merge run together (D-948).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2: fix F-175, the web guard that waits for an API build that can not start. Then the end of the review report.
+**The next step.** Next step 2: read the next deploy of a merge that changes the API and the web. Then end the review report of D-901.
 
-**The base.** `main` is `b65ca6a`, from #231.
+**The base.** `main` is `8d4b017`, from #232.
+
+**The cause.** The regional default pool of `us-central1` runs 10 build CPUs at a time, read 2026-09-25 in the Service Usage API. Each build asked for 8, so the second build of each merge waited in the queue. Every pair of builds since 2026-09-24 started one after the other. For b65ca6a, the API build started at 20:18:20 UTC, one minute after the web guard failed.
 
 **The change.**
 
-- M-20 measured the author sessions of #227 to #231, and all 47 sessions since D-749. A new session at 300K saves 34.8 percent of the input tokens of the five, and 18.0 percent over all 47.
-- The owner adopted the checkpoint rule at 300K (D-946). The hook `.claude/hooks/context_checkpoint.py` tells the session, and section 4 of the `one-pr-one-session` skill holds the steps.
-- No paid target ran.
-
-**The deploy of b65ca6a, read 2026-09-25.**
-
-- The first `deploy-web` build ran as `web-deployer`, and no step read a 403. So REV-069 holds.
-- Its guard waited 1,500 seconds for the API build, which did not start, and failed at 20:17 UTC (F-175). The API build then ended SUCCESS.
-- The owner chose a second run of `deploy-web` (D-947). It released the web at 20:26 UTC.
-- `/readyz` and `/version.json` name b65ca6a. The guards read git, so the Cloud SDK image holds git.
+- The web build uses `E2_STANDARD_2`, and the API build keeps `E2_HIGHCPU_8`. The sum is 10 CPUs (D-948).
+- `BuildMachinesTest` of `docs/tools/test_deploy_order.py` fails when the two build files ask for more than 10 CPUs. It failed on the base with 16.
+- The text "Cloud Build has no queue" was wrong. The build files, the guard script, and `docs/deploy-and-rollback.md` now say that the two builds run apart.
+- This merge starts no build, because no trigger reads `cloudbuild/` or `docs/tools/`. No paid target ran.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approved the current head, `4e5cb69`. Codex reads Ready for owner merge at that head. `make verify` passed with Node 22.23.2. No paid target ran. Pending the auto-merge.
+**The review.** Gitar and Codex wait for the first push. Pending the auto-merge.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- The fix of F-175, in its own pull request.
 - After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
@@ -103,6 +98,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - The deployed API, read 2026-09-25: Cloud Build `8ac189b0` of `deploy-api` built `b65ca6a`, from #231, and ended SUCCESS at 20:22:57 UTC. `mtg-api-00084-gjc` serves all traffic, and `/readyz` names the commit. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
 - The deployed web app, read 2026-09-25: build `1b9fbb10` of `deploy-web` built `b65ca6a` as `web-deployer`, and ended SUCCESS at 20:26:06 UTC. The site serves Hosting version `35b29aa5da9911f1` of 20:26:00 UTC, and `index.html` loads `assets/index-B2Ct3CUm.js`. `/version.json` names the commit. The release before it is `733ed6a0ffc1ef49`, from #230.
+- The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The deployed quality model, read 2026-09-24: `20260924T061156Z`, from the meta job that ran from 06:00:50 to 06:19:52 UTC on `worker:fa05e3c`. Its Commander fit read 25,851 lists and used 9,244, with `immaterial` 224 and accuracy 0.5595. It holds the rates of 225 commanders, and Najeela reads 64 lists and 169 cards (D-839). The EDHREC pass read nothing, because it ran on 2026-09-21. The mtgjson source read no list, because its deck list version differs from the stored table.
@@ -113,8 +109,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **M-20: five sessions on the new files, and the checkpoint rule** (D-946). This pull request is #232.
-2. **F-175: the web guard waits for an API build that can not start.** The builds of this project start one at a time. Fix the guard in its own pull request, then read the next deploy of a merge that changes the API. Then end the review report of D-901. It sits at `.local/reviews/repository-review-2026-09-24.md`, outside git, and its section 8.2 gives the order. Builds `d4c2e100` and `1b9fbb10` prove REV-069. Mark each finding `COMPLETE - PR #N`.
+1. **PR-82: the two builds of one merge run together** (F-175, D-948). This pull request is #233.
+2. **Read the next deploy of a merge that changes the API and the web** (F-175, D-948). Both builds must start at its create time, and the web guard must pass. Then end the review report of D-901. It sits at `.local/reviews/repository-review-2026-09-24.md`, outside git, and its section 8.2 gives the order. Builds `d4c2e100` and `1b9fbb10` prove REV-069. Mark each finding `COMPLETE - PR #N`.
 3. **M-19: replay the owned-only shortlist of the thumbs down of 2026-09-24** (F-174, D-881). It is free. Read the session and the deck of the snapshot, and the local collection export. Keep the export out of git.
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-174. PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. Session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses each read under `users/`. So a replay reads a local ManaBox export, which stays out of git (D-756).
@@ -136,10 +132,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-25c: twenty-two findings of the review, PR-80
-
-**The owner asked for as many corrections of the review report as one session can finish, then for three more.** The owner accepted the hour of REV-035, chose strict checks and a narrow web account, and asked for the fix of REV-073. The permission classifier refused the custom role of the web account, so the trigger stays on `gh-deployer`. The owner chose a soft delete for REV-036. GitHub reads a skipped job as a pass, so the review gate job takes no condition (D-928).
-
 ### 2026-09-25d: two findings of the review, PR-81
 
 **The owner asked for the next corrections of the review report, with no rule of one concern.** The owner then added REV-069 and approved its three remote writes. The owner chose guards in the two build files for REV-072, because one pipeline runs `pnpm install` as an account with `roles/run.admin` again (D-943). The API image carried no commit, so `/readyz` read `dev` in production. On the deck page, a second read of the chat ended the build flag first. So the watch holds until its own read (D-942).
@@ -148,6 +140,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for next step 3: measure five sessions, then ask about the checkpoint rule.** The session read the deploy of b65ca6a first. Its web guard waited for an API build that did not start, and the owner chose a second web run (F-175, D-947). The measurement found 34.8 percent of the input saved on the five sessions, and the owner adopted the rule at 300K (D-946). The line of D-750 never fired, so a hook now tells the session.
 
+### 2026-09-25f: the two builds of one merge, PR-82
+
+**The owner asked for next step 2: fix F-175.** The build list showed that the second build of each merge started when the first ended. The Service Usage API read a quota of 10 build CPUs in the default pool, and each build asked for 8. The quotas page says that no request raises it. The owner chose 2 CPUs for the web build, and kept 8 for the API (D-948).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25d, the records of 2026-08-31 to 2026-09-25b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25e, the records of 2026-08-31 to 2026-09-25c, and 104 more sections, word for word. Read it for the detail behind a decision.

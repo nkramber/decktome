@@ -306,5 +306,31 @@ class BuildFilesTest(unittest.TestCase):
         self.assertIn("deploy_order.py web-order", got["check"])
 
 
+# The CPUs of each machine type of the Cloud Build API, and the CPU quota of
+# the regional default pool of the project (D-948).
+MACHINE_CPUS = {"E2_MEDIUM": 1, "E2_STANDARD_2": 2, "E2_HIGHCPU_8": 8, "E2_HIGHCPU_32": 32}
+POOL_CPUS = 10
+
+
+def machine(path):
+    """Return the machineType of the options of a Cloud Build file."""
+    with open(os.path.join(ROOT, path), encoding="utf-8") as f:
+        for line in f:
+            if line.strip().startswith("machineType:"):
+                return line.split(":", 1)[1].strip()
+    return None
+
+
+class BuildMachinesTest(unittest.TestCase):
+    """The two builds of one merge fit the pool together, or the web guard waits for an API build that can not start (F-175)."""
+
+    def test_the_two_builds_fit_the_pool(self):
+        got = {p: machine(p) for p in ("cloudbuild/api.yaml", "cloudbuild/web.yaml")}
+        for path, name in got.items():
+            with self.subTest(path=path):
+                self.assertIn(name, MACHINE_CPUS, f"{path}: name each machineType of the file here")
+        self.assertLessEqual(sum(MACHINE_CPUS[n] for n in got.values()), POOL_CPUS, got)
+
+
 if __name__ == "__main__":
     unittest.main()

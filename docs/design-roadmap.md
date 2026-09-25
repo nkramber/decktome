@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-25 correction pass 230 (PR-82, F-175, D-948): the default pool of Cloud Build runs 10 build CPUs at a time, and each build asked for 8. So the web build now takes 2, and the two builds of one merge run together. Changes: F-175, PR-82, sequencing step 74.
+
 2026-09-25 correction pass 229 (F-155, F-175, M-20, D-946, D-947): M-20 measured five sessions on the files of D-749. The owner adopted the checkpoint rule at 300K tokens, and a hook tells the session. The deploy of b65ca6a found F-175. Changes: F-155, F-175, M-19, M-20, sequencing step 73.
 
 2026-09-25 correction pass 228 (PR-80, D-925 to D-941): the system map named a Firestore store for the cards and for the meta weights, and BigQuery for the evals. No code writes any of them, so each one reads REFUTED. The cost model named two services, and the deployment holds one service and two jobs. The guardrail summary counted seventeen of nineteen.
@@ -523,7 +525,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-172 | **A new read of an imported deck leaves the power of its session behind.** `ReadImportBracket` stores the new power on the deck alone. A revise turn reads the power slot of the session, so it reads the floor of a Commander estimate, or no step of a 60-card import. Found 2026-09-23 in the work of PR-71. | ✅ closes with PR-71 (D-870). A new read writes the power into the power slot of the session. |
 | F-173 | **A confirm run with no failing case still starts the fixer.** `case-check` exits 1 when one case or more does not read fail, and `scripts/feedback-loop.sh` sent that gate to the fixer. So the live cycle of PR-73 ran the fixer and a measure run on case 16, which passed before the fix. The cycle ended with 0, and its evidence read that every case passes. The measure run cost $0.0726 for nothing. Found 2026-09-24 in the live cycle. | ✅ closes with PR-73 (D-880). `case-check` exits 3 when no case fails before the fix, and the cycle stops before the fixer with 1. |
 | F-174 | **An owned-only Commander deck at bracket 4 holds 24 basic lands, and a bracket case can not show the fault.** The thumbs down of 2026-09-24 names Island with the reason `wrong_power`. The deck of Hope Estheim holds 14 Island, 10 Plains, and 9 fixing lands, at the fixing floor of 9 (D-799). The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. A bracket case builds with any card, and its two builds held 20 fixing lands. So the triage wrote a case that passed before the fix. Found 2026-09-24 in PR-73. | 🔧 planned. M-19 replays the owned-only shortlist for free, before any fix (D-881). |
-| F-175 | **The web guard of a merge that changes the API can wait for an API build that can not start.** The builds of this project start one at a time: in each of the four merges of 2026-09-25 before b65ca6a, the second build started after the first ended. The guard of D-943 assumes that both run together. For b65ca6a the web build started first, and its guard polled 100 times for the API. It failed at its limit of 1,500 seconds at 20:17 UTC. The API build then started, and it ended SUCCESS at 20:22:57 UTC. A second run of `deploy-web` released the web at 20:26 UTC (D-947). So each merge that changes the API loses its web deploy when the web build starts first. The guard did read the change with git, so the Cloud SDK image holds git. Found 2026-09-25 in M-20. | 🔧 planned. A fix of the guard waits for its own pull request. |
+| F-175 | **The web guard of a merge that changes the API can wait for an API build that can not start.** The builds of this project start one at a time: in each of the four merges of 2026-09-25 before b65ca6a, the second build started after the first ended. The guard of D-943 assumes that both run together. For b65ca6a the web build started first, and its guard polled 100 times for the API. It failed at its limit of 1,500 seconds at 20:17 UTC. The API build then started, and it ended SUCCESS at 20:22:57 UTC. A second run of `deploy-web` released the web at 20:26 UTC (D-947). So each merge that changes the API loses its web deploy when the web build starts first. The guard did read the change with git, so the Cloud SDK image holds git. Found 2026-09-25 in M-20. | ✅ PR-82, #233 (D-948). The regional default pool runs 10 build CPUs at a time, and each build asked for 8. The web build now takes 2. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2322,6 +2324,23 @@ Gate:
 - `make verify` passes.
 > *In plain English:* a long session costs more with each step, because each step reads all the work before it. Now a session that grows too long hands its work to a new session. That saves about a third of the cost of a long session.
 
+**PR-82: The two builds of one merge run together (F-175, D-948).** ✅ merged as #233. The mark comes before any review (D-822).
+The web guard of D-943 waits for the API build of its merge. The regional default pool of `us-central1` runs 10 build CPUs at a time, and each build asked for 8. So a web build that started first waited for an API build that did not start before the web build ended.
+
+- **The fix.** The web build uses `E2_STANDARD_2`, with 2 CPUs, and the API build keeps `E2_HIGHCPU_8`. The sum is 10 (D-948).
+- **The test.** `BuildMachinesTest` fails when the two build files ask for more than 10 CPUs. It fails on the base with 16.
+- **The text.** The build files, `docs/tools/deploy_order.py`, and `docs/deploy-and-rollback.md` said that Cloud Build has no queue. Cloud Build queues a build above the quota, so the text now says that the two builds run apart.
+- **The limit.** Two merges that change the API a few minutes apart can hold two waiting web builds. The next API build then waits, and one web guard can reach its time limit.
+- **The proof.** This merge starts no build. The next merge that changes the API and the web must start both builds together, and its web guard must pass.
+
+Gate:
+
+- The new test fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* a merge starts one build for the site and one for the server. The two builds did not fit together, so the site build waited for a server build that did not start. Now the site build uses a smaller machine, and the two builds fit together.
+
 **M-19: The owned-only shortlist of the thumbs down of 2026-09-24 (F-174, D-881).** 🔧 planned. It waited for the measurement of five sessions (D-750, D-890), and M-20 made it.
 The deck of Hope Estheim holds 24 basic lands at bracket 4. The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. The replay finds the step that left them out.
 
@@ -2702,6 +2721,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 71. **PR-80** twenty-two P3 findings of the repository review of 2026-09-24 (D-925 to D-941). No paid target ran.
 72. **PR-81** REV-046, REV-069, and REV-072 of the repository review of 2026-09-24 (D-942 to D-945). No paid target ran.
 73. **M-20** five sessions on the new files, and the checkpoint rule (D-750, D-946). No paid target ran.
+74. **PR-82** the two builds of one merge run together (F-175, D-948). No paid target ran.
 
 ## 9. Open questions
 
