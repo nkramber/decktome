@@ -140,8 +140,8 @@ func (s *Server) UpdateSession(ctx context.Context, req *connect.Request[mtgv1.U
 	return connect.NewResponse(&mtgv1.UpdateSessionResponse{Session: sum}), nil
 }
 
-// DeleteSession removes a conversation for good (D-433). The decks it
-// built stay. A session with a build in flight waits: the build writes
+// DeleteSession removes a conversation and the decks it built, for good
+// (D-433, D-456). A session with a build in flight waits: the build writes
 // its deck id onto the session when it ends, and a delete under it
 // would bring the session back half-written.
 func (s *Server) DeleteSession(ctx context.Context, req *connect.Request[mtgv1.DeleteSessionRequest]) (*connect.Response[mtgv1.DeleteSessionResponse], error) {

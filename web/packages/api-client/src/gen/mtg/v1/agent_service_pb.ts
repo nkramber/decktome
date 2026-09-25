@@ -662,8 +662,9 @@ export const AgentService: GenService<{
     output: typeof UpdateSessionResponseSchema;
   },
   /**
-   * DeleteSession removes a conversation for good. The decks it built
-   * stay (roadmap PR-19).
+   * DeleteSession removes a conversation and every deck it built, for
+   * good (roadmap PR-19, D-456). It refuses while a build of the
+   * conversation runs (D-922).
    *
    * @generated from rpc mtg.v1.AgentService.DeleteSession
    */

@@ -33,6 +33,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/nkramber/decktome/go/internal/gatekit"
@@ -54,7 +55,7 @@ func main() {
 
 func run() error {
 	root := flag.String("root", "..", "the repo root the triage reads and writes under")
-	in := flag.String("in", "", "a harvest JSONL file. Empty reads the newest one")
+	in := flag.String("in", "", "a harvest JSONL file. Empty reads every harvest no live -apply triage read")
 	out := flag.String("out", "", "write the triage document here")
 	dry := flag.Bool("dry", false, "call no model. A verdict the reason keys can not place keeps its need and writes no case")
 	apply := flag.Bool("apply", false, "write each case into the file that owns it")
@@ -72,22 +73,26 @@ func run() error {
 		return err
 	}
 
-	path := *in
-	if path == "" {
-		p, err := triage.NewestHarvest(*root)
+	paths := []string{*in}
+	if *in == "" {
+		pending, err := triage.PendingHarvests(*root)
 		if err != nil {
 			return err
 		}
-		if p == "" {
-			return fmt.Errorf("no harvest under %s. Run make feedback-harvest first", filepath.Join(*root, harvest.Dir))
+		if len(pending) == 0 {
+			return fmt.Errorf("no harvest under %s that a triage did not apply. Run make feedback-harvest first", filepath.Join(*root, harvest.Dir))
 		}
-		path = p
+		paths = pending
 	}
-	recs, err := triage.ReadHarvest(path)
-	if err != nil {
-		return err
+	var recs []harvest.Record
+	for _, path := range paths {
+		part, err := triage.ReadHarvest(path)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "harvest      %s, %d verdict(s)\n", path, len(part))
+		recs = append(recs, part...)
 	}
-	fmt.Fprintf(os.Stderr, "harvest      %s, %d verdict(s)\n", path, len(recs))
 
 	quiet := gatekit.Quiet()
 	// The card index names a commander and a card. It is free and local,
@@ -132,12 +137,19 @@ func run() error {
 		if err := applyCases(*root, results); err != nil {
 			return err
 		}
+		// A dry run writes no case for a verdict that needs the judge, so
+		// only a live run marks its harvests read (REV-082).
+		if !*dry {
+			if err := triage.MarkTriaged(*root, paths); err != nil {
+				return err
+			}
+		}
 	}
 	// The manifest names the cases a gate measures, whether or not this
 	// run wrote them into a gate file. So the plan of a dry cycle reads
 	// the same list the live one acts on.
 	if *manifest != "" {
-		m := triage.ManifestOf(path, time.Now().UTC(), results)
+		m := triage.ManifestOf(strings.Join(paths, ", "), time.Now().UTC(), results)
 		if err := triage.WriteManifest(*manifest, m); err != nil {
 			return err
 		}

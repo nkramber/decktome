@@ -245,18 +245,22 @@ func newestDoc(docs, prefix string) (string, error) {
 // lastCost is the cost of the newest full run file of a suite, or the
 // fallback. A rerun of one prompt holds fewer items than a full run,
 // and its cost is no estimate of the next full run, so the newest run
-// among the ones with the most items answers.
+// among the ones with the most items answers. A rejudge builds no deck,
+// so its cost is no estimate either (REV-076).
 func lastCost(headers []fileHeader, suite string, fallback float64) float64 {
+	counts := func(fh fileHeader) bool {
+		return fh.header.Suite == suite && fh.header.CostUSD != nil && fh.header.Versions["rejudge_of"] == ""
+	}
 	most := 0
 	for _, fh := range headers {
-		if fh.header.Suite == suite && fh.header.CostUSD != nil && fh.items > most {
+		if counts(fh) && fh.items > most {
 			most = fh.items
 		}
 	}
 	best := ""
 	var bestHeader evalrun.Header
 	for _, fh := range headers {
-		if fh.header.Suite != suite || fh.header.CostUSD == nil || fh.items < most {
+		if !counts(fh) || fh.items < most {
 			continue
 		}
 		if best == "" || runLess(bestHeader, fh.header) {

@@ -375,3 +375,28 @@ func TestSweepPlansUnderTheCap(t *testing.T) {
 		t.Error("a sweep with no cap planned")
 	}
 }
+
+// TestLastCostSkipsARejudge: a rejudge reads the stored decks again and
+// builds none, so its cost is no estimate of a whole build (REV-076).
+func TestLastCostSkipsARejudge(t *testing.T) {
+	cost := func(v float64) *float64 { return &v }
+	build := fileHeader{name: "run31.jsonl", items: 25, header: evalrun.Header{Suite: "decks", RunID: "pr8-deck-gate-run31", Date: "2026-09-20", CostUSD: cost(2.83)}}
+	rejudge := fileHeader{name: "run34.jsonl", items: 25, header: evalrun.Header{Suite: "decks", RunID: "pr8-deck-gate-run34", Date: "2026-09-21", CostUSD: cost(0.4653),
+		Versions: map[string]string{"rejudge_of": "pr8-deck-gate-run31"}}}
+	tests := []struct {
+		name    string
+		headers []fileHeader
+		want    float64
+	}{
+		{"a build alone", []fileHeader{build}, 2.83},
+		{"a newer rejudge", []fileHeader{build, rejudge}, 2.83},
+		{"a rejudge alone", []fileHeader{rejudge}, 9.99},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := lastCost(tc.headers, "decks", 9.99); got != tc.want {
+				t.Errorf("lastCost = %v, want %v", got, tc.want)
+			}
+		})
+	}
+}

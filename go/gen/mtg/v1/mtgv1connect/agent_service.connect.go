@@ -63,8 +63,9 @@ type AgentServiceClient interface {
 	ListSessions(context.Context, *connect.Request[v1.ListSessionsRequest]) (*connect.Response[v1.ListSessionsResponse], error)
 	// UpdateSession writes the name (roadmap PR-19).
 	UpdateSession(context.Context, *connect.Request[v1.UpdateSessionRequest]) (*connect.Response[v1.UpdateSessionResponse], error)
-	// DeleteSession removes a conversation for good. The decks it built
-	// stay (roadmap PR-19).
+	// DeleteSession removes a conversation and every deck it built, for
+	// good (roadmap PR-19, D-456). It refuses while a build of the
+	// conversation runs (D-922).
 	DeleteSession(context.Context, *connect.Request[v1.DeleteSessionRequest]) (*connect.Response[v1.DeleteSessionResponse], error)
 	// ImportDeck stores a deck list that a user brings, and a session
 	// that the revise turn reads (PR-70, D-845, D-851).
@@ -186,8 +187,9 @@ type AgentServiceHandler interface {
 	ListSessions(context.Context, *connect.Request[v1.ListSessionsRequest]) (*connect.Response[v1.ListSessionsResponse], error)
 	// UpdateSession writes the name (roadmap PR-19).
 	UpdateSession(context.Context, *connect.Request[v1.UpdateSessionRequest]) (*connect.Response[v1.UpdateSessionResponse], error)
-	// DeleteSession removes a conversation for good. The decks it built
-	// stay (roadmap PR-19).
+	// DeleteSession removes a conversation and every deck it built, for
+	// good (roadmap PR-19, D-456). It refuses while a build of the
+	// conversation runs (D-922).
 	DeleteSession(context.Context, *connect.Request[v1.DeleteSessionRequest]) (*connect.Response[v1.DeleteSessionResponse], error)
 	// ImportDeck stores a deck list that a user brings, and a session
 	// that the revise turn reads (PR-70, D-845, D-851).
