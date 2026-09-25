@@ -614,10 +614,11 @@ func spendCapOverrides(logger *slog.Logger) map[string]float64 {
 	return out
 }
 
-// loadSnapshot installs the newest stored snapshot that loads, when the
-// newest version differs from lastVersion. LoadIndex falls back past a
-// version that does not load (REV-012). A load error keeps the old index
-// and the old version, so the next tick tries again.
+// loadSnapshot installs the newest stored snapshot when its version
+// differs from lastVersion. A load error keeps the old index and the old
+// version, so the next tick tries again. An instance with no index yet
+// serves the newest version that loads instead, and answers that version,
+// so the next tick tries the newest one again (REV-012).
 func loadSnapshot(ctx context.Context, store cards.Store, server *cardsvc.Server, lastVersion string, logger *slog.Logger) string {
 	current, err := store.LatestVersion(ctx)
 	if err != nil {
@@ -630,14 +631,20 @@ func loadSnapshot(ctx context.Context, store cards.Store, server *cardsvc.Server
 		}
 		return lastVersion
 	}
-	idx, err := cards.LoadIndex(ctx, store, logger)
+	idx, err := cards.LoadVersion(ctx, store, current, logger)
 	if err != nil {
 		logger.Error("snapshot load failed", "version", current, "err", err)
-		return lastVersion
+		if server.Current() != nil {
+			return lastVersion
+		}
+		older, loaded, ferr := cards.LoadNewest(ctx, store, logger)
+		if ferr != nil || older == nil {
+			return lastVersion
+		}
+		server.Swap(older)
+		return loaded
 	}
-	if idx != nil {
-		server.Swap(idx)
-	}
+	server.Swap(idx)
 	return current
 }
 

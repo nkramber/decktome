@@ -99,6 +99,22 @@ func TestLoadSnapshot(t *testing.T) {
 			t.Fatalf("broken snapshot replaced the index: v2=%q", v2)
 		}
 	})
+	// REV-012: a new instance with a broken newest version served no card
+	// data until the next version came.
+	t.Run("a cold start serves the version before a broken one", func(t *testing.T) {
+		store := cards.DirStore{Root: t.TempDir()}
+		writeVersion(t, store, "20260824T090000", false)
+		writeVersion(t, store, "20260825T090000", true)
+		server := cardsvc.New()
+		v := loadSnapshot(ctx, store, server, "", logger)
+		if v != "20260824T090000" || server.Current() == nil {
+			t.Fatalf("v=%q current=%v, want the older version served", v, server.Current())
+		}
+		first := server.Current()
+		if v2 := loadSnapshot(ctx, store, server, v, logger); v2 != v || server.Current() != first {
+			t.Errorf("the next tick moved to %q", v2)
+		}
+	})
 }
 
 func TestReloadLoop(t *testing.T) {

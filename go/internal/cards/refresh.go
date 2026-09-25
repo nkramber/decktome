@@ -371,16 +371,22 @@ func CheckVersion(ctx context.Context, store Store, version string) error {
 // when the store is empty, and the error of the newest version when no
 // version loads.
 func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, error) {
+	idx, _, err := LoadNewest(ctx, store, logger)
+	return idx, err
+}
+
+// LoadNewest is LoadIndex, and it also answers the version that loaded.
+func LoadNewest(ctx context.Context, store Store, logger *slog.Logger) (*Index, string, error) {
 	versions, err := store.ListVersions(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	sortByVersionTime(versions)
 	var first error
 	for i := len(versions) - 1; i >= 0; i-- {
-		idx, err := loadVersion(ctx, store, versions[i], logger)
+		idx, err := LoadVersion(ctx, store, versions[i], logger)
 		if err == nil {
-			return idx, nil
+			return idx, versions[i], nil
 		}
 		if first == nil {
 			first = err
@@ -388,11 +394,11 @@ func LoadIndex(ctx context.Context, store Store, logger *slog.Logger) (*Index, e
 		logger.Warn("cards index: a stored version did not load, so the version before it serves",
 			"version", versions[i], "err", err)
 	}
-	return nil, first
+	return nil, "", first
 }
 
-// loadVersion builds an Index from one stored version.
-func loadVersion(ctx context.Context, store Store, version string, logger *slog.Logger) (*Index, error) {
+// LoadVersion builds an Index from one stored version.
+func LoadVersion(ctx context.Context, store Store, version string, logger *slog.Logger) (*Index, error) {
 	start := time.Now()
 	asOf, err := VersionTime(version)
 	if err != nil {
