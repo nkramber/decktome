@@ -2252,7 +2252,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the second batch of review findings. A pasted list can stall the server, a stopped share link stayed live, and the fallback deploy took any branch. A false address beat the rate limit, and a bad or stale card file reached no one. The share page lost its commander, and a mention of cEDH set the top power level. Forty-four such faults are fixed here.
 
-**PR-79: Fourteen findings of the repository review of 2026-09-24 (D-920 to D-923).** 🔨 in progress. The mark comes before any review (D-822).
+**PR-79: Fourteen findings of the repository review of 2026-09-24 (D-920 to D-923).** ✅ merged as #229. The mark comes before any review (D-822).
 The owner asked for as many corrections as one session can finish (D-920). Each code finding has a regression test that fails before its correction.
 
 - **REV-008, the review gate.** A record on a head from a fork fails RG 3. The owner chose no signed record for now (D-920).
