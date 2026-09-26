@@ -621,17 +621,18 @@ func conversations() []conversation {
 	cs = append(cs, c36)
 
 	// A theme that matches no card asks for the theme again before the
-	// build (D-725). The reader answers with a theme that matches, and the
-	// key closes.
+	// build (D-725), and it asks alone (D-955). The reader answers with a
+	// theme that matches, and the key closes.
 	c37 := conversation{name: "a theme no card matches"}
 	c37.ctx = newCtx("an anime commander deck")
 	c37.ctx.Format, c37.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "anime"
 	c37.ctx.Filled["format"], c37.ctx.Filled["theme"] = true, true
 	c37.ctx.ThemeUnmatched, c37.ctx.BuyList = true, true
 	c37.steps = []step{
-		{want: []string{"theme_unmatched", "power_commander", "colors"}, fill: []string{"theme_unmatched", "colors"},
+		{want: []string{"theme_unmatched"}, fill: []string{"theme_unmatched"},
 			set: func(c *Context) { c.ThemeUnmatched, c.Theme = false, "dragons" }},
-		{want: []string{"budget", "commander"}, fill: []string{"power", "budget", "commander"},
+		{want: []string{"power_commander", "colors", "budget"}, fill: []string{"power", "colors", "budget"}},
+		{want: []string{"commander"}, fill: []string{"commander"},
 			set: func(c *Context) { c.CommanderSet = true }},
 	}
 	cs = append(cs, c37)

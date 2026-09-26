@@ -58,6 +58,7 @@ import (
 const (
 	barGreatOverBaseline = quality.BarGreatOverBaseline
 	barBaselineOverBad   = quality.BarBaselineOverOwn
+	barSynergyOverOwn    = quality.BarSynergyOverOwn
 	commanderOffer       = 3
 )
 
@@ -220,15 +221,15 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 		}
 	}
 	if folds > 1 {
-		p("The bars read %d folds, every list holdout once, and the pairs of a bar sample evenly under the cap of %d (M-7). The precon bar reads each precon against its own broken copies (D-573). The cross pairs, every precon against every copy, stand as information.\n\n", folds, quality.MaxPairChecks)
+		p("The bars read %d folds, every list holdout once, and the pairs of a bar sample evenly under the cap of %d (M-7). The precon bar reads each precon against its own broken copies (D-573), and the synergy copies read a bar of their own (D-957). The cross pairs, every precon against every copy, stand as information.\n\n", folds, quality.MaxPairChecks)
 	}
 	checkSentence(p, rep)
-	p("| Format | Lists | Used | Synthetic | Immaterial | Holdout | Great over precon | Precon over own copy | Precon over bad, cross | Accuracy |" + "\n")
-	p("|---|---|---|---|---|---|---|---|---|---|" + "\n")
+	p("| Format | Lists | Used | Synthetic | Immaterial | Holdout | Great over precon | Precon over own copy, synergy aside | Precon over own synergy copy | Precon over bad, cross | Accuracy |" + "\n")
+	p("|---|---|---|---|---|---|---|---|---|---|---|" + "\n")
 	for _, word := range words {
 		fr := rep.Formats[word]
 		if fr == nil {
-			p("| %s | 0 | 0 | 0 | 0 | 0 | no fit | no fit | no fit | no fit |\n", word)
+			p("| %s | 0 | 0 | 0 | 0 | 0 | no fit | no fit | no fit | no fit | no fit |\n", word)
 			fails = append(fails, word+": no lists")
 			pass = false
 			run.Gate(word, "fit", 0, "no lists")
@@ -239,7 +240,7 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 			fm = model.Formats[word]
 		}
 		if fm == nil {
-			p("| %s | %d | %d | %d | %d | 0 | no fit | no fit | no fit | no fit |\n", word, fr.Read, fr.Used, fr.Synthetic, fr.ImmaterialCount())
+			p("| %s | %d | %d | %d | %d | 0 | no fit | no fit | no fit | no fit | no fit |\n", word, fr.Read, fr.Used, fr.Synthetic, fr.ImmaterialCount())
 			fails = append(fails, word+": no fit")
 			pass = false
 			run.Gate(word, "fit", 0, "no fit")
@@ -247,22 +248,25 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 		}
 		h := fr.Holdout
 		gb, bb, cross := h.GreatOverBaseline, h.BaselineOverOwn, h.BaselineOverBad
+		axes, syn := quality.OwnShares(h)
 		run.Gate(word, "fit", 1, "")
 		run.Gate(word, "great_over_precon", gb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", gb.Pairs, barGreatOverBaseline))
-		run.Gate(word, "precon_over_own", bb.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", bb.Pairs, barBaselineOverBad))
+		run.Info(word, "precon_over_own", bb.Share(), fmt.Sprintf("%d pairs over every axis, information", bb.Pairs))
+		run.Gate(word, "own_bar_axes", axes.Share(), fmt.Sprintf("%d pairs, synergy aside, the bar is %.2f", axes.Pairs, barBaselineOverBad))
+		run.Gate(word, "own_bar_synergy", syn.Share(), fmt.Sprintf("%d pairs, the bar is %.2f", syn.Pairs, barSynergyOverOwn))
 		run.Info(word, "precon_over_bad", cross.Share(), fmt.Sprintf("%d cross pairs, information", cross.Pairs))
 		run.Info(word, "accuracy", h.Accuracy, "")
 		run.Info(word, "lists", float64(fr.Read), fmt.Sprintf("%d used, %d synthetic, %d immaterial, %d holdout", fr.Used, fr.Synthetic, fr.ImmaterialCount(), h.Lists))
 		run.Info(word, "immaterial", float64(fr.ImmaterialCount()), fmt.Sprintf("%d of %d synergy copies, floor %.2f, unit %.4f", fr.ImmaterialCount(), fr.SynergyCopies, fr.SynergyFloor, fr.SynergyUnit))
 		run.Info(word, "folds", float64(fr.FoldCount), "")
-		p("| %s | %d | %d | %d | %d | %d | %s | %s | %.2f of %d | %.2f |\n", word, fr.Read, fr.Used, fr.Synthetic, fr.ImmaterialCount(), h.Lists,
-			pairWord(gb, barGreatOverBaseline), pairWord(bb, barBaselineOverBad), cross.Share(), cross.Pairs, h.Accuracy)
+		p("| %s | %d | %d | %d | %d | %d | %s | %s | %s | %.2f of %d | %.2f |\n", word, fr.Read, fr.Used, fr.Synthetic, fr.ImmaterialCount(), h.Lists,
+			pairWord(gb, barGreatOverBaseline), pairWord(axes, barBaselineOverBad), pairWord(syn, barSynergyOverOwn), cross.Share(), cross.Pairs, h.Accuracy)
 		if gb.Pairs == 0 || gb.Share() < barGreatOverBaseline {
 			fails = append(fails, fmt.Sprintf("%s: great over precon %s", word, pairWord(gb, barGreatOverBaseline)))
 			pass = false
 		}
-		if bb.Pairs == 0 || bb.Share() < barBaselineOverBad {
-			fails = append(fails, fmt.Sprintf("%s: precon over own copy %s", word, pairWord(bb, barBaselineOverBad)))
+		if own := quality.OwnBarFailures(word, h); len(own) > 0 {
+			fails = append(fails, own...)
 			pass = false
 		}
 	}

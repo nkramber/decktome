@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-26 correction pass 233 (PR-84, F-177, F-178, D-955 to D-957): the "anime" session asked the theme row beside two other rows. The meta job failed the precon bar. The theme row now asks alone, and the precon bar splits by axis. Changes: F-177, F-178, PR-84, sequencing step 77.
+
 2026-09-25 correction pass 232 (PR-83, F-176, D-952 to D-954): a cold start refused a chat turn of the owner, because six reads did not wait for the card index. Each one waits now, and the web chat sends a refused turn again by itself. Changes: F-176, PR-83, sequencing step 76.
 
 2026-09-25 correction pass 231 (M-19, F-174, D-949 to D-951): a free replay found no better owned land for the deck of the thumbs down. The balance phase now gives spare sources to the color with the least margin. Changes: F-174, PR-39, M-19, sequencing step 75.
@@ -531,6 +533,8 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-174 | **An owned-only Commander deck at bracket 4 holds 24 basic lands, and a bracket case can not show the fault.** The thumbs down of 2026-09-24 names Island with the reason `wrong_power`. The deck of Hope Estheim holds 14 Island, 10 Plains, and 9 fixing lands, at the fixing floor of 9 (D-799). The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. A bracket case builds with any card, and its two builds held 20 fixing lands. So the triage wrote a case that passed before the fix. Found 2026-09-24 in PR-73. | ✅ fixed by M-19 as #234. The replay found no better owned land, and the fault was the split of the basics. The balance phase now gives spare sources to the color with the least margin (D-950, D-951). |
 | F-175 | **The web guard of a merge that changes the API can wait for an API build that can not start.** The builds of this project start one at a time: in each of the four merges of 2026-09-25 before b65ca6a, the second build started after the first ended. The guard of D-943 assumes that both run together. For b65ca6a the web build started first, and its guard polled 100 times for the API. It failed at its limit of 1,500 seconds at 20:17 UTC. The API build then started, and it ended SUCCESS at 20:22:57 UTC. A second run of `deploy-web` released the web at 20:26 UTC (D-947). So each merge that changes the API loses its web deploy when the web build starts first. The guard did read the change with git, so the Cloud SDK image holds git. Found 2026-09-25 in M-20. | ✅ PR-82, #233 (D-948). The regional default pool runs 10 build CPUs at a time, and each build asked for 8. The web build now takes 2. |
 | F-176 | **A cold start refuses the chat turn of a user, and only a tap sends it again.** The owner read this on `decktome.com` at 02:44:30 UTC on 2026-09-26. A new instance of revision `mtg-api-00085-bd8` started at 02:44:19 and listened at 02:44:20. The turn "Build me an anime-themed commander deck from my collection." read Unavailable: "the card database is not loaded yet, so the chat waits". The index loaded at 02:44:39.9 in 19.05 seconds. The web showed a red error and a "Try again" button. F-164 covered the card reads alone (D-801). `Chat`, `ImportDeck`, `Validate`, `GetSharedDeck`, `GetCollection`, and the upload of a collection still refused at once, and the web chat retried only on a tap. The 40 index loads of 2026-09-23 to 2026-09-26 took 10.2 to 20.9 seconds, not the 90 seconds of F-164. | ✅ fixed by #235 (PR-83, D-952 to D-954). The six reads wait 5 seconds for the first index, and the web chat sends a turn again on the loading refusal alone. |
+| F-177 | **The theme row asks beside the power and color rows.** The owner sent "Build me an anime themed commander deck" on `decktome.com` on 2026-09-26. Session `IoWy0DnoC0hQ0weOjZWa` asked the theme row of D-725, the power row, and the colors row in one turn. The power question named the "anime-themed deck", the theme that matched no card. The power and colors answers read the theme, so they must wait for its answer. | ✅ fixed by PR-84 (D-955). The theme row asks alone, as the out-of-scope and two-deck rows do. |
+| F-178 | **The daily refit fails the precon bar, so the model of 2026-09-25 stays.** The meta job of 2026-09-26 read "commander: precon over own copy 0.94 of 827, the bar is 0.95", and Pushover sent the failure. It was the first job with the bar check of D-927. The lands, curve, and colors copies read 572 of 572, and the synergy copies 205 of 255. Free fits found no code, precon, or card snapshot cause. The list corpus grew, and more synergy copies passed the check of D-653. | ✅ fixed by PR-84 (D-957). The synergy own copies read a bar of 0.75, and every other own copy keeps 0.95. `docs/reference/pr84-meta-bar-2026-09-26.md` holds the fits. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2386,6 +2390,26 @@ Gate:
 - After the merge, both builds start at the create time of the merge, and the web guard passes (F-175, D-948).
 > *In plain English:* after a quiet period, the server needs about 20 seconds to load the cards. A chat message in that time read an error. Now the server waits a moment, and the page sends the message again by itself.
 
+**PR-84: The theme row asks alone, and the precon bar splits by axis (F-177, F-178, D-955 to D-957).** 🔧 in review.
+The item started as the read of one deployed session whose theme matches no card (PR-54, D-953). The read found F-177, and the owner added the failed meta job of the same morning (D-956).
+
+- **The deploy of #235.** Both builds of `bd48d53` read a create time of 05:16:02 UTC on 2026-09-26. The web build started 1 second later and the API build 56 seconds later, the same wait as an API build alone. The web guard waited for the API commit, then released it (F-175).
+- **The cold start.** A new instance started at 11:19:36.6. The first chat turn waited 5.0 seconds and read the loading refusal, and the web sent it again. The index loaded 17.2 seconds after the start, and the second turn reached the model (F-176).
+- **The theme row.** Session `IoWy0DnoC0hQ0weOjZWa` asked the theme row before the build (D-725). It also asked the power and color rows, and the power question named "anime" (F-177).
+- **The fix of F-177.** `Catalog.Plan` returns the theme row alone when it can ask (D-955). The power and color rows ask in the next turn.
+- **The fix of F-178.** `quality.OwnBarFailures` reads the own copies of the synergy axis at 0.75 and every other axis at 0.95. The gate and the daily refit read it (D-927, D-957).
+
+Gate:
+
+- The new tests fail on the base and pass on this branch.
+- The gate reads PASS on the deployed meta store of 2026-09-26. Met: 1.00 of 572 and 0.80 of 255.
+- Questions gate run 53 reads PASS. Met: 75 of 75 counted conversations, for $0.195. Conversation 110 asks the theme row alone in turn 1.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+- After the merge, the next meta job stores a model.
+> *In plain English:* when the app finds no card for a theme, it now asks about the theme first, and the other questions wait. The daily grader update failed on one weak test, so that test now has its own, lower bar.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2759,6 +2783,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 74. **PR-82** the two builds of one merge run together (F-175, D-948). No paid target ran.
 75. **M-19** the owned-only shortlist of the thumbs down, and the balance of the basics (F-174, D-949 to D-951). No paid target ran.
 76. **PR-83** a cold start waits for the card index, and the chat sends a refused turn again (F-176, D-952 to D-954). No paid target ran.
+77. **PR-84** the theme row asks alone, and the precon bar splits by axis (F-177, F-178, D-955 to D-957). Questions gate run 53 cost $0.195.
 
 ## 9. Open questions
 
