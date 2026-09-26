@@ -6,36 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-26a)
+## RESUME HERE (2026-09-26b)
 
-**Pull request #236, PR-84, reads the deploy of #235 and the "anime" session, and fixes F-177 and F-178 (D-955 to D-957).**
+**Pull request #237, PR-85, reads the meta job and the "anime" session after #236, and adds the `live-test` skill and the live sweep (D-958 to D-961).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2: read the meta job after the merge.
+**The next step.** Next step 2: read the scheduled meta job of 2026-09-27 at 06:00 UTC.
 
-**The base.** `main` is `bd48d53`, from #235.
+**The base.** `main` is `1e6f73c`, from #236.
 
-**The deploy of #235 (F-175).** Both builds read a create time of 05:16:02 UTC on 2026-09-26. The web build started at 05:16:03, and the API build at 05:16:58, the same wait as an API build alone. The web guard waited for the API commit, then released it. The check read `decktome.com: 200`.
+**The deploy of #236.** The API build of `1e6f73c` ended SUCCESS at 20:10:05 UTC on 2026-09-26, and no web build ran. `/readyz` read `ok` with the commit, and `mtg-meta` runs `worker:1e6f73c`.
 
-**The cold start (F-176).** The owner sent the "anime" prompt at 11:19 UTC. A new instance started at 11:19:36.6. The first `Chat` waited 5.0 seconds and read the loading refusal. The web sent it again at 11:19:52.6, and the index loaded at 11:19:53.8. The second turn reached the model and asked three questions. The owner saw no red error. `GetCards` also read 503 twice before its 200.
+**The meta job (D-958).** The next scheduled run was ten hours away, so the owner chose a manual run. Execution `mtg-meta-8qg4p` ran from 20:12:15 to 21:32:21 UTC. It logged "meta job done" and stored model `20260926T212435Z`. The job logs no own share, and the stored model holds fold 0 alone. A free refit of the same data read Commander other own copies 572 of 572, and synergy own copies 210 of 264.
 
-**The "anime" session (D-725).** Session `IoWy0DnoC0hQ0weOjZWa` asked the theme row before the build. It also asked the power and color rows, and the power question named "anime" (F-177).
+**The "anime" sessions (D-955).** Session `q3u6SJljKgGOHcFYEN6x` of `make api-build` and session `SXD19vlkrXKtKjXbtJqR` of `make live-web` asked the theme row alone in turn 1. The screen turn cost $0.0007.
 
-**The change.**
+**The `live-test` skill (D-959, D-960).** The owner asked why the session did not send the prompt itself, and asked for a repeatable skill. `make live-web` signs in on `decktome.com` as the check account of D-779 in headless Chromium. `docs/reference/pr85-live-reads-2026-09-26.md` holds every read.
 
-- `Catalog.Plan` returns the theme row alone when it can ask (D-955).
-- `quality.OwnBarFailures` reads the synergy own copies at 0.75 and every other own copy at 0.95 (D-957). The gate and the refit read it.
-- The meta job of 2026-09-26 failed at 0.94 of 827. Free fits found the cause in the list corpus, not in code (F-178).
-- Questions gate run 53 reads PASS, 75 of 75, for $0.195. Conversation 110 asks the theme row alone, and turn 2 asks about "the dragon deck".
+**The live sweep (D-961).** The owner asked for a Playwright sweep of every path, for as little money as possible. `make live-sweep` read 36 screens for $0 with no build, and 41 screens for $0.0545 with one build, with no fault.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approves head `e5c04ee` with no finding and no review thread. The review record `docs/reviews/pr-236.md` reads Ready for owner merge at `e5c04ee`, with no finding. Pending the auto-merge.
+**The review.** Gitar reviewed `a5f0ed9` with two findings of the sweep: a delete of an older deck, and a share link that stays live after a break. Both had merit, and `52cd090` fixes both. Gitar approves `52cd090` with both findings closed. Codex: Ready for owner merge at `52cd090`, with no open finding. Pending the auto-merge.
 
 **What waits on the owner.**
 
-- The merge of this pull request. After it, the next meta job must store a model.
+- The merge of this pull request.
+- The scheduled meta job of 2026-09-27 must store a model. UNVERIFIED: why the scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages.
 - A deck gate run to grade the new split of the basics of #234. Ask first.
 - After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
@@ -44,7 +42,7 @@ Author provider: Claude Code
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next steps 3 and 5, and OQ-67 and OQ-77.
+- Next steps 3 and 4, and OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -68,7 +66,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
-- Fifteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
+- Seventeen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate document names the commit of `HEAD`, and never the tree. Deck gate run 29 ran over uncommitted work, so its header names the parent commit `5fd8085`. Commit the change before a paid run.
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -114,17 +112,16 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-84: the theme row asks alone, and the precon bar splits by axis** (F-177, F-178, D-955 to D-957). This pull request is #236.
-2. **Read the meta job after the merge** (F-178, D-957). The job runs at 06:00 UTC. It must end with "meta job done", and `meta/model/` must hold a new version.
-3. **Read one more "anime" session after the deploy** (D-955). The first turn must ask the theme row alone. `scripts/read-session.sh` reads it.
-4. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
-5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
-6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-7. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
-8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-10. **PR-26, the return channels**, waits on OQ-67.
-11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+1. **PR-85: the reads after #236, and the live test of the deployed app** (F-178, D-958 to D-961). This pull request is #237.
+2. **Read the scheduled meta job of 2026-09-27** (F-178, D-958). The job runs at 06:00 UTC. It must end with "meta job done", and `meta/model/` must hold a new version. Also read the MTGO line of "meta source": the scheduled runs of 2026-09-24 to 2026-09-26 read 0 pages.
+3. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+4. **Read the first commander question on the app after one more load** (D-690). `make live-web` can read it now (D-960), with the approval of the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
+5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
+7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+9. **PR-26, the return channels**, waits on OQ-67.
+10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
 
@@ -136,10 +133,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-25g: the owned-only shortlist and the basics, M-19
-
-**The owner asked for M-19: replay the shortlist of the thumbs down of 2026-09-24.** No local export matched the deployed collection, so the replay read the export of 2026-09-02. The deck held every owned land of classes 0 to 2, and the count of D-881 held lands of conditional mana (D-950). The owner chose a balance of the basics past the need, in this pull request (D-951).
-
 ### 2026-09-25h: the cold-start index wait, PR-83
 
 **The owner asked for option A of F-176: each read waits for the first card index, and the web chat sends a refused turn again.** The owner declined a web retry alone, one warm instance, and a startup probe (D-952). The session found that a plain Unavailable also names a conflict after a paid call. So the chat reads a refusal header, not the code alone (D-954). The Cloud Run logs gave 40 loads of 10 to 21 seconds, not 90.
@@ -148,6 +141,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for the deploy read of #235 and the "anime" read of PR-54.** Both deploy reads held. The owner said that the power question must wait for the theme, and chose the rule of the out-of-scope row (D-955). The owner added the failed meta job to this pull request (D-956). Four free control fits found the cause in the list corpus. The owner read the house rule of D-486 and chose the split bar (D-957).
 
+### 2026-09-26b: the reads after #236, and the live test, PR-85
+
+**The owner asked for next steps 2 and 3: read the meta job, then one more "anime" session.** The prompt put the read of the job of 06:00 UTC before the session, ten hours early. The owner chose a manual run (D-958). The owner then asked why the session did not send the prompt itself, and asked for the `live-test` skill with a screen lane (D-959, D-960). The owner then added a sweep of every screen to this pull request (D-961).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25h, the records of 2026-08-31 to 2026-09-25f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-26a, the records of 2026-08-31 to 2026-09-25g, and 104 more sections, word for word. Read it for the detail behind a decision.

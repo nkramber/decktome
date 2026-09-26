@@ -47,7 +47,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
-    // The Playwright flow under e2e is not a unit test (PR-23).
-    exclude: [...configDefaults.exclude, "e2e/**"],
+    // The Playwright flows under e2e and live are not unit tests (PR-23,
+    // D-960).
+    exclude: [...configDefaults.exclude, "e2e/**", "live/**"],
   },
 });

@@ -57,6 +57,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 | `pr-review` | For a Codex review, `make codex-review`, each answer to a review, and the `review-override` label. |
 | `design-doc-style` | Before you edit `docs/design-roadmap.md`. |
 | `mtg-corpus` | Before you reason about formats, legality, archetypes, or card terms. |
+| `live-test` | Before a check of a deployed chat turn, question, or deck (D-960). |
 
 ## File map
 
@@ -78,7 +79,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Commands that cost money
 
-Fifteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run, except a round of `make codex-review`, which spends the Codex plan (D-831). A rerun writes to a new `*_OUT` file, and a guard refuses a document that holds a result (D-65).
+Seventeen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run, except a round of `make codex-review`, which spends the Codex plan (D-831). A rerun writes to a new `*_OUT` file, and a guard refuses a document that holds a result (D-65).
 
 `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each paid target, and every free target (D-749). Read it before you run or change a target.
 

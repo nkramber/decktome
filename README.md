@@ -165,7 +165,7 @@ make candidates-review   # write the PR-6 gate document from the local snapshot
 
 `cd go && go run ./cmd/tune-check` compares an eval summary with its baseline, and it costs nothing.
 
-CAUTION: fifteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. They call the real LLM providers or the Codex plan. Ask the owner before each run, and write to a new output file (D-65). `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each one, and each free target.
+CAUTION: seventeen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. They call the real LLM providers or the Codex plan. Ask the owner before each run, and write to a new output file (D-65). `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each one, and each free target.
 
 `make autotune` is free: it prints how to start the paid loop. `make deck-gate-dry` is free too: it builds every shortlist over the trimmed snapshot of the repo (D-521).
 

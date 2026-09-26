@@ -12,6 +12,50 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-26a
+
+**Pull request #236, PR-84, reads the deploy of #235 and the "anime" session, and fixes F-177 and F-178 (D-955 to D-957).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: read the meta job after the merge.
+
+**The base.** `main` is `bd48d53`, from #235.
+
+**The deploy of #235 (F-175).** Both builds read a create time of 05:16:02 UTC on 2026-09-26. The web build started at 05:16:03, and the API build at 05:16:58, the same wait as an API build alone. The web guard waited for the API commit, then released it. The check read `decktome.com: 200`.
+
+**The cold start (F-176).** The owner sent the "anime" prompt at 11:19 UTC. A new instance started at 11:19:36.6. The first `Chat` waited 5.0 seconds and read the loading refusal. The web sent it again at 11:19:52.6, and the index loaded at 11:19:53.8. The second turn reached the model and asked three questions. The owner saw no red error. `GetCards` also read 503 twice before its 200.
+
+**The "anime" session (D-725).** Session `IoWy0DnoC0hQ0weOjZWa` asked the theme row before the build. It also asked the power and color rows, and the power question named "anime" (F-177).
+
+**The change.**
+
+- `Catalog.Plan` returns the theme row alone when it can ask (D-955).
+- `quality.OwnBarFailures` reads the synergy own copies at 0.75 and every other own copy at 0.95 (D-957). The gate and the refit read it.
+- The meta job of 2026-09-26 failed at 0.94 of 827. Free fits found the cause in the list corpus, not in code (F-178).
+- Questions gate run 53 reads PASS, 75 of 75, for $0.195. Conversation 110 asks the theme row alone, and turn 2 asks about "the dragon deck".
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approves head `e5c04ee` with no finding and no review thread. The review record `docs/reviews/pr-236.md` reads Ready for owner merge at `e5c04ee`, with no finding. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request. After it, the next meta job must store a model.
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 3 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-25g: the owned-only shortlist and the basics, M-19
+
+**The owner asked for M-19: replay the shortlist of the thumbs down of 2026-09-24.** No local export matched the deployed collection, so the replay read the export of 2026-09-02. The deck held every owned land of classes 0 to 2, and the count of D-881 held lands of conditional mana (D-950). The owner chose a balance of the basics past the need, in this pull request (D-951).
+
 ## The resume section of 2026-09-25h
 
 **Pull request #235, PR-83, fixes F-176: a cold start waits for the card index, and the chat sends a refused turn again (D-952 to D-954).**

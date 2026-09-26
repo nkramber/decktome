@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build allow disallow deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -244,6 +244,16 @@ API_BUILD_OUT ?= .local/probes/api-build.txt
 API_BUILD_PROMPT ?= Build me a lifegain Commander deck from the cards I own.
 API_BUILD_ANSWERS ?=
 API_BUILD_ARGS ?=
+# LIVE_WEB_OUT is the folder of one live web run: result.json and turn.png
+# (D-960). A rerun names a new folder.
+LIVE_WEB_OUT ?= .local/live-web/run
+LIVE_WEB_PROMPT ?= Build me a lifegain Commander deck from the cards I own.
+# LIVE_SWEEP_OUT is the folder of one live sweep (D-961). LIVE_SWEEP_BUILD=0
+# sends no message and sweeps the newest deck, for nothing. LIVE_SWEEP_DELETE=1
+# deletes the deck of the sweep at the end.
+LIVE_SWEEP_OUT ?= .local/live-sweep/run
+LIVE_SWEEP_BUILD ?= 1
+LIVE_SWEEP_DELETE ?= 0
 GENERATE_PROBE_THEME ?= lifegain
 GENERATE_PROBE_COMMANDER ?= Karlov of the Ghost Council
 
@@ -367,6 +377,24 @@ api-build: ## Build one deck over the deployed API, with no GUI (D-778). CAUTION
 		-prompt "$(API_BUILD_PROMPT)" -answers "$(API_BUILD_ANSWERS)" $(API_BUILD_ARGS) \
 		2>&1 | tee $(API_BUILD_OUT)
 	@echo "wrote $(API_BUILD_OUT)"
+
+live-web: ## Send one message on the deployed web app as the test account, in headless Chromium (D-960). CAUTION: the deployed API calls the real providers and costs money
+	@[ -f .env ] || { echo "live-web: .env is absent. It holds API_BUILD_EMAIL and API_BUILD_PASSWORD."; exit 1; }
+	@test ! -e $(LIVE_WEB_OUT) || { echo "$(LIVE_WEB_OUT) exists. Set LIVE_WEB_OUT to a new folder."; exit 1; }
+	@set -a && . ./.env && set +a && cd web/apps/web && \
+		LIVE_WEB=1 LIVE_EMAIL="$$API_BUILD_EMAIL" LIVE_PASSWORD="$$API_BUILD_PASSWORD" \
+		LIVE_PROMPT="$(LIVE_WEB_PROMPT)" LIVE_OUT=$(abspath $(LIVE_WEB_OUT)) \
+		pnpm exec playwright test --config playwright.live.config.ts live/live.spec.ts
+	@echo "wrote $(LIVE_WEB_OUT)/result.json and $(LIVE_WEB_OUT)/turn.png"
+
+live-sweep: ## Walk every screen of the deployed web app as the test account, on a desktop and a phone (D-961). CAUTION: one deck build costs money, and LIVE_SWEEP_BUILD=0 costs nothing
+	@[ -f .env ] || { echo "live-sweep: .env is absent. It holds API_BUILD_EMAIL and API_BUILD_PASSWORD."; exit 1; }
+	@test ! -e $(LIVE_SWEEP_OUT) || { echo "$(LIVE_SWEEP_OUT) exists. Set LIVE_SWEEP_OUT to a new folder."; exit 1; }
+	@set -a && . ./.env && set +a && cd web/apps/web && \
+		LIVE_SWEEP=1 LIVE_EMAIL="$$API_BUILD_EMAIL" LIVE_PASSWORD="$$API_BUILD_PASSWORD" \
+		LIVE_OUT=$(abspath $(LIVE_SWEEP_OUT)) LIVE_SWEEP_BUILD=$(LIVE_SWEEP_BUILD) LIVE_SWEEP_DELETE=$(LIVE_SWEEP_DELETE) \
+		pnpm exec playwright test --config playwright.live.config.ts live/sweep.spec.ts
+	@echo "wrote $(LIVE_SWEEP_OUT)/report.md, report.json, and shots/"
 
 generate-probe: ## Build one deck with the real generate role. CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "generate-probe: .env is absent."; exit 1; }
