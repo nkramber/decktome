@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar reviewed `a5f0ed9` with two findings of the sweep: a delete of an older deck, and a share link that stays live after a break. Both had merit, and `52cd090` fixes both. Codex: Ready for owner merge at `52cd090`, with no open finding. Pending the auto-merge.
+**The review.** Gitar reviewed `a5f0ed9` with two findings of the sweep: a delete of an older deck, and a share link that stays live after a break. Both had merit, and `52cd090` fixes both. Gitar approves `52cd090` with both findings closed. Codex: Ready for owner merge at `52cd090`, with no open finding. Pending the auto-merge.
 
 **What waits on the owner.**
 
