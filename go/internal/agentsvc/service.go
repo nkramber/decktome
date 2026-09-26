@@ -468,10 +468,12 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		return connect.NewError(connect.CodeInvalidArgument, errBadCollectionID)
 	}
 	// A turn with no card index resolves no name, offers no commander,
-	// and builds nothing. It waits, as ImportCollection does, instead of
-	// a turn that asks and then claims a commander it never had (D-405).
-	if s.index != nil && s.index.Current() == nil {
-		return connect.NewError(connect.CodeUnavailable, errIndexNotLoaded)
+	// and builds nothing. It waits for the first index, as a card RPC
+	// does, instead of a turn that asks and then claims a commander it
+	// never had (D-405, F-176). The web sends the turn again on this
+	// refusal, so it comes before any state change of the turn (D-954).
+	if s.index != nil && cardsvc.Await(ctx, s.index) == nil {
+		return cardsvc.Unloaded(errIndexNotLoaded)
 	}
 	if id := req.Msg.GetSessionId(); id != "" {
 		if _, busy := s.building.Load(buildKey(uid, id)); busy {

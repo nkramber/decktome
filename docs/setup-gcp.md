@@ -243,7 +243,7 @@ gcloud run deploy mtg-api \
 Six notes on the flags:
 
 - `--allow-unauthenticated` opens the URL to the internet. The API checks the Firebase token itself on every request, and a request with no token gets Unauthenticated on Cloud Run. The API refuses to start on Cloud Run when `ALLOW_DEBUG_USER` or `FIREBASE_AUTH_EMULATOR_HOST` holds a value (D-925).
-- `--min-instances 0` bills nothing at idle. The first request after an idle period starts an instance, and the instance loads the newest snapshot from the bucket. The load takes about 90 seconds, and the card RPCs answer `Unavailable` until the index lands.
+- `--min-instances 0` bills nothing at idle. The first request after an idle period starts an instance, and the instance loads the newest snapshot from the bucket. The 40 loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176). Each read that needs the index waits 5 seconds for it, then answers `Unavailable` (D-952).
 - `--no-cpu-throttling` keeps the CPU on between the requests (D-574). The snapshot loads in a background goroutine (`cmd/api/main.go`), and the default of Cloud Run gives that goroutine almost no CPU at an idle instance. Without this flag the load never completes, and `/readyz` reads `starting` for as long as the traffic stays low. The flag moves the service to instance-based billing.
 - `--memory 2Gi` is a starting point. The API holds the whole card index in memory. Read the memory chart after the first week and move the number.
 - `--timeout 900` covers a deck build. The default is 300 seconds and the maximum is 3,600. A build with repair passes takes minutes, and the `Chat` RPC streams for that whole time.

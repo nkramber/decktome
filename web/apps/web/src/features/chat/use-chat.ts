@@ -6,6 +6,7 @@ import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { agentClient } from "../../lib/api";
+import { cardRetryDelay, cardRetryMax, indexLoading } from "../../lib/card-retry";
 import { errorMessage } from "../../lib/errors";
 import { byteLength, maxMessageBytes } from "../../lib/limits";
 
@@ -53,6 +54,9 @@ export type ChatState = {
   // lastInput is what the last send carried, so a failed turn can run
   // again with one click (PR-19).
   lastInput?: SendInput;
+  // loadingCards says the server has no card index yet, after a cold
+  // start, and the running send goes again by itself (F-176).
+  loadingCards?: boolean;
 };
 
 // mergeOpen keeps every open question the turn did not answer, replaces
@@ -252,13 +256,14 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
           busy: true,
           phase: BuildPhase.UNSPECIFIED,
           repaired: false,
+          loadingCards: false,
           lastInput: { message, answers },
           thread: message ? [...marked, item({ kind: "user", text: message })] : marked,
           openQuestions: s.openQuestions.filter((q) => !answeredIds.has(q.id)),
         };
       });
-      try {
-        const stream = agentClient.chat(
+      const request = () =>
+        agentClient.chat(
           {
             sessionId: sessionId.current,
             collectionId: sessionId.current === "" ? collectionId : "",
@@ -270,12 +275,28 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
           },
           { signal: controller.signal },
         );
-        for await (const res of stream) {
-          if (controller.signal.aborted) break;
-          apply(res, ctx, update, (id) => {
-            sessionId.current = id;
-            started.current?.(id);
-          });
+      try {
+        for (let retries = 0; ; retries++) {
+          try {
+            for await (const res of request()) {
+              if (controller.signal.aborted) break;
+              if (retries > 0 && !ctx.reached) update((s) => ({ ...s, loadingCards: false }));
+              ctx.reached = true;
+              apply(res, ctx, update, (id) => {
+                sessionId.current = id;
+                started.current?.(id);
+              });
+            }
+            break;
+          } catch (err) {
+            // A turn that meets no card index changed nothing on the
+            // server, so it goes again by itself through a cold start
+            // (F-176, D-954). Any other failure ends the send.
+            if (controller.signal.aborted || !indexLoading(err) || retries >= cardRetryMax) throw err;
+            update((s) => ({ ...s, loadingCards: true }));
+            await pause(cardRetryDelay(retries), controller.signal);
+            if (controller.signal.aborted) throw err;
+          }
         }
       } catch (err) {
         ok = false;
@@ -290,7 +311,7 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
           // A failed or stopped send gives the answered questions back,
           // so the user can submit again.
           const restore = ok ? [] : answeredQuestions;
-          update((s) => ({ ...s, busy: false, openQuestions: mergeOpen(mergeOpen(s.openQuestions, restore), ctx.asked) }));
+          update((s) => ({ ...s, busy: false, loadingCards: false, openQuestions: mergeOpen(mergeOpen(s.openQuestions, restore), ctx.asked) }));
         }
       }
       return { ok: ok && !controller.signal.aborted, restored: ok ? [] : answeredQuestions };
@@ -302,8 +323,22 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
 }
 
 // StreamContext is what one send collects over its stream: the questions
-// it asked, and whether the next text delta starts a new agent line.
-type StreamContext = { asked: Question[]; newAgentLine: boolean };
+// it asked, whether the next text delta starts a new agent line, and
+// whether any event reached it.
+type StreamContext = { asked: Question[]; newAgentLine: boolean; reached?: boolean };
+
+// pause waits ms, or until the signal aborts.
+function pause(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(done, ms);
+    signal.addEventListener("abort", done, { once: true });
+    function done() {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", done);
+      resolve();
+    }
+  });
+}
 
 function apply(res: ChatResponse, ctx: StreamContext, update: (f: (s: ChatState) => ChatState) => void, onSessionStarted: (id: string) => void) {
   const ev = res.event;

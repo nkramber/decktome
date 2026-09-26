@@ -10,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/auth"
 	"github.com/nkramber/decktome/go/internal/cards"
 )
 
@@ -224,5 +225,52 @@ func TestReadyStopsOnCanceledRequest(t *testing.T) {
 	}
 	if time.Since(start) > 5*time.Second {
 		t.Error("GetCards waited past the end of the request")
+	}
+}
+
+// TestAwaitWaitsForTheFirstIndex is F-176. Every service that refuses a
+// read before the first index waits for it through Await, as the card
+// RPCs do (D-952). A source that is not the Server answers at once.
+func TestAwaitWaitsForTheFirstIndex(t *testing.T) {
+	s := New()
+	s.SetIndexWait(5 * time.Second)
+	go func() {
+		time.Sleep(20 * time.Millisecond)
+		s.Swap(testIndex(1))
+	}()
+	start := time.Now()
+	if Await(context.Background(), s) == nil {
+		t.Fatal("Await read no index during the load")
+	}
+	if time.Since(start) < 20*time.Millisecond {
+		t.Error("Await answered before the swap")
+	}
+	if Await(context.Background(), nil) != nil {
+		t.Error("Await of no source read an index")
+	}
+	if Await(context.Background(), fixed{testIndex(1)}) == nil {
+		t.Error("Await of a fixed source read no index")
+	}
+}
+
+type fixed struct{ idx *cards.Index }
+
+func (f fixed) Current() *cards.Index { return f.idx }
+
+// TestTheRefusalNamesTheLoadingIndex is D-954. The web chat sends a turn
+// again on the refusal header alone, because a turn that conflicts with
+// another turn also reads Unavailable, after a paid call.
+func TestTheRefusalNamesTheLoadingIndex(t *testing.T) {
+	if refusalHeader != auth.RefusalHeader {
+		t.Errorf("refusal header = %q, want %q", refusalHeader, auth.RefusalHeader)
+	}
+	s := New()
+	s.SetIndexWait(0)
+	_, err := s.GetCards(context.Background(), connect.NewRequest(&mtgv1.GetCardsRequest{OracleIds: []string{"o0"}}))
+	if !Loading(err) {
+		t.Errorf("GetCards before the index = %v, want the loading refusal", err)
+	}
+	if Loading(connect.NewError(connect.CodeUnavailable, errors.New("the session is busy"))) {
+		t.Error("a plain Unavailable reads as the loading refusal")
 	}
 }

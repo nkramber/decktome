@@ -16,6 +16,7 @@ import (
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/auth"
 	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/cardsvc"
 	"github.com/nkramber/decktome/go/internal/decklist"
 	"github.com/nkramber/decktome/go/internal/generate"
 	"github.com/nkramber/decktome/go/internal/gzstore"
@@ -86,9 +87,11 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 	if !ok || s.deckStore == nil || s.index == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoImporter)
 	}
-	idx := s.index.Current()
+	// An import of the first seconds after a cold start waits for the
+	// first index (F-176).
+	idx := cardsvc.Await(ctx, s.index)
 	if idx == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errIndexNotLoaded)
+		return nil, cardsvc.Unloaded(errIndexNotLoaded)
 	}
 
 	// A list that does not read offers the report form on the page

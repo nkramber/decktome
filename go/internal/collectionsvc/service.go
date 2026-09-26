@@ -113,7 +113,7 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 	if target != "" && !gzstore.ValidID(target) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadID)
 	}
-	entries, report, source, err := s.parseUpload(req.Msg.GetSource(), content)
+	entries, report, source, err := s.parseUpload(ctx, req.Msg.GetSource(), content)
 	if err != nil {
 		return nil, err
 	}
@@ -220,9 +220,10 @@ func (s *Server) GetCollection(ctx context.Context, req *connect.Request[mtgv1.G
 	}
 	// The filters read the display fields that the index fills, so a
 	// page before the index loads would match the wrong rows. The call
-	// answers Unavailable, and the binder retries (REV-022, F-164).
-	if s.index.Current() == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
+	// waits for the first index, then answers Unavailable, and the binder
+	// retries (REV-022, F-164, F-176).
+	if cardsvc.Await(ctx, s.index) == nil {
+		return nil, cardsvc.Unloaded(errNoIndex)
 	}
 	col, err := s.repo.Get(ctx, uid, id)
 	if err != nil {
@@ -442,7 +443,7 @@ func (s *Server) DiffCollections(ctx context.Context, req *connect.Request[mtgv1
 	if !gzstore.ValidID(id) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadID)
 	}
-	entries, report, _, err := s.parseUpload(req.Msg.GetSource(), req.Msg.GetContent())
+	entries, report, _, err := s.parseUpload(ctx, req.Msg.GetSource(), req.Msg.GetContent())
 	if err != nil {
 		return nil, err
 	}
@@ -460,16 +461,18 @@ func (s *Server) DiffCollections(ctx context.Context, req *connect.Request[mtgv1
 // the format it read the file as. ImportCollection and DiffCollections
 // both read a file the same way, and one term per concept means one
 // function does it.
-func (s *Server) parseUpload(source mtgv1.ImportSource, content []byte) ([]*mtgv1.CollectionEntry, *mtgv1.ImportReport, mtgv1.ImportSource, error) {
+func (s *Server) parseUpload(ctx context.Context, source mtgv1.ImportSource, content []byte) ([]*mtgv1.CollectionEntry, *mtgv1.ImportReport, mtgv1.ImportSource, error) {
 	if len(content) == 0 {
 		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, errEmptyBody)
 	}
 	if len(content) > maxUpload {
 		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeInvalidArgument, errTooLarge)
 	}
-	idx := s.index.Current()
+	// An upload of the first seconds after a cold start waits for the
+	// first index (F-176).
+	idx := cardsvc.Await(ctx, s.index)
 	if idx == nil {
-		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, connect.NewError(connect.CodeUnavailable, errNoIndex)
+		return nil, nil, mtgv1.ImportSource_IMPORT_SOURCE_UNSPECIFIED, cardsvc.Unloaded(errNoIndex)
 	}
 	// The reader drops a file and never names the app it came from, so an
 	// unnamed source reads the format out of the file (D-647). A caller

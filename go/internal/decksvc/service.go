@@ -157,9 +157,11 @@ func (s *Server) Validate(ctx context.Context, req *connect.Request[mtgv1.Valida
 	if req.Msg.Deck == nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoDeck)
 	}
-	idx := s.index.Current()
+	// A check of the first seconds after a cold start waits for the first
+	// index (F-176).
+	idx := cardsvc.Await(ctx, s.index)
 	if idx == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
+		return nil, cardsvc.Unloaded(errNoIndex)
 	}
 	pool := resolvePoolRule(req.Msg.PoolRule, req.Msg.CollectionId)
 	var counts map[string]int32

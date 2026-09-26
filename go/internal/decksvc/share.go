@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/cardsvc"
 	"github.com/nkramber/decktome/go/internal/decks"
 	"github.com/nkramber/decktome/go/internal/export"
 )
@@ -117,10 +118,10 @@ func (s *Server) GetSharedDeck(ctx context.Context, req *connect.Request[mtgv1.G
 		return nil, err
 	}
 	// The page shows the card data inline, and a page with none stays
-	// blank. Before the index loads, the call answers Unavailable, and
-	// the page retries (REV-022, F-164).
-	if s.index == nil || s.index.Current() == nil {
-		return nil, connect.NewError(connect.CodeUnavailable, errNoIndex)
+	// blank. Before the index loads, the call waits for it, then answers
+	// Unavailable, and the page retries (REV-022, F-164, F-176).
+	if cardsvc.Await(ctx, s.index) == nil {
+		return nil, cardsvc.Unloaded(errNoIndex)
 	}
 	return connect.NewResponse(&mtgv1.GetSharedDeckResponse{Deck: sharedDeck(d, s.lookup())}), nil
 }

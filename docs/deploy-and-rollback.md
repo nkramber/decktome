@@ -243,7 +243,7 @@ gcloud logging read 'resource.type="cloud_run_revision"
   --format='value(timestamp,severity,textPayload,jsonPayload.message)'
 ```
 
-Note: `/readyz` reads `starting` for about 90 seconds after a cold start. Do not read that as a failure. `/healthz` never answers on a `run.app` URL, because the Google frontend takes that path.
+Note: `/readyz` reads `starting` for 10 to 21 seconds after a cold start (F-176). Do not read that as a failure. `/healthz` never answers on a `run.app` URL, because the Google frontend takes that path.
 
 CAUTION: `gcloud run services logs read` crashed with a `TypeError` on gcloud 533.0.0 against this service. The command above reads the same logs.
 
