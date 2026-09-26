@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending.
+**The review.** Gitar reviewed `76cface` and approved the code review, with no open threads. Codex: Ready for owner merge at `76cface`, with no open finding. The record is `docs/reviews/pr-238.md`. Pending the auto-merge.
 
 **What waits on the owner.**
 
