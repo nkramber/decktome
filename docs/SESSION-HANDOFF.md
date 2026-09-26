@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Get the Gitar pass and the Codex review of this pull request.
+**The review state.** The Codex review is Ready for owner merge for effective head `e5c04ee`. No finding stays open. Read `docs/reviews/pr-236.md`.
 
 **The base.** `main` is `bd48d53`, from #235.
 
