@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-26 correction pass 234 (PR-85, F-178, D-958 to D-961): a manual meta job on the image of #236 stored a model. Two deployed "anime" sessions asked the theme row alone. The `live-test` skill and a live sweep of every screen now check the deployed app as the check account. Changes: PR-85, sequencing step 78.
+
 2026-09-26 correction pass 233 (PR-84, F-177, F-178, D-955 to D-957): the "anime" session asked the theme row beside two other rows. The meta job failed the precon bar. The theme row now asks alone, and the precon bar splits by axis. Changes: F-177, F-178, PR-84, sequencing step 77.
 
 2026-09-25 correction pass 232 (PR-83, F-176, D-952 to D-954): a cold start refused a chat turn of the owner, because six reads did not wait for the card index. Each one waits now, and the web chat sends a refused turn again by itself. Changes: F-176, PR-83, sequencing step 76.
@@ -2410,6 +2412,28 @@ Gate:
 - After the merge, the next meta job stores a model.
 > *In plain English:* when the app finds no card for a theme, it now asks about the theme first, and the other questions wait. The daily grader update failed on one weak test, so that test now has its own, lower bar.
 
+**PR-85: The reads after #236, and the live test of the deployed app (F-178, D-958 to D-961).**
+The item reads the meta job and one "anime" session after the merge of #236. The owner added a skill that checks the deployed app with no help from the owner (D-959), and a sweep of every screen (D-961).
+
+- **The meta job.** The next scheduled run was ten hours away, so the owner chose a manual run on the image of `1e6f73c` (D-958). It logged "meta job done" and stored model `20260926T212435Z`.
+- **The own shares.** The job logs no share, and the stored model holds fold 0 alone. A free refit of the same data read Commander other own copies 572 of 572 and synergy own copies 210 of 264.
+- **The theme row.** Two deployed sessions asked the theme row alone in turn 1 (D-955): one over the API and one on the screen.
+- **The `live-test` skill.** `make api-build` checks the server path, and `make live-web` checks the screen on `decktome.com` in headless Chromium (D-960). Both sign in as the check account of D-779.
+- **The live sweep.** `make live-sweep` walks every screen on a desktop and a phone, and reads five faults on each one (D-961). It builds one deck, or none with `LIVE_SWEEP_BUILD=0`.
+
+`docs/reference/pr85-live-reads-2026-09-26.md` holds the reads.
+
+Gate:
+
+- The manual meta job logs "meta job done" and stores a model. Met: `20260926T212435Z`.
+- Turn 1 of a deployed "anime" session asks the theme row alone. Met: sessions `q3u6SJljKgGOHcFYEN6x` and `SXD19vlkrXKtKjXbtJqR`.
+- `make live-web` records the question and a screenshot. Met: one run, $0.0007.
+- `make live-sweep` reads every screen with no fault. Met: 36 screens for $0 with no build, and 41 screens for $0.0545 with one build.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+> *In plain English:* the daily grader update now works again, and the app asks about an unknown theme first. New tools let a session test the live site by itself with a test account, and walk every screen on a computer and a phone.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2784,6 +2808,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 75. **M-19** the owned-only shortlist of the thumbs down, and the balance of the basics (F-174, D-949 to D-951). No paid target ran.
 76. **PR-83** a cold start waits for the card index, and the chat sends a refused turn again (F-176, D-952 to D-954). No paid target ran.
 77. **PR-84** the theme row asks alone, and the precon bar splits by axis (F-177, F-178, D-955 to D-957). Questions gate run 53 cost $0.195.
+78. **PR-85** the reads after #236, and the live test of the deployed app (F-178, D-958 to D-961). The live turns cost $0.0007, and the sweep with one build cost $0.0545.
 
 ## 9. Open questions
 

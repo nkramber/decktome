@@ -4,7 +4,7 @@ This file holds the cost, the flags, and the guards of each `make` target and lo
 
 ## The paid targets
 
-Fifteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run, except a round of `make codex-review` (D-831).
+Seventeen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run, except a round of `make codex-review` (D-831).
 
 ## Each target
 
@@ -48,6 +48,14 @@ Add `-keep <absolute path of an earlier rejudge run file>` to judge again only t
 `make api-build` builds one deck over the deployed API, with no browser and no GUI (D-778). It signs in with an email and a password, and it imports a ManaBox CSV. It then answers every question of the agent, and it reads the built deck back out of storage. It costs about $0.10 to $0.20, because the deployed API calls the real providers.
 
 The guards are `API_BUILD=1` and a check on `API_BUILD_OUT`. `API_BUILD_EMAIL` and `API_BUILD_PASSWORD` name the check account of D-779, and `.env` holds both. The run keeps the deck, the chat, and the collection. `API_BUILD_ARGS=-cleanup` deletes all three (D-780). `API_BUILD_ANSWERS="power=#3"` asks for a bracket 3 deck, and an empty plan builds a bracket 1 deck. `docs/reference/api-deck-build-2026-09-20.md` holds the method, the result, and the limits.
+
+`make live-web` sends one message on the deployed web app as the check account, in headless Chromium (D-960). It signs in on `decktome.com` and picks the first collection of the account. It then writes `result.json` and `turn.png` to `LIVE_WEB_OUT`. The "anime" turn of 2026-09-26 cost $0.0007.
+
+The guards are `LIVE_WEB=1`, which the target sets, and a check on `LIVE_WEB_OUT`: any file or folder there stops the run. The lane keeps no trace, because a trace records the typed password. The `live-test` skill holds the procedure.
+
+`make live-sweep` walks every screen of the deployed web app as the check account, on a desktop and on a phone (D-961). Each screen reads console errors, uncaught errors, failed requests, sideways overflow, and broken images. The sweep writes `report.md`, `report.json`, and one screenshot for each screen to `LIVE_SWEEP_OUT`, and it fails on any fault. One run sends one vague message, answers each question, and builds one deck, for about $0.05 to $0.20. `LIVE_SWEEP_BUILD=0` sends no message and sweeps the newest deck of the account, for nothing. `LIVE_SWEEP_DELETE=1` deletes the deck of the run at the end.
+
+The guards are `LIVE_SWEEP=1`, which the target sets, and a check on `LIVE_SWEEP_OUT`. The free run of 2026-09-26 read 36 screens in 53 seconds. The paid run of the same day read 41 screens in 131 seconds, and its chat cost $0.0545 for 8 calls, with bracket 1 picked.
 
 `make test-smoke` runs the live LLM smoke test and reads the keys from `.env`. It spends a few cents. The list at the top of this file names every paid target. `go run ./cmd/eval sweep -cap <USD>` drives five of them in the order of the eval list under a cap, and it needs `EVAL_SWEEP=1` (PR-15). `-dry` prints the plan for nothing, and the estimate of a step reads its last run file. Since PR-15 the deck gate spends one more judge call a deck, and run 16 cost $3.79 for 25 prompts.
 
