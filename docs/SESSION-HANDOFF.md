@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The review state.** The Codex review is Ready for owner merge for effective head `e5c04ee`. No finding stays open. Read `docs/reviews/pr-236.md`.
+**The next step.** Next step 2: read the meta job after the merge.
 
 **The base.** `main` is `bd48d53`, from #235.
 
@@ -31,7 +31,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Not yet asked.
+**The review.** Gitar approves head `e5c04ee` with no finding and no review thread. The review record `docs/reviews/pr-236.md` reads Ready for owner merge at `e5c04ee`, with no finding. Pending the auto-merge.
 
 **What waits on the owner.**
 
