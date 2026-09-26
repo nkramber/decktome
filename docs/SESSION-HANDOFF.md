@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-26a)
 
-**Pull request PR-84 reads the deploy of #235 and the "anime" session, and fixes F-177 and F-178 (D-955 to D-957).**
+**Pull request #236, PR-84, reads the deploy of #235 and the "anime" session, and fixes F-177 and F-178 (D-955 to D-957).**
 
 Author provider: Claude Code
 
@@ -114,7 +114,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-84: the theme row asks alone, and the precon bar splits by axis** (F-177, F-178, D-955 to D-957). This pull request.
+1. **PR-84: the theme row asks alone, and the precon bar splits by axis** (F-177, F-178, D-955 to D-957). This pull request is #236.
 2. **Read the meta job after the merge** (F-178, D-957). The job runs at 06:00 UTC. It must end with "meta job done", and `meta/model/` must hold a new version.
 3. **Read one more "anime" session after the deploy** (D-955). The first turn must ask the theme row alone. `scripts/read-session.sh` reads it.
 4. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
