@@ -12,6 +12,47 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-25g
+
+**Pull request #234, M-19, closes F-174: a free replay of the owned-only shortlist, and a balance of the basics past the need (D-950, D-951).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: read the next deploy of a merge that changes the API and the web (F-175, D-948).
+
+**The base.** `main` is `5ac3873`, from #233.
+
+**The replay.** The deck of the thumbs down of 2026-09-24 holds all 6 owned W/U lands of classes 0 to 2. The 30 lands of D-881 make colored mana on a condition, or they enter tapped. So no step dropped a better land (D-950). The fault was the split: blue held 29 sources for a need of 19, and white held 25 for 23. `docs/reference/m19-owned-shortlist-2026-09-25.md` holds the replay.
+
+**The change.**
+
+- When the capped ratios tie, `balanceBasics` keeps a trade that raises the ratios with no cap, the worst color first (D-951).
+- The deck of F-174 then holds 15 Plains and 9 Island, and its band score stays at 1.75.
+- `TestTheBalancePhaseGivesSpareSourcesToTheLeastMargin` fails on the base. The old test of the cap now reads a split of even margins.
+- `make manapass-check` over deck gate run 29 moves 11 of 25 decks, and no deck gains an off-band feature. No paid target ran.
+- The owner closed the review report of D-901 outside git, with no pull request (D-949).
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approves head `36dd4e9` with no finding and no review thread. The review record `docs/reviews/pr-234.md` reads Ready for owner merge at `36dd4e9`, with no finding. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- A deck gate run to grade the new split of the basics. Ask first.
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 4 and 5, and OQ-67 and OQ-77.
+
+### 2026-09-25e: five sessions measured, and the checkpoint rule, M-20
+
+**The owner asked for next step 3: measure five sessions, then ask about the checkpoint rule.** The session read the deploy of b65ca6a first. Its web guard waited for an API build that did not start, and the owner chose a second web run (F-175, D-947). The measurement found 34.8 percent of the input saved on the five sessions, and the owner adopted the rule at 300K (D-946). The line of D-750 never fired, so a hook now tells the session.
+
 ## The resume section of 2026-09-25f
 
 **Pull request #233, PR-82, fixes F-175: the web build runs on 2 CPUs, so the two builds of one merge run together (D-948).**

@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-25 correction pass 232 (PR-83, F-176, D-952 to D-954): a cold start refused a chat turn of the owner, because six reads did not wait for the card index. Each one waits now, and the web chat sends a refused turn again by itself. Changes: F-176, PR-83, sequencing step 76.
+
 2026-09-25 correction pass 231 (M-19, F-174, D-949 to D-951): a free replay found no better owned land for the deck of the thumbs down. The balance phase now gives spare sources to the color with the least margin. Changes: F-174, PR-39, M-19, sequencing step 75.
 
 2026-09-25 correction pass 230 (PR-82, F-175, D-948): the default pool of Cloud Build runs 10 build CPUs at a time, and each build asked for 8. So the web build now takes 2, and the two builds of one merge run together. Changes: F-175, PR-82, sequencing step 74.
@@ -528,6 +530,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-173 | **A confirm run with no failing case still starts the fixer.** `case-check` exits 1 when one case or more does not read fail, and `scripts/feedback-loop.sh` sent that gate to the fixer. So the live cycle of PR-73 ran the fixer and a measure run on case 16, which passed before the fix. The cycle ended with 0, and its evidence read that every case passes. The measure run cost $0.0726 for nothing. Found 2026-09-24 in the live cycle. | ✅ closes with PR-73 (D-880). `case-check` exits 3 when no case fails before the fix, and the cycle stops before the fixer with 1. |
 | F-174 | **An owned-only Commander deck at bracket 4 holds 24 basic lands, and a bracket case can not show the fault.** The thumbs down of 2026-09-24 names Island with the reason `wrong_power`. The deck of Hope Estheim holds 14 Island, 10 Plains, and 9 fixing lands, at the fixing floor of 9 (D-799). The collection export of 2026-08-30 holds 30 owned lands that make white and blue mana, and the deck holds none of them. A bracket case builds with any card, and its two builds held 20 fixing lands. So the triage wrote a case that passed before the fix. Found 2026-09-24 in PR-73. | ✅ fixed by M-19 as #234. The replay found no better owned land, and the fault was the split of the basics. The balance phase now gives spare sources to the color with the least margin (D-950, D-951). |
 | F-175 | **The web guard of a merge that changes the API can wait for an API build that can not start.** The builds of this project start one at a time: in each of the four merges of 2026-09-25 before b65ca6a, the second build started after the first ended. The guard of D-943 assumes that both run together. For b65ca6a the web build started first, and its guard polled 100 times for the API. It failed at its limit of 1,500 seconds at 20:17 UTC. The API build then started, and it ended SUCCESS at 20:22:57 UTC. A second run of `deploy-web` released the web at 20:26 UTC (D-947). So each merge that changes the API loses its web deploy when the web build starts first. The guard did read the change with git, so the Cloud SDK image holds git. Found 2026-09-25 in M-20. | ✅ PR-82, #233 (D-948). The regional default pool runs 10 build CPUs at a time, and each build asked for 8. The web build now takes 2. |
+| F-176 | **A cold start refuses the chat turn of a user, and only a tap sends it again.** The owner read this on `decktome.com` at 02:44:30 UTC on 2026-09-26. A new instance of revision `mtg-api-00085-bd8` started at 02:44:19 and listened at 02:44:20. The turn "Build me an anime-themed commander deck from my collection." read Unavailable: "the card database is not loaded yet, so the chat waits". The index loaded at 02:44:39.9 in 19.05 seconds. The web showed a red error and a "Try again" button. F-164 covered the card reads alone (D-801). `Chat`, `ImportDeck`, `Validate`, `GetSharedDeck`, `GetCollection`, and the upload of a collection still refused at once, and the web chat retried only on a tap. The 40 index loads of 2026-09-23 to 2026-09-26 took 10.2 to 20.9 seconds, not the 90 seconds of F-164. | ✅ fixed by #235 (PR-83, D-952 to D-954). The six reads wait 5 seconds for the first index, and the web chat sends a turn again on the loading refusal alone. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2363,6 +2366,26 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the reader owned no better lands than the deck used. The real fault was the split: too many Islands for the blue cards. Now the app moves spare basics to the color that needs them more.
 
+**PR-83: A cold start waits for the card index, and the chat sends a refused turn again (F-176, D-952 to D-954).** ✅ merged as #235. The mark comes before any review (D-822).
+The API listens before its card snapshot loads. F-164 made the card RPCs wait 5 seconds for the first index, and the web card queries retry. Six other reads still refused at once, and the web chat retried only on a tap.
+
+- **The server.** `cardsvc.Await` waits for the first index, as a card RPC does. `Chat`, `ImportDeck`, `Validate`, `GetSharedDeck`, `GetCollection`, and the upload of a collection read the index through it (D-952).
+- **The refusal.** `cardsvc.Unloaded` answers Unavailable with the header `Deck-Tome-Refusal: index-loading`. The header of F-59 already passes the CORS rule of the API (D-954).
+- **The chat.** `useChat` sends a turn again on that refusal alone, at the delays of `cardRetry`, 13 times at most. The working row says that the card database loads.
+- **The safety.** The index check of `Chat` runs before the lease read, the slot of the user, the spend cap, and each store write. A turn that conflicts with another turn also reads Unavailable, after a paid call, so the chat never sends a plain Unavailable again (D-954).
+- **The tests.** Nine Go tests and five web tests fail on the base, and pass on this branch.
+- **The load.** The 40 index loads of 2026-09-23 to 2026-09-26 took 10.2 to 20.9 seconds. `docs/setup-gcp.md` and `docs/deploy-and-rollback.md` said about 90 seconds.
+- **The limit.** The upload of a collection and the import of a deck list wait 5 seconds, and the web sends neither again by itself.
+
+Gate:
+
+- The new tests fail on the base and pass on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+- After the merge, both builds start at the create time of the merge, and the web guard passes (F-175, D-948).
+> *In plain English:* after a quiet period, the server needs about 20 seconds to load the cards. A chat message in that time read an error. Now the server waits a moment, and the page sends the message again by itself.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2735,6 +2758,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 73. **M-20** five sessions on the new files, and the checkpoint rule (D-750, D-946). No paid target ran.
 74. **PR-82** the two builds of one merge run together (F-175, D-948). No paid target ran.
 75. **M-19** the owned-only shortlist of the thumbs down, and the balance of the basics (F-174, D-949 to D-951). No paid target ran.
+76. **PR-83** a cold start waits for the card index, and the chat sends a refused turn again (F-176, D-952 to D-954). No paid target ran.
 
 ## 9. Open questions
 

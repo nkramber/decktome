@@ -77,23 +77,68 @@ func (s *Server) Swap(idx *cards.Index) {
 // never waits, because a caller of it holds no request.
 func (s *Server) Current() *cards.Index { return s.index.Load() }
 
-// ready answers the current index. Before the first index it waits, for
-// the limit of s.wait or for the end of the request (F-164).
+// ready answers the current index, or the loading refusal (F-164).
 func (s *Server) ready(ctx context.Context) (*cards.Index, error) {
-	if idx := s.index.Load(); idx != nil {
+	if idx := s.await(ctx); idx != nil {
 		return idx, nil
+	}
+	return nil, Unloaded(errNoSnapshot)
+}
+
+// await answers the current index. Before the first index it waits, for
+// the limit of s.wait or for the end of the request, and then answers
+// nil (F-164).
+func (s *Server) await(ctx context.Context) *cards.Index {
+	if idx := s.index.Load(); idx != nil {
+		return idx
 	}
 	timer := time.NewTimer(s.wait)
 	defer timer.Stop()
 	select {
 	case <-s.loaded:
-		if idx := s.index.Load(); idx != nil {
-			return idx, nil
-		}
 	case <-ctx.Done():
 	case <-timer.C:
 	}
-	return nil, connect.NewError(connect.CodeUnavailable, errNoSnapshot)
+	return s.index.Load()
+}
+
+// Await answers the current index of src. When src is the Server, a
+// request before the first index waits as a card RPC does, so a read of
+// the first seconds after a cold start gets its answer (F-176, D-952).
+// Any other source answers at once, and a nil source answers nil.
+func Await(ctx context.Context, src IndexSource) *cards.Index {
+	switch s := src.(type) {
+	case nil:
+		return nil
+	case *Server:
+		return s.await(ctx)
+	default:
+		return src.Current()
+	}
+}
+
+// refusalHeader is auth.RefusalHeader. This package does not import auth,
+// and a test keeps the two names the same.
+const refusalHeader = "Deck-Tome-Refusal"
+
+// RefusalIndexLoading is the value of the refusal header on a read that
+// meets no index. A client sends the call again on this value alone.
+// Unavailable alone also names a turn that conflicts with another turn,
+// after a paid call (D-954).
+const RefusalIndexLoading = "index-loading"
+
+// Unloaded is the refusal of a read that meets no index: Unavailable, with
+// the refusal header set to RefusalIndexLoading (D-954).
+func Unloaded(err error) *connect.Error {
+	ce := connect.NewError(connect.CodeUnavailable, err)
+	ce.Meta().Set(refusalHeader, RefusalIndexLoading)
+	return ce
+}
+
+// Loading reports whether err is the refusal of Unloaded.
+func Loading(err error) bool {
+	var ce *connect.Error
+	return errors.As(err, &ce) && ce.Code() == connect.CodeUnavailable && ce.Meta().Get(refusalHeader) == RefusalIndexLoading
 }
 
 var errNoSnapshot = errors.New("card database not loaded yet: no snapshot available")

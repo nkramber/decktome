@@ -8,6 +8,7 @@ import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { cardRetryMax } from "../../lib/card-retry";
 import { useAppStore } from "../../lib/store";
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
@@ -504,6 +505,74 @@ describe("SessionPage", () => {
     const second = chat.mock.calls[1][0] as { answers: unknown[] };
     const third = chat.mock.calls[2][0] as { answers: unknown[] };
     expect(third.answers).toEqual(second.answers);
+  });
+
+  // F-176: a turn of the first seconds after a cold start read the refusal
+  // of the card index, and the page showed a red error and Try again.
+  describe("a turn that meets no card index", () => {
+    beforeEach(() => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const loading = () => new ConnectError("the card database is not loaded yet, so the chat waits", Code.Unavailable, { "deck-tome-refusal": "index-loading" });
+
+    it("goes again by itself, and the page says that the card database loads (D-952)", async () => {
+      chat
+        .mockImplementationOnce(() => {
+          throw loading();
+        })
+        .mockImplementationOnce(() => {
+          throw loading();
+        })
+        .mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+      await renderAt("/session/new");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "Build me an anime-themed commander deck from my collection.");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      expect(await screen.findByTestId("cards-loading")).toHaveTextContent("The card database loads");
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+      await act(() => vi.advanceTimersByTimeAsync(3000));
+      expect(await screen.findByRole("button", { name: "Modern" })).toBeInTheDocument();
+      expect(chat).toHaveBeenCalledTimes(3);
+      const first = chat.mock.calls[0][0] as { message: string };
+      const third = chat.mock.calls[2][0] as { message: string };
+      expect(third.message).toBe(first.message);
+      expect(screen.queryByTestId("cards-loading")).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("shows the failure after the retries of a cold start", async () => {
+      chat.mockImplementation(() => {
+        throw loading();
+      });
+      await renderAt("/session/new");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      await act(() => vi.advanceTimersByTimeAsync(120_000));
+      expect(await screen.findByRole("alert")).toBeInTheDocument();
+      expect(chat).toHaveBeenCalledTimes(cardRetryMax + 1);
+      expect(screen.queryByTestId("cards-loading")).not.toBeInTheDocument();
+    });
+
+    it("stops the wait on Stop, with no failure", async () => {
+      chat.mockImplementation(() => {
+        throw loading();
+      });
+      await renderAt("/session/new");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      await screen.findByTestId("cards-loading");
+      await user.click(screen.getByRole("button", { name: "Stop" }));
+      await act(() => vi.advanceTimersByTimeAsync(20_000));
+      expect(chat).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId("cards-loading")).not.toBeInTheDocument();
+      expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    });
   });
 
   it("an Aborted stream names the build in progress and stays retryable (D-303)", async () => {

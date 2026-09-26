@@ -538,6 +538,11 @@ export function ChatPanel({
               Stop
             </Button>
           </div>
+          {state.loadingCards && (
+            <p className="text-sm text-muted-foreground" data-testid="cards-loading">
+              The card database loads after a restart of the server. Your message goes again by itself when it is ready.
+            </p>
+          )}
           <BuildStepper phase={state.phase} repaired={state.repaired} />
         </>
       )}

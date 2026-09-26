@@ -1,7 +1,7 @@
 import { Code, ConnectError } from "@connectrpc/connect";
 import { describe, expect, it } from "vitest";
 
-import { cardRetry, cardRetryDelay, cardRetryMax } from "./card-retry";
+import { cardRetry, cardRetryDelay, cardRetryMax, indexLoading } from "./card-retry";
 
 describe("cardRetry", () => {
   it("retries while the card database is Unavailable", () => {
@@ -33,5 +33,22 @@ describe("cardRetry", () => {
     expect(cardRetryDelay(0)).toBe(1000);
     expect(cardRetryDelay(3)).toBe(8000);
     expect(cardRetryDelay(20)).toBe(8000);
+  });
+});
+
+// D-954: the chat sends a turn again on the refusal of a read that met no
+// card index, and on no other Unavailable. A turn that conflicts with
+// another turn reads Unavailable too, after a paid call.
+describe("indexLoading", () => {
+  it("reads the refusal header of a read with no card index", () => {
+    const loading = new ConnectError("the card database is not loaded yet, so the chat waits", Code.Unavailable, { "deck-tome-refusal": "index-loading" });
+    expect(indexLoading(loading)).toBe(true);
+  });
+
+  it("takes no plain Unavailable, and no other refusal", () => {
+    expect(indexLoading(new ConnectError("the session is busy with another turn, send the message again", Code.Unavailable))).toBe(false);
+    expect(indexLoading(new ConnectError("no", Code.PermissionDenied, { "deck-tome-refusal": "index-loading" }))).toBe(false);
+    expect(indexLoading(new ConnectError("no", Code.Unavailable, { "deck-tome-refusal": "not-invited" }))).toBe(false);
+    expect(indexLoading(new Error("network"))).toBe(false);
   });
 });

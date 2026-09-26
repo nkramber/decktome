@@ -6,34 +6,35 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-25g)
+## RESUME HERE (2026-09-25h)
 
-**Pull request #234, M-19, closes F-174: a free replay of the owned-only shortlist, and a balance of the basics past the need (D-950, D-951).**
+**Pull request #235, PR-83, fixes F-176: a cold start waits for the card index, and the chat sends a refused turn again (D-952 to D-954).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2: read the next deploy of a merge that changes the API and the web (F-175, D-948).
+**The next step.** Next step 2: read the two deploy builds of this merge. It changes `go/` and `web/`, so it is the proof of F-175 (D-948).
 
-**The base.** `main` is `5ac3873`, from #233.
+**The base.** `main` is `52d21a7`, from #234.
 
-**The replay.** The deck of the thumbs down of 2026-09-24 holds all 6 owned W/U lands of classes 0 to 2. The 30 lands of D-881 make colored mana on a condition, or they enter tapped. So no step dropped a better land (D-950). The fault was the split: blue held 29 sources for a need of 19, and white held 25 for 23. `docs/reference/m19-owned-shortlist-2026-09-25.md` holds the replay.
+**The evidence.** At 02:44:30 UTC on 2026-09-26, a chat turn of the owner met a new instance with no card index. It read Unavailable, and the web showed a red error. The index loaded 9.9 seconds later. The 40 index loads of 2026-09-23 to 2026-09-26 took 10.2 to 20.9 seconds.
 
 **The change.**
 
-- When the capped ratios tie, `balanceBasics` keeps a trade that raises the ratios with no cap, the worst color first (D-951).
-- The deck of F-174 then holds 15 Plains and 9 Island, and its band score stays at 1.75.
-- `TestTheBalancePhaseGivesSpareSourcesToTheLeastMargin` fails on the base. The old test of the cap now reads a split of even margins.
-- `make manapass-check` over deck gate run 29 moves 11 of 25 decks, and no deck gains an off-band feature. No paid target ran.
-- The owner closed the review report of D-901 outside git, with no pull request (D-949).
+- `cardsvc.Await` waits 5 seconds for the first index. `Chat`, `ImportDeck`, `Validate`, `GetSharedDeck`, `GetCollection`, and the upload of a collection use it (D-952).
+- `cardsvc.Unloaded` sets `Deck-Tome-Refusal: index-loading` on the refusal (D-954).
+- `useChat` sends a turn again on that refusal alone, 13 times at most. The working row says that the card database loads.
+- The index check of `Chat` runs before any state change of the turn. A test proves that a refused turn stores nothing.
+- Nine Go tests and five web tests fail on the base. `docs/setup-gcp.md` and `docs/deploy-and-rollback.md` now read 10 to 21 seconds.
+- The owner moved the read of the "anime" theme of PR-54 to the step after this pull request (D-953).
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approves head `36dd4e9` with no finding and no review thread. The review record `docs/reviews/pr-234.md` reads Ready for owner merge at `36dd4e9`, with no finding. Pending the auto-merge.
+**The review.** Pending the Gitar pass and the Codex review.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- A deck gate run to grade the new split of the basics. Ask first.
+- A deck gate run to grade the new split of the basics of #234. Ask first.
 - After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
@@ -41,7 +42,7 @@ Author provider: Claude Code
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next steps 4 and 5, and OQ-67 and OQ-77.
+- Next steps 3 and 5, and OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -98,7 +99,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-25: Cloud Build `8ac189b0` of `deploy-api` built `b65ca6a`, from #231, and ended SUCCESS at 20:22:57 UTC. `mtg-api-00084-gjc` serves all traffic, and `/readyz` names the commit. The service holds no minimum instance, so a cold start reads Unavailable for about 90 seconds (F-164).
+- The deployed API, read 2026-09-25: Cloud Build `8ac189b0` of `deploy-api` built `b65ca6a`, from #231, and ended SUCCESS at 20:22:57 UTC. `mtg-api-00084-gjc` serves all traffic, and `/readyz` names the commit. The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
 - The deployed web app, read 2026-09-25: build `1b9fbb10` of `deploy-web` built `b65ca6a` as `web-deployer`, and ended SUCCESS at 20:26:06 UTC. The site serves Hosting version `35b29aa5da9911f1` of 20:26:00 UTC, and `index.html` loads `assets/index-B2Ct3CUm.js`. `/version.json` names the commit. The release before it is `733ed6a0ffc1ef49`, from #230.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
@@ -111,10 +112,10 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **M-19: the owned-only shortlist, and the balance of the basics** (F-174, D-949 to D-951). This pull request is #234.
-2. **Read the next deploy of a merge that changes the API and the web** (F-175, D-948). Both builds must start at its create time, and the web guard must pass. This merge changes `go/` alone, so it is not the proof.
-3. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
-4. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. Session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses each read under `users/`. So a replay reads a local ManaBox export, which stays out of git (D-756).
+1. **PR-83: a cold start waits for the card index, and the chat sends a refused turn again** (F-176, D-952 to D-954). This pull request is #235.
+2. **Read the two deploy builds of this merge** (F-175, D-948). This merge changes `go/` and `web/`. Both builds must start at its create time, and the web guard must pass. Then read one cold start: a chat turn of its first seconds must reach the model with no red error.
+3. **Read one deployed session whose theme matches no card, such as "anime"** (PR-54, D-953). The theme row must ask before the build. The owner builds it, and a session reads it with `scripts/read-session.sh`. Session `z1hshyY6Npig1FN2NuV7` no longer exists, and the sandbox refuses each read under `users/`. So a replay reads a local ManaBox export, which stays out of git (D-756).
+4. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **Read the first commander question on the app after one more load** (D-690). It waits for the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 7. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
@@ -133,10 +134,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-25e: five sessions measured, and the checkpoint rule, M-20
-
-**The owner asked for next step 3: measure five sessions, then ask about the checkpoint rule.** The session read the deploy of b65ca6a first. Its web guard waited for an API build that did not start, and the owner chose a second web run (F-175, D-947). The measurement found 34.8 percent of the input saved on the five sessions, and the owner adopted the rule at 300K (D-946). The line of D-750 never fired, so a hook now tells the session.
-
 ### 2026-09-25f: the two builds of one merge, PR-82
 
 **The owner asked for next step 2: fix F-175.** The build list showed that the second build of each merge started when the first ended. The Service Usage API read a quota of 10 build CPUs in the default pool, and each build asked for 8. The quotas page says that no request raises it. The owner chose 2 CPUs for the web build, and kept 8 for the API (D-948).
@@ -145,6 +142,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for M-19: replay the shortlist of the thumbs down of 2026-09-24.** No local export matched the deployed collection, so the replay read the export of 2026-09-02. The deck held every owned land of classes 0 to 2, and the count of D-881 held lands of conditional mana (D-950). The owner chose a balance of the basics past the need, in this pull request (D-951).
 
+### 2026-09-25h: the cold-start index wait, PR-83
+
+**The owner asked for option A of F-176: each read waits for the first card index, and the web chat sends a refused turn again.** The owner declined a web retry alone, one warm instance, and a startup probe (D-952). The session found that a plain Unavailable also names a conflict after a paid call. So the chat reads a refusal header, not the code alone (D-954). The Cloud Run logs gave 40 loads of 10 to 21 seconds, not 90.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25f, the records of 2026-08-31 to 2026-09-25d, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-25g, the records of 2026-08-31 to 2026-09-25e, and 104 more sections, word for word. Read it for the detail behind a decision.
