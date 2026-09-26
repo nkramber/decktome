@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending the Gitar pass and the Codex review.
+**The review.** Gitar approves head `222b9bb`. Codex records Ready for owner merge at `222b9bb`. No finding remains open. The review record waits for its push and the review-gate check.
 
 **What waits on the owner.**
 
