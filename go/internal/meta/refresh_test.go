@@ -390,6 +390,55 @@ func TestJobKeepsFailedPageApart(t *testing.T) {
 	}
 }
 
+// TestMTGOLogsEachMonthPage: a month page with no event link reads 0
+// pages and 0 errors, so the log names each month, and the store keeps
+// the empty page for a reader (D-962).
+func TestMTGOLogsEachMonthPage(t *testing.T) {
+	ctx := context.Background()
+	srv, _ := fakeSites(t)
+	store := DirObjects{Root: t.TempDir()}
+	job := testJob(t, srv, store)
+	mux := http.NewServeMux()
+	mux.HandleFunc("/empty/decklists/2026/09", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("<html>no events</html>"))
+	})
+	mux.HandleFunc("/empty/decklists/2026/08", func(w http.ResponseWriter, _ *http.Request) {
+		data, _ := os.ReadFile(filepath.Join("testdata", "mtgo_month.html"))
+		_, _ = w.Write(data)
+	})
+	empty := httptest.NewServer(mux)
+	defer empty.Close()
+	job.MTGOBase = empty.URL + "/empty"
+	var logs strings.Builder
+	job.Logger = slog.New(slog.NewTextHandler(&logs, nil))
+	if err := job.runMTGO(ctx, newReport()); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		`msg="mtgo month page" month=2026-09 found=true bytes=22 links=0 covered=0`,
+		`msg="mtgo month page" month=2026-08 found=true`,
+		`msg="mtgo event slugs" listed=`,
+	} {
+		if !strings.Contains(logs.String(), want) {
+			t.Errorf("the log lacks %q:\n%s", want, logs.String())
+		}
+	}
+	if ok, _ := HasRaw(ctx, store, SourceMTGO+"-month-empty", "2026-09-20260902T120000Z"); !ok {
+		t.Errorf("the empty month page is not kept for a reader")
+	}
+	if ok, _ := HasRaw(ctx, store, SourceMTGO+"-month-empty", "2026-08-20260902T120000Z"); ok {
+		t.Errorf("a month page with event links is kept as empty")
+	}
+	job.MTGOBase = empty.URL + "/gone"
+	logs.Reset()
+	if err := job.runMTGO(ctx, newReport()); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(logs.String(), `msg="mtgo month page" month=2026-09 found=false`) {
+		t.Errorf("the log lacks the month the site does not have:\n%s", logs.String())
+	}
+}
+
 // TestMTGJSONSkipsAnUnchangedDeckList: the version stamp carries the
 // build day, so the table of yesterday never matches today's stamp. The
 // job compares the products instead. It reads no deck file while they

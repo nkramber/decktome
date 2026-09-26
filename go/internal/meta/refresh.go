@@ -178,20 +178,39 @@ func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 	for i := 0; i < j.MTGOMonths; i++ {
 		month := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -i, 0)
 		url := fmt.Sprintf("%s/decklists/%04d/%02d", j.MTGOBase, month.Year(), int(month.Month()))
+		key := month.Format("2006-01")
 		page, err := j.Fetch.Get(ctx, url)
 		if err != nil {
 			if NotFound(err) {
+				j.Logger.Info("mtgo month page", "month", key, "found", false)
 				continue
 			}
 			return err
 		}
-		for _, slug := range ParseMTGOMonth(page) {
+		links := ParseMTGOMonth(page)
+		covered := 0
+		for _, slug := range links {
 			if MTGOSlugFormat(slug) != "" && !seen[slug] {
 				seen[slug] = true
 				slugs = append(slugs, slug)
+				covered++
+			}
+		}
+		// A month page with no event link can not tell a quiet site from
+		// a page the site served in place of the listing, so the page
+		// stays for a reader under its own prefix (D-962).
+		j.Logger.Info("mtgo month page", "month", key, "found", true, "bytes", len(page), "links", len(links), "covered", covered)
+		if len(links) == 0 {
+			if err := PutRaw(ctx, j.Store, SourceMTGO+"-month-empty", key+"-"+now.Format("20060102T150405Z"), page); err != nil {
+				return err
 			}
 		}
 	}
+	stored := 0
+	defer func() {
+		j.Logger.Info("mtgo event slugs", "listed", len(slugs), "stored", stored, "fetched", rep.Pages[SourceMTGO],
+			"fetch_errors", rep.FetchErrors[SourceMTGO])
+	}()
 	fetched := 0
 	for _, slug := range slugs {
 		if fetched >= j.MaxPages {
@@ -201,6 +220,7 @@ func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 		if ok, err := HasRaw(ctx, j.Store, SourceMTGO, slug); err != nil {
 			return err
 		} else if ok {
+			stored++
 			continue
 		}
 		page, err := j.Fetch.Get(ctx, j.MTGOBase+"/decklist/"+slug)

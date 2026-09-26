@@ -12,6 +12,48 @@ The records run newest first. The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-26b
+
+**Pull request #237, PR-85, reads the meta job and the "anime" session after #236, and adds the `live-test` skill and the live sweep (D-958 to D-961).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: read the scheduled meta job of 2026-09-27 at 06:00 UTC.
+
+**The base.** `main` is `1e6f73c`, from #236.
+
+**The deploy of #236.** The API build of `1e6f73c` ended SUCCESS at 20:10:05 UTC on 2026-09-26, and no web build ran. `/readyz` read `ok` with the commit, and `mtg-meta` runs `worker:1e6f73c`.
+
+**The meta job (D-958).** The next scheduled run was ten hours away, so the owner chose a manual run. Execution `mtg-meta-8qg4p` ran from 20:12:15 to 21:32:21 UTC. It logged "meta job done" and stored model `20260926T212435Z`. The job logs no own share, and the stored model holds fold 0 alone. A free refit of the same data read Commander other own copies 572 of 572, and synergy own copies 210 of 264.
+
+**The "anime" sessions (D-955).** Session `q3u6SJljKgGOHcFYEN6x` of `make api-build` and session `SXD19vlkrXKtKjXbtJqR` of `make live-web` asked the theme row alone in turn 1. The screen turn cost $0.0007.
+
+**The `live-test` skill (D-959, D-960).** The owner asked why the session did not send the prompt itself, and asked for a repeatable skill. `make live-web` signs in on `decktome.com` as the check account of D-779 in headless Chromium. `docs/reference/pr85-live-reads-2026-09-26.md` holds every read.
+
+**The live sweep (D-961).** The owner asked for a Playwright sweep of every path, for as little money as possible. `make live-sweep` read 36 screens for $0 with no build, and 41 screens for $0.0545 with one build, with no fault.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar reviewed `a5f0ed9` with two findings of the sweep: a delete of an older deck, and a share link that stays live after a break. Both had merit, and `52cd090` fixes both. Gitar approves `52cd090` with both findings closed. Codex: Ready for owner merge at `52cd090`, with no open finding. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The scheduled meta job of 2026-09-27 must store a model. UNVERIFIED: why the scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages.
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 3 and 4, and OQ-67 and OQ-77.
+
+### 2026-09-25h: the cold-start index wait, PR-83
+
+**The owner asked for option A of F-176: each read waits for the first card index, and the web chat sends a refused turn again.** The owner declined a web retry alone, one warm instance, and a startup probe (D-952). The session found that a plain Unavailable also names a conflict after a paid call. So the chat reads a refusal header, not the code alone (D-954). The Cloud Run logs gave 40 loads of 10 to 21 seconds, not 90.
+
 ## The resume section of 2026-09-26a
 
 **Pull request #236, PR-84, reads the deploy of #235 and the "anime" session, and fixes F-177 and F-178 (D-955 to D-957).**
