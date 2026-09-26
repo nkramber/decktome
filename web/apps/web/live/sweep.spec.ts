@@ -255,7 +255,10 @@ test("the check account sweeps every screen of the deployed web app", async ({ b
   const anonP = await context(browser, phone, sweep);
   await d.ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: baseURL });
 
+  // deckPath is the deck the sweep reads, and builtDeck the deck this run
+  // built. LIVE_SWEEP_DELETE deletes builtDeck alone.
   let deckPath = "";
+  let builtDeck = "";
   let sessionPath = "";
   // A break in the main flow still writes the report of every screen
   // before it.
@@ -379,7 +382,7 @@ test("the check account sweeps every screen of the deployed web app", async ({ b
         continue;
       }
       turns.push({ turn, outcome: seen, asked, picked: [] });
-      if (seen === "deck") deckPath = new URL(d.page.url()).pathname;
+      if (seen === "deck") builtDeck = deckPath = new URL(d.page.url()).pathname;
       if (seen === "failure") sweep.note(`turn ${turn}`, "desktop", await d.page.getByTestId("recovery").innerText());
       break;
     }
@@ -458,44 +461,65 @@ test("the check account sweeps every screen of the deployed web app", async ({ b
     });
 
     // One share link: read it signed out, revoke it, and read it again.
-    await sweep.step("share", [dp, anonD.page, anonP.page], async () => {
-      await dp.getByRole("button", { name: /^Share/ }).click();
-      await dp.getByRole("button", { name: /^Make (a|a new) link$/ }).click();
-      const linkBox = dp.getByLabel("The link, shown once");
-      await expect(linkBox).not.toHaveValue("");
-      const link = new URL(await linkBox.inputValue()).pathname;
-      await sweep.look(dp, "share dialog", "desktop");
-      for (const [a, view] of [
-        [anonD.page, "desktop"],
-        [anonP.page, "phone"],
-      ] as const) {
-        await a.goto(link);
-        await expect(a.getByText("A shared deck, read-only.")).toBeVisible({ timeout: 60_000 });
-        await sweep.look(a, "shared deck", view);
-      }
+    // A link that the step made stays live until a revoke, so a break
+    // in the step still revokes it.
+    let link = "";
+    let revoked = false;
+    const revoke = async () => {
       await dp.getByRole("button", { name: "Revoke the link" }).click();
       await expect(dp.getByTestId("share-state")).toBeVisible();
-      await dp.keyboard.press("Escape");
-      sweep.expect4xx(anonD.page, true);
-      await anonD.page.goto(link);
-      await expect(anonD.page.getByRole("alert")).toBeVisible({ timeout: 60_000 });
-      await sweep.look(anonD.page, "revoked share", "desktop");
-      sweep.expect4xx(anonD.page, false);
+      revoked = true;
+    };
+    await sweep.step("share", [dp, anonD.page, anonP.page], async () => {
+      try {
+        await dp.getByRole("button", { name: /^Share/ }).click();
+        await dp.getByRole("button", { name: /^Make (a|a new) link$/ }).click();
+        const linkBox = dp.getByLabel("The link, shown once");
+        await expect(linkBox).not.toHaveValue("");
+        link = new URL(await linkBox.inputValue()).pathname;
+        await sweep.look(dp, "share dialog", "desktop");
+        for (const [a, view] of [
+          [anonD.page, "desktop"],
+          [anonP.page, "phone"],
+        ] as const) {
+          await a.goto(link);
+          await expect(a.getByText("A shared deck, read-only.")).toBeVisible({ timeout: 60_000 });
+          await sweep.look(a, "shared deck", view);
+        }
+        await revoke();
+        await dp.keyboard.press("Escape");
+        sweep.expect4xx(anonD.page, true);
+        await anonD.page.goto(link);
+        await expect(anonD.page.getByRole("alert")).toBeVisible({ timeout: 60_000 });
+        await sweep.look(anonD.page, "revoked share", "desktop");
+      } finally {
+        sweep.expect4xx(anonD.page, false);
+        if (link && !revoked) {
+          await dp.keyboard.press("Escape").catch(() => undefined);
+          await dp.goto(deckPath);
+          await dp.getByRole("button", { name: /^Share/ }).click();
+          await revoke().catch(() => sweep.note("share", "flow", `the link ${link} stays live: revoke it on the deck screen`));
+          await dp.keyboard.press("Escape").catch(() => undefined);
+        }
+      }
     });
   }
 
   // The error states: a deck that does not exist, and a bad link.
   await sweep.step("missing deck", [d.page], async () => {
     sweep.expect4xx(d.page, true);
-    await d.page.goto("/decks/no-such-deck");
-    await expect(d.page.getByRole("link", { name: "Back to your decks" })).toBeVisible({ timeout: 60_000 });
-    await sweep.look(d.page, "missing deck", "desktop");
-    sweep.expect4xx(d.page, false);
+    try {
+      await d.page.goto("/decks/no-such-deck");
+      await expect(d.page.getByRole("link", { name: "Back to your decks" })).toBeVisible({ timeout: 60_000 });
+      await sweep.look(d.page, "missing deck", "desktop");
+    } finally {
+      sweep.expect4xx(d.page, false);
+    }
   });
 
-  if (deckPath && build && process.env.LIVE_SWEEP_DELETE === "1") {
-    await d.page.goto(deckPath);
-    await d.page.getByRole("button", { name: "Delete" }).click();
+  if (builtDeck && process.env.LIVE_SWEEP_DELETE === "1") {
+    await d.page.goto(builtDeck);
+    await d.page.getByRole("button", { name: "Delete", exact: true }).click();
     await d.page.getByRole("button", { name: "Delete the deck" }).click();
     await expect(d.page).toHaveURL(/\/decks$/);
     await sweep.look(d.page, "after deck delete", "desktop");

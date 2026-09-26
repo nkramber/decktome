@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar: waiting for the first review of this pull request. Codex: waiting for the Gitar pass (D-823).
+**The review.** Gitar reviewed `a5f0ed9` with two findings of the sweep: a delete of an older deck, and a share link that stays live after a break. Both had merit, and the next commit fixes both. Codex: waiting for the Gitar pass (D-823).
 
 **What waits on the owner.**
 
