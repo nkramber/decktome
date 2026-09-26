@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approves head `222b9bb`. Codex records Ready for owner merge at `222b9bb`. No finding remains open. The review record waits for its push and the review-gate check.
+**The review.** Gitar approves head `222b9bb` with no finding and no review thread. The review record `docs/reviews/pr-235.md` reads Ready for owner merge at `222b9bb`, with no finding. Pending the auto-merge.
 
 **What waits on the owner.**
 
