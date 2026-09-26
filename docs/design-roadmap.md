@@ -2412,7 +2412,7 @@ Gate:
 - After the merge, the next meta job stores a model.
 > *In plain English:* when the app finds no card for a theme, it now asks about the theme first, and the other questions wait. The daily grader update failed on one weak test, so that test now has its own, lower bar.
 
-**PR-85: The reads after #236, and the live test of the deployed app (F-178, D-958 to D-961).**
+**PR-85: The reads after #236, and the live test of the deployed app (F-178, D-958 to D-961).** ✅ merged as #237. The mark comes before any review (D-822).
 The item reads the meta job and one "anime" session after the merge of #236. The owner added a skill that checks the deployed app with no help from the owner (D-959), and a sweep of every screen (D-961).
 
 - **The meta job.** The next scheduled run was ten hours away, so the owner chose a manual run on the image of `1e6f73c` (D-958). It logged "meta job done" and stored model `20260926T212435Z`.

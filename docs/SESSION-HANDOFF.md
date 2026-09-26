@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-26b)
 
-**Pull request #PRNUM, PR-85, reads the meta job and the "anime" session after #236, and adds the `live-test` skill and the live sweep (D-958 to D-961).**
+**Pull request #237, PR-85, reads the meta job and the "anime" session after #236, and adds the `live-test` skill and the live sweep (D-958 to D-961).**
 
 Author provider: Claude Code
 
@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** REVIEWSTATE
+**The review.** Gitar: waiting for the first review of this pull request. Codex: waiting for the Gitar pass (D-823).
 
 **What waits on the owner.**
 
@@ -112,7 +112,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-85: the reads after #236, and the live test of the deployed app** (F-178, D-958 to D-961). This pull request is #PRNUM.
+1. **PR-85: the reads after #236, and the live test of the deployed app** (F-178, D-958 to D-961). This pull request is #237.
 2. **Read the scheduled meta job of 2026-09-27** (F-178, D-958). The job runs at 06:00 UTC. It must end with "meta job done", and `meta/model/` must hold a new version. Also read the MTGO line of "meta source": the scheduled runs of 2026-09-24 to 2026-09-26 read 0 pages.
 3. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 4. **Read the first commander question on the app after one more load** (D-690). `make live-web` can read it now (D-960), with the approval of the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
