@@ -129,6 +129,28 @@ func TestPoolRowsStayOutOfTheThemeRowTurn(t *testing.T) {
 	}
 }
 
+// TestThemeRowAsksAlone is D-955. The "anime" session of PR-54 asked the
+// theme row beside the power and color rows, and the power question named
+// the theme that matched no card. The row now asks alone, and the other
+// rows ask once it is out.
+func TestThemeRowAsksAlone(t *testing.T) {
+	c := load(t)
+	base := ctx(mtgv1.FormatId_FORMAT_ID_COMMANDER, "format", "theme")
+	if got := ids(c.Plan(base)); !contains(got, "power_commander") || !contains(got, "colors") {
+		t.Fatalf("the power and color rows must ask in this context: %v", got)
+	}
+	base.ThemeUnmatched = true
+	if got := ids(c.Plan(base)); len(got) != 1 || got[0] != "theme_unmatched" {
+		t.Errorf("the theme row did not ask alone: %v", got)
+	}
+	base.Asked = map[string]bool{"theme_unmatched": true}
+	base.Outstanding = map[string]string{SlotThemeUnmatched: "theme"}
+	got := ids(c.Plan(base))
+	if contains(got, "theme_unmatched") || !contains(got, "power_commander") {
+		t.Errorf("the rows after an unanswered theme row: %v", got)
+	}
+}
+
 // TestThemeUnmatchedReadsTheCardDatabase is F-142 through the real hint
 // source. "opponent milling cards" matched no card before D-724, and a
 // word no card holds still reads as unmatched.

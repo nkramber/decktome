@@ -185,6 +185,12 @@ func (c *Catalog) Plan(ctx Context) []Row {
 			return []Row{row}
 		}
 	}
+	// A theme that matches no card also gets one question and no others.
+	// The power and color questions read the theme, so they wait for the
+	// answer that replaces it (D-955).
+	if row, ok := c.Row(SlotThemeUnmatched); ok && ctx.ThemeUnmatched && row.open(ctx) {
+		return []Row{row}
+	}
 	for _, r := range c.Rows {
 		if len(out) >= MaxPerTurn {
 			break
@@ -192,14 +198,7 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		key := r.StateKey()
 		// One question per proto slot per turn. Two rows that inform one
 		// slot read as a contradiction in the same message.
-		if ctx.Filled[key] || (ctx.Asked[r.ID] && !r.asksAgain(ctx)) || usedKey[key] || usedSlot[r.Slot] {
-			continue
-		}
-		// Another row already asked this key, and no answer came back.
-		if _, out := ctx.Outstanding[key]; out && !ctx.Asked[r.ID] {
-			continue
-		}
-		if !r.When.matches(ctx) {
+		if usedKey[key] || usedSlot[r.Slot] || !r.open(ctx) {
 			continue
 		}
 		// A row keeps some slots out of its turn. The commander offer ranks
@@ -212,6 +211,20 @@ func (c *Catalog) Plan(ctx Context) []Row {
 		usedKey[key], usedSlot[r.Slot] = true, true
 	}
 	return out
+}
+
+// open reports whether the row may ask in this context, apart from the
+// other rows of the turn.
+func (r Row) open(ctx Context) bool {
+	key := r.StateKey()
+	if ctx.Filled[key] || (ctx.Asked[r.ID] && !r.asksAgain(ctx)) {
+		return false
+	}
+	// Another row already asked this key, and no answer came back.
+	if _, out := ctx.Outstanding[key]; out && !ctx.Asked[r.ID] {
+		return false
+	}
+	return r.When.matches(ctx)
 }
 
 // asksAgain reports whether a row the session already asked may ask a

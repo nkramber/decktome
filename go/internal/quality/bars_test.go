@@ -19,7 +19,10 @@ func passing(edit func(r *FitReport, m *Model)) (*Model, *FitReport) {
 		m.Formats[w] = &FormatModel{}
 		fr := &FormatReport{}
 		fr.Holdout.GreatOverBaseline = PairShare{Pairs: 100, Wins: 97}
-		fr.Holdout.BaselineOverOwn = PairShare{Pairs: 100, Wins: 96}
+		fr.Holdout.OwnByDefect = map[string]PairShare{
+			DefectLands: {Pairs: 50, Wins: 49}, DefectCurve: {Pairs: 50, Wins: 48},
+			DefectSynergy: {Pairs: 100, Wins: 80},
+		}
 		r.Formats[w] = fr
 	}
 	if edit != nil {
@@ -40,16 +43,33 @@ func TestPublishKeepsTheModelOnABarFailure(t *testing.T) {
 		{name: "every bar passes", stored: true},
 		{name: "the bar values pass", edit: func(r *FitReport, _ *Model) {
 			r.Formats[meta.FormatModern].Holdout.GreatOverBaseline = PairShare{Pairs: 10, Wins: 9}
-			r.Formats[meta.FormatModern].Holdout.BaselineOverOwn = PairShare{Pairs: 20, Wins: 19}
+			r.Formats[meta.FormatModern].Holdout.OwnByDefect = map[string]PairShare{
+				DefectLands: {Pairs: 20, Wins: 19}, DefectSynergy: {Pairs: 20, Wins: 15},
+			}
+		}, stored: true},
+		// The Commander fit of 2026-09-26 read 0.94 of 827 over every axis,
+		// under the one bar of 0.95. Each axis but synergy read 572 of 572,
+		// and synergy 205 of 255 (D-957).
+		{name: "the commander fit of 2026-09-26", edit: func(r *FitReport, _ *Model) {
+			r.Formats[meta.FormatCommander].Holdout.OwnByDefect = map[string]PairShare{
+				DefectLands: {Pairs: 196, Wins: 196}, DefectCurve: {Pairs: 196, Wins: 196},
+				DefectColors: {Pairs: 180, Wins: 180}, DefectSynergy: {Pairs: 255, Wins: 205},
+			}
 		}, stored: true},
 		{name: "great over precon under its bar", edit: func(r *FitReport, _ *Model) {
 			r.Formats[meta.FormatCommander].Holdout.GreatOverBaseline = PairShare{Pairs: 100, Wins: 89}
 		}},
 		{name: "precon over own copy under its bar", edit: func(r *FitReport, _ *Model) {
-			r.Formats[meta.FormatStandard].Holdout.BaselineOverOwn = PairShare{Pairs: 100, Wins: 94}
+			r.Formats[meta.FormatStandard].Holdout.OwnByDefect[DefectCurve] = PairShare{Pairs: 50, Wins: 45}
+		}},
+		{name: "precon over own synergy copy under its bar", edit: func(r *FitReport, _ *Model) {
+			r.Formats[meta.FormatCommander].Holdout.OwnByDefect[DefectSynergy] = PairShare{Pairs: 100, Wins: 74}
 		}},
 		{name: "a bar with no pair", edit: func(r *FitReport, _ *Model) {
-			r.Formats[meta.FormatModern].Holdout.BaselineOverOwn = PairShare{}
+			r.Formats[meta.FormatModern].Holdout.OwnByDefect = nil
+		}},
+		{name: "no synergy pair", edit: func(r *FitReport, _ *Model) {
+			delete(r.Formats[meta.FormatCommander].Holdout.OwnByDefect, DefectSynergy)
 		}},
 		{name: "a format drops out of the lists", edit: func(r *FitReport, _ *Model) {
 			delete(r.Formats, meta.FormatStandard)
