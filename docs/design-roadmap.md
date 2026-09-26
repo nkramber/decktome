@@ -2437,7 +2437,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* the daily grader update now works again, and the app asks about an unknown theme first. New tools let a session test the live site by itself with a test account, and walk every screen on a computer and a phone.
 
-**PR-86: The meta job logs each MTGO month page (F-179, D-962).**
+**PR-86: The meta job logs each MTGO month page (F-179, D-962).** ✅ merged as #238. The mark comes before any review (D-822).
 The scheduled meta jobs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors. The job logged no line for a month page, so no read named the cause. The owner chose a logging change over a manual run (D-962).
 
 - **The month line.** `runMTGO` logs `mtgo month page` for each month, with `month`, `found`, `bytes`, `links`, and `covered`.
