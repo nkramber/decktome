@@ -22,7 +22,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar and Codex have not read this pull request yet.
+**The review.** Gitar approved effective head `9d31be6` with no finding or open thread. The Codex record `docs/reviews/pr-246.md` says Ready for owner merge at `9d31be6`, with no open finding. Pending the owner decision.
 
 **What waits on the owner.**
 
