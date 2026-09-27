@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The next step.** Next step 3: the third pull request after #240 reads the scheduled meta job (D-966). Before the item work, it makes 61 shared reads over IPv6 on the deploy of this pull request (D-970).
+**The next step.** Next step 3: move the checkout to `/Volumes/SSD-1TB/decktome` (D-971). Before the item work, make 61 shared reads over IPv6 on the deploy of this pull request (D-970).
 
 **The base.** `main` is `ea587fc`, from #241. The API serves revision `mtg-api-00090-zzs`, the deploy of #241, and `/readyz` names `ea587fc`.
 
@@ -26,20 +26,20 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approves effective head `7e4ec70` with no finding and no open thread. Codex round 1 read `Blocked`. Comment 5852326252 answers the CI notice. The repeat review reads `Ready for owner merge` for effective head `7e4ec70`, after `make verify` passed. The published `review-gate` check read the old verdict and must rerun after this record reaches origin. Pending the auto-merge.
+**The review.** Gitar approves effective head `7e4ec70` with no finding and no open thread. Codex round 1 read `Blocked`. Comment 5852326252 answers the CI notice. The repeat review reads `Ready for owner merge` for effective head `7e4ec70`, after `make verify` passed. The published `review-gate` check read the old verdict and must rerun after this record reaches origin. Pending the auto-merge. A later commit of documents alone records D-971, the move of the checkout as the next step, and keeps the approval (D-837).
 
 **What waits on the owner.**
 
 - The merge of this pull request.
 - After the deploy of this pull request: 61 shared reads over IPv6 from two addresses of one /64. The 61st must answer 429 (D-970).
-- The scheduled meta job, in the third pull request after #240 (D-963, D-966). It must store a model, and log each MTGO month page (F-179).
+- The scheduled meta job, in the pull request after the move (D-963, D-966, D-971). It must store a model, and log each MTGO month page (F-179).
 - A deck gate run to grade the new split of the basics of #234. Ask first.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next step 4, and OQ-67 and OQ-77.
+- Next step 5, and OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -112,18 +112,19 @@ Twenty-two things a fresh session gets wrong without this file.
 
 1. **PR-89: the deploy reads of #230 and #227, and the header lines of the rate limit** (F-181, D-966 to D-968). It merged as #241.
 2. **PR-90: the rate limit checks on the deploy of #241, and the IPv6 key of the limiter** (F-181, F-182, D-969, D-970). This pull request is #242.
-3. **In the third pull request after #240, read the scheduled meta job** (F-179, D-962, D-963, D-966). Before the item work, make 61 calls of `GetSharedDeck` over IPv6 on the deploy of #242. Switch the source between two addresses of one /64 with `curl -6 --interface`. The 61st must answer 429 (F-182, D-970). When it answers 404, record the finding and ask the owner. The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:ea587fc`, which holds the fix of #239 and writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
+3. **Move the decktome checkout to `/Volumes/SSD-1TB/decktome`** (D-971). Before the item work, make 61 calls of `GetSharedDeck` over IPv6 on the deploy of #242. Switch the source between two addresses of one /64 with `curl -6 --interface`. The 61st must answer 429 (F-182, D-970). When it answers 404, record the finding and ask the owner. Then start in the old checkout, and clone to the new path. Copy `.env`, `.local`, and the auto-memory directory to the key `-Volumes-SSD-1TB-decktome`. Run `make hooks` and `make verify` there. `docs/setup-second-mac.md` names `~/Repos/decktome` as the fixed path, so change it. Keep the old checkout until the owner approves its deletion.
+4. **In the pull request after the move, read the scheduled meta job** (F-179, D-962, D-963, D-966, D-971). The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:ea587fc`, which holds the fix of #239 and writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
 
    ```text
    read the `mtg-meta` execution of 06:00 UTC on 2026-09-27 (or the newest scheduled one), filter on `msg` or `message` and `level` or `severity`, and check "meta job done", a new `meta/model/` version, 12 `mtgo month page` lines, and each `links=0` page under `meta/raw/mtgo-month-empty/` (F-179, F-180, D-962, D-963).
    ```
-4. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-179 (next step 3), and F-182 (next step 3). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
-5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
-7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **PR-26, the return channels**, waits on OQ-67.
-10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+5. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-179 (next step 4), and F-182 (next step 3). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+7. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
+8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+10. **PR-26, the return channels**, waits on OQ-67.
+11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
 
