@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Waits for Gitar. The pull request changes documents alone, so the `review-override` label replaces the Codex review (D-812).
+**The review.** Gitar approves effective head `4e54611` with one finding closed and no open thread. It found the 06:00 evidence assigned to one cause alone, fixed in `4e54611`. The pull request changes documents alone, so the `review-override` label replaces the Codex review (D-812). Pending the auto-merge.
 
 **What waits on the owner.**
 
