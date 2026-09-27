@@ -8,7 +8,10 @@ and each old resume section moves here, word for word.
 Read this file for the detail behind a decision. Read `docs/decisions.md`
 for the decision itself. Read `docs/SESSION-HANDOFF.md` to resume the work.
 
-The records run newest first. The oldest narratives sit in
+The groups run newest first. Each pull request moves one group here:
+the old resume section, then the session record that left the hand-off.
+So a session record sits below the resume section of a later session.
+The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
