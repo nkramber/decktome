@@ -607,14 +607,16 @@ func TestMTGORetryWaits(t *testing.T) {
 // the event slugs of each read of it, and the last entry repeats. An
 // empty entry is an empty page. events maps a slug to the status of each
 // read of its event page, and the last entry repeats. The site logs the
-// path of each read. delay is the time of each event page read.
+// path of each read. delay is the time of each event page read, and
+// againDelay the time of each month page read after the first.
 type mtgoSite struct {
-	mu     sync.Mutex
-	months map[string][][]string
-	events map[string][]int
-	delay  time.Duration
-	reads  map[string]int
-	log    []string
+	mu         sync.Mutex
+	months     map[string][][]string
+	events     map[string][]int
+	delay      time.Duration
+	againDelay time.Duration
+	reads      map[string]int
+	log        []string
 }
 
 func (m *mtgoSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -626,6 +628,9 @@ func (m *mtgoSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	m.mu.Unlock()
 	switch {
 	case strings.HasPrefix(p, "/decklists/"):
+		if n > 0 {
+			time.Sleep(m.againDelay)
+		}
 		reads, ok := m.months[p]
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
@@ -833,6 +838,23 @@ func TestMTGOStopsAtTheTimeBudget(t *testing.T) {
 		}
 		want(t, logs, `msg="mtgo time budget held" stage=months budget=200ms`,
 			`msg="mtgo month pages stay empty" months=2026-08 passes=0`)
+	})
+	t.Run("month retry pass", func(t *testing.T) {
+		site := &mtgoSite{months: map[string][][]string{
+			"/decklists/2026/09": {{sep}},
+			"/decklists/2026/08": {{}},
+			"/decklists/2026/07": {{}},
+			"/decklists/2026/06": {{}},
+		}, againDelay: 100 * time.Millisecond}
+		_, logs := run(t, site, 4, 10, 20*time.Millisecond, 150*time.Millisecond)
+		// The budget ends inside pass 1, so the pass reads no month after
+		// it, and each unread month stays empty.
+		again := strings.Count(logs, `msg="mtgo month page again"`)
+		if again < 1 || again >= 3 {
+			t.Errorf("%d month reads again, want at least 1 and fewer than 3", again)
+		}
+		want(t, logs, `msg="mtgo time budget held" stage=months`,
+			`msg="mtgo month pages stay empty" months="2026-08 2026-07 2026-06"`)
 	})
 	t.Run("302 retry", func(t *testing.T) {
 		site := &mtgoSite{

@@ -2669,7 +2669,7 @@ The item is next step 5 of the hand-off. The first scheduled run on the image of
 
 Gate:
 
-- `TestMTGOStopsAtTheTimeBudget` passes for the month retry, the 302 retry, and the event fetch. It fails when the budget stops no step.
+- `TestMTGOStopsAtTheTimeBudget` passes for the month retry, a month retry pass, the 302 retry, and the event fetch. It fails when the budget stops no step.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex record approves the effective head.
 

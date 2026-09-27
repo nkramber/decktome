@@ -363,7 +363,11 @@ func (j *Job) retryMTGOMonths(ctx context.Context, rep *Report, run *mtgoRun) er
 			}
 		}
 		var empty []mtgoMonth
-		for _, m := range months {
+		for k, m := range months {
+			if !j.inBudget(run, rep, 0, "months") {
+				empty = append(empty, months[k:]...)
+				break
+			}
 			page, err := j.Fetch.Get(ctx, m.url)
 			m.read = time.Now()
 			if err != nil {
