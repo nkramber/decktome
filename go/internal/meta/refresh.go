@@ -51,9 +51,9 @@ type Job struct {
 	// MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL, MTGTop8Base, and
 	// GoldfishBase override the sites, for the tests.
 	MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL, MTGTop8Base, GoldfishBase string
-	// MTGORetryWait is the least time between the first read of an
-	// empty older MTGO month page and its one retry, default
-	// DefaultMTGORetryWait (F-179, D-974).
+	// MTGORetryWait is the least time between two reads of an empty
+	// older MTGO month page, default DefaultMTGORetryWait (F-179, D-974,
+	// D-977).
 	MTGORetryWait time.Duration
 
 	// mtgoRetry holds the empty older month pages of this run, for the
@@ -66,6 +66,12 @@ type Job struct {
 // 2026-09-27 (F-179).
 const DefaultMTGORetryWait = 5 * time.Minute
 
+// MTGORetryPasses is how many times the job reads an empty older MTGO
+// month page again. The site served full and empty reads of one page
+// seconds apart on 2026-09-27, so one more read can get the same empty
+// page (F-179, D-977).
+const MTGORetryPasses = 3
+
 // mtgoRetry is the state of the MTGO month retry of one run.
 type mtgoRetry struct {
 	months []mtgoMonth
@@ -74,9 +80,10 @@ type mtgoRetry struct {
 }
 
 // mtgoMonth is one month page that held no event link on its first read.
+// first is the time of that read, and read is the time of the last one.
 type mtgoMonth struct {
-	key, url string
-	read     time.Time
+	key, url    string
+	first, read time.Time
 }
 
 // Report counts what one run did.
@@ -248,61 +255,82 @@ func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 			// The current month can hold no event yet, so only an older
 			// month reads again (D-974).
 			if i > 0 {
-				retry.months = append(retry.months, mtgoMonth{key: key, url: url, read: time.Now()})
+				at := time.Now()
+				retry.months = append(retry.months, mtgoMonth{key: key, url: url, first: at, read: at})
 			}
 		}
 	}
 	return j.fetchMTGOEvents(ctx, rep, slugs)
 }
 
-// retryMTGOMonths reads each empty older month page of runMTGO one more
-// time, at least MTGORetryWait after its first read, then fetches the
-// event pages of the months that now list events. The store keeps a
-// page that is empty again under its own name (F-179, D-974).
+// retryMTGOMonths reads each empty older month page of runMTGO again, up
+// to MTGORetryPasses times. Each pass comes at least MTGORetryWait after
+// the reads of the pass before it, and it reads only the months that are
+// still empty. It then fetches the event pages of the months that now
+// list events. The store keeps each page that is empty again under its
+// own name (F-179, D-974, D-977).
 func (j *Job) retryMTGOMonths(ctx context.Context, rep *Report) error {
 	retry := j.mtgoRetry
 	j.mtgoRetry = nil
-	if retry == nil || len(retry.months) == 0 {
+	if retry == nil {
 		return nil
 	}
-	if d := j.MTGORetryWait - time.Since(retry.months[len(retry.months)-1].read); d > 0 {
-		j.Logger.Info("mtgo month pages wait", "months", len(retry.months), "wait", d.Round(time.Second).String())
-		t := time.NewTimer(d)
-		select {
-		case <-ctx.Done():
-			t.Stop()
-			return ctx.Err()
-		case <-t.C:
+	months := retry.months
+	for pass := 1; pass <= MTGORetryPasses && len(months) > 0; pass++ {
+		if d := j.MTGORetryWait - time.Since(months[len(months)-1].read); d > 0 {
+			j.Logger.Info("mtgo month pages wait", "months", len(months), "pass", pass, "wait", d.Round(time.Second).String())
+			t := time.NewTimer(d)
+			select {
+			case <-ctx.Done():
+				t.Stop()
+				return ctx.Err()
+			case <-t.C:
+			}
 		}
+		var slugs []string
+		var empty []mtgoMonth
+		for _, m := range months {
+			page, err := j.Fetch.Get(ctx, m.url)
+			m.read = time.Now()
+			if err != nil {
+				if ctx.Err() != nil {
+					return err
+				}
+				j.Logger.Warn("mtgo month page again did not fetch", "month", m.key, "pass", pass, "err", err)
+				empty = append(empty, m)
+				continue
+			}
+			links := ParseMTGOMonth(page)
+			covered := 0
+			for _, slug := range links {
+				if MTGOSlugFormat(slug) != "" && !retry.seen[slug] {
+					retry.seen[slug] = true
+					slugs = append(slugs, slug)
+					covered++
+				}
+			}
+			j.Logger.Info("mtgo month page again", "month", m.key, "pass", pass, "after", m.read.Sub(m.first).Round(time.Second).String(),
+				"bytes", len(page), "links", len(links), "covered", covered)
+			if len(links) == 0 {
+				if err := PutRaw(ctx, j.Store, SourceMTGO+"-month-empty", fmt.Sprintf("%s-%s-again%d", m.key, retry.stamp, pass), page); err != nil {
+					return err
+				}
+				empty = append(empty, m)
+			}
+		}
+		if err := j.fetchMTGOEvents(ctx, rep, slugs); err != nil {
+			return err
+		}
+		months = empty
 	}
-	var slugs []string
-	for _, m := range retry.months {
-		page, err := j.Fetch.Get(ctx, m.url)
-		if err != nil {
-			if ctx.Err() != nil {
-				return err
-			}
-			j.Logger.Warn("mtgo month page again did not fetch", "month", m.key, "err", err)
-			continue
+	if len(months) > 0 {
+		keys := make([]string, len(months))
+		for i, m := range months {
+			keys[i] = m.key
 		}
-		links := ParseMTGOMonth(page)
-		covered := 0
-		for _, slug := range links {
-			if MTGOSlugFormat(slug) != "" && !retry.seen[slug] {
-				retry.seen[slug] = true
-				slugs = append(slugs, slug)
-				covered++
-			}
-		}
-		j.Logger.Info("mtgo month page again", "month", m.key, "after", time.Since(m.read).Round(time.Second).String(),
-			"bytes", len(page), "links", len(links), "covered", covered)
-		if len(links) == 0 {
-			if err := PutRaw(ctx, j.Store, SourceMTGO+"-month-empty", m.key+"-"+retry.stamp+"-again", page); err != nil {
-				return err
-			}
-		}
+		j.Logger.Warn("mtgo month pages stay empty", "months", strings.Join(keys, " "), "passes", MTGORetryPasses)
 	}
-	return j.fetchMTGOEvents(ctx, rep, slugs)
+	return nil
 }
 
 // fetchMTGOEvents fetches every event page of slugs the store lacks, in
