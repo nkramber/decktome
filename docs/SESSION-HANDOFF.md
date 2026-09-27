@@ -26,7 +26,7 @@ CAUTION: start each session in `/Volumes/SSD-1TB/decktome`. A session in the old
 
 **The checks.** See the pull request body.
 
-**The review.** Pending the Gitar review. The pull request changes documents alone, so the `review-override` label applies after Gitar and the other checks (D-812). Pending the auto-merge.
+**The review.** Gitar approves effective head `8d2b2ce` with one finding closed and no open thread. It found the old path in the unpack step, fixed in `5f05f88`. CI then found `.claude/` settings named as a path that git ignores, fixed in `8d2b2ce` (REF 2). The pull request changes documents alone, so the `review-override` label replaces the Codex review (D-812). Pending the auto-merge.
 
 **What waits on the owner.**
 
