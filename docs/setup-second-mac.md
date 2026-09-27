@@ -16,7 +16,7 @@ The repo comes from GitHub. Six things do not, and the paid gates and the dev st
 | The emulator data | `.local/firestore/` | 744 KB | The sessions, decks, and collections of the local dev stack. Optional. |
 | The feedback harvests | `.local/feedback/` | 284 KB | The verdicts that `make feedback-harvest` read from production. The triage and the fix cycle read them. Keep them out of git. |
 | The Claude Code memory | `~/.claude/projects/-Volumes-SSD-1TB-decktome/memory/` | 60 KB | The facts Claude Code keeps about you and this repo. Not in git. |
-| The local permission rules | `.claude/settings.local.json` in the repo root | 4 KB | The commands that Claude Code runs with no prompt. Not in git. |
+| The local permission rules | settings.local.json in the `.claude/` folder | 4 KB | The commands that Claude Code runs with no prompt. Not in git. |
 
 CAUTION: the fake GCS server keeps the metadata of each object in an extended attribute, `user.metadata`. A copy that drops the attribute breaks every listing of the bucket, and the API then loads no card index. Use `tar` or `ditto`, which keep the attributes on macOS. Do not use a cloud drive that strips them, and do not write a file into `.local/gcs` by hand.
 
@@ -69,7 +69,7 @@ Two tools are optional. `brew install --cask docker-desktop` serves `make dev-do
 
 1. Move `mtg-carry.tgz` and `mtg-claude-memory.tgz` to the new Mac.
 2. Run `cd /Volumes/SSD-1TB/decktome`.
-3. Run `tar -xzf ~/Desktop/mtg-carry.tgz`. It writes `.env`, `.claude/settings.local.json`, and `.local/`.
+3. Run `tar -xzf ~/Desktop/mtg-carry.tgz`. It writes `.env`, the local permission rules, and `.local/`.
 4. Run `chmod 600 .env`.
 5. Check the attributes on one snapshot object with the two lines below.
 

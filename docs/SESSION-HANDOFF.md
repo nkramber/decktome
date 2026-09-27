@@ -18,7 +18,7 @@ Author provider: Claude Code
 
 **The IPv6 check (F-182).** 61 calls of `GetSharedDeck` ran at 04:00 UTC on 2026-09-27, from two addresses of one /64. Calls 1 to 60 answered 404, and call 61 answered 429. One instance served all 61, so the fix of D-970 holds.
 
-**The move (D-971).** The owner chose to delete the two untracked review prompts of the old checkout (D-972). The session cloned to the new path. It copied `.env`, `.local`, `.claude/settings.local.json`, and the auto-memory to the key `-Volumes-SSD-1TB-decktome`. `make hooks`, `pnpm install`, and `make verify` passed there. `docs/setup-second-mac.md` names the new path.
+**The move (D-971).** The owner chose to delete the two untracked review prompts of the old checkout (D-972). The session cloned to the new path. It copied `.env`, `.local`, the local permission rules, and the auto-memory to the key `-Volumes-SSD-1TB-decktome`. `make hooks`, `pnpm install`, and `make verify` passed there. `docs/setup-second-mac.md` names the new path.
 
 CAUTION: start each session in `/Volumes/SSD-1TB/decktome`. A session in the old checkout reads the old memory directory, and the new checkout does not get its new memory.
 
@@ -151,7 +151,7 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The check came before the move.** The session waited for the build of #242, then read the revision and `/readyz`. The 61st shared read over IPv6 answered 429 (F-182). The first log read held 55 entries, and a second read held 61.
 
-**The move carried more than the clone.** The session listed each file that git ignores. It also copied `.claude/settings.local.json`, and it proved the `user.metadata` attribute on 19 of 19 files of `.local/gcs`.
+**The move carried more than the clone.** The session listed each file that git ignores. It also copied the local permission rules of `.claude/`, and it proved the `user.metadata` attribute on 19 of 19 files of `.local/gcs`.
 
 ## The archive
 
