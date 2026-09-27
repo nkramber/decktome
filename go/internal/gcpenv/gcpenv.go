@@ -4,7 +4,7 @@
 //
 // Variables it reads: PROJECT_ID, GOOGLE_CLOUD_PROJECT,
 // FIRESTORE_EMULATOR_HOST, STORAGE_EMULATOR_HOST, CARDS_SNAPSHOT_DIR,
-// CARDS_BUCKET, and K_SERVICE.
+// CARDS_BUCKET, K_SERVICE, and CLOUD_RUN_JOB.
 package gcpenv
 
 import (
@@ -41,6 +41,10 @@ func ProjectID() (string, error) {
 // OnCloudRun reports whether the process runs on Cloud Run, which sets
 // K_SERVICE.
 func OnCloudRun() bool { return os.Getenv("K_SERVICE") != "" }
+
+// onCloudRunJob reports whether the process runs as a Cloud Run job,
+// which sets CLOUD_RUN_JOB and not K_SERVICE (F-180).
+func onCloudRunJob() bool { return os.Getenv("CLOUD_RUN_JOB") != "" }
 
 // SnapshotStore picks the snapshot backend. CARDS_SNAPSHOT_DIR selects a
 // local directory (offline mode, tests). Default: the GCS bucket, which
@@ -80,12 +84,13 @@ func EnvOr(key, fallback string) string {
 	return fallback
 }
 
-// NewLogger builds the JSON logger. On Cloud Run the level and message
-// keys become severity and message, which Cloud Logging reads (L-18).
+// NewLogger builds the JSON logger. On a Cloud Run service or job the
+// level and message keys become severity and message, which Cloud
+// Logging reads (L-18, F-180).
 // Elsewhere the slog defaults stay, so a local log stays plain.
 func NewLogger(w io.Writer) *slog.Logger {
 	opts := &slog.HandlerOptions{}
-	if OnCloudRun() {
+	if OnCloudRun() || onCloudRunJob() {
 		opts.ReplaceAttr = cloudLoggingAttr
 	}
 	return slog.New(slog.NewJSONHandler(w, opts))

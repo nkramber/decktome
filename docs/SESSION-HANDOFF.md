@@ -6,34 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-26c)
+## RESUME HERE (2026-09-26d)
 
-**Pull request #238, PR-86, logs each MTGO month page of the meta job (F-179, D-962).**
+**Pull request #239, PR-87, gives the Cloud Run jobs a log severity (F-180, D-963, D-964).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2: read the first scheduled meta job after the API deploy of this pull request.
+**The next step.** Next step 2, in the next pull request: read the first scheduled meta job after the API deploy of #238 (D-963).
 
-**The base.** `main` is `b739386`, from #237.
+**The base.** `main` is `6301a30`, from #238.
 
-**The deploy of #237.** The web build `1a3df566` of `b739386` ended SUCCESS at 22:42:31 UTC on 2026-09-26, and `/version.json` names `b739386`. No API build ran, because #237 changes no file of `go/`.
+**The deploy of #238.** The `deploy-api` build `5674e284` of `6301a30` ended SUCCESS at 23:27:04 UTC on 2026-09-26. The jobs `mtg-meta` and `mtg-snapshot` run `worker:6301a30`.
 
-**Why this change.** The session started seven hours before the scheduled job of 2026-09-27. The owner asked why the session did not run the job by hand. The manual run of PR-85 already passed the split bar on the same image. No log of the job names the cause of the MTGO zeros. So the owner chose the logging change (D-962).
+**The fault (F-180).** `gcpenv.NewLogger` renamed `level` and `msg` only when `K_SERVICE` was set. A Cloud Run job sets `CLOUD_RUN_JOB` and not `K_SERVICE`. So the "worker failed" line of `mtg-meta-4spgm` at 06:22:04 UTC on 2026-09-26 read no severity. An `mtg-snapshot` line of the same day read none too.
 
-**The MTGO reads (F-179).** The runs of 2026-09-24 to 2026-09-26 stored no September page, and the manual run of 2026-09-26 stored 31. So their month pages gave no event link. The 06:00 runs of 2026-09-11 and 2026-09-14 stored older pages, so the hour is not the cause. The cause stays UNVERIFIED. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` holds every read.
+**The source.** The Cloud Run container contract and logging pages, updated 2026-09-24, read 2026-09-27 UTC. Cloud Logging moves `severity` into the entry for a job too, and keeps `jsonPayload.message`.
 
-**The change.** `runMTGO` logs `mtgo month page` for each month, and `mtgo event slugs` at the end. A month page with no event link stays under `meta/raw/mtgo-month-empty/`. `TestMTGOLogsEachMonthPage` fails on the base and passes here.
+**The change.** `NewLogger` renames the two keys when `K_SERVICE` or `CLOUD_RUN_JOB` is set. `OnCloudRun` still reads `K_SERVICE` alone, so its three API callers do not change (D-964). The job case of `TestNewLogger` fails on the base and passes here.
 
-**The job logs.** `mtg-meta-4spgm`, the run of 2026-09-26 at 06:00 UTC, failed the precon bar at 0.94 of 827 (F-178). The job writes its level into `jsonPayload.level`, so filter on that field, not on the severity.
+**The log keys.** A job on `worker:6301a30` or older writes `jsonPayload.level` and `jsonPayload.msg`. A job on the image of this pull request writes `severity` and `jsonPayload.message`. So a read of a job log accepts either key.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar reviewed `76cface` and approved the code review, with no open threads. Codex: Ready for owner merge at `76cface`, with no open finding. The record is `docs/reviews/pr-238.md`. Pending the auto-merge.
+**The review.** Pending.
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- The first scheduled meta job after the API deploy of this pull request. It must store a model, and log each MTGO month page (F-179).
+- The first scheduled meta job after the API deploy of #238, in the next pull request (D-963). It must store a model, and log each MTGO month page (F-179).
 - A deck gate run to grade the new split of the basics of #234. Ask first.
 - After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
@@ -99,7 +99,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-26: Cloud Build `532a3d5d` of `deploy-api` built `1e6f73c`, from #236, and ended SUCCESS at 20:10:05 UTC. The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed API, read 2026-09-27 UTC: Cloud Build `5674e284` of `deploy-api` built `6301a30`, from #238, and ended SUCCESS at 23:27:04 UTC on 2026-09-26. The jobs `mtg-meta` and `mtg-snapshot` run `worker:6301a30`. The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
 - The deployed web app, read 2026-09-26: build `1a3df566` of `deploy-web` built `b739386`, from #237, and ended SUCCESS at 22:42:31 UTC. `/version.json` names `b739386`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
@@ -112,8 +112,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-86: the meta job logs each MTGO month page** (F-179, D-962). This pull request is #238.
-2. **Read the first scheduled meta job after the API deploy of this pull request** (F-179, D-962). The job runs at 06:00 UTC. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`.
+1. **PR-87: the Cloud Run jobs write a log severity** (F-180, D-964). This pull request is #239.
+2. **In the next pull request, read the first scheduled meta job after the API deploy of #238** (F-179, D-962, D-963). The job runs at 06:00 UTC. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. A job on `worker:6301a30` writes `jsonPayload.msg` and `jsonPayload.level`. A job on the image of PR-87 writes `jsonPayload.message` and `severity` (F-180). So filter on `msg` or `message`, and on `level` or `severity`.
 3. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 4. **Read the first commander question on the app after one more load** (D-690). `make live-web` can read it now (D-960), with the approval of the owner. The server half holds: session `vY1lCRtl64uwFObznCZ9` stores the flag. The question must show "Suggest one" and no "You decide", and the pick row must still show "You decide". Session `z1hshyY6Npig1FN2NuV7` named its commander, so it showed no such row.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -133,10 +133,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-26a: the "anime" read, the theme row, and the meta bar, PR-84
-
-**The owner asked for the deploy read of #235 and the "anime" read of PR-54.** Both deploy reads held. The owner said that the power question must wait for the theme, and chose the rule of the out-of-scope row (D-955). The owner added the failed meta job to this pull request (D-956). Four free control fits found the cause in the list corpus. The owner read the house rule of D-486 and chose the split bar (D-957).
-
 ### 2026-09-26b: the reads after #236, and the live test, PR-85
 
 **The owner asked for next steps 2 and 3: read the meta job, then one more "anime" session.** The prompt put the read of the job of 06:00 UTC before the session, ten hours early. The owner chose a manual run (D-958). The owner then asked why the session did not send the prompt itself, and asked for the `live-test` skill with a screen lane (D-959, D-960). The owner then added a sweep of every screen to this pull request (D-961).
@@ -147,6 +143,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **A reading that the evidence refuted.** The session first read the MTGO zeros as a fault of the hour. The stored pages of the 06:00 runs of 2026-09-11 and 2026-09-14 refuted it, and the session told the owner before the choice.
 
+### 2026-09-26d: the log severity of the Cloud Run jobs, PR-87
+
+**The owner asked for F-180 before the read of the meta job (D-963).** The deploy of #238 held. The live logs and the Cloud Run docs proved the fault. The owner chose the scope: `NewLogger` reads `CLOUD_RUN_JOB`, and `OnCloudRun` does not change (D-964).
+
+**A change that the session reverted.** The session first added a line to the dated record of PR-86. A dated record is history, so the session reverted the line.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-26b, the records of 2026-08-31 to 2026-09-25h, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-26c, the records of 2026-08-31 to 2026-09-26a, and 104 more sections, word for word. Read it for the detail behind a decision.

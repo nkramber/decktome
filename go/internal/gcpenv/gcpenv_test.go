@@ -44,15 +44,18 @@ func TestNewLogger(t *testing.T) {
 	tests := []struct {
 		name      string
 		kService  string
+		runJob    string
 		wantKeys  []string
 		wantValue string
 	}{
 		{name: "local keeps slog keys", wantKeys: []string{"level", "msg"}, wantValue: "WARN"},
 		{name: "cloud run renames", kService: "api", wantKeys: []string{"severity", "message"}, wantValue: "WARNING"},
+		{name: "cloud run job renames", runJob: "mtg-meta", wantKeys: []string{"severity", "message"}, wantValue: "WARNING"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv("K_SERVICE", tt.kService)
+			t.Setenv("CLOUD_RUN_JOB", tt.runJob)
 			var buf bytes.Buffer
 			NewLogger(&buf).Warn("hello", "k", "v")
 			var row map[string]any
