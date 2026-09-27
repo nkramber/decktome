@@ -15,6 +15,42 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-27d
+
+**Pull request #247, PR-95, reads the 3 MTGO month passes of #246. It fetches the event pages after the retry, and it reads a 302 event page again (F-179, F-183, D-978 to D-980).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `0414f27`, from #246. Cloud Build `245c2d7b` deployed it at 16:31 UTC. The API serves revision `mtg-api-00093-rx2`, and the jobs run `worker:0414f27`.
+
+**The reads.** The owner chose a manual run over the wait for 06:00 UTC (D-978). The run `mtg-meta-87jlg` read 4 older month pages empty. Pass 1 read 3 of them full, and pass 2 read 2026-02 full. The page cap held before the retry, so the retry fetched no event page. 141 event pages answered 302 (F-183). `docs/reference/pr95-mtgo-passes-read-2026-09-27.md` holds the reads.
+
+**The change.** `finishMTGO` runs after the other sources. It reads the month retry passes, then it fetches the event pages of every month, newest month first (D-979). An event page that answers 302 reads again up to 3 times, 5 minutes apart. It holds its place under the page cap until its last read (D-980).
+
+**The tests.** `TestMTGOFetchesNewestMonthFirst` fails when the event pages come before the retry. `TestMTGORetriesARedirectedEventPage` fails when a 302 page reads once. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approved effective head `3b93ca4` with no finding or open thread. The Codex record `docs/reviews/pr-247.md` says Ready for owner merge at `3b93ca4`, with no open finding. The local Docker step of `make verify` did not run because the daemon was off. GitHub `verify:docker` passed. Pending the owner decision and auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 6, and OQ-67 and OQ-77.
+
+### 2026-09-27b: the retry of an empty older MTGO month page, PR-93
+
+**The evidence changed the delay.** The 11 older pages stayed empty for 4.5 minutes, and most 06:00 runs stored no older page. So a retry after one minute can fall in the same fault. The owner chose the retry after the other sources (D-974).
+
+**The test runs the whole job.** A fake site answers the first read of an older month with an empty page. The test proves the order of the reads, the wait, both log lines, and the stored page.
+
 ## The resume section of 2026-09-27c
 
 **Pull request #246, PR-94, reads the MTGO month retry of #245, and it reads an empty older month page up to 3 times (F-179, D-975, D-976, D-977).**

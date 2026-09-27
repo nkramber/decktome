@@ -57,6 +57,12 @@ type Job struct {
 	// older MTGO month page, default DefaultMTGORetryWait (F-179, D-974,
 	// D-977).
 	MTGORetryWait time.Duration
+	// MTGOBudget is the time from the start of the MTGO lane after
+	// which the lane starts no fetch and no wait, default
+	// DefaultMTGOBudget. The pages it does not read wait for the next
+	// run, and the quality fit after the sources keeps its time (F-184,
+	// D-982).
+	MTGOBudget time.Duration
 
 	// mtgo holds the month pages of this run, for the retry and the
 	// event fetch after the other sources.
@@ -74,6 +80,12 @@ const DefaultMTGORetryWait = 5 * time.Minute
 // page (F-179, D-977).
 const MTGORetryPasses = 3
 
+// DefaultMTGOBudget is the default of Job.MTGOBudget. On 2026-09-27 the
+// MTGO lane of mtg-meta-4nps4 ended 150 minutes after its start, with
+// the 302 retry. So the task timeout of 150 minutes stopped the quality
+// fit 14 seconds after its start (F-184).
+const DefaultMTGOBudget = 2 * time.Hour
+
 // mtgoRun is the state of the MTGO lane of one run, from the read of the
 // month pages to the fetch of the event pages (D-979).
 type mtgoRun struct {
@@ -83,6 +95,25 @@ type mtgoRun struct {
 	months []mtgoMonth
 	seen   map[string]bool
 	stamp  string
+	// deadline is the end of the MTGO budget of the run, zero for none.
+	// held tells that a step stopped at it.
+	deadline time.Time
+	held     bool
+}
+
+// inBudget answers whether a step that starts after wait starts before
+// the deadline of the run. The first step that does not names the
+// budget in the report and the log (F-184, D-982).
+func (j *Job) inBudget(run *mtgoRun, rep *Report, wait time.Duration, stage string) bool {
+	if run.deadline.IsZero() || time.Now().Add(wait).Before(run.deadline) {
+		return true
+	}
+	if !run.held {
+		run.held = true
+		j.Logger.Warn("mtgo time budget held", "stage", stage, "budget", j.MTGOBudget.String())
+	}
+	rep.Skipped[SourceMTGO] = fmt.Sprintf("the time budget of %s held, and more pages wait", j.MTGOBudget)
+	return false
 }
 
 // mtgoMonth is one month page that held no event link on its first read.
@@ -179,6 +210,9 @@ func (j *Job) defaults() {
 	if j.MTGORetryWait <= 0 {
 		j.MTGORetryWait = DefaultMTGORetryWait
 	}
+	if j.MTGOBudget <= 0 {
+		j.MTGOBudget = DefaultMTGOBudget
+	}
 }
 
 // Run reads every source. The error is the context's alone: a source
@@ -230,6 +264,9 @@ func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 	}
 	now := j.Now().UTC()
 	run := &mtgoRun{seen: map[string]bool{}, stamp: now.Format("20060102T150405Z")}
+	if j.MTGOBudget > 0 {
+		run.deadline = time.Now().Add(j.MTGOBudget)
+	}
 	j.mtgo = run
 	for i := 0; i < j.MTGOMonths; i++ {
 		month := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -i, 0)
@@ -284,24 +321,26 @@ func (r *mtgoRun) add(i int, links []string) int {
 // month, newest month first, up to MaxPages. So a month that the retry
 // reads full keeps its place before the older months (F-179, D-979). It
 // then reads each event page that answered 302 again (F-183, D-980).
+// Each step starts before the MTGO budget ends, or not at all (F-184,
+// D-982).
 func (j *Job) finishMTGO(ctx context.Context, rep *Report) error {
 	run := j.mtgo
 	j.mtgo = nil
 	if run == nil {
 		return nil
 	}
-	if err := j.retryMTGOMonths(ctx, run); err != nil {
+	if err := j.retryMTGOMonths(ctx, rep, run); err != nil {
 		return err
 	}
 	var slugs []string
 	for _, s := range run.slugs {
 		slugs = append(slugs, s...)
 	}
-	redirected, err := j.fetchMTGOEvents(ctx, rep, slugs, 0)
+	redirected, err := j.fetchMTGOEvents(ctx, rep, run, slugs, 0)
 	if err != nil {
 		return err
 	}
-	return j.retryMTGOEvents(ctx, rep, redirected)
+	return j.retryMTGOEvents(ctx, rep, run, redirected)
 }
 
 // retryMTGOMonths reads each empty older month page of runMTGO again, up
@@ -309,17 +348,26 @@ func (j *Job) finishMTGO(ctx context.Context, rep *Report) error {
 // the reads of the pass before it, and it reads only the months that are
 // still empty. The store keeps each page that is empty again under its
 // own name (F-179, D-974, D-977).
-func (j *Job) retryMTGOMonths(ctx context.Context, run *mtgoRun) error {
+func (j *Job) retryMTGOMonths(ctx context.Context, rep *Report, run *mtgoRun) error {
 	months := run.months
-	for pass := 1; pass <= MTGORetryPasses && len(months) > 0; pass++ {
-		if d := j.MTGORetryWait - time.Since(months[len(months)-1].read); d > 0 {
+	pass := 1
+	for ; pass <= MTGORetryPasses && len(months) > 0; pass++ {
+		d := j.MTGORetryWait - time.Since(months[len(months)-1].read)
+		if !j.inBudget(run, rep, max(d, 0), "months") {
+			break
+		}
+		if d > 0 {
 			j.Logger.Info("mtgo month pages wait", "months", len(months), "pass", pass, "wait", d.Round(time.Second).String())
 			if err := sleep(ctx, d); err != nil {
 				return err
 			}
 		}
 		var empty []mtgoMonth
-		for _, m := range months {
+		for k, m := range months {
+			if !j.inBudget(run, rep, 0, "months") {
+				empty = append(empty, months[k:]...)
+				break
+			}
 			page, err := j.Fetch.Get(ctx, m.url)
 			m.read = time.Now()
 			if err != nil {
@@ -348,7 +396,7 @@ func (j *Job) retryMTGOMonths(ctx context.Context, run *mtgoRun) error {
 		for i, m := range months {
 			keys[i] = m.key
 		}
-		j.Logger.Warn("mtgo month pages stay empty", "months", strings.Join(keys, " "), "passes", MTGORetryPasses)
+		j.Logger.Warn("mtgo month pages stay empty", "months", strings.Join(keys, " "), "passes", pass-1)
 	}
 	return nil
 }
@@ -359,17 +407,22 @@ func (j *Job) retryMTGOMonths(ctx context.Context, run *mtgoRun) error {
 // it served in full to the Mac later, so a 302 is most often a fault of
 // the site at that time (F-183, D-980). A page that stays redirected is
 // a fetch error, and the next run reads it again.
-func (j *Job) retryMTGOEvents(ctx context.Context, rep *Report, slugs []string) error {
+func (j *Job) retryMTGOEvents(ctx context.Context, rep *Report, run *mtgoRun, slugs []string) error {
 	last := time.Now()
-	for pass := 1; pass <= MTGORetryPasses && len(slugs) > 0; pass++ {
-		if d := j.MTGORetryWait - time.Since(last); d > 0 {
+	pass := 1
+	for ; pass <= MTGORetryPasses && len(slugs) > 0; pass++ {
+		d := j.MTGORetryWait - time.Since(last)
+		if !j.inBudget(run, rep, max(d, 0), "events again") {
+			break
+		}
+		if d > 0 {
 			j.Logger.Info("mtgo event pages wait", "slugs", len(slugs), "pass", pass, "wait", d.Round(time.Second).String())
 			if err := sleep(ctx, d); err != nil {
 				return err
 			}
 		}
 		var err error
-		slugs, err = j.fetchMTGOEvents(ctx, rep, slugs, pass)
+		slugs, err = j.fetchMTGOEvents(ctx, rep, run, slugs, pass)
 		last = time.Now()
 		if err != nil {
 			return err
@@ -377,7 +430,7 @@ func (j *Job) retryMTGOEvents(ctx context.Context, rep *Report, slugs []string) 
 	}
 	if len(slugs) > 0 {
 		rep.FetchErrors[SourceMTGO] += len(slugs)
-		j.Logger.Warn("mtgo event pages stay redirected", "slugs", len(slugs), "passes", MTGORetryPasses)
+		j.Logger.Warn("mtgo event pages stay redirected", "slugs", len(slugs), "passes", pass-1)
 	}
 	return nil
 }
@@ -399,7 +452,9 @@ func sleep(ctx context.Context, d time.Duration) error {
 // first fetch, and pass 1 to MTGORetryPasses read a 302 again. A slug
 // that answered 302 holds its place under MaxPages until its last read,
 // so a newer event keeps its place before an older one (D-979, D-980).
-func (j *Job) fetchMTGOEvents(ctx context.Context, rep *Report, slugs []string, pass int) ([]string, error) {
+// The fetch stops at the MTGO budget. On a retry pass, a slug that it
+// did not read again stays redirected (F-184, D-982).
+func (j *Job) fetchMTGOEvents(ctx context.Context, rep *Report, run *mtgoRun, slugs []string, pass int) ([]string, error) {
 	var redirected []string
 	stored, fetched, fetchErrors := 0, 0, 0
 	defer func() {
@@ -410,7 +465,7 @@ func (j *Job) fetchMTGOEvents(ctx context.Context, rep *Report, slugs []string, 
 		j.Logger.Info(msg, "pass", pass, "listed", len(slugs), "stored", stored, "fetched", fetched,
 			"redirected", len(redirected), "fetch_errors", fetchErrors)
 	}()
-	for _, slug := range slugs {
+	for i, slug := range slugs {
 		if rep.Pages[SourceMTGO]+len(redirected) >= j.MaxPages {
 			rep.Skipped[SourceMTGO] = fmt.Sprintf("the page cap of %d held, and more pages wait", j.MaxPages)
 			break
@@ -420,6 +475,16 @@ func (j *Job) fetchMTGOEvents(ctx context.Context, rep *Report, slugs []string, 
 		} else if ok {
 			stored++
 			continue
+		}
+		stage := "events"
+		if pass > 0 {
+			stage = "events again"
+		}
+		if !j.inBudget(run, rep, 0, stage) {
+			if pass > 0 {
+				redirected = append(redirected, slugs[i:]...)
+			}
+			break
 		}
 		page, err := j.Fetch.Get(ctx, j.MTGOBase+"/decklist/"+slug)
 		if err != nil {
