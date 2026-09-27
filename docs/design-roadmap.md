@@ -2500,7 +2500,7 @@ Gate:
 - `make verify` passes.
 > *In plain English:* in September a fix removed a confusing second button from the question that asks for a commander. The first live look ran an old copy of the page, so no one saw the fixed question. This check opened the live site as a test user and saw the question with one button, as planned.
 
-**PR-89: The deploy reads of #230 and #227, and the header lines of the rate limit (F-181, D-966 to D-968).** 🔧 planned.
+**PR-89: The deploy reads of #230 and #227, and the header lines of the rate limit (F-181, D-966 to D-968).** ✅ merged as #241. The mark comes before any review (D-822).
 The item reads two checks that waited on a deploy, next step 2 of the hand-off. The owner put them before the read of the meta job (D-966).
 
 - **The feedback list.** `make feedback-list VERDICT=` read six verdicts of every kind. The query needs the collection-group index of #230 (D-938).

@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-26f)
 
-**Pull request #PRNUM, PR-89, reads two deploy checks and fixes the header lines of the rate limit (F-181, D-966 to D-968).**
+**Pull request #241, PR-89, reads two deploy checks and fixes the header lines of the rate limit (F-181, D-966 to D-968).**
 
 Author provider: Claude Code
 
@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** REVIEWSTATE
+**The review.** The Gitar review and the Codex review wait on the effective head (D-823).
 
 **What waits on the owner.**
 
@@ -113,7 +113,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **PR-88: the live read of the commander row** (F-121, D-690, D-965). It merged as #240.
-2. **PR-89: the deploy reads of #230 and #227, and the header lines of the rate limit** (F-181, D-966 to D-968). This pull request is #PRNUM.
+2. **PR-89: the deploy reads of #230 and #227, and the header lines of the rate limit** (F-181, D-966 to D-968). This pull request is #241.
 3. **In the second pull request after #240, make the eleven calls of `CheckInvite` again** (F-181, D-968). Use a new first `X-Forwarded-For` address for each call. The eleventh must answer 429. Then the owner names a second concern, and not the meta read. When it answers 200, record a new design of the key.
 4. **In the third pull request after #240, read the scheduled meta job** (F-179, D-962, D-963, D-966). The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:2258cb0`, which writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
 
