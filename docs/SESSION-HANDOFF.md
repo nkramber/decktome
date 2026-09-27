@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approved effective head `48717b9`, and its only finding is closed. The Codex record says Ready for owner merge at `48717b9`, with no open finding. The review-gate check waits for the record push. Pending the owner decision and auto-merge.
+**The review.** Gitar approved effective head `48717b9`, and its only finding is closed. The Codex record says Ready for owner merge at `48717b9`, with no open finding. The review-gate check passed after the record push. Pending the owner decision and auto-merge.
 
 **What waits on the owner.**
 
