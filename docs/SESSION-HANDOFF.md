@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Ready for owner merge at `d68682050b337d05a23f91a2beb2ca1c18171dab`. No open finding ids.
+**The review.** Gitar approves effective head `d686820` with no finding and no thread. The Codex record `docs/reviews/pr-245.md` reads Ready for owner merge at `d686820`, with no open finding. Pending the auto-merge.
 
 **What waits on the owner.**
 
