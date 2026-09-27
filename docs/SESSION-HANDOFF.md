@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** The Codex review found P2-1 in the pull request body. Remove the provider line before merge. The effective head is `45f16eb` (D-823).
+**The review.** Gitar reviewed `45f16eb` and approved, with no finding and no thread. Codex round 1 read `Changes required` with one finding, P2-1: the body named the author provider. An edit of the body removed the line, and `docs/reviews/pr-241-response.md` holds the answer. The effective head is `45f16eb` (D-823).
 
 **What waits on the owner.**
 
