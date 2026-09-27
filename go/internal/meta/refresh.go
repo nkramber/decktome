@@ -51,6 +51,32 @@ type Job struct {
 	// MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL, MTGTop8Base, and
 	// GoldfishBase override the sites, for the tests.
 	MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL, MTGTop8Base, GoldfishBase string
+	// MTGORetryWait is the least time between the first read of an
+	// empty older MTGO month page and its one retry, default
+	// DefaultMTGORetryWait (F-179, D-974).
+	MTGORetryWait time.Duration
+
+	// mtgoRetry holds the empty older month pages of this run, for the
+	// retry after the other sources.
+	mtgoRetry *mtgoRetry
+}
+
+// DefaultMTGORetryWait is the default of Job.MTGORetryWait. The site
+// served an empty deck list for each older month for 4.5 minutes on
+// 2026-09-27 (F-179).
+const DefaultMTGORetryWait = 5 * time.Minute
+
+// mtgoRetry is the state of the MTGO month retry of one run.
+type mtgoRetry struct {
+	months []mtgoMonth
+	seen   map[string]bool
+	stamp  string
+}
+
+// mtgoMonth is one month page that held no event link on its first read.
+type mtgoMonth struct {
+	key, url string
+	read     time.Time
 }
 
 // Report counts what one run did.
@@ -135,6 +161,9 @@ func (j *Job) defaults() {
 	if j.GoldfishListPages <= 0 {
 		j.GoldfishListPages = 100
 	}
+	if j.MTGORetryWait <= 0 {
+		j.MTGORetryWait = DefaultMTGORetryWait
+	}
 }
 
 // Run reads every source. The error is the context's alone: a source
@@ -163,18 +192,30 @@ func (j *Job) Run(ctx context.Context) (*Report, error) {
 			j.Logger.Error("meta source failed", "source", s.name, "err", err)
 		}
 	}
+	// The other sources are the delay of the MTGO month retry (D-974).
+	if err := j.retryMTGOMonths(ctx, rep); err != nil {
+		if ctx.Err() != nil {
+			return rep, ctx.Err()
+		}
+		rep.Errors = append(rep.Errors, SourceMTGO+" retry: "+err.Error())
+		j.Logger.Error("meta source failed", "source", SourceMTGO+" retry", "err", err)
+	}
 	return rep, nil
 }
 
 // runMTGO reads the month pages back MTGOMonths, then every event page
 // of a covered format the store lacks, newest first, up to MaxPages.
+// An older month page with no event link waits for retryMTGOMonths.
 func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
+	j.mtgoRetry = nil
 	if j.Reparse {
 		return j.reparseMTGO(ctx, rep)
 	}
 	now := j.Now().UTC()
 	var slugs []string
 	seen := map[string]bool{}
+	retry := &mtgoRetry{seen: seen, stamp: now.Format("20060102T150405Z")}
+	j.mtgoRetry = retry
 	for i := 0; i < j.MTGOMonths; i++ {
 		month := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -i, 0)
 		url := fmt.Sprintf("%s/decklists/%04d/%02d", j.MTGOBase, month.Year(), int(month.Month()))
@@ -201,19 +242,79 @@ func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 		// stays for a reader under its own prefix (D-962).
 		j.Logger.Info("mtgo month page", "month", key, "found", true, "bytes", len(page), "links", len(links), "covered", covered)
 		if len(links) == 0 {
-			if err := PutRaw(ctx, j.Store, SourceMTGO+"-month-empty", key+"-"+now.Format("20060102T150405Z"), page); err != nil {
+			if err := PutRaw(ctx, j.Store, SourceMTGO+"-month-empty", key+"-"+retry.stamp, page); err != nil {
+				return err
+			}
+			// The current month can hold no event yet, so only an older
+			// month reads again (D-974).
+			if i > 0 {
+				retry.months = append(retry.months, mtgoMonth{key: key, url: url, read: time.Now()})
+			}
+		}
+	}
+	return j.fetchMTGOEvents(ctx, rep, slugs)
+}
+
+// retryMTGOMonths reads each empty older month page of runMTGO one more
+// time, at least MTGORetryWait after its first read, then fetches the
+// event pages of the months that now list events. The store keeps a
+// page that is empty again under its own name (F-179, D-974).
+func (j *Job) retryMTGOMonths(ctx context.Context, rep *Report) error {
+	retry := j.mtgoRetry
+	j.mtgoRetry = nil
+	if retry == nil || len(retry.months) == 0 {
+		return nil
+	}
+	if d := j.MTGORetryWait - time.Since(retry.months[len(retry.months)-1].read); d > 0 {
+		j.Logger.Info("mtgo month pages wait", "months", len(retry.months), "wait", d.Round(time.Second).String())
+		t := time.NewTimer(d)
+		select {
+		case <-ctx.Done():
+			t.Stop()
+			return ctx.Err()
+		case <-t.C:
+		}
+	}
+	var slugs []string
+	for _, m := range retry.months {
+		page, err := j.Fetch.Get(ctx, m.url)
+		if err != nil {
+			if ctx.Err() != nil {
+				return err
+			}
+			j.Logger.Warn("mtgo month page again did not fetch", "month", m.key, "err", err)
+			continue
+		}
+		links := ParseMTGOMonth(page)
+		covered := 0
+		for _, slug := range links {
+			if MTGOSlugFormat(slug) != "" && !retry.seen[slug] {
+				retry.seen[slug] = true
+				slugs = append(slugs, slug)
+				covered++
+			}
+		}
+		j.Logger.Info("mtgo month page again", "month", m.key, "after", time.Since(m.read).Round(time.Second).String(),
+			"bytes", len(page), "links", len(links), "covered", covered)
+		if len(links) == 0 {
+			if err := PutRaw(ctx, j.Store, SourceMTGO+"-month-empty", m.key+"-"+retry.stamp+"-again", page); err != nil {
 				return err
 			}
 		}
 	}
-	stored := 0
+	return j.fetchMTGOEvents(ctx, rep, slugs)
+}
+
+// fetchMTGOEvents fetches every event page of slugs the store lacks, in
+// order, while the run holds fewer than MaxPages MTGO pages.
+func (j *Job) fetchMTGOEvents(ctx context.Context, rep *Report, slugs []string) error {
+	stored, fetched, fetchErrors := 0, 0, 0
 	defer func() {
-		j.Logger.Info("mtgo event slugs", "listed", len(slugs), "stored", stored, "fetched", rep.Pages[SourceMTGO],
-			"fetch_errors", rep.FetchErrors[SourceMTGO])
+		j.Logger.Info("mtgo event slugs", "listed", len(slugs), "stored", stored, "fetched", fetched,
+			"fetch_errors", fetchErrors)
 	}()
-	fetched := 0
 	for _, slug := range slugs {
-		if fetched >= j.MaxPages {
+		if rep.Pages[SourceMTGO] >= j.MaxPages {
 			rep.Skipped[SourceMTGO] = fmt.Sprintf("the page cap of %d held, and more pages wait", j.MaxPages)
 			break
 		}
@@ -235,6 +336,7 @@ func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 			// One page the site would not serve is not the whole month.
 			// The store lacks it still, so the next run reads it again.
 			rep.FetchErrors[SourceMTGO]++
+			fetchErrors++
 			j.Logger.Warn("mtgo event page did not fetch", "slug", slug, "err", err)
 			continue
 		}

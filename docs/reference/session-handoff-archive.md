@@ -15,6 +15,46 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-27a
+
+**Pull request #244, PR-92, reads the first scheduled meta job on `worker:f178f05` (F-179, F-180, D-973).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 3: a retry of an empty older MTGO month page in the meta job (F-179, D-973). It is a code change.
+
+**The base.** `main` is `200e30c`, from #243. The API serves revision `mtg-api-00091-xd9`, and the jobs run `worker:f178f05`.
+
+**The job (F-179, F-180).** The execution `mtg-meta-xpt2x` ran at 06:00 UTC on 2026-09-27, and it logged "meta job done". It stored the model `20260927T061832Z`. Each log line held `message` and a severity.
+
+**The month pages.** The job logged 12 `mtgo month page` lines. 11 older months read `links=0`, and the store holds each page under `meta/raw/mtgo-month-empty/`. Each page held an empty deck list. September read 383 links.
+
+**The Mac.** The same pages gave 419 to 451 links to the headers of the job, to gzip, and to the Go client. The address of the job and a fault of the site at times stay as causes. The owner chose the retry in the next pull request (D-973).
+
+`docs/reference/pr92-meta-job-read-2026-09-27.md` holds the reads. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approves effective head `4e54611` with one finding closed and no open thread. It found the 06:00 evidence assigned to one cause alone, fixed in `4e54611`. The pull request changes documents alone, so the `review-override` label replaces the Codex review (D-812). Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 4, and OQ-67 and OQ-77.
+
+### 2026-09-26g: the rate limit checks on the deploy of #241, PR-90
+
+**The fix of #241 held, and a second probe found a second hole.** The eleventh call of `CheckInvite` answered 429. The owner named the shared-read limit as the second concern (D-969). Its 61 calls all passed, because the Mac sent them from two IPv6 addresses of one /64.
+
+**A scratch test before a claim.** The session built the handler wiring of `main.go` in a scratch test, and it refused call 61. So the key caused the miss, and the wiring did not. The logs then showed the two addresses. The owner chose the fix in this pull request (D-970).
+
 ## The resume section of 2026-09-26h
 
 **Pull request #243, PR-91, moves the decktome checkout to `/Volumes/SSD-1TB/decktome`, and reads the IPv6 check of F-182 on the deploy of #242 (D-971, D-972).**
