@@ -415,10 +415,13 @@ func TestMTGOLogsEachMonthPage(t *testing.T) {
 	if err := job.runMTGO(ctx, newReport()); err != nil {
 		t.Fatal(err)
 	}
+	if err := job.finishMTGO(ctx, newReport()); err != nil {
+		t.Fatal(err)
+	}
 	for _, want := range []string{
 		`msg="mtgo month page" month=2026-09 found=true bytes=22 links=0 covered=0`,
 		`msg="mtgo month page" month=2026-08 found=true`,
-		`msg="mtgo event slugs" listed=`,
+		`msg="mtgo event slugs" pass=0 listed=`,
 	} {
 		if !strings.Contains(logs.String(), want) {
 			t.Errorf("the log lacks %q:\n%s", want, logs.String())
@@ -487,14 +490,23 @@ func TestMTGORetriesAnEmptyOlderMonth(t *testing.T) {
 			t.Fatal(err)
 		}
 		var reads []hit
-		lastOther := -1
+		lastOther, lastMonth, firstEvent := -1, -1, -1
 		for i, h := range hits {
 			switch {
 			case strings.HasPrefix(h.path, "/decklists/"):
 				reads = append(reads, h)
-			case !strings.HasPrefix(h.path, "/decklist/"):
+				lastMonth = i
+			case strings.HasPrefix(h.path, "/decklist/"):
+				if firstEvent < 0 {
+					firstEvent = i
+				}
+			default:
 				lastOther = i
 			}
+		}
+		// The event pages come after the last month read (D-979).
+		if full && (firstEvent < 0 || firstEvent < lastMonth) {
+			t.Errorf("fullOn=%d: the first event page came at hit %d, before the last month read at %d", fullOn, firstEvent, lastMonth)
 		}
 		paths := make([]string, len(reads))
 		for i, h := range reads {
@@ -569,7 +581,7 @@ func TestMTGORetryWaits(t *testing.T) {
 	if err := job.runMTGO(ctx, newReport()); err != nil {
 		t.Fatal(err)
 	}
-	if err := job.retryMTGOMonths(ctx, newReport()); err != nil {
+	if err := job.finishMTGO(ctx, newReport()); err != nil {
 		t.Fatal(err)
 	}
 	if took, want := time.Since(start), MTGORetryPasses*job.MTGORetryWait; took < want {
@@ -586,8 +598,190 @@ func TestMTGORetryWaits(t *testing.T) {
 	}
 	// A second call finds no month: the retry runs once in a run.
 	logs.Reset()
-	if err := job.retryMTGOMonths(ctx, newReport()); err != nil || logs.Len() != 0 {
+	if err := job.finishMTGO(ctx, newReport()); err != nil || logs.Len() != 0 {
 		t.Errorf("a second retry ran: err %v, log %q", err, logs.String())
+	}
+}
+
+// mtgoSite is a fake MTGO site for one test. months maps a month path to
+// the event slugs of each read of it, and the last entry repeats. An
+// empty entry is an empty page. events maps a slug to the status of each
+// read of its event page, and the last entry repeats. The site logs the
+// path of each read.
+type mtgoSite struct {
+	mu     sync.Mutex
+	months map[string][][]string
+	events map[string][]int
+	reads  map[string]int
+	log    []string
+}
+
+func (m *mtgoSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	m.mu.Lock()
+	p := r.URL.Path
+	n := m.reads[p]
+	m.reads[p] = n + 1
+	m.log = append(m.log, p)
+	m.mu.Unlock()
+	switch {
+	case strings.HasPrefix(p, "/decklists/"):
+		reads, ok := m.months[p]
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		var b strings.Builder
+		b.WriteString("<html>")
+		for _, slug := range reads[min(n, len(reads)-1)] {
+			fmt.Fprintf(&b, `<a href="/decklist/%s">`, slug)
+		}
+		b.WriteString("</html>")
+		_, _ = w.Write([]byte(b.String()))
+	case strings.HasPrefix(p, "/decklist/"):
+		codes := m.events[strings.TrimPrefix(p, "/decklist/")]
+		code := http.StatusOK
+		if len(codes) > 0 {
+			code = codes[min(n, len(codes)-1)]
+		}
+		if code == http.StatusFound {
+			w.Header().Set("Location", "/decklists")
+		}
+		if code != http.StatusOK {
+			w.WriteHeader(code)
+			return
+		}
+		data, _ := os.ReadFile(filepath.Join("testdata", "mtgo_challenge.html"))
+		_, _ = w.Write(data)
+	default:
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
+
+// eventReads answers the event slugs the site served, in order.
+func (m *mtgoSite) eventReads() []string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var out []string
+	for _, p := range m.log {
+		if strings.HasPrefix(p, "/decklist/") {
+			out = append(out, strings.TrimPrefix(p, "/decklist/"))
+		}
+	}
+	return out
+}
+
+// mtgoOnlyJob runs the MTGO lane alone against site, with a page cap.
+func mtgoOnlyJob(t *testing.T, site *mtgoSite, months, maxPages int, logs *strings.Builder) (*Job, func()) {
+	t.Helper()
+	site.reads = map[string]int{}
+	srv := httptest.NewServer(site)
+	job := testJob(t, srv, DirObjects{Root: t.TempDir()})
+	job.MTGOMonths, job.MaxPages, job.MTGORetryWait = months, maxPages, 20*time.Millisecond
+	job.Logger = slog.New(slog.NewTextHandler(logs, nil))
+	return job, srv.Close
+}
+
+// TestMTGOFetchesNewestMonthFirst: a month that the retry reads full
+// keeps its place before an older month under the page cap. The run of
+// 2026-09-27 read 4 older months full on the retry, and the cap was full
+// before the retry, so their 584 slugs fetched no page (F-183, D-979).
+func TestMTGOFetchesNewestMonthFirst(t *testing.T) {
+	ctx := context.Background()
+	sep, aug, jul := "modern-challenge-32-2026-09-0112800001", "modern-challenge-32-2026-08-0112800002", "modern-challenge-32-2026-07-0112800003"
+	site := &mtgoSite{months: map[string][][]string{
+		"/decklists/2026/09": {{sep}},
+		"/decklists/2026/08": {{}, {aug}},
+		"/decklists/2026/07": {{jul}},
+	}}
+	var logs strings.Builder
+	job, done := mtgoOnlyJob(t, site, 3, 2, &logs)
+	defer done()
+	rep := newReport()
+	if err := job.runMTGO(ctx, rep); err != nil {
+		t.Fatal(err)
+	}
+	if got := site.eventReads(); len(got) != 0 {
+		t.Fatalf("event pages %v before the retry, want none", got)
+	}
+	if err := job.finishMTGO(ctx, rep); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := strings.Join(site.eventReads(), " "), sep+" "+aug; got != want {
+		t.Errorf("event pages %q, want %q: the retried month comes before the older one", got, want)
+	}
+	if rep.Pages[SourceMTGO] != 2 || rep.Skipped[SourceMTGO] == "" {
+		t.Errorf("mtgo pages %d, skipped %q, want 2 pages and the cap named", rep.Pages[SourceMTGO], rep.Skipped[SourceMTGO])
+	}
+	if want := `msg="mtgo event slugs" pass=0 listed=3 stored=0 fetched=2 redirected=0 fetch_errors=0`; !strings.Contains(logs.String(), want) {
+		t.Errorf("the log lacks %q:\n%s", want, logs.String())
+	}
+}
+
+// TestMTGORetriesARedirectedEventPage: an event page that answers 302
+// reads again up to MTGORetryPasses times, and it holds its place under
+// the page cap until its last read. A page that stays redirected is one
+// fetch error and one warning (F-183, D-980). fullOn is the read of the
+// page that answers 200, and 0 is none.
+func TestMTGORetriesARedirectedEventPage(t *testing.T) {
+	for _, fullOn := range []int{2, 4, 0} {
+		ctx := context.Background()
+		first, second := "modern-challenge-32-2026-09-0212800001", "modern-challenge-32-2026-09-0112800002"
+		codes := []int{http.StatusFound}
+		if fullOn > 0 {
+			codes = nil
+			for i := 1; i < fullOn; i++ {
+				codes = append(codes, http.StatusFound)
+			}
+			codes = append(codes, http.StatusOK)
+		}
+		site := &mtgoSite{
+			months: map[string][][]string{"/decklists/2026/09": {{first, second}}},
+			events: map[string][]int{first: codes},
+		}
+		var logs strings.Builder
+		job, done := mtgoOnlyJob(t, site, 1, 1, &logs)
+		rep := newReport()
+		if err := job.runMTGO(ctx, rep); err != nil {
+			t.Fatal(err)
+		}
+		start := time.Now()
+		if err := job.finishMTGO(ctx, rep); err != nil {
+			t.Fatal(err)
+		}
+		took := time.Since(start)
+		done()
+		reads := fullOn
+		if fullOn == 0 {
+			reads = 1 + MTGORetryPasses
+		}
+		// The redirected page holds the one place under the cap, so the
+		// older event never fetches.
+		if got, want := strings.Join(site.eventReads(), " "), strings.TrimSpace(strings.Repeat(first+" ", reads)); got != want {
+			t.Errorf("fullOn=%d: event pages %q, want %q", fullOn, got, want)
+		}
+		if want := time.Duration(reads-1) * job.MTGORetryWait; took < want {
+			t.Errorf("fullOn=%d: the passes ended after %v, want at least %v", fullOn, took, want)
+		}
+		wantPages, wantErrors := 1, 0
+		if fullOn == 0 {
+			wantPages, wantErrors = 0, 1
+		}
+		if rep.Pages[SourceMTGO] != wantPages || rep.FetchErrors[SourceMTGO] != wantErrors {
+			t.Errorf("fullOn=%d: mtgo pages %d, fetch errors %d, want %d and %d", fullOn, rep.Pages[SourceMTGO], rep.FetchErrors[SourceMTGO], wantPages, wantErrors)
+		}
+		for _, want := range []string{
+			`msg="mtgo event page answered 302" slug=` + first + ` pass=0`,
+			`msg="mtgo event slugs" pass=0 listed=2 stored=0 fetched=0 redirected=1 fetch_errors=0`,
+			`msg="mtgo event pages again" pass=1 listed=1`,
+		} {
+			if !strings.Contains(logs.String(), want) {
+				t.Errorf("fullOn=%d: the log lacks %q:\n%s", fullOn, want, logs.String())
+			}
+		}
+		stay := strings.Contains(logs.String(), `msg="mtgo event pages stay redirected" slugs=1 passes=3`)
+		if stay != (fullOn == 0) {
+			t.Errorf("fullOn=%d: the log names the pages that stay redirected %v, want %v", fullOn, stay, fullOn == 0)
+		}
 	}
 }
 
