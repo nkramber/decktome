@@ -2571,7 +2571,7 @@ The item is next step 3 of the hand-off (D-971). It reads the first scheduled ru
 - **The month pages.** The job logged 12 `mtgo month page` lines. 11 older months read `links=0`, and each stored page held an empty deck list.
 - **The Mac.** The same pages gave 419 to 451 links to the headers of the job, to gzip, and to the Go client.
 
-The address of the job and a fault of the site at 06:00 UTC stay as causes. The owner chose a retry of an empty older month page in the next pull request (D-973). `docs/reference/pr92-meta-job-read-2026-09-27.md` holds the reads. No paid target ran.
+The address of the job and a fault of the site at times stay as causes. The owner chose a retry of an empty older month page in the next pull request (D-973). `docs/reference/pr92-meta-job-read-2026-09-27.md` holds the reads. No paid target ran.
 
 Gate:
 

@@ -53,7 +53,7 @@ So the site served the page, and it served the deck list with no item.
 
 ## The month pages from the Mac
 
-At about 06:35 UTC on 2026-09-27, the session fetched the month pages from the Mac of the owner.
+From 06:28:58 to about 06:31 UTC on 2026-09-27, the session fetched the month pages from the Mac of the owner.
 
 | Client | Month | Status | Bytes | Event links |
 |---|---|---|---|---|
@@ -75,9 +75,9 @@ The headers of the job are the user agent `mtg-deck-builder/0.1 (github.com/nkra
 Two causes stay open:
 
 - The site answers an older month with an empty list to the address of the job.
-- The site answers an older month with an empty list at times, for example about 06:00 UTC.
+- The site answers an older month with an empty list at times, to any client.
 
-Two facts weaken the first cause. The 06:00 runs of 2026-09-11 and 2026-09-14 stored 100 and 111 older event pages. The manual run `mtg-meta-8qg4p` from Cloud Run stored 169 older event pages. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` holds those counts.
+Facts weaken both causes. The 06:00 runs of 2026-09-11 and 2026-09-14 stored 100 and 111 older event pages. So the hour alone does not empty the list, and the job got full lists before. The manual run `mtg-meta-8qg4p` from Cloud Run stored 169 older event pages. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` holds those counts.
 
 ## The owner decision
 
