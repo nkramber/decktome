@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar reviewed `250c08d` and approved, with no finding and no thread. Codex round 1 read Changes required at `250c08d`, with P2-1 on the order of the archive. The author found partial merit, and `docs/reviews/pr-239-response.md` holds the answer. The repeat review is pending.
+**The review.** Gitar reviewed `250c08d` and approved, with no finding and no thread. Codex round 1 read Changes required at `250c08d`, with P2-1 on the order of the archive. The author found partial merit, and `docs/reviews/pr-239-response.md` holds the answer. Codex repeat review: Ready for owner merge at `250c08d`, with no open finding. The record is `docs/reviews/pr-239.md`. Pending the auto-merge.
 
 **What waits on the owner.**
 
