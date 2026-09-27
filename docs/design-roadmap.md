@@ -2630,7 +2630,7 @@ Gate:
 
 > *In plain English:* the Magic Online site sometimes sends an empty list of events for an old month, to anyone who asks. The nightly job now asks up to three more times, five minutes apart, before it gives up on that month.
 
-**PR-95: Read the 3 MTGO month passes, and fetch the event pages after the retry (F-179, F-183, D-978, D-979, D-980).** 🔧 open.
+**PR-95: Read the 3 MTGO month passes, and fetch the event pages after the retry (F-179, F-183, D-978, D-979, D-980).** ✅ merged as #247. The mark comes before any review (D-822).
 The item is next step 4 of the hand-off. The first scheduled run on the image of #246 comes at 06:00 UTC on 2026-09-28, so the owner chose a manual run (D-978).
 
 - **The manual run.** `mtg-meta-87jlg` read 4 older month pages empty. Pass 1 read 3 of them full, and pass 2 read the fourth full.
