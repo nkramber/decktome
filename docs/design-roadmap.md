@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-27 correction pass 241 (PR-92, F-179, D-973): the scheduled meta job of 2026-09-27 stored a model. 11 of 12 MTGO month pages held an empty deck list. The Mac got the full lists. Changes: F-179, PR-92, sequencing step 85.
+
 2026-09-26 correction pass 240 (PR-91, F-182, D-971, D-972): the 61st shared read over IPv6 answered 429 on the deploy of #242, so F-182 is fixed. The checkout moves to `/Volumes/SSD-1TB/decktome`. Changes: F-182, PR-91, sequencing step 84.
 
 2026-09-26 correction pass 239 (PR-90, F-181, F-182, D-969, D-970): the eleventh call of `CheckInvite` answered 429 on the deploy of #241, so F-181 is fixed. The 61 shared reads all passed, because they came from two IPv6 addresses of one /64. The limiter now keys an IPv6 client on its /64. Changes: F-181, F-182, PR-90, sequencing step 83.
@@ -547,7 +549,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-176 | **A cold start refuses the chat turn of a user, and only a tap sends it again.** The owner read this on `decktome.com` at 02:44:30 UTC on 2026-09-26. A new instance of revision `mtg-api-00085-bd8` started at 02:44:19 and listened at 02:44:20. The turn "Build me an anime-themed commander deck from my collection." read Unavailable: "the card database is not loaded yet, so the chat waits". The index loaded at 02:44:39.9 in 19.05 seconds. The web showed a red error and a "Try again" button. F-164 covered the card reads alone (D-801). `Chat`, `ImportDeck`, `Validate`, `GetSharedDeck`, `GetCollection`, and the upload of a collection still refused at once, and the web chat retried only on a tap. The 40 index loads of 2026-09-23 to 2026-09-26 took 10.2 to 20.9 seconds, not the 90 seconds of F-164. | ✅ fixed by #235 (PR-83, D-952 to D-954). The six reads wait 5 seconds for the first index, and the web chat sends a turn again on the loading refusal alone. |
 | F-177 | **The theme row asks beside the power and color rows.** The owner sent "Build me an anime themed commander deck" on `decktome.com` on 2026-09-26. Session `IoWy0DnoC0hQ0weOjZWa` asked the theme row of D-725, the power row, and the colors row in one turn. The power question named the "anime-themed deck", the theme that matched no card. The power and colors answers read the theme, so they must wait for its answer. | ✅ fixed by #236 (PR-84, D-955). The theme row asks alone, as the out-of-scope and two-deck rows do. |
 | F-178 | **The daily refit fails the precon bar, so the model of 2026-09-25 stays.** The meta job of 2026-09-26 read "commander: precon over own copy 0.94 of 827, the bar is 0.95", and Pushover sent the failure. It was the first job with the bar check of D-927. The lands, curve, and colors copies read 572 of 572, and the synergy copies 205 of 255. Free fits found no code, precon, or card snapshot cause. The list corpus grew, and more synergy copies passed the check of D-653. | ✅ fixed by #236 (PR-84, D-957). The synergy own copies read a bar of 0.75, and every other own copy keeps 0.95. `docs/reference/pr84-meta-bar-2026-09-26.md` holds the fits. |
-| F-179 | **The meta job reads 0 MTGO pages, and no log line names the cause.** The scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors, and stored no September page. The manual run of 2026-09-26 stored 31 new September pages and 169 older ones. The runs of 2026-09-19 to 2026-09-23 read September links alone, so the older month pages gave them no link. Each month page answered 200 with 129 to 158 links to a Mac fetch. | 🔧 PR-86 logs each month page and keeps a month page with no event link (D-962). The cause waits for the first scheduled run after the deploy. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` holds the reads. |
+| F-179 | **The meta job reads 0 MTGO pages, and no log line names the cause.** The scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors, and stored no September page. The manual run of 2026-09-26 stored 31 new September pages and 169 older ones. The runs of 2026-09-19 to 2026-09-23 read September links alone, so the older month pages gave them no link. Each month page answered 200 with 129 to 158 links to a Mac fetch. | 🔧 PR-86 logs each month page and keeps a month page with no event link (D-962). On 2026-09-27 the job read 11 of 12 month pages with an empty deck list, and the Mac got the full lists (PR-92). A retry of an empty older month page comes next (D-973). `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` and `docs/reference/pr92-meta-job-read-2026-09-27.md` hold the reads. |
 | F-180 | **The Cloud Run jobs write no log severity.** `gcpenv.NewLogger` renamed `level` and `msg` to `severity` and `message` only when `K_SERVICE` was set. A Cloud Run job sets `CLOUD_RUN_JOB` and not `K_SERVICE`. So each line of `mtg-meta` and `mtg-snapshot` held `jsonPayload.level` and `jsonPayload.msg`, and no severity. The "worker failed" line of `mtg-meta-4spgm` on 2026-09-26 read no severity, and a filter on `severity>=ERROR` missed it. | ✅ fixed by #239 (PR-87, D-964). `NewLogger` renames the two keys on a service or a job. `OnCloudRun` still reads `K_SERVICE` alone. |
 | F-181 | **A spoofed first address still gets a new bucket on the deployed API.** Eleven calls of `CheckInvite` on 2026-09-27, each with a new first address in `X-Forwarded-For`, all answered 200. The request logs name one instance for all eleven, so one limiter counted them. The interceptor read the header with `Header.Get`, which answers the first header line alone. UNVERIFIED: no log holds the header that the API read. | ✅ PR-89 joins every header line (D-967). On the deploy of #241 the eleventh call answered 429, and one instance served all eleven (D-968). `docs/reference/pr90-limit-rechecks-2026-09-27.md` holds the reads. |
 | F-182 | **One IPv6 host gets a new bucket for each address in its /64.** 61 calls of `GetSharedDeck` on 2026-09-27 all answered 404, and none answered 429. The request logs name one instance, and two IPv6 addresses of one /64: 56 calls and 5 calls. `ClientAddress` answers the full address, and the limiter used it as the key. So a host that changes its address gets a new bucket, for the shared reads (D-315) and for the invite check (D-592). The same calls over IPv4 read a 429 on the 61st. | ✅ PR-90 keys an IPv6 client on its /64 (D-970). On the deploy of #242, 61 shared reads over IPv6 from two addresses of one /64 ended with a 429 (PR-91). `docs/reference/pr90-limit-rechecks-2026-09-27.md` and `docs/reference/pr91-ipv6-recheck-2026-09-27.md` hold the reads. |
@@ -2561,6 +2563,24 @@ Gate:
 
 > *In plain English:* the project files move from the internal disk of the Mac to an external drive. The notes and secrets that git does not keep move with them. First, a check proved that the app now counts a block of newer internet addresses as one visitor.
 
+**PR-92: Read the scheduled meta job of 2026-09-27 (F-179, F-180, D-973).** ✅ merged as #244. The mark comes before any review (D-822).
+The item is next step 3 of the hand-off (D-971). It reads the first scheduled run of `mtg-meta` on `worker:f178f05`.
+
+- **The job.** The execution `mtg-meta-xpt2x` logged "meta job done", and it stored the model `20260927T061832Z`.
+- **The log keys.** Each line held `message` and a severity, so the fix of F-180 holds on a job.
+- **The month pages.** The job logged 12 `mtgo month page` lines. 11 older months read `links=0`, and each stored page held an empty deck list.
+- **The Mac.** The same pages gave 419 to 451 links to the headers of the job, to gzip, and to the Go client.
+
+The address of the job and a fault of the site at times stay as causes. The owner chose a retry of an empty older month page in the next pull request (D-973). `docs/reference/pr92-meta-job-read-2026-09-27.md` holds the reads. No paid target ran.
+
+Gate:
+
+- The read names "meta job done", a new `meta/model/` version, 12 `mtgo month page` lines, and each empty month page.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head, or the `review-override` label applies.
+
+> *In plain English:* the nightly job that learns from tournament decks ran, and it saved a new model. The official Magic Online site sent it empty lists for eleven old months. The same pages hold full lists on the Mac, so the next change asks the site again.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2942,6 +2962,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 82. **PR-89** the deploy reads of #230 and #227, and the header lines of the rate limit (F-181, D-966 to D-968). No paid target ran.
 83. **PR-90** the rate limit checks on the deploy of #241, and the IPv6 key of the limiter (F-181, F-182, D-969, D-970). No paid target ran.
 84. **PR-91** the IPv6 check on the deploy of #242, and the move of the checkout to `/Volumes/SSD-1TB/decktome` (F-182, D-971, D-972). No paid target ran.
+85. **PR-92** the read of the scheduled meta job of 2026-09-27 (F-179, F-180, D-973). No paid target ran.
 
 ## 9. Open questions
 
