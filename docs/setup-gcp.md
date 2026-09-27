@@ -282,14 +282,14 @@ gcloud run jobs create mtg-meta \
   --region REGION --service-account SA_WORKER \
   --set-env-vars PROJECT_ID=PROJECT_ID,CARDS_BUCKET=PROJECT_ID-cards \
   --set-secrets TOPDECK_API_KEY=topdeck-api-key:1,PUSHOVER_APP_TOKEN=pushover-app-token:1,PUSHOVER_USER_KEY=pushover-user-key:1 \
-  --memory 8Gi --cpu 2 --task-timeout 150m --max-retries 0
+  --memory 8Gi --cpu 2 --task-timeout 240m --max-retries 0
 ```
 
 Run the first snapshot by hand and wait for it: `gcloud run jobs execute mtg-snapshot --region REGION --wait`. The largest bulk file is about 80 MB, and the download timeout inside the worker is 25 minutes. Then run `gcloud run jobs execute mtg-meta --region REGION --wait`. The first meta run reads every source.
 
 CAUTION: give the meta job 8 GiB of memory. The job fits the quality model over about 48,766 lists (D-566), and 1 GiB stopped it after 52 minutes with "The configured memory limit was reached" (F-61). Cloud Run asks for 2 vCPU above 4 GiB, so the two flags move together.
 
-CAUTION: give the meta job a task timeout of 150 minutes. `make meta-refresh` read every source in 96 minutes on 2026-09-07 (D-566), and a timeout of 60 minutes stops the job before it writes the model. A second run skips the sources that hold a read marker of the same day.
+CAUTION: give the meta job a task timeout of 240 minutes. A timeout stops the job before it writes the model. On 2026-09-27 the timeout of 150 minutes stopped the quality fit of `mtg-meta-4nps4` after an MTGO lane of 150 minutes (F-184, D-982). The MTGO lane now stops at a budget of 2 hours. A second run skips the sources that hold a read marker of the same day. The step `update-jobs` of `cloudbuild/api.yaml` changes the image alone, so a deploy keeps the timeout.
 
 Give the scheduler account the invoker role on both jobs:
 

@@ -81,9 +81,9 @@ const DefaultMTGORetryWait = 5 * time.Minute
 const MTGORetryPasses = 3
 
 // DefaultMTGOBudget is the default of Job.MTGOBudget. On 2026-09-27 the
-// MTGO lane of mtg-meta-4nps4 took 145 minutes with the 302 retry, and
-// the task timeout of 150 minutes stopped the quality fit 14 seconds
-// after its start (F-184).
+// MTGO lane of mtg-meta-4nps4 ended 150 minutes after its start, with
+// the 302 retry. So the task timeout of 150 minutes stopped the quality
+// fit 14 seconds after its start (F-184).
 const DefaultMTGOBudget = 2 * time.Hour
 
 // mtgoRun is the state of the MTGO lane of one run, from the read of the

@@ -789,7 +789,7 @@ func TestMTGORetriesARedirectedEventPage(t *testing.T) {
 
 // TestMTGOStopsAtTheTimeBudget: the MTGO lane starts no fetch and no
 // wait after its budget, so the quality fit keeps its time. On
-// 2026-09-27 the lane of mtg-meta-4nps4 took 145 minutes, and the task
+// 2026-09-27 the lane of mtg-meta-4nps4 ended after 150 minutes, and the task
 // timeout stopped the fit (F-184, D-982).
 func TestMTGOStopsAtTheTimeBudget(t *testing.T) {
 	sep, aug := "modern-challenge-32-2026-09-0112800001", "modern-challenge-32-2026-08-0112800002"
