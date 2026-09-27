@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Codex reviewed `250c08d`. Verdict: Changes required, with open finding P2-1.
+**The review.** Gitar reviewed `250c08d` and approved, with no finding and no thread. Codex round 1 read Changes required at `250c08d`, with P2-1 on the order of the archive. The author found partial merit, and `docs/reviews/pr-239-response.md` holds the answer. The repeat review is pending.
 
 **What waits on the owner.**
 
