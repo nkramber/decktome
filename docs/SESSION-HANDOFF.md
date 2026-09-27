@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-26g)
 
-**Pull request #PRNUM, PR-90, checks the rate limit on the deploy of #241, and keys an IPv6 client on its /64 (F-181, F-182, D-969, D-970).**
+**Pull request #242, PR-90, checks the rate limit on the deploy of #241, and keys an IPv6 client on its /64 (F-181, F-182, D-969, D-970).**
 
 Author provider: Claude Code
 
@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** REVIEWSTATE
+**The review.** The Gitar pass and the Codex review of this pull request are open.
 
 **What waits on the owner.**
 
@@ -111,8 +111,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **PR-89: the deploy reads of #230 and #227, and the header lines of the rate limit** (F-181, D-966 to D-968). It merged as #241.
-2. **PR-90: the rate limit checks on the deploy of #241, and the IPv6 key of the limiter** (F-181, F-182, D-969, D-970). This pull request is #PRNUM.
-3. **In the third pull request after #240, read the scheduled meta job** (F-179, D-962, D-963, D-966). Before the item work, make 61 calls of `GetSharedDeck` over IPv6 on the deploy of #PRNUM. Switch the source between two addresses of one /64 with `curl -6 --interface`. The 61st must answer 429 (F-182, D-970). When it answers 404, record the finding and ask the owner. The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:ea587fc`, which holds the fix of #239 and writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
+2. **PR-90: the rate limit checks on the deploy of #241, and the IPv6 key of the limiter** (F-181, F-182, D-969, D-970). This pull request is #242.
+3. **In the third pull request after #240, read the scheduled meta job** (F-179, D-962, D-963, D-966). Before the item work, make 61 calls of `GetSharedDeck` over IPv6 on the deploy of #242. Switch the source between two addresses of one /64 with `curl -6 --interface`. The 61st must answer 429 (F-182, D-970). When it answers 404, record the finding and ask the owner. The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:ea587fc`, which holds the fix of #239 and writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
 
    ```text
    read the `mtg-meta` execution of 06:00 UTC on 2026-09-27 (or the newest scheduled one), filter on `msg` or `message` and `level` or `severity`, and check "meta job done", a new `meta/model/` version, 12 `mtgo month page` lines, and each `links=0` page under `meta/raw/mtgo-month-empty/` (F-179, F-180, D-962, D-963).

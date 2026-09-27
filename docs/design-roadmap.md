@@ -2520,7 +2520,7 @@ Gate:
 - After the merge, the eleventh call of `CheckInvite` on the deployed API answers 429.
 > *In plain English:* the app limits how often one visitor can ask whether an email has an invite. A visitor who wrote a fake address in one header got a fresh limit each time. The app now reads the full header, so the fake address no longer helps.
 
-**PR-90: The rate limit checks on the deploy of #241, and the IPv6 key of the limiter (F-181, F-182, D-969, D-970).** 🔧 in progress.
+**PR-90: The rate limit checks on the deploy of #241, and the IPv6 key of the limiter (F-181, F-182, D-969, D-970).** ✅ merged as #242. The mark comes before any review (D-822).
 The item makes the eleven calls of `CheckInvite` on the deploy of #241, next step 3 of the hand-off (D-968). The owner named the shared-read limit as the second concern (D-969).
 
 - **The invite check.** The eleventh call answered 429 on one instance, so the fix of F-181 holds.
