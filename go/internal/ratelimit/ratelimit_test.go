@@ -119,6 +119,32 @@ func TestInterceptorLimitsTheNamedProcedures(t *testing.T) {
 	}
 }
 
+// TestASpoofedFirstLineGetsNoNewBucket is F-181. On the deployed API the
+// eleventh check of an invite passed, each with a new first address. A
+// proxy that appends its entry as a second header line leaves the caller
+// line first, and the key must still read the appended address.
+func TestASpoofedFirstLineGetsNoNewBucket(t *testing.T) {
+	now := time.Date(2026, 9, 27, 1, 53, 0, 0, time.UTC)
+	l := New(10, time.Minute).WithClock(func() time.Time { return now })
+	in := l.Interceptor("/mtg.v1.InviteService/CheckInvite")
+	next := in.WrapUnary(func(context.Context, connect.AnyRequest) (connect.AnyResponse, error) {
+		return nil, nil
+	})
+	allowed := 0
+	for i := range 11 {
+		req := connect.NewRequest(&struct{}{})
+		req.Header().Add("X-Forwarded-For", fmt.Sprintf("203.0.113.%d", i+1))
+		req.Header().Add("X-Forwarded-For", "2001:db8::5, 169.254.1.1")
+		_, err := next(context.Background(), &anyRequest{Request: req, spec: connect.Spec{Procedure: "/mtg.v1.InviteService/CheckInvite"}, peer: connect.Peer{Addr: "169.254.1.1:443"}})
+		if err == nil {
+			allowed++
+		}
+	}
+	if allowed != 10 {
+		t.Errorf("allowed %d of 11 calls with a new first line each, want 10", allowed)
+	}
+}
+
 // anyRequest gives a request the spec and the peer a server sees.
 type anyRequest struct {
 	*connect.Request[struct{}]

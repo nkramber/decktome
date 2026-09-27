@@ -11,6 +11,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"net/http"
 	"net/netip"
 	"strings"
 	"sync"
@@ -114,6 +115,14 @@ func ClientAddress(forwardedFor, remoteAddr string) string {
 	return strings.TrimSpace(remoteAddr)
 }
 
+// forwardedFor joins every X-Forwarded-For line of a request in order.
+// A proxy can append its entry as a new line, and Get reads the first
+// line alone. The first line is the one that the caller wrote, so the
+// key then followed a spoofed address on the deployed API (F-181).
+func forwardedFor(h http.Header) string {
+	return strings.Join(h.Values("X-Forwarded-For"), ",")
+}
+
 var errTooMany = errors.New("too many calls from this address, try again in a minute")
 
 // Interceptor limits the named procedures. Every other procedure passes
@@ -136,7 +145,7 @@ func (i *interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 		if req.Spec().IsClient || !i.limited[req.Spec().Procedure] {
 			return next(ctx, req)
 		}
-		key := ClientAddress(req.Header().Get("X-Forwarded-For"), req.Peer().Addr)
+		key := ClientAddress(forwardedFor(req.Header()), req.Peer().Addr)
 		if !i.limiter.Allow(key) {
 			return nil, connect.NewError(connect.CodeResourceExhausted, errTooMany)
 		}
@@ -153,7 +162,7 @@ func (i *interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) co
 		if !i.limited[conn.Spec().Procedure] {
 			return next(ctx, conn)
 		}
-		key := ClientAddress(conn.RequestHeader().Get("X-Forwarded-For"), conn.Peer().Addr)
+		key := ClientAddress(forwardedFor(conn.RequestHeader()), conn.Peer().Addr)
 		if !i.limiter.Allow(key) {
 			return connect.NewError(connect.CodeResourceExhausted, errTooMany)
 		}
