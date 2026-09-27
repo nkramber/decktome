@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-27a)
 
-**Pull request #PRNUM, PR-92, reads the first scheduled meta job on `worker:f178f05` (F-179, F-180, D-973).**
+**Pull request #244, PR-92, reads the first scheduled meta job on `worker:f178f05` (F-179, F-180, D-973).**
 
 Author provider: Claude Code
 
@@ -110,7 +110,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **PR-91: move the decktome checkout to `/Volumes/SSD-1TB/decktome`** (F-182, D-971, D-972). It merged as #243.
-2. **PR-92: read the scheduled meta job** (F-179, F-180, D-973). This pull request is #PRNUM. The job stored a model, and 11 of 12 MTGO month pages held an empty deck list.
+2. **PR-92: read the scheduled meta job** (F-179, F-180, D-973). This pull request is #244. The job stored a model, and 11 of 12 MTGO month pages held an empty deck list.
 3. **Retry an empty older MTGO month page** (F-179, D-973). The first action, word for word, is in the block below. It is a code change with a regression test. No paid target runs.
 
    ```text

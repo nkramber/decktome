@@ -2563,7 +2563,7 @@ Gate:
 
 > *In plain English:* the project files move from the internal disk of the Mac to an external drive. The notes and secrets that git does not keep move with them. First, a check proved that the app now counts a block of newer internet addresses as one visitor.
 
-**PR-92: Read the scheduled meta job of 2026-09-27 (F-179, F-180, D-973).** 🔧 in review. The mark comes before any review (D-822).
+**PR-92: Read the scheduled meta job of 2026-09-27 (F-179, F-180, D-973).** ✅ merged as #244. The mark comes before any review (D-822).
 The item is next step 3 of the hand-off (D-971). It reads the first scheduled run of `mtg-meta` on `worker:f178f05`.
 
 - **The job.** The execution `mtg-meta-xpt2x` logged "meta job done", and it stored the model `20260927T061832Z`.
