@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** The Gitar pass approves effective head `7e4ec70`. Codex review is Blocked. The record lists the unresolved Gitar CI notice.
+**The review.** Gitar approves `7e4ec70` with no finding and no thread. Codex round 1 reads `Blocked` with no finding. It asked for an answer to the CI notice of the Gitar dashboard, and for the result of `review-gate`. Comment 5852326252 answers the notice, and `docs/reviews/pr-242-response.md` holds both answers.
 
 **What waits on the owner.**
 
