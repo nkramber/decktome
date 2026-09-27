@@ -15,6 +15,47 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-26h
+
+**Pull request #243, PR-91, moves the decktome checkout to `/Volumes/SSD-1TB/decktome`, and reads the IPv6 check of F-182 on the deploy of #242 (D-971, D-972).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 3: read the scheduled meta job (F-179, D-971). Start the session in `/Volumes/SSD-1TB/decktome`.
+
+**The base.** `main` is `f178f05`, from #242. The API serves revision `mtg-api-00091-xd9`, the deploy of #242, and `/readyz` names `f178f05`.
+
+**The IPv6 check (F-182).** 61 calls of `GetSharedDeck` ran at 04:00 UTC on 2026-09-27, from two addresses of one /64. Calls 1 to 60 answered 404, and call 61 answered 429. One instance served all 61, so the fix of D-970 holds.
+
+**The move (D-971).** The owner chose to delete the two untracked review prompts of the old checkout (D-972). The session cloned to the new path. It copied `.env`, `.local`, the local permission rules, and the auto-memory to the key `-Volumes-SSD-1TB-decktome`. `make hooks`, `pnpm install`, and `make verify` passed there. `docs/setup-second-mac.md` names the new path.
+
+CAUTION: start each session in `/Volumes/SSD-1TB/decktome`. A session in the old checkout reads the old memory directory, and the new checkout does not get its new memory.
+
+`docs/reference/pr91-ipv6-recheck-2026-09-27.md` holds the reads. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approves effective head `8d2b2ce` with one finding closed and no open thread. It found the old path in the unpack step, fixed in `5f05f88`. CI then found `.claude/` settings named as a path that git ignores, fixed in `8d2b2ce` (REF 2). The pull request changes documents alone, so the `review-override` label replaces the Codex review (D-812). Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- The scheduled meta job, next step 3 (D-963, D-966, D-971). It must store a model, and log each MTGO month page (F-179).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 4, and OQ-67 and OQ-77.
+
+### 2026-09-26f: the deploy reads of #230 and #227, PR-89
+
+**The owner changed the order after #240 (D-966).** The feedback list and the eleven calls of `CheckInvite` came first. The feedback list passed, and the eleventh call passed where it must fail.
+
+**A cause from the code, not the logs.** The request logs named one instance, so the key changed with each call. The code read the first header line alone. The owner chose the fix in this pull request over free probes first (D-967).
+
 ## The resume section of 2026-09-26g
 
 **Pull request #242, PR-90, checks the rate limit on the deploy of #241, and keys an IPv6 client on its /64 (F-181, F-182, D-969, D-970).**
