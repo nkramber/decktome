@@ -15,6 +15,49 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-26f
+
+**Pull request #241, PR-89, reads two deploy checks and fixes the header lines of the rate limit (F-181, D-966 to D-968).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 3, in the second pull request after #240: make the eleven calls of `CheckInvite` again (D-968).
+
+**The base.** `main` is `a3b2c95`, from #240. The API serves revision `mtg-api-00089-z54`, the deploy of #239.
+
+**The order (D-966).** The owner put the two deploy reads before the read of the meta job. The meta read moves to the third pull request after #240, next step 4.
+
+**The feedback list.** `make feedback-list VERDICT=` read six verdicts of every kind, with exit 0. So the deployed store holds the collection-group index of #230 (D-938).
+
+**The rate limit.** The eleven calls of D-907 all answered 200 on one instance. The limiter read the first `X-Forwarded-For` line alone, so a spoofed first address got a new bucket (F-181). The owner chose the fix in this pull request (D-967). `forwardedFor` joins every line, and a new test fails on the old code.
+
+**An open read.** No log holds the header that the API read, so the cause is UNVERIFIED. The calls on the next deploy prove or refute it (D-968).
+
+`docs/reference/pr89-deploy-reads-2026-09-27.md` holds the reads. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar reviewed `45f16eb` and `fff4097`, and approved both with no finding and no thread. Codex round 1 found P2-1: the body named the author provider. An edit of the body removed it, and `docs/reviews/pr-241-response.md` holds the answer. Codex round 2 reads `Ready for owner merge`, with the head field `94d8bd3`. `review-gate` passes, because each later commit changes documents alone (D-837). The owner confirmed the merge. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy of this pull request: the eleven calls of `CheckInvite` again. The eleventh must answer 429 (D-968).
+- The scheduled meta job, in the third pull request after #240 (D-963, D-966). It must store a model, and log each MTGO month page (F-179).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 5, and OQ-67 and OQ-77.
+
+### 2026-09-26d: the log severity of the Cloud Run jobs, PR-87
+
+**The owner asked for F-180 before the read of the meta job (D-963).** The deploy of #238 held. The live logs and the Cloud Run docs proved the fault. The owner chose the scope: `NewLogger` reads `CLOUD_RUN_JOB`, and `OnCloudRun` does not change (D-964).
+
+**A change that the session reverted.** The session first added a line to the dated record of PR-86. A dated record is history, so the session reverted the line.
+
 ## The resume section of 2026-09-26e
 
 **Pull request #240, PR-88, reads the commander row on the deployed app (F-121, D-690, D-965).**

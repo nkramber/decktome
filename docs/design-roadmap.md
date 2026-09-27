@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-09-26 correction pass 238 (PR-89, F-181, D-966 to D-968): the feedback list read every verdict on the index of #230. The eleventh call of `CheckInvite` passed on the deployed API, so the rate limit of D-907 did not hold. The limiter now reads every header line. Changes: F-181, PR-89, sequencing step 82.
+2026-09-26 correction pass 239 (PR-90, F-181, F-182, D-969, D-970): the eleventh call of `CheckInvite` answered 429 on the deploy of #241, so F-181 is fixed. The 61 shared reads all passed, because they came from two IPv6 addresses of one /64. The limiter now keys an IPv6 client on its /64. Changes: F-181, F-182, PR-90, sequencing step 83.
 
 2026-09-26 correction pass 237 (PR-88, F-121, D-965): the deployed app showed the commander row with "Suggest one" alone, and the pick row with "You decide". The owner moved the read of the meta job to a later session. Changes: F-121, PR-88, sequencing step 81.
 
@@ -547,7 +547,8 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-178 | **The daily refit fails the precon bar, so the model of 2026-09-25 stays.** The meta job of 2026-09-26 read "commander: precon over own copy 0.94 of 827, the bar is 0.95", and Pushover sent the failure. It was the first job with the bar check of D-927. The lands, curve, and colors copies read 572 of 572, and the synergy copies 205 of 255. Free fits found no code, precon, or card snapshot cause. The list corpus grew, and more synergy copies passed the check of D-653. | ✅ fixed by #236 (PR-84, D-957). The synergy own copies read a bar of 0.75, and every other own copy keeps 0.95. `docs/reference/pr84-meta-bar-2026-09-26.md` holds the fits. |
 | F-179 | **The meta job reads 0 MTGO pages, and no log line names the cause.** The scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors, and stored no September page. The manual run of 2026-09-26 stored 31 new September pages and 169 older ones. The runs of 2026-09-19 to 2026-09-23 read September links alone, so the older month pages gave them no link. Each month page answered 200 with 129 to 158 links to a Mac fetch. | 🔧 PR-86 logs each month page and keeps a month page with no event link (D-962). The cause waits for the first scheduled run after the deploy. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` holds the reads. |
 | F-180 | **The Cloud Run jobs write no log severity.** `gcpenv.NewLogger` renamed `level` and `msg` to `severity` and `message` only when `K_SERVICE` was set. A Cloud Run job sets `CLOUD_RUN_JOB` and not `K_SERVICE`. So each line of `mtg-meta` and `mtg-snapshot` held `jsonPayload.level` and `jsonPayload.msg`, and no severity. The "worker failed" line of `mtg-meta-4spgm` on 2026-09-26 read no severity, and a filter on `severity>=ERROR` missed it. | ✅ fixed by #239 (PR-87, D-964). `NewLogger` renames the two keys on a service or a job. `OnCloudRun` still reads `K_SERVICE` alone. |
-| F-181 | **A spoofed first address still gets a new bucket on the deployed API.** Eleven calls of `CheckInvite` on 2026-09-27, each with a new first address in `X-Forwarded-For`, all answered 200. The request logs name one instance for all eleven, so one limiter counted them. The interceptor read the header with `Header.Get`, which answers the first header line alone. UNVERIFIED: no log holds the header that the API read. | 🔧 PR-89 joins every header line (D-967). The eleven calls on the next deploy prove the fix (D-968). `docs/reference/pr89-deploy-reads-2026-09-27.md` holds the reads. |
+| F-181 | **A spoofed first address still gets a new bucket on the deployed API.** Eleven calls of `CheckInvite` on 2026-09-27, each with a new first address in `X-Forwarded-For`, all answered 200. The request logs name one instance for all eleven, so one limiter counted them. The interceptor read the header with `Header.Get`, which answers the first header line alone. UNVERIFIED: no log holds the header that the API read. | ✅ PR-89 joins every header line (D-967). On the deploy of #241 the eleventh call answered 429, and one instance served all eleven (D-968). `docs/reference/pr90-limit-rechecks-2026-09-27.md` holds the reads. |
+| F-182 | **One IPv6 host gets a new bucket for each address in its /64.** 61 calls of `GetSharedDeck` on 2026-09-27 all answered 404, and none answered 429. The request logs name one instance, and two IPv6 addresses of one /64: 56 calls and 5 calls. `ClientAddress` answers the full address, and the limiter used it as the key. So a host that changes its address gets a new bucket, for the shared reads (D-315) and for the invite check (D-592). The same calls over IPv4 read a 429 on the 61st. | 🔧 PR-90 keys an IPv6 client on its /64 (D-970). 61 shared reads over IPv6 on the next deploy prove the fix. `docs/reference/pr90-limit-rechecks-2026-09-27.md` holds the reads. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2519,6 +2520,26 @@ Gate:
 - After the merge, the eleventh call of `CheckInvite` on the deployed API answers 429.
 > *In plain English:* the app limits how often one visitor can ask whether an email has an invite. A visitor who wrote a fake address in one header got a fresh limit each time. The app now reads the full header, so the fake address no longer helps.
 
+**PR-90: The rate limit checks on the deploy of #241, and the IPv6 key of the limiter (F-181, F-182, D-969, D-970).** 🔧 in progress.
+The item makes the eleven calls of `CheckInvite` on the deploy of #241, next step 3 of the hand-off (D-968). The owner named the shared-read limit as the second concern (D-969).
+
+- **The invite check.** The eleventh call answered 429 on one instance, so the fix of F-181 holds.
+- **The shared reads.** 61 calls all passed, because they came from two IPv6 addresses of one /64 (F-182). Over IPv4, the 61st call answered 429.
+- **The fix.** The limiter keys an IPv6 client on its /64, and an IPv4 client on its address (D-970).
+- **The next check.** 61 shared reads over IPv6 on the next deploy must end with a 429.
+
+`docs/reference/pr90-limit-rechecks-2026-09-27.md` holds the reads. No paid target ran.
+
+Gate:
+
+- `TestANewAddressInOneSlash64GetsNoNewBucket` fails on the old limiter and passes on the fix.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+- After the merge, the 61st shared read over IPv6 on the deployed API answers 429.
+
+> *In plain English:* the app limits how often one visitor can read shared decks or check an invite. A computer on the newer internet protocol owns a large block of addresses and can switch between them. Each switch gave it a fresh limit. The app now counts the whole block as one visitor.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2898,6 +2919,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 80. **PR-87** the Cloud Run jobs write a log severity (F-180, D-963, D-964). No paid target ran.
 81. **PR-88** the live read of the commander row (F-121, D-690, D-965). The three live turns cost $0.0024.
 82. **PR-89** the deploy reads of #230 and #227, and the header lines of the rate limit (F-181, D-966 to D-968). No paid target ran.
+83. **PR-90** the rate limit checks on the deploy of #241, and the IPv6 key of the limiter (F-181, F-182, D-969, D-970). No paid target ran.
 
 ## 9. Open questions
 

@@ -145,6 +145,56 @@ func TestASpoofedFirstLineGetsNoNewBucket(t *testing.T) {
 	}
 }
 
+// TestANewAddressInOneSlash64GetsNoNewBucket is F-182. On the deployed
+// API the shared reads of one Mac came from two IPv6 addresses of one
+// /64, so no key reached the limit. Each call here has a new first line
+// and a new address in one /64, and the eleventh check must fail.
+func TestANewAddressInOneSlash64GetsNoNewBucket(t *testing.T) {
+	now := time.Date(2026, 9, 27, 2, 52, 0, 0, time.UTC)
+	l := New(10, time.Minute).WithClock(func() time.Time { return now })
+	in := l.Interceptor("/mtg.v1.InviteService/CheckInvite")
+	next := in.WrapUnary(func(context.Context, connect.AnyRequest) (connect.AnyResponse, error) {
+		return nil, nil
+	})
+	call := func(first, client string) error {
+		req := connect.NewRequest(&struct{}{})
+		req.Header().Add("X-Forwarded-For", first)
+		req.Header().Add("X-Forwarded-For", client+", 169.254.1.1")
+		_, err := next(context.Background(), &anyRequest{Request: req, spec: connect.Spec{Procedure: "/mtg.v1.InviteService/CheckInvite"}, peer: connect.Peer{Addr: "169.254.1.1:443"}})
+		return err
+	}
+	allowed := 0
+	for i := range 11 {
+		if call(fmt.Sprintf("198.51.100.%d", i+1), fmt.Sprintf("2001:db8:1:2::%x", i+1)) == nil {
+			allowed++
+		}
+	}
+	if allowed != 10 {
+		t.Errorf("allowed %d of 11 calls from one /64, want 10", allowed)
+	}
+	if err := call("198.51.100.99", "2001:db8:1:3::1"); err != nil {
+		t.Errorf("another /64 shares the bucket: %v", err)
+	}
+}
+
+// TestBucketKeysIPv6OnItsSlash64: an IPv4 address is its own key, and an
+// IPv6 address keys on its /64 (D-970).
+func TestBucketKeysIPv6OnItsSlash64(t *testing.T) {
+	for _, tc := range []struct{ client, want string }{
+		{"203.0.113.5", "203.0.113.5"},
+		{"::ffff:203.0.113.5", "203.0.113.5"},
+		{"2001:db8:1:2::7", "2001:db8:1:2::/64"},
+		{"2001:db8:1:2:ffff:ffff:ffff:ffff", "2001:db8:1:2::/64"},
+		{"2001:db8:1:3::7", "2001:db8:1:3::/64"},
+		{"fe80::1%en0", "fe80::/64"},
+		{"not-an-address", "not-an-address"},
+	} {
+		if got := bucket(tc.client); got != tc.want {
+			t.Errorf("bucket(%q) = %q, want %q", tc.client, got, tc.want)
+		}
+	}
+}
+
 // anyRequest gives a request the spec and the peer a server sees.
 type anyRequest struct {
 	*connect.Request[struct{}]
