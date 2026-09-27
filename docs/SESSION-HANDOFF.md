@@ -6,27 +6,25 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-27a)
+## RESUME HERE (2026-09-27b)
 
-**Pull request #244, PR-92, reads the first scheduled meta job on `worker:f178f05` (F-179, F-180, D-973).**
+**Pull request #N, PR-93, makes the meta job read an empty older MTGO month page again (F-179, D-973, D-974).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 3: a retry of an empty older MTGO month page in the meta job (F-179, D-973). It is a code change.
+**The base.** `main` is `56565c4`, from #244. The API serves revision `mtg-api-00091-xd9`, and the jobs run `worker:f178f05`.
 
-**The base.** `main` is `200e30c`, from #243. The API serves revision `mtg-api-00091-xd9`, and the jobs run `worker:f178f05`.
+**The change.** `runMTGO` keeps each older month page with no event link. After the other six sources, `retryMTGOMonths` reads each one again, one time. It reads no page before `MTGORetryWait` after the last first read. The default is 5 minutes. The current month reads one time, because it can hold no event yet.
 
-**The job (F-179, F-180).** The execution `mtg-meta-xpt2x` ran at 06:00 UTC on 2026-09-27, and it logged "meta job done". It stored the model `20260927T061832Z`. Each log line held `message` and a severity.
+**The log and the store.** The retry logs `mtgo month page again` with `after`, the time since the first read. A retry with no event link stays under `meta/raw/mtgo-month-empty/`, with `-again` at the end of its name. The event pages of a retried month share the page cap of the first pass.
 
-**The month pages.** The job logged 12 `mtgo month page` lines. 11 older months read `links=0`, and the store holds each page under `meta/raw/mtgo-month-empty/`. Each page held an empty deck list. September read 383 links.
+**The owner decision.** The owner chose the retry after the other sources, over a wait of 5 minutes inside the lane or 60 seconds for each month (D-974).
 
-**The Mac.** The same pages gave 419 to 451 links to the headers of the job, to gzip, and to the Go client. The address of the job and a fault of the site at times stay as causes. The owner chose the retry in the next pull request (D-973).
-
-`docs/reference/pr92-meta-job-read-2026-09-27.md` holds the reads. No paid target ran.
+**The tests.** `TestMTGORetriesAnEmptyOlderMonth` runs the whole job on a fake site that answers an empty page, then a full one or an empty one. `TestMTGORetryWaits` proves the wait. No paid target ran.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approves effective head `4e54611` with one finding closed and no open thread. It found the 06:00 evidence assigned to one cause alone, fixed in `4e54611`. The pull request changes documents alone, so the `review-override` label replaces the Codex review (D-812). Pending the auto-merge.
+**The review.** Pending.
 
 **What waits on the owner.**
 
@@ -109,12 +107,12 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-91: move the decktome checkout to `/Volumes/SSD-1TB/decktome`** (F-182, D-971, D-972). It merged as #243.
-2. **PR-92: read the scheduled meta job** (F-179, F-180, D-973). This pull request is #244. The job stored a model, and 11 of 12 MTGO month pages held an empty deck list.
-3. **Retry an empty older MTGO month page** (F-179, D-973). The first action, word for word, is in the block below. It is a code change with a regression test. No paid target runs.
+1. **PR-92: read the scheduled meta job** (F-179, F-180, D-973). It merged as #244. The job stored a model, and 11 of 12 MTGO month pages held an empty deck list.
+2. **PR-93: read an empty older MTGO month page again** (F-179, D-973, D-974). This pull request is #N.
+3. **Read the first scheduled meta job on the image of this pull request** (F-179, D-974). It needs the deploy of this merge. The first action, word for word, is in the block below. No paid target runs.
 
    ```text
-   make the meta job fetch an older MTGO month page again, once, after a delay, when the page holds no event link, log both reads, and test it with a fake fetcher (F-179, D-973).
+   after the deploy of #N, read the 06:00 UTC run of mtg-meta, and count the "mtgo month page again" lines, their links, and their after values (F-179, D-974).
    ```
 4. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-179 (next step 3). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
@@ -134,12 +132,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-26g: the rate limit checks on the deploy of #241, PR-90
-
-**The fix of #241 held, and a second probe found a second hole.** The eleventh call of `CheckInvite` answered 429. The owner named the shared-read limit as the second concern (D-969). Its 61 calls all passed, because the Mac sent them from two IPv6 addresses of one /64.
-
-**A scratch test before a claim.** The session built the handler wiring of `main.go` in a scratch test, and it refused call 61. So the key caused the miss, and the wiring did not. The logs then showed the two addresses. The owner chose the fix in this pull request (D-970).
-
 ### 2026-09-26h: the IPv6 check and the move of the checkout, PR-91
 
 **The check came before the move.** The session waited for the build of #242, then read the revision and `/readyz`. The 61st shared read over IPv6 answered 429 (F-182). The first log read held 55 entries, and a second read held 61.
@@ -152,6 +144,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **Each client check came before a claim.** The stored pages held an empty list. The Mac then fetched the same months with the headers of the job, with gzip, and with the Go client. Each fetch got the full list.
 
+### 2026-09-27b: the retry of an empty older MTGO month page, PR-93
+
+**The evidence changed the delay.** The 11 older pages stayed empty for 4.5 minutes, and most 06:00 runs stored no older page. So a retry after one minute can fall in the same fault. The owner chose the retry after the other sources (D-974).
+
+**The test runs the whole job.** A fake site answers the first read of an older month with an empty page. The test proves the order of the reads, the wait, both log lines, and the stored page.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-26h, the records of 2026-08-31 to 2026-09-26f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-27a, the records of 2026-08-31 to 2026-09-26g, and 104 more sections, word for word. Read it for the detail behind a decision.

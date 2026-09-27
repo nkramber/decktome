@@ -101,7 +101,7 @@ func testJob(t *testing.T, srv *httptest.Server, store ObjectStore) *Job {
 		Store: store, Fetch: fetch, Topdeck: td, TopdeckDays: 7,
 		Now:        func() time.Time { return time.Date(2026, 9, 2, 12, 0, 0, 0, time.UTC) },
 		MTGOMonths: 2, MTGOBase: srv.URL, MTGJSONBase: srv.URL, EDHRECBase: srv.URL, CEDHDBURL: srv.URL + "/cedh/",
-		MTGTop8Base: srv.URL, GoldfishBase: srv.URL, GoldfishListPages: 2,
+		MTGTop8Base: srv.URL, GoldfishBase: srv.URL, GoldfishListPages: 2, MTGORetryWait: time.Millisecond,
 		Commanders: []string{"Kinnan, Bonder Prodigy"},
 	}
 }
@@ -436,6 +436,142 @@ func TestMTGOLogsEachMonthPage(t *testing.T) {
 	}
 	if !strings.Contains(logs.String(), `msg="mtgo month page" month=2026-09 found=false`) {
 		t.Errorf("the log lacks the month the site does not have:\n%s", logs.String())
+	}
+}
+
+// TestMTGORetriesAnEmptyOlderMonth: an older month page with no event
+// link reads again once, after the other sources and at least
+// MTGORetryWait after its first read. The log names both reads. The
+// current month reads once, because it can hold no event yet (F-179,
+// D-974).
+func TestMTGORetriesAnEmptyOlderMonth(t *testing.T) {
+	for _, full := range []bool{true, false} {
+		ctx := context.Background()
+		srv, _ := fakeSites(t)
+		type hit struct {
+			path string
+			at   time.Time
+		}
+		var mu sync.Mutex
+		var hits []hit
+		august := 0
+		front := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mu.Lock()
+			hits = append(hits, hit{r.URL.Path, time.Now()})
+			if r.URL.Path == "/decklists/2026/08" {
+				august++
+			}
+			n := august
+			mu.Unlock()
+			switch {
+			case r.URL.Path == "/decklists/2026/09", r.URL.Path == "/decklists/2026/08" && (n == 1 || !full):
+				_, _ = w.Write([]byte("<html>no events</html>"))
+			case r.URL.Path == "/decklists/2026/08":
+				data, _ := os.ReadFile(filepath.Join("testdata", "mtgo_month.html"))
+				_, _ = w.Write(data)
+			default:
+				srv.Config.Handler.ServeHTTP(w, r)
+			}
+		}))
+		store := DirObjects{Root: t.TempDir()}
+		job := testJob(t, front, store)
+		job.MTGORetryWait = 50 * time.Millisecond
+		var logs strings.Builder
+		job.Logger = slog.New(slog.NewTextHandler(&logs, nil))
+		rep, err := job.Run(ctx)
+		front.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var reads []hit
+		lastOther := -1
+		for i, h := range hits {
+			switch {
+			case strings.HasPrefix(h.path, "/decklists/"):
+				reads = append(reads, h)
+			case !strings.HasPrefix(h.path, "/decklist/"):
+				lastOther = i
+			}
+		}
+		paths := make([]string, len(reads))
+		for i, h := range reads {
+			paths[i] = h.path
+		}
+		if want := "/decklists/2026/09 /decklists/2026/08 /decklists/2026/08"; strings.Join(paths, " ") != want {
+			t.Fatalf("full=%v: month reads %q, want %q", full, strings.Join(paths, " "), want)
+		}
+		if gap := reads[2].at.Sub(reads[1].at); gap < job.MTGORetryWait {
+			t.Errorf("full=%v: the retry came %v after the first read, want at least %v", full, gap, job.MTGORetryWait)
+		}
+		if lastOther < 0 || hits[lastOther].at.After(reads[2].at) {
+			t.Errorf("full=%v: the retry came before the other sources ended", full)
+		}
+		for _, want := range []string{
+			`msg="mtgo month page" month=2026-08 found=true bytes=22 links=0 covered=0`,
+			`msg="mtgo month page again" month=2026-08 after=`,
+		} {
+			if !strings.Contains(logs.String(), want) {
+				t.Errorf("full=%v: the log lacks %q:\n%s", full, want, logs.String())
+			}
+		}
+		if strings.Contains(logs.String(), `msg="mtgo month page again" month=2026-09`) {
+			t.Errorf("full=%v: the current month reads again", full)
+		}
+		again, _ := HasRaw(ctx, store, SourceMTGO+"-month-empty", "2026-08-20260902T120000Z-again")
+		if full {
+			// The retried month lists the challenge, and its event page
+			// fetches after the retry.
+			if rep.Lists[SourceMTGO] != 3 || rep.Pages[SourceMTGO] != 1 {
+				t.Errorf("mtgo lists %d, pages %d, want the 3 lists of the challenge on 1 page", rep.Lists[SourceMTGO], rep.Pages[SourceMTGO])
+			}
+			if again {
+				t.Errorf("a full retry is kept as empty")
+			}
+		} else {
+			if !again {
+				t.Errorf("the retry that is empty again is not kept for a reader")
+			}
+			if rep.Pages[SourceMTGO] != 0 {
+				t.Errorf("mtgo pages %d, want 0", rep.Pages[SourceMTGO])
+			}
+		}
+		if len(rep.Errors) != 0 {
+			t.Errorf("full=%v: errors %v", full, rep.Errors)
+		}
+	}
+}
+
+// TestMTGORetryWaits: when the other sources end fast, the retry waits
+// out the rest of MTGORetryWait and logs the wait (D-974).
+func TestMTGORetryWaits(t *testing.T) {
+	ctx := context.Background()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("<html>no events</html>"))
+	}))
+	defer srv.Close()
+	job := testJob(t, srv, DirObjects{Root: t.TempDir()})
+	job.MTGORetryWait = 100 * time.Millisecond
+	var logs strings.Builder
+	job.Logger = slog.New(slog.NewTextHandler(&logs, nil))
+	start := time.Now()
+	if err := job.runMTGO(ctx, newReport()); err != nil {
+		t.Fatal(err)
+	}
+	if err := job.retryMTGOMonths(ctx, newReport()); err != nil {
+		t.Fatal(err)
+	}
+	if took := time.Since(start); took < job.MTGORetryWait {
+		t.Errorf("the retry came after %v, want at least %v", took, job.MTGORetryWait)
+	}
+	for _, want := range []string{`msg="mtgo month pages wait" months=1`, `msg="mtgo month page again" month=2026-08`} {
+		if !strings.Contains(logs.String(), want) {
+			t.Errorf("the log lacks %q:\n%s", want, logs.String())
+		}
+	}
+	// A second call finds no month: the retry runs once.
+	logs.Reset()
+	if err := job.retryMTGOMonths(ctx, newReport()); err != nil || logs.Len() != 0 {
+		t.Errorf("a second retry ran: err %v, log %q", err, logs.String())
 	}
 }
 
