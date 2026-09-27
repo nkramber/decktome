@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar reviewed `94d8bd3` and approved, with no finding and no open thread. Codex round 2 reads `Ready for owner merge` at effective head `94d8bd3`. P2-1 is fixed: the body no longer names the author provider. The check of the review record waits for this metadata push.
+**The review.** Gitar reviewed `45f16eb` and `fff4097`, and approved both with no finding and no thread. Codex round 1 found P2-1: the body named the author provider. An edit of the body removed it, and `docs/reviews/pr-241-response.md` holds the answer. Codex round 2 reads `Ready for owner merge`, with the head field `94d8bd3`. `review-gate` passes, because each later commit changes documents alone (D-837). The owner confirmed the merge. Pending the auto-merge.
 
 **What waits on the owner.**
 
