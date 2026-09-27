@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-27c)
 
-**Pull request PR-94 reads the MTGO month retry of #245, and it reads an empty older month page up to 3 times (F-179, D-975, D-976, D-977).**
+**Pull request #246, PR-94, reads the MTGO month retry of #245, and it reads an empty older month page up to 3 times (F-179, D-975, D-976, D-977).**
 
 Author provider: Claude Code
 
@@ -107,11 +107,11 @@ Twenty-two things a fresh session gets wrong without this file.
 
 1. **PR-92: read the scheduled meta job** (F-179, F-180, D-973). It merged as #244. The job stored a model, and 11 of 12 MTGO month pages held an empty deck list.
 2. **PR-93: read an empty older MTGO month page again** (F-179, D-973, D-974). It merged as #245.
-3. **PR-94: read the MTGO month retry, and read an empty month up to 3 times** (F-179, D-975, D-976, D-977). This pull request.
+3. **PR-94: read the MTGO month retry, and read an empty month up to 3 times** (F-179, D-975, D-976, D-977). This pull request is #246.
 4. **Read the first scheduled meta job on the image of this pull request** (F-179, D-977). It needs the deploy of this merge. The first action, word for word, is in the block below. No paid target runs.
 
    ```text
-   after the deploy of PR-94, read the next 06:00 UTC run of mtg-meta, and count the "mtgo month page again" lines by pass, their links, and each "mtgo month pages stay empty" line (F-179, D-977).
+   after the deploy of #246, read the next 06:00 UTC run of mtg-meta, and count the "mtgo month page again" lines by pass, their links, and each "mtgo month pages stay empty" line (F-179, D-977).
    ```
 5. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-179 (next step 4). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.

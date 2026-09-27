@@ -2606,7 +2606,7 @@ Gate:
 
 > *In plain English:* the nightly job asks the Magic Online site again for each old month that came back empty. It asks about ten minutes later, after the other sites. The log then shows whether the second answer held the decks.
 
-**PR-94: Read the MTGO month retry, and read an empty month up to 3 times (F-179, D-975, D-976, D-977).** 🔧 in review. The mark comes before any review (D-822).
+**PR-94: Read the MTGO month retry, and read an empty month up to 3 times (F-179, D-975, D-976, D-977).** ✅ merged as #246. The mark comes before any review (D-822).
 The item is next step 3 of the hand-off. The first scheduled run on the image of #245 comes at 06:00 UTC on 2026-09-28, so the owner chose a manual run (D-975).
 
 - **The manual run.** `mtg-meta-hlzf5` read 12 full month pages on Cloud Run, so no retry started.
