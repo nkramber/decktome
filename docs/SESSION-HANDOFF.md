@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** The Gitar pass and the Codex review of this pull request are open.
+**The review.** The Gitar pass approves effective head `7e4ec70`. Codex review is Blocked. The record lists the unresolved Gitar CI notice.
 
 **What waits on the owner.**
 
