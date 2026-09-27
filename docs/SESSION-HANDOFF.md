@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar reviewed `22b465e` and approved, with two suggestions: the placeholder of this line, and the summary of the two skipped turns. The next commit fixes both. This pull request changes documents alone, so it takes the `review-override` label in place of a Codex review (D-812).
+**The review.** Gitar reviewed `22b465e` and approved, with two suggestions: the placeholder of this line, and the summary of the two skipped turns. `2137f43` fixes both, and its reply refutes one claim. Gitar reviewed `2137f43` and approved, with 2 of 2 findings closed and no open thread. This pull request changes documents alone, so it takes the `review-override` label in place of a Codex review (D-812). Pending the auto-merge.
 
 **What waits on the owner.**
 
