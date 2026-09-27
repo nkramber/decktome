@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approves `7e4ec70` with no finding and no thread. Codex round 1 reads `Blocked` with no finding. It asked for an answer to the CI notice of the Gitar dashboard, and for the result of `review-gate`. Comment 5852326252 answers the notice, and `docs/reviews/pr-242-response.md` holds both answers.
+**The review.** Gitar approves effective head `7e4ec70` with no finding and no open thread. Codex round 1 read `Blocked`. Comment 5852326252 answers the CI notice. The repeat review reads `Ready for owner merge` for effective head `7e4ec70`, after `make verify` passed. The published `review-gate` check read the old verdict and must rerun after this record reaches origin. Pending the auto-merge.
 
 **What waits on the owner.**
 
