@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-27 correction pass 243 (PR-94, F-179, D-975 to D-977): the site served an empty older MTGO month page to the Mac too. The meta job reads an empty older month page again up to 3 times. Changes: F-179, PR-93, PR-94, sequencing step 87.
+
 2026-09-27 correction pass 242 (PR-93, F-179, D-974): the meta job reads an empty older MTGO month page again, once, after the other sources. Changes: F-179, PR-93, sequencing step 86.
 
 2026-09-27 correction pass 241 (PR-92, F-179, D-973): the scheduled meta job of 2026-09-27 stored a model. 11 of 12 MTGO month pages held an empty deck list. The Mac got the full lists. Changes: F-179, PR-92, sequencing step 85.
@@ -551,7 +553,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-176 | **A cold start refuses the chat turn of a user, and only a tap sends it again.** The owner read this on `decktome.com` at 02:44:30 UTC on 2026-09-26. A new instance of revision `mtg-api-00085-bd8` started at 02:44:19 and listened at 02:44:20. The turn "Build me an anime-themed commander deck from my collection." read Unavailable: "the card database is not loaded yet, so the chat waits". The index loaded at 02:44:39.9 in 19.05 seconds. The web showed a red error and a "Try again" button. F-164 covered the card reads alone (D-801). `Chat`, `ImportDeck`, `Validate`, `GetSharedDeck`, `GetCollection`, and the upload of a collection still refused at once, and the web chat retried only on a tap. The 40 index loads of 2026-09-23 to 2026-09-26 took 10.2 to 20.9 seconds, not the 90 seconds of F-164. | ✅ fixed by #235 (PR-83, D-952 to D-954). The six reads wait 5 seconds for the first index, and the web chat sends a turn again on the loading refusal alone. |
 | F-177 | **The theme row asks beside the power and color rows.** The owner sent "Build me an anime themed commander deck" on `decktome.com` on 2026-09-26. Session `IoWy0DnoC0hQ0weOjZWa` asked the theme row of D-725, the power row, and the colors row in one turn. The power question named the "anime-themed deck", the theme that matched no card. The power and colors answers read the theme, so they must wait for its answer. | ✅ fixed by #236 (PR-84, D-955). The theme row asks alone, as the out-of-scope and two-deck rows do. |
 | F-178 | **The daily refit fails the precon bar, so the model of 2026-09-25 stays.** The meta job of 2026-09-26 read "commander: precon over own copy 0.94 of 827, the bar is 0.95", and Pushover sent the failure. It was the first job with the bar check of D-927. The lands, curve, and colors copies read 572 of 572, and the synergy copies 205 of 255. Free fits found no code, precon, or card snapshot cause. The list corpus grew, and more synergy copies passed the check of D-653. | ✅ fixed by #236 (PR-84, D-957). The synergy own copies read a bar of 0.75, and every other own copy keeps 0.95. `docs/reference/pr84-meta-bar-2026-09-26.md` holds the fits. |
-| F-179 | **The meta job reads 0 MTGO pages, and no log line names the cause.** The scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors, and stored no September page. The manual run of 2026-09-26 stored 31 new September pages and 169 older ones. The runs of 2026-09-19 to 2026-09-23 read September links alone, so the older month pages gave them no link. Each month page answered 200 with 129 to 158 links to a Mac fetch. | 🔧 PR-86 logs each month page and keeps a month page with no event link (D-962). On 2026-09-27 the job read 11 of 12 month pages with an empty deck list, and the Mac got the full lists (PR-92). PR-93 reads each empty older month page again, once, after the other sources and at least 5 minutes later (D-973, D-974). The next scheduled run on the new image reads the retry lines. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` and `docs/reference/pr92-meta-job-read-2026-09-27.md` hold the reads. |
+| F-179 | **The meta job reads 0 MTGO pages, and no log line names the cause.** The scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors, and stored no September page. The manual run of 2026-09-26 stored 31 new September pages and 169 older ones. The runs of 2026-09-19 to 2026-09-23 read September links alone, so the older month pages gave them no link. Each month page answered 200 with 129 to 158 links to a Mac fetch. | 🔧 PR-86 logs each month page and keeps a month page with no event link (D-962). On 2026-09-27 the job read 11 of 12 month pages with an empty deck list, and the Mac got the full lists (PR-92). PR-93 reads each empty older month page again, once, after the other sources and at least 5 minutes later (D-973, D-974). On 2026-09-27 the site served an empty older month page to the Mac too, and one retry read empty (PR-94). So the fault is of the site, at times, to any client. PR-94 reads an empty older month page again up to 3 times, 5 minutes apart (D-977). The next scheduled run on the new image reads the retry lines. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md`, `docs/reference/pr92-meta-job-read-2026-09-27.md`, and `docs/reference/pr94-mtgo-retry-read-2026-09-27.md` hold the reads. |
 | F-180 | **The Cloud Run jobs write no log severity.** `gcpenv.NewLogger` renamed `level` and `msg` to `severity` and `message` only when `K_SERVICE` was set. A Cloud Run job sets `CLOUD_RUN_JOB` and not `K_SERVICE`. So each line of `mtg-meta` and `mtg-snapshot` held `jsonPayload.level` and `jsonPayload.msg`, and no severity. The "worker failed" line of `mtg-meta-4spgm` on 2026-09-26 read no severity, and a filter on `severity>=ERROR` missed it. | ✅ fixed by #239 (PR-87, D-964). `NewLogger` renames the two keys on a service or a job. `OnCloudRun` still reads `K_SERVICE` alone. |
 | F-181 | **A spoofed first address still gets a new bucket on the deployed API.** Eleven calls of `CheckInvite` on 2026-09-27, each with a new first address in `X-Forwarded-For`, all answered 200. The request logs name one instance for all eleven, so one limiter counted them. The interceptor read the header with `Header.Get`, which answers the first header line alone. UNVERIFIED: no log holds the header that the API read. | ✅ PR-89 joins every header line (D-967). On the deploy of #241 the eleventh call answered 429, and one instance served all eleven (D-968). `docs/reference/pr90-limit-rechecks-2026-09-27.md` holds the reads. |
 | F-182 | **One IPv6 host gets a new bucket for each address in its /64.** 61 calls of `GetSharedDeck` on 2026-09-27 all answered 404, and none answered 429. The request logs name one instance, and two IPv6 addresses of one /64: 56 calls and 5 calls. `ClientAddress` answers the full address, and the limiter used it as the key. So a host that changes its address gets a new bucket, for the shared reads (D-315) and for the invite check (D-592). The same calls over IPv4 read a 429 on the 61st. | ✅ PR-90 keys an IPv6 client on its /64 (D-970). On the deploy of #242, 61 shared reads over IPv6 from two addresses of one /64 ended with a 429 (PR-91). `docs/reference/pr90-limit-rechecks-2026-09-27.md` and `docs/reference/pr91-ipv6-recheck-2026-09-27.md` hold the reads. |
@@ -2594,6 +2596,8 @@ The item is next step 3 of the hand-off. The 06:00 runs got empty older month pa
 
 A full retry points to a fault of the site at times. An empty retry points to the address of the job. `go/internal/meta/refresh_test.go` tests both results with a fake site. No paid target ran.
 
+Refuted 2026-09-27 (PR-94): the real site answered an empty retry to the Mac too. So an empty retry does not point to the address of the job.
+
 Gate:
 
 - `TestMTGORetriesAnEmptyOlderMonth` and `TestMTGORetryWaits` pass.
@@ -2601,6 +2605,27 @@ Gate:
 - A Codex record approves the effective head.
 
 > *In plain English:* the nightly job asks the Magic Online site again for each old month that came back empty. It asks about ten minutes later, after the other sites. The log then shows whether the second answer held the decks.
+
+**PR-94: Read the MTGO month retry, and read an empty month up to 3 times (F-179, D-975, D-976, D-977).** ✅ merged as #246. The mark comes before any review (D-822).
+The item is next step 3 of the hand-off. The first scheduled run on the image of #245 comes at 06:00 UTC on 2026-09-28, so the owner chose a manual run (D-975).
+
+- **The manual run.** `mtg-meta-hlzf5` read 12 full month pages on Cloud Run, so no retry started.
+- **The forced run.** A scratch test on the Mac emptied the first read of 2026-08. The real retry one minute later read empty too (D-976).
+- **The probes.** From the Mac, 2026-08 read empty 3 of 6 times in 4 minutes, between full reads.
+- **The retry.** An empty older month page reads again up to `MTGORetryPasses` times, 3. Each pass comes at least `MTGORetryWait` after the pass before it (D-977).
+- **The log.** `mtgo month page again` names the pass. `mtgo month pages stay empty` names each month that is empty after the last pass.
+- **The store.** A page that is empty again stays under `meta/raw/mtgo-month-empty/`, with `-again1` to `-again3` at the end of its name.
+
+`docs/reference/pr94-mtgo-retry-read-2026-09-27.md` holds the reads. No paid target ran.
+
+Gate:
+
+- `TestMTGORetriesAnEmptyOlderMonth` passes for a month that reads full on pass 1, full on pass 3, and never full.
+- `TestMTGORetryWaits` passes with 3 passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+
+> *In plain English:* the Magic Online site sometimes sends an empty list of events for an old month, to anyone who asks. The nightly job now asks up to three more times, five minutes apart, before it gives up on that month.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -2985,6 +3010,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 84. **PR-91** the IPv6 check on the deploy of #242, and the move of the checkout to `/Volumes/SSD-1TB/decktome` (F-182, D-971, D-972). No paid target ran.
 85. **PR-92** the read of the scheduled meta job of 2026-09-27 (F-179, F-180, D-973). No paid target ran.
 86. **PR-93** the meta job reads an empty older MTGO month page again (F-179, D-973, D-974). No paid target ran.
+87. **PR-94** the read of the MTGO month retry, and a retry of up to 3 passes (F-179, D-975 to D-977). No paid target ran.
 
 ## 9. Open questions
 

@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-27b
+
+**Pull request #245, PR-93, makes the meta job read an empty older MTGO month page again (F-179, D-973, D-974).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `56565c4`, from #244. The API serves revision `mtg-api-00091-xd9`, and the jobs run `worker:f178f05`.
+
+**The change.** `runMTGO` keeps each older month page with no event link. After the other six sources, `retryMTGOMonths` reads each one again, one time. It reads no page before `MTGORetryWait` after the last first read. The default is 5 minutes. The current month reads one time, because it can hold no event yet.
+
+**The log and the store.** The retry logs `mtgo month page again` with `after`, the time since the first read. A retry with no event link stays under `meta/raw/mtgo-month-empty/`, with `-again` at the end of its name. The event pages of a retried month share the page cap of the first pass.
+
+**The owner decision.** The owner chose the retry after the other sources, over a wait of 5 minutes inside the lane or 60 seconds for each month (D-974).
+
+**The tests.** `TestMTGORetriesAnEmptyOlderMonth` runs the whole job on a fake site that answers an empty page, then a full one or an empty one. `TestMTGORetryWaits` proves the wait. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approves effective head `d686820` with no finding and no thread. The Codex record `docs/reviews/pr-245.md` reads Ready for owner merge at `d686820`, with no open finding. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 4, and OQ-67 and OQ-77.
+
+### 2026-09-26h: the IPv6 check and the move of the checkout, PR-91
+
+**The check came before the move.** The session waited for the build of #242, then read the revision and `/readyz`. The 61st shared read over IPv6 answered 429 (F-182). The first log read held 55 entries, and a second read held 61.
+
+**The move carried more than the clone.** The session listed each file that git ignores. It also copied the local permission rules of `.claude/`, and it proved the `user.metadata` attribute on 19 of 19 files of `.local/gcs`.
+
 ## The resume section of 2026-09-27a
 
 **Pull request #244, PR-92, reads the first scheduled meta job on `worker:f178f05` (F-179, F-180, D-973).**

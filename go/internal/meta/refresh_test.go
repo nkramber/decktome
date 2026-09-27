@@ -3,6 +3,7 @@ package meta
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -440,12 +441,14 @@ func TestMTGOLogsEachMonthPage(t *testing.T) {
 }
 
 // TestMTGORetriesAnEmptyOlderMonth: an older month page with no event
-// link reads again once, after the other sources and at least
-// MTGORetryWait after its first read. The log names both reads. The
-// current month reads once, because it can hold no event yet (F-179,
-// D-974).
+// link reads again, after the other sources, up to MTGORetryPasses
+// times, each read at least MTGORetryWait after the one before it. The
+// log names each read. The current month reads once, because it can
+// hold no event yet (F-179, D-974, D-977). fullOn is the read of August
+// that lists the events, and 0 is none.
 func TestMTGORetriesAnEmptyOlderMonth(t *testing.T) {
-	for _, full := range []bool{true, false} {
+	for _, fullOn := range []int{2, 4, 0} {
+		full := fullOn != 0
 		ctx := context.Background()
 		srv, _ := fakeSites(t)
 		type hit struct {
@@ -464,7 +467,7 @@ func TestMTGORetriesAnEmptyOlderMonth(t *testing.T) {
 			n := august
 			mu.Unlock()
 			switch {
-			case r.URL.Path == "/decklists/2026/09", r.URL.Path == "/decklists/2026/08" && (n == 1 || !full):
+			case r.URL.Path == "/decklists/2026/09", r.URL.Path == "/decklists/2026/08" && (!full || n < fullOn):
 				_, _ = w.Write([]byte("<html>no events</html>"))
 			case r.URL.Path == "/decklists/2026/08":
 				data, _ := os.ReadFile(filepath.Join("testdata", "mtgo_month.html"))
@@ -497,52 +500,61 @@ func TestMTGORetriesAnEmptyOlderMonth(t *testing.T) {
 		for i, h := range reads {
 			paths[i] = h.path
 		}
-		if want := "/decklists/2026/09 /decklists/2026/08 /decklists/2026/08"; strings.Join(paths, " ") != want {
-			t.Fatalf("full=%v: month reads %q, want %q", full, strings.Join(paths, " "), want)
+		augusts := fullOn
+		if !full {
+			augusts = 1 + MTGORetryPasses
 		}
-		if gap := reads[2].at.Sub(reads[1].at); gap < job.MTGORetryWait {
-			t.Errorf("full=%v: the retry came %v after the first read, want at least %v", full, gap, job.MTGORetryWait)
+		want := "/decklists/2026/09" + strings.Repeat(" /decklists/2026/08", augusts)
+		if strings.Join(paths, " ") != want {
+			t.Fatalf("fullOn=%d: month reads %q, want %q", fullOn, strings.Join(paths, " "), want)
+		}
+		for i := 2; i < len(reads); i++ {
+			if gap := reads[i].at.Sub(reads[i-1].at); gap < job.MTGORetryWait {
+				t.Errorf("fullOn=%d: read %d came %v after the read before it, want at least %v", fullOn, i, gap, job.MTGORetryWait)
+			}
 		}
 		if lastOther < 0 || hits[lastOther].at.After(reads[2].at) {
-			t.Errorf("full=%v: the retry came before the other sources ended", full)
+			t.Errorf("fullOn=%d: the retry came before the other sources ended", fullOn)
 		}
 		for _, want := range []string{
 			`msg="mtgo month page" month=2026-08 found=true bytes=22 links=0 covered=0`,
-			`msg="mtgo month page again" month=2026-08 after=`,
+			`msg="mtgo month page again" month=2026-08 pass=1 after=`,
 		} {
 			if !strings.Contains(logs.String(), want) {
-				t.Errorf("full=%v: the log lacks %q:\n%s", full, want, logs.String())
+				t.Errorf("fullOn=%d: the log lacks %q:\n%s", fullOn, want, logs.String())
 			}
 		}
 		if strings.Contains(logs.String(), `msg="mtgo month page again" month=2026-09`) {
-			t.Errorf("full=%v: the current month reads again", full)
+			t.Errorf("fullOn=%d: the current month reads again", fullOn)
 		}
-		again, _ := HasRaw(ctx, store, SourceMTGO+"-month-empty", "2026-08-20260902T120000Z-again")
+		stay := strings.Contains(logs.String(), `msg="mtgo month pages stay empty" months=2026-08 passes=3`)
+		if stay == full {
+			t.Errorf("fullOn=%d: the log names the months that stay empty %v, want %v:\n%s", fullOn, stay, !full, logs.String())
+		}
+		for pass := 1; pass <= MTGORetryPasses; pass++ {
+			again, _ := HasRaw(ctx, store, SourceMTGO+"-month-empty", fmt.Sprintf("2026-08-20260902T120000Z-again%d", pass))
+			if want := !full || pass+1 < fullOn; again != want {
+				t.Errorf("fullOn=%d: the empty page of pass %d kept %v, want %v", fullOn, pass, again, want)
+			}
+		}
 		if full {
 			// The retried month lists the challenge, and its event page
-			// fetches after the retry.
+			// fetches after the pass that reads it full.
 			if rep.Lists[SourceMTGO] != 3 || rep.Pages[SourceMTGO] != 1 {
-				t.Errorf("mtgo lists %d, pages %d, want the 3 lists of the challenge on 1 page", rep.Lists[SourceMTGO], rep.Pages[SourceMTGO])
+				t.Errorf("fullOn=%d: mtgo lists %d, pages %d, want the 3 lists of the challenge on 1 page", fullOn, rep.Lists[SourceMTGO], rep.Pages[SourceMTGO])
 			}
-			if again {
-				t.Errorf("a full retry is kept as empty")
-			}
-		} else {
-			if !again {
-				t.Errorf("the retry that is empty again is not kept for a reader")
-			}
-			if rep.Pages[SourceMTGO] != 0 {
-				t.Errorf("mtgo pages %d, want 0", rep.Pages[SourceMTGO])
-			}
+		} else if rep.Pages[SourceMTGO] != 0 {
+			t.Errorf("mtgo pages %d, want 0", rep.Pages[SourceMTGO])
 		}
 		if len(rep.Errors) != 0 {
-			t.Errorf("full=%v: errors %v", full, rep.Errors)
+			t.Errorf("fullOn=%d: errors %v", fullOn, rep.Errors)
 		}
 	}
 }
 
-// TestMTGORetryWaits: when the other sources end fast, the retry waits
-// out the rest of MTGORetryWait and logs the wait (D-974).
+// TestMTGORetryWaits: when the other sources end fast, each pass of the
+// retry waits out the rest of MTGORetryWait and logs the wait (D-974,
+// D-977).
 func TestMTGORetryWaits(t *testing.T) {
 	ctx := context.Background()
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -560,15 +572,19 @@ func TestMTGORetryWaits(t *testing.T) {
 	if err := job.retryMTGOMonths(ctx, newReport()); err != nil {
 		t.Fatal(err)
 	}
-	if took := time.Since(start); took < job.MTGORetryWait {
-		t.Errorf("the retry came after %v, want at least %v", took, job.MTGORetryWait)
+	if took, want := time.Since(start), MTGORetryPasses*job.MTGORetryWait; took < want {
+		t.Errorf("the retry passes ended after %v, want at least %v", took, want)
 	}
-	for _, want := range []string{`msg="mtgo month pages wait" months=1`, `msg="mtgo month page again" month=2026-08`} {
+	for _, want := range []string{
+		`msg="mtgo month pages wait" months=1 pass=1`,
+		`msg="mtgo month pages wait" months=1 pass=3`,
+		`msg="mtgo month page again" month=2026-08 pass=3`,
+	} {
 		if !strings.Contains(logs.String(), want) {
 			t.Errorf("the log lacks %q:\n%s", want, logs.String())
 		}
 	}
-	// A second call finds no month: the retry runs once.
+	// A second call finds no month: the retry runs once in a run.
 	logs.Reset()
 	if err := job.retryMTGOMonths(ctx, newReport()); err != nil || logs.Len() != 0 {
 		t.Errorf("a second retry ran: err %v, log %q", err, logs.String())
