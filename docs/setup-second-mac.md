@@ -68,8 +68,8 @@ Two tools are optional. `brew install --cask docker-desktop` serves `make dev-do
 ## 4. Put the data in place
 
 1. Move `mtg-carry.tgz` and `mtg-claude-memory.tgz` to the new Mac.
-2. Run `cd ~/Repos/decktome`.
-3. Run `tar -xzf ~/Desktop/mtg-carry.tgz`. It writes `.env` and `.local/`.
+2. Run `cd /Volumes/SSD-1TB/decktome`.
+3. Run `tar -xzf ~/Desktop/mtg-carry.tgz`. It writes `.env`, `.claude/settings.local.json`, and `.local/`.
 4. Run `chmod 600 .env`.
 5. Check the attributes on one snapshot object with the two lines below.
 
