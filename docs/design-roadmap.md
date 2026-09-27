@@ -2583,7 +2583,7 @@ Gate:
 
 > *In plain English:* the nightly job that learns from tournament decks ran, and it saved a new model. The official Magic Online site sent it empty lists for eleven old months. The same pages hold full lists on the Mac, so the next change asks the site again.
 
-**PR-93: Read an empty older MTGO month page again (F-179, D-973, D-974).** ✅ merged as #N. The mark comes before any review (D-822).
+**PR-93: Read an empty older MTGO month page again (F-179, D-973, D-974).** ✅ merged as #245. The mark comes before any review (D-822).
 The item is next step 3 of the hand-off. The 06:00 runs got empty older month pages, and the Mac got full lists.
 
 - **The retry.** An older month page with no event link reads again one time. The retry comes after the other six sources, at least `MTGORetryWait` after the first read. The default is 5 minutes.
