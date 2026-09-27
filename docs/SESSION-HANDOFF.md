@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending.
+**The review.** Codex reviewed `250c08d`. Verdict: Blocked, with open finding P2-1. The Gitar dashboard has an unanswered contract claim.
 
 **What waits on the owner.**
 
