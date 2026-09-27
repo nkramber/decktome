@@ -607,11 +607,12 @@ func TestMTGORetryWaits(t *testing.T) {
 // the event slugs of each read of it, and the last entry repeats. An
 // empty entry is an empty page. events maps a slug to the status of each
 // read of its event page, and the last entry repeats. The site logs the
-// path of each read.
+// path of each read. delay is the time of each event page read.
 type mtgoSite struct {
 	mu     sync.Mutex
 	months map[string][][]string
 	events map[string][]int
+	delay  time.Duration
 	reads  map[string]int
 	log    []string
 }
@@ -638,6 +639,7 @@ func (m *mtgoSite) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		b.WriteString("</html>")
 		_, _ = w.Write([]byte(b.String()))
 	case strings.HasPrefix(p, "/decklist/"):
+		time.Sleep(m.delay)
 		codes := m.events[strings.TrimPrefix(p, "/decklist/")]
 		code := http.StatusOK
 		if len(codes) > 0 {
@@ -783,6 +785,85 @@ func TestMTGORetriesARedirectedEventPage(t *testing.T) {
 			t.Errorf("fullOn=%d: the log names the pages that stay redirected %v, want %v", fullOn, stay, fullOn == 0)
 		}
 	}
+}
+
+// TestMTGOStopsAtTheTimeBudget: the MTGO lane starts no fetch and no
+// wait after its budget, so the quality fit keeps its time. On
+// 2026-09-27 the lane of mtg-meta-4nps4 took 145 minutes, and the task
+// timeout stopped the fit (F-184, D-982).
+func TestMTGOStopsAtTheTimeBudget(t *testing.T) {
+	sep, aug := "modern-challenge-32-2026-09-0112800001", "modern-challenge-32-2026-08-0112800002"
+	run := func(t *testing.T, site *mtgoSite, months, maxPages int, wait, budget time.Duration) (*Report, string) {
+		t.Helper()
+		ctx := context.Background()
+		var logs strings.Builder
+		job, done := mtgoOnlyJob(t, site, months, maxPages, &logs)
+		defer done()
+		job.MTGORetryWait, job.MTGOBudget = wait, budget
+		rep := newReport()
+		if err := job.runMTGO(ctx, rep); err != nil {
+			t.Fatal(err)
+		}
+		if err := job.finishMTGO(ctx, rep); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(rep.Skipped[SourceMTGO], "time budget") {
+			t.Errorf("skipped %q, want the time budget named", rep.Skipped[SourceMTGO])
+		}
+		return rep, logs.String()
+	}
+	want := func(t *testing.T, logs string, lines ...string) {
+		t.Helper()
+		for _, line := range lines {
+			if !strings.Contains(logs, line) {
+				t.Errorf("the log lacks %q:\n%s", line, logs)
+			}
+		}
+	}
+	t.Run("month retry", func(t *testing.T) {
+		site := &mtgoSite{months: map[string][][]string{
+			"/decklists/2026/09": {{sep}},
+			"/decklists/2026/08": {{}, {aug}},
+		}}
+		_, logs := run(t, site, 2, 10, time.Second, 200*time.Millisecond)
+		// The wait of the retry ends after the budget, so the month does
+		// not read again. The event page of the full month still fetches.
+		if got := strings.Join(site.eventReads(), " "); got != sep {
+			t.Errorf("event pages %q, want %q", got, sep)
+		}
+		want(t, logs, `msg="mtgo time budget held" stage=months budget=200ms`,
+			`msg="mtgo month pages stay empty" months=2026-08 passes=0`)
+	})
+	t.Run("302 retry", func(t *testing.T) {
+		site := &mtgoSite{
+			months: map[string][][]string{"/decklists/2026/09": {{sep}}},
+			events: map[string][]int{sep: {http.StatusFound}},
+		}
+		rep, logs := run(t, site, 1, 10, time.Second, 200*time.Millisecond)
+		if got := len(site.eventReads()); got != 1 {
+			t.Errorf("%d event reads, want 1: the retry wait ends after the budget", got)
+		}
+		if rep.FetchErrors[SourceMTGO] != 1 {
+			t.Errorf("fetch errors %d, want 1 for the page that stays redirected", rep.FetchErrors[SourceMTGO])
+		}
+		want(t, logs, `msg="mtgo time budget held" stage="events again"`,
+			`msg="mtgo event pages stay redirected" slugs=1 passes=0`)
+	})
+	t.Run("event fetch", func(t *testing.T) {
+		var slugs []string
+		for i := range 5 {
+			slugs = append(slugs, fmt.Sprintf("modern-challenge-32-2026-09-0%d12800001", i+1))
+		}
+		site := &mtgoSite{months: map[string][][]string{"/decklists/2026/09": {slugs}}, delay: 100 * time.Millisecond}
+		rep, logs := run(t, site, 1, 10, 20*time.Millisecond, 150*time.Millisecond)
+		if got := len(site.eventReads()); got < 1 || got >= len(slugs) {
+			t.Errorf("%d event reads, want at least 1 and fewer than %d", got, len(slugs))
+		}
+		if rep.Pages[SourceMTGO] != len(site.eventReads()) {
+			t.Errorf("mtgo pages %d, want one for each read", rep.Pages[SourceMTGO])
+		}
+		want(t, logs, `msg="mtgo time budget held" stage=events`)
+	})
 }
 
 // TestMTGJSONSkipsAnUnchangedDeckList: the version stamp carries the
