@@ -2542,7 +2542,7 @@ Gate:
 
 > *In plain English:* the app limits how often one visitor can read shared decks or check an invite. A computer on the newer internet protocol owns a large block of addresses and can switch between them. Each switch gave it a fresh limit. The app now counts the whole block as one visitor.
 
-**PR-91: Move the decktome checkout to `/Volumes/SSD-1TB/decktome`, after the IPv6 check of F-182 (D-971, D-972).** 🔧 open. The mark comes before any review (D-822).
+**PR-91: Move the decktome checkout to `/Volumes/SSD-1TB/decktome`, after the IPv6 check of F-182 (D-971, D-972).** ✅ merged as #243. The mark comes before any review (D-822).
 The item is next step 3 of the hand-off (D-971). It reads the check of D-970 on the deploy of #242 first.
 
 - **The IPv6 check.** 61 calls of `GetSharedDeck` came from two addresses of one /64. Calls 1 to 60 answered 404, and call 61 answered 429 (F-182).

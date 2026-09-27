@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-26h)
 
-**Pull request #PRNUM, PR-91, moves the decktome checkout to `/Volumes/SSD-1TB/decktome`, and reads the IPv6 check of F-182 on the deploy of #242 (D-971, D-972).**
+**Pull request #243, PR-91, moves the decktome checkout to `/Volumes/SSD-1TB/decktome`, and reads the IPv6 check of F-182 on the deploy of #242 (D-971, D-972).**
 
 Author provider: Claude Code
 
@@ -111,7 +111,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 1. **PR-90: the rate limit checks on the deploy of #241, and the IPv6 key of the limiter** (F-181, F-182, D-969, D-970). It merged as #242.
-2. **PR-91: move the decktome checkout to `/Volumes/SSD-1TB/decktome`** (F-182, D-971, D-972). This pull request is #PRNUM. The 61st shared read over IPv6 answered 429 on the deploy of #242.
+2. **PR-91: move the decktome checkout to `/Volumes/SSD-1TB/decktome`** (F-182, D-971, D-972). This pull request is #243. The 61st shared read over IPv6 answered 429 on the deploy of #242.
 3. **Read the scheduled meta job, in the new checkout** (F-179, D-962, D-963, D-966, D-971). The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:f178f05`, which holds the fix of #239 and writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
 
    ```text
