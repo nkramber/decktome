@@ -22,6 +22,8 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
+**The manual run.** At 09:03 UTC, `mtg-meta-hlzf5` still fetched MTGO event pages, and it had not logged "meta job done". Next step 4 reads its end.
+
 **The review.** Gitar approved effective head `9d31be6` with no finding or open thread. The Codex record `docs/reviews/pr-246.md` says Ready for owner merge at `9d31be6`, with no open finding. `review-gate`, `pr-contract`, `verify:shell`, and `verify:eval` pass on the published record. The docs-only workflow skipped the six heavy checks. Those checks passed on the effective head. Pending the owner decision.
 
 **What waits on the owner.**
@@ -111,7 +113,7 @@ Twenty-two things a fresh session gets wrong without this file.
 4. **Read the first scheduled meta job on the image of this pull request** (F-179, D-977). It needs the deploy of this merge. The first action, word for word, is in the block below. No paid target runs.
 
    ```text
-   after the deploy of #246, read the next 06:00 UTC run of mtg-meta, and count the "mtgo month page again" lines by pass, their links, and each "mtgo month pages stay empty" line (F-179, D-977).
+   after the deploy of #246, read the next 06:00 UTC run of mtg-meta, and count the "mtgo month page again" lines by pass, their links, and each "mtgo month pages stay empty" line. Also read the end of the manual run mtg-meta-hlzf5 (F-179, D-977).
    ```
 5. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-179 (next step 4). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
