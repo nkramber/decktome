@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending.
+**The review.** Ready for owner merge at `d68682050b337d05a23f91a2beb2ca1c18171dab`. No open finding ids.
 
 **What waits on the owner.**
 
