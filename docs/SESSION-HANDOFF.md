@@ -6,35 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-26f)
+## RESUME HERE (2026-09-26g)
 
-**Pull request #241, PR-89, reads two deploy checks and fixes the header lines of the rate limit (F-181, D-966 to D-968).**
+**Pull request #242, PR-90, checks the rate limit on the deploy of #241, and keys an IPv6 client on its /64 (F-181, F-182, D-969, D-970).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 3, in the second pull request after #240: make the eleven calls of `CheckInvite` again (D-968).
+**The next step.** Next step 3: move the checkout to `/Volumes/SSD-1TB/decktome` (D-971). Before the item work, make 61 shared reads over IPv6 on the deploy of this pull request (D-970).
 
-**The base.** `main` is `a3b2c95`, from #240. The API serves revision `mtg-api-00089-z54`, the deploy of #239.
+**The base.** `main` is `ea587fc`, from #241. The API serves revision `mtg-api-00090-zzs`, the deploy of #241, and `/readyz` names `ea587fc`.
 
-**The order (D-966).** The owner put the two deploy reads before the read of the meta job. The meta read moves to the third pull request after #240, next step 4.
+**The invite check (F-181).** The eleven calls of `CheckInvite` ran at 02:46 UTC on 2026-09-27, each with a new first `X-Forwarded-For` address. Calls 1 to 10 answered 200, and call 11 answered 429. One instance served all eleven, so the fix of D-967 holds.
 
-**The feedback list.** `make feedback-list VERDICT=` read six verdicts of every kind, with exit 0. So the deployed store holds the collection-group index of #230 (D-938).
+**The second concern (D-969).** The owner chose a check of the shared-read limit. 61 calls of `GetSharedDeck` with a token that no share holds all answered 404. The logs name one instance, and two IPv6 addresses of one /64: 56 calls and 5 calls (F-182). Over IPv4, calls 1 to 60 answered 404, and call 61 answered 429.
 
-**The rate limit.** The eleven calls of D-907 all answered 200 on one instance. The limiter read the first `X-Forwarded-For` line alone, so a spoofed first address got a new bucket (F-181). The owner chose the fix in this pull request (D-967). `forwardedFor` joins every line, and a new test fails on the old code.
+**The change (D-970).** `bucket` keys an IPv6 client on its /64, and an IPv4 client on its address. `TestANewAddressInOneSlash64GetsNoNewBucket` read 11 of 11 allowed on the old code, and 10 of 11 on the fix.
 
-**An open read.** No log holds the header that the API read, so the cause is UNVERIFIED. The calls on the next deploy prove or refute it (D-968).
-
-`docs/reference/pr89-deploy-reads-2026-09-27.md` holds the reads. No paid target ran.
+`docs/reference/pr90-limit-rechecks-2026-09-27.md` holds the reads. No paid target ran.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar reviewed `45f16eb` and `fff4097`, and approved both with no finding and no thread. Codex round 1 found P2-1: the body named the author provider. An edit of the body removed it, and `docs/reviews/pr-241-response.md` holds the answer. Codex round 2 reads `Ready for owner merge`, with the head field `94d8bd3`. `review-gate` passes, because each later commit changes documents alone (D-837). The owner confirmed the merge. Pending the auto-merge.
+**The review.** Gitar approves effective head `7e4ec70` with no finding and no open thread. Codex round 1 read `Blocked`. Comment 5852326252 answers the CI notice. The repeat review reads `Ready for owner merge` for effective head `7e4ec70`, after `make verify` passed. The published `review-gate` check read the old verdict and must rerun after this record reaches origin. Pending the auto-merge. A later commit of documents alone records D-971, the move of the checkout as the next step, and keeps the approval (D-837).
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- After the deploy of this pull request: the eleven calls of `CheckInvite` again. The eleventh must answer 429 (D-968).
-- The scheduled meta job, in the third pull request after #240 (D-963, D-966). It must store a model, and log each MTGO month page (F-179).
+- After the deploy of this pull request: 61 shared reads over IPv6 from two addresses of one /64. The 61st must answer 429 (D-970).
+- The scheduled meta job, in the pull request after the move (D-963, D-966, D-971). It must store a model, and log each MTGO month page (F-179).
 - A deck gate run to grade the new split of the basics of #234. Ask first.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
@@ -99,7 +97,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - `make feedback-list VERDICT=` of 2026-09-27 at about 01:50 UTC read 6 verdicts, all of one user. The newest is of 2026-09-24 at 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-27 UTC: Cloud Build `ce046353` of `deploy-api` built `2258cb0`, from #239, and ended SUCCESS at 01:26:56 UTC on 2026-09-27. The jobs `mtg-meta` and `mtg-snapshot` run `worker:2258cb0`. The service serves revision `mtg-api-00089-z54`, created at 01:26:32 UTC. The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed API, read 2026-09-27 UTC: Cloud Build `28dfd4b1` of `deploy-api` built `ea587fc`, from #241, and ended SUCCESS at 02:46:23 UTC on 2026-09-27. The jobs `mtg-meta` and `mtg-snapshot` run `worker:ea587fc`. The service serves revision `mtg-api-00090-zzs`, created at 02:45:48 UTC. The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
 - The deployed web app, read 2026-09-26: build `1a3df566` of `deploy-web` built `b739386`, from #237, and ended SUCCESS at 22:42:31 UTC. `/version.json` names `b739386`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
@@ -112,15 +110,15 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-88: the live read of the commander row** (F-121, D-690, D-965). It merged as #240.
-2. **PR-89: the deploy reads of #230 and #227, and the header lines of the rate limit** (F-181, D-966 to D-968). This pull request is #241.
-3. **In the second pull request after #240, make the eleven calls of `CheckInvite` again** (F-181, D-968). Use a new first `X-Forwarded-For` address for each call. The eleventh must answer 429. Then the owner names a second concern, and not the meta read. When it answers 200, record a new design of the key.
-4. **In the third pull request after #240, read the scheduled meta job** (F-179, D-962, D-963, D-966). The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:2258cb0`, which writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
+1. **PR-89: the deploy reads of #230 and #227, and the header lines of the rate limit** (F-181, D-966 to D-968). It merged as #241.
+2. **PR-90: the rate limit checks on the deploy of #241, and the IPv6 key of the limiter** (F-181, F-182, D-969, D-970). This pull request is #242.
+3. **Move the decktome checkout to `/Volumes/SSD-1TB/decktome`** (D-971). Before the item work, make 61 calls of `GetSharedDeck` over IPv6 on the deploy of #242. Switch the source between two addresses of one /64 with `curl -6 --interface`. The 61st must answer 429 (F-182, D-970). When it answers 404, record the finding and ask the owner. Then start in the old checkout, and clone to the new path. Copy `.env`, `.local`, and the auto-memory directory to the key `-Volumes-SSD-1TB-decktome`. Run `make hooks` and `make verify` there. `docs/setup-second-mac.md` names `~/Repos/decktome` as the fixed path, so change it. Keep the old checkout until the owner approves its deletion.
+4. **In the pull request after the move, read the scheduled meta job** (F-179, D-962, D-963, D-966, D-971). The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:ea587fc`, which holds the fix of #239 and writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
 
    ```text
    read the `mtg-meta` execution of 06:00 UTC on 2026-09-27 (or the newest scheduled one), filter on `msg` or `message` and `level` or `severity`, and check "meta job done", a new `meta/model/` version, 12 `mtgo month page` lines, and each `links=0` page under `meta/raw/mtgo-month-empty/` (F-179, F-180, D-962, D-963).
    ```
-5. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-179 (next step 4), and F-181 (next step 3). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+5. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-179 (next step 4), and F-182 (next step 3). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 7. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
 8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
@@ -138,12 +136,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-26d: the log severity of the Cloud Run jobs, PR-87
-
-**The owner asked for F-180 before the read of the meta job (D-963).** The deploy of #238 held. The live logs and the Cloud Run docs proved the fault. The owner chose the scope: `NewLogger` reads `CLOUD_RUN_JOB`, and `OnCloudRun` does not change (D-964).
-
-**A change that the session reverted.** The session first added a line to the dated record of PR-86. A dated record is history, so the session reverted the line.
-
 ### 2026-09-26e: the live read of the commander row, PR-88
 
 **The owner asked for next step 2: read the scheduled meta job of 2026-09-27.** The session started at 01:28 UTC, before the job. The deploy of #239 held. The owner asked to start the next pull request, and the session named the rule of one pull request in each session. So the owner chose next step 4 for this session (D-965).
@@ -155,6 +147,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner changed the order after #240 (D-966).** The feedback list and the eleven calls of `CheckInvite` came first. The feedback list passed, and the eleventh call passed where it must fail.
 
 **A cause from the code, not the logs.** The request logs named one instance, so the key changed with each call. The code read the first header line alone. The owner chose the fix in this pull request over free probes first (D-967).
+
+### 2026-09-26g: the rate limit checks on the deploy of #241, PR-90
+
+**The fix of #241 held, and a second probe found a second hole.** The eleventh call of `CheckInvite` answered 429. The owner named the shared-read limit as the second concern (D-969). Its 61 calls all passed, because the Mac sent them from two IPv6 addresses of one /64.
+
+**A scratch test before a claim.** The session built the handler wiring of `main.go` in a scratch test, and it refused call 61. So the key caused the miss, and the wiring did not. The logs then showed the two addresses. The owner chose the fix in this pull request (D-970).
 
 ## The archive
 

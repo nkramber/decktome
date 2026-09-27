@@ -4,7 +4,8 @@
 // every visitor gets a bucket of their own. The caller writes the left
 // part of that header, and the Google front end appends the address that
 // it saw. So the key is the rightmost address that no proxy of Google
-// holds (REV-010).
+// holds (REV-010). An IPv6 host holds a whole /64, so an IPv6 key is
+// that prefix and not the one address (F-182).
 package ratelimit
 
 import (
@@ -123,6 +124,31 @@ func forwardedFor(h http.Header) string {
 	return strings.Join(h.Values("X-Forwarded-For"), ",")
 }
 
+// ipv6Prefix is the prefix length of one IPv6 host. A network gives each
+// host a /64, and the host can pick any address in it.
+const ipv6Prefix = 64
+
+// bucket turns a client address into the key of the limiter. An IPv4
+// address is its own key. An IPv6 address keys on its /64, so a host that
+// changes the address in its prefix keeps one bucket (F-182, D-970).
+func bucket(client string) string {
+	a, err := netip.ParseAddr(client)
+	if err != nil {
+		return client
+	}
+	a = a.Unmap()
+	if a.Is4() {
+		return a.String()
+	}
+	return netip.PrefixFrom(a.WithZone(""), ipv6Prefix).Masked().String()
+}
+
+// clientKey is the key of one request: the client address behind the
+// proxy, as a bucket.
+func clientKey(h http.Header, remoteAddr string) string {
+	return bucket(ClientAddress(forwardedFor(h), remoteAddr))
+}
+
 var errTooMany = errors.New("too many calls from this address, try again in a minute")
 
 // Interceptor limits the named procedures. Every other procedure passes
@@ -145,7 +171,7 @@ func (i *interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 		if req.Spec().IsClient || !i.limited[req.Spec().Procedure] {
 			return next(ctx, req)
 		}
-		key := ClientAddress(forwardedFor(req.Header()), req.Peer().Addr)
+		key := clientKey(req.Header(), req.Peer().Addr)
 		if !i.limiter.Allow(key) {
 			return nil, connect.NewError(connect.CodeResourceExhausted, errTooMany)
 		}
@@ -162,7 +188,7 @@ func (i *interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) co
 		if !i.limited[conn.Spec().Procedure] {
 			return next(ctx, conn)
 		}
-		key := ClientAddress(forwardedFor(conn.RequestHeader()), conn.Peer().Addr)
+		key := clientKey(conn.RequestHeader(), conn.Peer().Addr)
 		if !i.limiter.Allow(key) {
 			return connect.NewError(connect.CodeResourceExhausted, errTooMany)
 		}
