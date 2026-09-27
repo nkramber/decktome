@@ -2485,7 +2485,7 @@ The item reads the first commander question on the deployed app, next step 4 of 
 - **The deploy.** The `deploy-api` build of `2258cb0` ended SUCCESS, and both jobs run `worker:2258cb0`.
 - **The commander row.** A `make live-web` turn showed the row with "Suggest one" and no "You decide" (D-690).
 - **The pick row.** A second turn showed the pick row with "You decide". The paid sweep of 2026-09-26 showed the same.
-- **The skip.** Two turns asked no commander row, because the plan went straight to the pick row. The classifier flag `wants_suggestion` likely caused it, and the read stays unverified.
+- **The skip.** Two turns asked no commander row: one asked the color row, and one asked the pick row. The classifier flag `wants_suggestion` likely caused it, and the read stays unverified.
 
 `docs/reference/pr88-commander-row-2026-09-27.md` holds the reads. The three turns cost $0.0024.
 

@@ -22,11 +22,11 @@ Author provider: Claude Code
 
 **The reads.** Three `make live-web` turns ran on `decktome.com` for $0.0024. Session `YFZXGxi6bWvYYZhMAJIk` showed the commander row with "Suggest one" and no "You decide". Session `5G18DZhbINMGawawxNd7` showed the pick row with "You decide". `docs/reference/pr88-commander-row-2026-09-27.md` holds the reads.
 
-**An open read.** Two turns asked the pick row and no commander row. The classifier flag `wants_suggestion` likely caused the skip. The read is UNVERIFIED, and it opens no finding.
+**An open read.** Two turns asked no commander row: turn a asked the color row, and turn b asked the pick row. The classifier flag `wants_suggestion` likely caused the skip. The read is UNVERIFIED, and it opens no finding.
 
 **The checks.** See the pull request body.
 
-**The review.** REVIEW_STATE
+**The review.** Gitar reviewed `22b465e` and approved, with two suggestions: the placeholder of this line, and the summary of the two skipped turns. The next commit fixes both. This pull request changes documents alone, so it takes the `review-override` label in place of a Codex review (D-812).
 
 **What waits on the owner.**
 
