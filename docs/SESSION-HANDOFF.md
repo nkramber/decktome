@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-26e)
 
-**Pull request #N, PR-88, reads the commander row on the deployed app (F-121, D-690, D-965).**
+**Pull request #240, PR-88, reads the commander row on the deployed app (F-121, D-690, D-965).**
 
 Author provider: Claude Code
 
@@ -110,7 +110,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-88: the live read of the commander row** (F-121, D-690, D-965). This pull request is #N.
+1. **PR-88: the live read of the commander row** (F-121, D-690, D-965). This pull request is #240.
 2. **In the next pull request, read the scheduled meta job of 06:00 UTC on 2026-09-27** (F-179, D-962, D-963, D-965). It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:2258cb0`, which writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`. So filter on `msg` or `message`, and on `level` or `severity`.
 3. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.

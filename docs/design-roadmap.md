@@ -2479,7 +2479,7 @@ Gate:
 - After the merge, a job line of the new image reads a severity in Cloud Logging.
 > *In plain English:* the two background jobs wrote their log lines with no level. An error line looked like any other line, so a search for errors missed it. The jobs now mark each line as info, warning, or error.
 
-**PR-88: The live read of the commander row (F-121, D-690, D-965).** 🔧 planned.
+**PR-88: The live read of the commander row (F-121, D-690, D-965).** ✅ merged as #240. The mark comes before any review (D-822).
 The item reads the first commander question on the deployed app, next step 4 of the hand-off. The session started before the scheduled meta job, so the owner moved its read to a later session (D-965).
 
 - **The deploy.** The `deploy-api` build of `2258cb0` ended SUCCESS, and both jobs run `worker:2258cb0`.
