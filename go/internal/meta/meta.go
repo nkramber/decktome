@@ -400,6 +400,14 @@ func NotFound(err error) bool {
 	return errors.As(err, &se) && se.Status == http.StatusNotFound
 }
 
+// Redirected says whether an error is a 302. The Fetcher follows no
+// redirect, and the MTGO site answers 302 for an event page at times
+// (F-183).
+func Redirected(err error) bool {
+	var se *StatusError
+	return errors.As(err, &se) && se.Status == http.StatusFound
+}
+
 // cleanName trims a card name the way a source writes it: whitespace,
 // and a set code in parentheses at the end.
 func cleanName(s string) string {

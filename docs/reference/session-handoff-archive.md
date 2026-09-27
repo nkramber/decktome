@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-27c
+
+**Pull request #246, PR-94, reads the MTGO month retry of #245, and it reads an empty older month page up to 3 times (F-179, D-975, D-976, D-977).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `9781286`, from #245. Cloud Build `e4988aa0` deployed it. The API serves revision `mtg-api-00092-f9g`, and the jobs run `worker:9781286`.
+
+**The reads.** The first scheduled run on `worker:9781286` comes at 06:00 UTC on 2026-09-28. The owner chose a manual run in place of that wait (D-975). The manual run `mtg-meta-hlzf5` read 12 full month pages, so no retry started. A forced run on the Mac emptied the first read of 2026-08, and the real retry read empty too (D-976). Probes from the Mac read 2026-08 empty 3 of 6 times.
+
+**The change.** An empty older month page reads again up to `MTGORetryPasses` times, 3. Each pass comes at least `MTGORetryWait` after the pass before it. The log line `mtgo month page again` names the pass. The warning `mtgo month pages stay empty` names each month that stays empty. The stored page ends with `-again1` to `-again3` (D-977).
+
+**The tests.** `TestMTGORetriesAnEmptyOlderMonth` reads a month that is full on pass 1, full on pass 3, and never full. `TestMTGORetryWaits` proves the wait of each pass. The tests fail with one pass. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The manual run.** At 09:03 UTC, `mtg-meta-hlzf5` still fetched MTGO event pages, and it had not logged "meta job done". Next step 4 reads its end.
+
+**The review.** Gitar approved effective head `9d31be6` with no finding or open thread. The Codex record `docs/reviews/pr-246.md` says Ready for owner merge at `9d31be6`, with no open finding. `review-gate`, `pr-contract`, `verify:shell`, and `verify:eval` pass on the published record. The docs-only workflow skipped the six heavy checks. Those checks passed on the effective head. Pending the owner decision.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 5, and OQ-67 and OQ-77.
+
+### 2026-09-27a: the read of the scheduled meta job, PR-92
+
+**The session waited for the job, and it did not read the old run again.** The newest scheduled run at the start was of 2026-09-26, on an older image, and F-178 already held it. So the session waited for the run of 06:00 UTC.
+
+**Each client check came before a claim.** The stored pages held an empty list. The Mac then fetched the same months with the headers of the job, with gzip, and with the Go client. Each fetch got the full list.
+
 ## The resume section of 2026-09-27b
 
 **Pull request #245, PR-93, makes the meta job read an empty older MTGO month page again (F-179, D-973, D-974).**
