@@ -22,7 +22,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending the Gitar pass and the Codex review.
+**The review.** Gitar approved effective head `3b93ca4` with no finding or open thread. The Codex record `docs/reviews/pr-247.md` says Ready for owner merge at `3b93ca4`, with no open finding. The local Docker step of `make verify` did not run because the daemon was off. GitHub `verify:docker` passed. Pending the owner decision and auto-merge.
 
 **What waits on the owner.**
 
