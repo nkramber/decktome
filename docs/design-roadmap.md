@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-26 correction pass 236 (PR-87, F-180, D-963, D-964): the Cloud Run jobs wrote no log severity, because the logger read `K_SERVICE` alone. The logger now reads `CLOUD_RUN_JOB` too. Changes: F-180, PR-87, sequencing step 80.
+
 2026-09-26 correction pass 235 (PR-86, F-179, D-962): the scheduled meta jobs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors, with no logged cause. The job now logs each MTGO month page, and keeps a month page with no event link. Changes: F-179, PR-86, sequencing step 79.
 
 2026-09-26 correction pass 234 (PR-85, F-178, D-958 to D-961): a manual meta job on the image of #236 stored a model. Two deployed "anime" sessions asked the theme row alone. The `live-test` skill and a live sweep of every screen now check the deployed app as the check account. Changes: PR-85, sequencing step 78.
@@ -540,6 +542,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-177 | **The theme row asks beside the power and color rows.** The owner sent "Build me an anime themed commander deck" on `decktome.com` on 2026-09-26. Session `IoWy0DnoC0hQ0weOjZWa` asked the theme row of D-725, the power row, and the colors row in one turn. The power question named the "anime-themed deck", the theme that matched no card. The power and colors answers read the theme, so they must wait for its answer. | ✅ fixed by #236 (PR-84, D-955). The theme row asks alone, as the out-of-scope and two-deck rows do. |
 | F-178 | **The daily refit fails the precon bar, so the model of 2026-09-25 stays.** The meta job of 2026-09-26 read "commander: precon over own copy 0.94 of 827, the bar is 0.95", and Pushover sent the failure. It was the first job with the bar check of D-927. The lands, curve, and colors copies read 572 of 572, and the synergy copies 205 of 255. Free fits found no code, precon, or card snapshot cause. The list corpus grew, and more synergy copies passed the check of D-653. | ✅ fixed by #236 (PR-84, D-957). The synergy own copies read a bar of 0.75, and every other own copy keeps 0.95. `docs/reference/pr84-meta-bar-2026-09-26.md` holds the fits. |
 | F-179 | **The meta job reads 0 MTGO pages, and no log line names the cause.** The scheduled runs of 2026-09-24 to 2026-09-26 read 0 MTGO pages and 0 errors, and stored no September page. The manual run of 2026-09-26 stored 31 new September pages and 169 older ones. The runs of 2026-09-19 to 2026-09-23 read September links alone, so the older month pages gave them no link. Each month page answered 200 with 129 to 158 links to a Mac fetch. | 🔧 PR-86 logs each month page and keeps a month page with no event link (D-962). The cause waits for the first scheduled run after the deploy. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` holds the reads. |
+| F-180 | **The Cloud Run jobs write no log severity.** `gcpenv.NewLogger` renamed `level` and `msg` to `severity` and `message` only when `K_SERVICE` was set. A Cloud Run job sets `CLOUD_RUN_JOB` and not `K_SERVICE`. So each line of `mtg-meta` and `mtg-snapshot` held `jsonPayload.level` and `jsonPayload.msg`, and no severity. The "worker failed" line of `mtg-meta-4spgm` on 2026-09-26 read no severity, and a filter on `severity>=ERROR` missed it. | ✅ fixed by #239 (PR-87, D-964). `NewLogger` renames the two keys on a service or a job. `OnCloudRun` still reads `K_SERVICE` alone. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2456,6 +2459,24 @@ Gate:
 - After the merge, the next scheduled meta job logs "meta job done", stores a model, and logs one line for each month page.
 > *In plain English:* the daily job that reads tournament decks from the MTGO site found no decks for three days. Its log did not say why. It now writes what each monthly listing page held, and it keeps an empty page for a person to read.
 
+**PR-87: The Cloud Run jobs write a log severity (F-180, D-963, D-964).** ✅ merged as #239. The mark comes before any review (D-822).
+The jobs `mtg-meta` and `mtg-snapshot` wrote each log line with no severity. The logger renamed the level key only on a Cloud Run service, and a job is not a service.
+
+- **The fault.** `NewLogger` read `OnCloudRun`, which reads `K_SERVICE`. A job sets `CLOUD_RUN_JOB` and not `K_SERVICE`, per the Cloud Run container contract, read 2026-09-27 UTC.
+- **The change.** `NewLogger` renames `level` and `msg` when `K_SERVICE` or `CLOUD_RUN_JOB` is set. Cloud Logging then moves `severity` into the entry, and keeps `jsonPayload.message`.
+- **The scope.** `OnCloudRun` still reads `K_SERVICE` alone. Its three API callers gate the invite list, the debug user, and the spend cap (D-964).
+- **The order.** The read of the first scheduled meta job moves to the next pull request, and it filters on the keys of either image (D-963).
+- **The deploy.** The `deploy-api` build of `6301a30` ended SUCCESS, and both jobs run `worker:6301a30`.
+
+Gate:
+
+- The new case of `TestNewLogger` fails on the base and passes on this branch.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex record approves the effective head.
+- `make verify` passes.
+- After the merge, a job line of the new image reads a severity in Cloud Logging.
+> *In plain English:* the two background jobs wrote their log lines with no level. An error line looked like any other line, so a search for errors missed it. The jobs now mark each line as info, warning, or error.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -2832,6 +2853,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 77. **PR-84** the theme row asks alone, and the precon bar splits by axis (F-177, F-178, D-955 to D-957). Questions gate run 53 cost $0.195.
 78. **PR-85** the reads after #236, and the live test of the deployed app (F-178, D-958 to D-961). The live turns cost $0.0007, and the sweep with one build cost $0.0545.
 79. **PR-86** the meta job logs each MTGO month page (F-179, D-962). No paid target ran.
+80. **PR-87** the Cloud Run jobs write a log severity (F-180, D-963, D-964). No paid target ran.
 
 ## 9. Open questions
 

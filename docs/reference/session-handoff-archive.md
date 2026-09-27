@@ -8,9 +8,54 @@ and each old resume section moves here, word for word.
 Read this file for the detail behind a decision. Read `docs/decisions.md`
 for the decision itself. Read `docs/SESSION-HANDOFF.md` to resume the work.
 
-The records run newest first. The oldest narratives sit in
+The groups run newest first. Each pull request moves one group here:
+the old resume section, then the session record that left the hand-off.
+So a session record sits below the resume section of a later session.
+The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
+
+## The resume section of 2026-09-26c
+
+**Pull request #238, PR-86, logs each MTGO month page of the meta job (F-179, D-962).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2: read the first scheduled meta job after the API deploy of this pull request.
+
+**The base.** `main` is `b739386`, from #237.
+
+**The deploy of #237.** The web build `1a3df566` of `b739386` ended SUCCESS at 22:42:31 UTC on 2026-09-26, and `/version.json` names `b739386`. No API build ran, because #237 changes no file of `go/`.
+
+**Why this change.** The session started seven hours before the scheduled job of 2026-09-27. The owner asked why the session did not run the job by hand. The manual run of PR-85 already passed the split bar on the same image. No log of the job names the cause of the MTGO zeros. So the owner chose the logging change (D-962).
+
+**The MTGO reads (F-179).** The runs of 2026-09-24 to 2026-09-26 stored no September page, and the manual run of 2026-09-26 stored 31. So their month pages gave no event link. The 06:00 runs of 2026-09-11 and 2026-09-14 stored older pages, so the hour is not the cause. The cause stays UNVERIFIED. `docs/reference/pr86-mtgo-month-pages-2026-09-26.md` holds every read.
+
+**The change.** `runMTGO` logs `mtgo month page` for each month, and `mtgo event slugs` at the end. A month page with no event link stays under `meta/raw/mtgo-month-empty/`. `TestMTGOLogsEachMonthPage` fails on the base and passes here.
+
+**The job logs.** `mtg-meta-4spgm`, the run of 2026-09-26 at 06:00 UTC, failed the precon bar at 0.94 of 827 (F-178). The job writes its level into `jsonPayload.level`, so filter on that field, not on the severity.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar reviewed `76cface` and approved the code review, with no open threads. Codex: Ready for owner merge at `76cface`, with no open finding. The record is `docs/reviews/pr-238.md`. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The first scheduled meta job after the API deploy of this pull request. It must store a model, and log each MTGO month page (F-179).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 3 and 4, and OQ-67 and OQ-77.
+
+### 2026-09-26a: the "anime" read, the theme row, and the meta bar, PR-84
+
+**The owner asked for the deploy read of #235 and the "anime" read of PR-54.** Both deploy reads held. The owner said that the power question must wait for the theme, and chose the rule of the out-of-scope row (D-955). The owner added the failed meta job to this pull request (D-956). Four free control fits found the cause in the list corpus. The owner read the house rule of D-486 and chose the split bar (D-957).
 
 ## The resume section of 2026-09-26b
 
