@@ -6,41 +6,42 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-26e)
+## RESUME HERE (2026-09-26f)
 
-**Pull request #240, PR-88, reads the commander row on the deployed app (F-121, D-690, D-965).**
+**Pull request #PRNUM, PR-89, reads two deploy checks and fixes the header lines of the rate limit (F-181, D-966 to D-968).**
 
 Author provider: Claude Code
 
-**The next step.** Next step 2, in the next pull request: read the scheduled meta job of 06:00 UTC on 2026-09-27 (D-963, D-965).
+**The next step.** Next step 3, in the second pull request after #240: make the eleven calls of `CheckInvite` again (D-968).
 
-**The base.** `main` is `2258cb0`, from #239.
+**The base.** `main` is `a3b2c95`, from #240. The API serves revision `mtg-api-00089-z54`, the deploy of #239.
 
-**The deploy of #239.** The `deploy-api` build `ce046353` of `2258cb0` ended SUCCESS at 01:26:56 UTC on 2026-09-27. The jobs `mtg-meta` and `mtg-snapshot` run `worker:2258cb0`. So a job line now writes `severity` and `jsonPayload.message` (F-180). The first such line closes the last gate of PR-87.
+**The order (D-966).** The owner put the two deploy reads before the read of the meta job. The meta read moves to the third pull request after #240, next step 4.
 
-**The order (D-965).** This session started at 01:28 UTC on 2026-09-27, before the job. The owner asked to start the next pull request. So this session took next step 4, and a later session reads the job.
+**The feedback list.** `make feedback-list VERDICT=` read six verdicts of every kind, with exit 0. So the deployed store holds the collection-group index of #230 (D-938).
 
-**The reads.** Three `make live-web` turns ran on `decktome.com` for $0.0024. Session `YFZXGxi6bWvYYZhMAJIk` showed the commander row with "Suggest one" and no "You decide". Session `5G18DZhbINMGawawxNd7` showed the pick row with "You decide". `docs/reference/pr88-commander-row-2026-09-27.md` holds the reads.
+**The rate limit.** The eleven calls of D-907 all answered 200 on one instance. The limiter read the first `X-Forwarded-For` line alone, so a spoofed first address got a new bucket (F-181). The owner chose the fix in this pull request (D-967). `forwardedFor` joins every line, and a new test fails on the old code.
 
-**An open read.** Two turns asked no commander row: turn a asked the color row, and turn b asked the pick row. The classifier flag `wants_suggestion` likely caused the skip. The read is UNVERIFIED, and it opens no finding.
+**An open read.** No log holds the header that the API read, so the cause is UNVERIFIED. The calls on the next deploy prove or refute it (D-968).
+
+`docs/reference/pr89-deploy-reads-2026-09-27.md` holds the reads. No paid target ran.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar reviewed `22b465e` and approved, with two suggestions: the placeholder of this line, and the summary of the two skipped turns. `2137f43` fixes both, and its reply refutes one claim. Gitar reviewed `2137f43` and approved, with 2 of 2 findings closed and no open thread. This pull request changes documents alone, so it takes the `review-override` label in place of a Codex review (D-812). Pending the auto-merge.
+**The review.** REVIEWSTATE
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- The scheduled meta job of 06:00 UTC on 2026-09-27, in the next pull request (D-963, D-965). It must store a model, and log each MTGO month page (F-179).
+- After the deploy of this pull request: the eleven calls of `CheckInvite` again. The eleventh must answer 429 (D-968).
+- The scheduled meta job, in the third pull request after #240 (D-963, D-966). It must store a model, and log each MTGO month page (F-179).
 - A deck gate run to grade the new split of the basics of #234. Ask first.
-- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
-- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next step 3, and OQ-67 and OQ-77.
+- Next step 5, and OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -95,9 +96,10 @@ Twenty-two things a fresh session gets wrong without this file.
 - The owner repaired the application default credentials of this Mac on 2026-09-23, after the failure of 2026-09-13. The harvest then read `decktome-prod`, and the sandbox let it read the feedback of each user.
 - CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration. A read on 2026-09-12 at 19:24 UTC found the configuration unchanged.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
+- `make feedback-list VERDICT=` of 2026-09-27 at about 01:50 UTC read 6 verdicts, all of one user. The newest is of 2026-09-24 at 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-27 UTC: Cloud Build `ce046353` of `deploy-api` built `2258cb0`, from #239, and ended SUCCESS at 01:26:56 UTC on 2026-09-27. The jobs `mtg-meta` and `mtg-snapshot` run `worker:2258cb0`. The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed API, read 2026-09-27 UTC: Cloud Build `ce046353` of `deploy-api` built `2258cb0`, from #239, and ended SUCCESS at 01:26:56 UTC on 2026-09-27. The jobs `mtg-meta` and `mtg-snapshot` run `worker:2258cb0`. The service serves revision `mtg-api-00089-z54`, created at 01:26:32 UTC. The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
 - The deployed web app, read 2026-09-26: build `1a3df566` of `deploy-web` built `b739386`, from #237, and ended SUCCESS at 22:42:31 UTC. `/version.json` names `b739386`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
@@ -110,15 +112,21 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-1. **PR-88: the live read of the commander row** (F-121, D-690, D-965). This pull request is #240.
-2. **In the next pull request, read the scheduled meta job of 06:00 UTC on 2026-09-27** (F-179, D-962, D-963, D-965). It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:2258cb0`, which writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`. So filter on `msg` or `message`, and on `level` or `severity`.
-3. **The open items of the roadmap.** One register row reads 🔧: F-49. F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
-4. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-5. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
-6. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
-7. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-8. **PR-26, the return channels**, waits on OQ-67.
-9. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
+1. **PR-88: the live read of the commander row** (F-121, D-690, D-965). It merged as #240.
+2. **PR-89: the deploy reads of #230 and #227, and the header lines of the rate limit** (F-181, D-966 to D-968). This pull request is #PRNUM.
+3. **In the second pull request after #240, make the eleven calls of `CheckInvite` again** (F-181, D-968). Use a new first `X-Forwarded-For` address for each call. The eleventh must answer 429. Then the owner names a second concern, and not the meta read. When it answers 200, record a new design of the key.
+4. **In the third pull request after #240, read the scheduled meta job** (F-179, D-962, D-963, D-966). The first action, word for word, is in the block below. It must end with "meta job done", and `meta/model/` must hold a new version. It must log one `mtgo month page` line for each of 12 months. For a month with `links=0`, read its page under `meta/raw/mtgo-month-empty/`. The job runs `worker:2258cb0`, which writes `jsonPayload.message` and `severity` (F-180). An older image writes `jsonPayload.msg` and `jsonPayload.level`.
+
+   ```text
+   read the `mtg-meta` execution of 06:00 UTC on 2026-09-27 (or the newest scheduled one), filter on `msg` or `message` and `level` or `severity`, and check "meta job done", a new `meta/model/` version, 12 `mtgo month page` lines, and each `links=0` page under `meta/raw/mtgo-month-empty/` (F-179, F-180, D-962, D-963).
+   ```
+5. **The open items of the roadmap.** Three register rows read 🔧: F-49, F-179 (next step 4), and F-181 (next step 3). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+6. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
+7. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
+8. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
+9. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
+10. **PR-26, the return channels**, waits on OQ-67.
+11. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
 
@@ -129,12 +137,6 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 The repository is public (D-639). The rulesets API answers, and the ruleset of `main` can require each job of `verify` (D-828). `docs/reference/merge-rules.md` holds the rules, and `make ruleset-check` compares them with GitHub.
 
 ## The three most recent sessions
-
-### 2026-09-26c: the MTGO month pages of the meta job, PR-86
-
-**The owner asked for next step 2: read the scheduled meta job of 2026-09-27.** The session started at 22:40 UTC on 2026-09-26, seven hours before the job. The deploy of #237 held. The owner asked why the session did not run the job by hand. A manual run already passed the split bar, and no log named the cause of the MTGO zeros. So the owner chose a logging change (D-962).
-
-**A reading that the evidence refuted.** The session first read the MTGO zeros as a fault of the hour. The stored pages of the 06:00 runs of 2026-09-11 and 2026-09-14 refuted it, and the session told the owner before the choice.
 
 ### 2026-09-26d: the log severity of the Cloud Run jobs, PR-87
 
@@ -148,6 +150,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **A message that needed a third turn.** The first two paid turns asked no commander row. The session read the plan rules after each turn, and the owner approved a third turn. It showed the row.
 
+### 2026-09-26f: the deploy reads of #230 and #227, PR-89
+
+**The owner changed the order after #240 (D-966).** The feedback list and the eleven calls of `CheckInvite` came first. The feedback list passed, and the eleventh call passed where it must fail.
+
+**A cause from the code, not the logs.** The request logs named one instance, so the key changed with each call. The code read the first header line alone. The owner chose the fix in this pull request over free probes first (D-967).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-26d, the records of 2026-08-31 to 2026-09-26b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-26e, the records of 2026-08-31 to 2026-09-26c, and 104 more sections, word for word. Read it for the detail behind a decision.
