@@ -50,6 +50,8 @@ A run of one turn ends with exit 2 and the line "no deck after 1 turns". That ex
 
 The lane signs in on `decktome.com`, picks the first collection of the account, and sends the message. It waits until the turn shows a question, a deck, or a failure. `result.json` holds the session, the outcome, each question, and the name of each button of each question. The lane fails on a failure outcome alone.
 
+A turn shows at most three questions, in the order of the catalog. So the message fills each slot before the slot of the check. The commander row of D-690 showed on "Build me a bracket 3 black and white tokens Commander deck from my collection with no budget. I have a commander in mind." The same message without its last sentence showed the pick row (PR-88).
+
 `LIVE_BASE_URL` points the lane at another origin, for example a Hosting preview channel. The lane keeps no trace, because a trace records the typed password.
 
 ## The sweep: `make live-sweep`

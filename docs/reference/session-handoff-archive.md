@@ -15,6 +15,48 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-26d
+
+**Pull request #239, PR-87, gives the Cloud Run jobs a log severity (F-180, D-963, D-964).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 2, in the next pull request: read the first scheduled meta job after the API deploy of #238 (D-963).
+
+**The base.** `main` is `6301a30`, from #238.
+
+**The deploy of #238.** The `deploy-api` build `5674e284` of `6301a30` ended SUCCESS at 23:27:04 UTC on 2026-09-26. The jobs `mtg-meta` and `mtg-snapshot` run `worker:6301a30`.
+
+**The fault (F-180).** `gcpenv.NewLogger` renamed `level` and `msg` only when `K_SERVICE` was set. A Cloud Run job sets `CLOUD_RUN_JOB` and not `K_SERVICE`. So the "worker failed" line of `mtg-meta-4spgm` at 06:22:04 UTC on 2026-09-26 read no severity. An `mtg-snapshot` line of the same day read none too.
+
+**The source.** The Cloud Run container contract and logging pages, updated 2026-09-24, read 2026-09-27 UTC. Cloud Logging moves `severity` into the entry for a job too, and keeps `jsonPayload.message`.
+
+**The change.** `NewLogger` renames the two keys when `K_SERVICE` or `CLOUD_RUN_JOB` is set. `OnCloudRun` still reads `K_SERVICE` alone, so its three API callers do not change (D-964). The job case of `TestNewLogger` fails on the base and passes here.
+
+**The log keys.** A job on `worker:6301a30` or older writes `jsonPayload.level` and `jsonPayload.msg`. A job on the image of this pull request writes `severity` and `jsonPayload.message`. So a read of a job log accepts either key.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar reviewed `250c08d` and approved, with no finding and no thread. Codex round 1 read Changes required at `250c08d`, with P2-1 on the order of the archive. The author found partial merit, and `docs/reviews/pr-239-response.md` holds the answer. Codex repeat review: Ready for owner merge at `250c08d`, with no open finding. The record is `docs/reviews/pr-239.md`. Its first commit, `58737a6`, reached the branch. Pending the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The first scheduled meta job after the API deploy of #238, in the next pull request (D-963). It must store a model, and log each MTGO month page (F-179).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- After the deploy of #230: `make feedback-list VERDICT=` reads the new index.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- After the deploy of #227: eleven calls of `CheckInvite` with a new first address each. The eleventh must fail (D-907).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next steps 3 and 4, and OQ-67 and OQ-77.
+
+### 2026-09-26b: the reads after #236, and the live test, PR-85
+
+**The owner asked for next steps 2 and 3: read the meta job, then one more "anime" session.** The prompt put the read of the job of 06:00 UTC before the session, ten hours early. The owner chose a manual run (D-958). The owner then asked why the session did not send the prompt itself, and asked for the `live-test` skill with a screen lane (D-959, D-960). The owner then added a sweep of every screen to this pull request (D-961).
+
 ## The resume section of 2026-09-26c
 
 **Pull request #238, PR-86, logs each MTGO month page of the meta job (F-179, D-962).**
