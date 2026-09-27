@@ -6,7 +6,7 @@ Verified on 2026-09-04 against this Mac: macOS 26.5.2, Apple Silicon, Go 1.27.0,
 
 ## 1. What to carry from this Mac
 
-The repo comes from GitHub. Five things do not, and the paid gates and the dev stack need them.
+The repo comes from GitHub. Six things do not, and the paid gates and the dev stack need them.
 
 | Item | Path on this Mac | Size | Why |
 |---|---|---|---|
@@ -15,16 +15,17 @@ The repo comes from GitHub. Five things do not, and the paid gates and the dev s
 | The eval run files | `.local/tune/` | 4.6 MB | The JSON of every question eval run. `make questions-eval` writes there, and `tune-check` reads it. |
 | The emulator data | `.local/firestore/` | 744 KB | The sessions, decks, and collections of the local dev stack. Optional. |
 | The feedback harvests | `.local/feedback/` | 284 KB | The verdicts that `make feedback-harvest` read from production. The triage and the fix cycle read them. Keep them out of git. |
-| The Claude Code memory | `~/.claude/projects/-Users-nate-Repos-decktome/memory/` | 60 KB | The facts Claude Code keeps about you and this repo. Not in git. |
+| The Claude Code memory | `~/.claude/projects/-Volumes-SSD-1TB-decktome/memory/` | 60 KB | The facts Claude Code keeps about you and this repo. Not in git. |
+| The local permission rules | settings.local.json in the `.claude/` folder | 4 KB | The commands that Claude Code runs with no prompt. Not in git. |
 
 CAUTION: the fake GCS server keeps the metadata of each object in an extended attribute, `user.metadata`. A copy that drops the attribute breaks every listing of the bucket, and the API then loads no card index. Use `tar` or `ditto`, which keep the attributes on macOS. Do not use a cloud drive that strips them, and do not write a file into `.local/gcs` by hand.
 
 Pack the data on this Mac:
 
 ```
-cd ~/Repos/decktome
-tar -czf ~/Desktop/mtg-carry.tgz .env .local/gcs/mtg-local-cards .local/gcs/mtg-local-cards.bucketMetadata .local/tune .local/firestore .local/feedback
-tar -czf ~/Desktop/mtg-claude-memory.tgz -C ~/.claude/projects ./-Users-nate-Repos-decktome/memory
+cd /Volumes/SSD-1TB/decktome
+tar -czf ~/Desktop/mtg-carry.tgz .env .claude/settings.local.json .local/gcs/mtg-local-cards .local/gcs/mtg-local-cards.bucketMetadata .local/tune .local/firestore .local/feedback
+tar -czf ~/Desktop/mtg-claude-memory.tgz -C ~/.claude/projects ./-Volumes-SSD-1TB-decktome/memory
 ```
 
 CAUTION: `mtg-carry.tgz` holds your API keys. Move it with AirDrop or a USB drive, and delete both copies after the unpack.
@@ -36,11 +37,13 @@ CAUTION: `mtg-carry.tgz` holds your API keys. Move it with AirDrop or a USB driv
 3. Run `brew install gh`.
 4. Run `gh auth login`. Choose GitHub.com, then SSH, and let it upload a new key.
 5. Run `ssh -T git@github.com`. The answer names your account.
-6. Run `git clone git@github.com:nkramber/decktome.git ~/Repos/decktome`.
-7. Run `cd ~/Repos/decktome`. The work continues on `main`, and every new branch starts from it (D-494).
+6. Run `git clone git@github.com:nkramber/decktome.git /Volumes/SSD-1TB/decktome`.
+7. Run `cd /Volumes/SSD-1TB/decktome`. The work continues on `main`, and every new branch starts from it (D-494).
 8. Run `make hooks`. The pre-commit hook refuses a commit on `main` (D-585).
 
-Keep the path `~/Repos/decktome`. Claude Code names its memory directory after the repo path, and section 6 explains the rule.
+Keep the path `/Volumes/SSD-1TB/decktome` (D-971). Claude Code names its memory directory after the repo path, and section 6 explains the rule. When the new Mac has no volume of that name, use another path, and change the memory key to agree.
+
+CAUTION: the checkout is on an external drive. Connect the drive before you start a session. Without the drive, the path does not exist, and Claude Code loads no memory of this repo.
 
 ## 3. Install the tools
 
@@ -65,8 +68,8 @@ Two tools are optional. `brew install --cask docker-desktop` serves `make dev-do
 ## 4. Put the data in place
 
 1. Move `mtg-carry.tgz` and `mtg-claude-memory.tgz` to the new Mac.
-2. Run `cd ~/Repos/decktome`.
-3. Run `tar -xzf ~/Desktop/mtg-carry.tgz`. It writes `.env` and `.local/`.
+2. Run `cd /Volumes/SSD-1TB/decktome`.
+3. Run `tar -xzf ~/Desktop/mtg-carry.tgz`. It writes `.env`, the local permission rules, and `.local/`.
 4. Run `chmod 600 .env`.
 5. Check the attributes on one snapshot object with the two lines below.
 
@@ -105,7 +108,7 @@ The quality gate of step 6 reads FAIL on the two precon bars, as run 12 did on 2
 5. Run `claude mcp add playwright -- npx @playwright/mcp@latest`.
 6. Open the repo in VS Code, or run `claude` in the repo root.
 
-The memory directory is `~/.claude/projects/<key>/memory/`, and the key is the repo path with each slash as a dash. On this Mac the key is `-Users-nate-Repos-decktome`. A different user name or a different path gives a different key, and Claude Code then loads no memory. Rename the unpacked directory to the key of the new Mac when they differ.
+The memory directory is `~/.claude/projects/<key>/memory/`, and the key is the repo path with each slash as a dash. On this Mac the key is `-Volumes-SSD-1TB-decktome`. A different user name or a different path gives a different key, and Claude Code then loads no memory. Rename the unpacked directory to the key of the new Mac when they differ.
 
 The skills and the agent of this repo live in `.claude/` and come with the clone. `~/.claude/settings.json` on this Mac holds no secret: the model, the effort level, and the thinking flag. Set them again on the new Mac, or copy the file. `AUTOTUNE_FIXER_CMD` in `.env` names the `claude` command, so the tuning loop needs it on the PATH.
 
@@ -135,7 +138,7 @@ Ask before every paid run, and write every run to a new document (D-65). Each ta
 |---|---|---|
 | Every web test fails with `ERR_REQUIRE_ESM` | Node 20 is on the PATH | Run `nvm use`, or set `nvm alias default 22.23.2`. |
 | `make dev` logs "bucket doesn't exist" every 15 seconds | An object under `.local/gcs` lost its `user.metadata` attribute | Copy the data again with `tar` or `ditto`. Never write into `.local/gcs` by hand. |
-| `go run ./cmd/eval` says "no required module provides package" | The shell is not in the repo root, or the branch predates #65 | Run `cd ~/Repos/decktome && git checkout main && git pull`. |
+| `go run ./cmd/eval` says "no required module provides package" | The shell is not in the repo root, or the branch predates #65 | Run `cd /Volumes/SSD-1TB/decktome && git checkout main && git pull`. |
 | `make lint` says "No rule to make target" | The shell is in `go/` | Run `make` from the repo root. |
 | A paid target says `.env is absent` | No `.env` in the repo root | Unpack `mtg-carry.tgz` again, or copy `.env.example` and add the keys. |
 | `firebase emulators:start` fails with a Java error | Java is not on the PATH | Repeat step 8 of section 3. |

@@ -15,6 +15,47 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-26g
+
+**Pull request #242, PR-90, checks the rate limit on the deploy of #241, and keys an IPv6 client on its /64 (F-181, F-182, D-969, D-970).**
+
+Author provider: Claude Code
+
+**The next step.** Next step 3: move the checkout to `/Volumes/SSD-1TB/decktome` (D-971). Before the item work, make 61 shared reads over IPv6 on the deploy of this pull request (D-970).
+
+**The base.** `main` is `ea587fc`, from #241. The API serves revision `mtg-api-00090-zzs`, the deploy of #241, and `/readyz` names `ea587fc`.
+
+**The invite check (F-181).** The eleven calls of `CheckInvite` ran at 02:46 UTC on 2026-09-27, each with a new first `X-Forwarded-For` address. Calls 1 to 10 answered 200, and call 11 answered 429. One instance served all eleven, so the fix of D-967 holds.
+
+**The second concern (D-969).** The owner chose a check of the shared-read limit. 61 calls of `GetSharedDeck` with a token that no share holds all answered 404. The logs name one instance, and two IPv6 addresses of one /64: 56 calls and 5 calls (F-182). Over IPv4, calls 1 to 60 answered 404, and call 61 answered 429.
+
+**The change (D-970).** `bucket` keys an IPv6 client on its /64, and an IPv4 client on its address. `TestANewAddressInOneSlash64GetsNoNewBucket` read 11 of 11 allowed on the old code, and 10 of 11 on the fix.
+
+`docs/reference/pr90-limit-rechecks-2026-09-27.md` holds the reads. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approves effective head `7e4ec70` with no finding and no open thread. Codex round 1 read `Blocked`. Comment 5852326252 answers the CI notice. The repeat review reads `Ready for owner merge` for effective head `7e4ec70`, after `make verify` passed. The published `review-gate` check read the old verdict and must rerun after this record reaches origin. Pending the auto-merge. A later commit of documents alone records D-971, the move of the checkout as the next step, and keeps the approval (D-837).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy of this pull request: 61 shared reads over IPv6 from two addresses of one /64. The 61st must answer 429 (D-970).
+- The scheduled meta job, in the pull request after the move (D-963, D-966, D-971). It must store a model, and log each MTGO month page (F-179).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 5, and OQ-67 and OQ-77.
+
+### 2026-09-26e: the live read of the commander row, PR-88
+
+**The owner asked for next step 2: read the scheduled meta job of 2026-09-27.** The session started at 01:28 UTC, before the job. The deploy of #239 held. The owner asked to start the next pull request, and the session named the rule of one pull request in each session. So the owner chose next step 4 for this session (D-965).
+
+**A message that needed a third turn.** The first two paid turns asked no commander row. The session read the plan rules after each turn, and the owner approved a third turn. It showed the row.
+
 ## The resume section of 2026-09-26f
 
 **Pull request #241, PR-89, reads two deploy checks and fixes the header lines of the rate limit (F-181, D-966 to D-968).**
