@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending Gitar and the Codex review.
+**The review.** Codex says Ready for owner merge at effective head `5d8e681`. No finding is open. The review-gate check must pass after the review record push.
 
 **What waits on the owner.**
 
