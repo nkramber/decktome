@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-28b
+
+**Pull request #250, PR-98, reads the current MTGO month on the image of #249. The first read was full, and the owner closed F-185 (F-179, F-185, D-984, D-985).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `bdc5b60`, from #249. Cloud Build `0dfd1851` deployed it at 14:20 UTC on 2026-09-28. The API serves revision `mtg-api-00096-ldb`, and the jobs run `worker:bdc5b60`.
+
+**The read.** The owner chose a manual run over the scheduled run of 06:00 UTC on 2026-09-29 (D-985). The run `mtg-meta-4wbpp` started at 16:27 UTC. Its first read of 2026-09 held 401 links, so the retry of an empty current month did not start.
+
+**The finding.** The owner chose to close F-185 on a full first read (D-985). No run on this image read an empty current month yet. `TestMTGORetriesAnEmptyCurrentMonth` holds the proof of the retry.
+
+**The older months.** 9 of 11 older months read empty on the first read, and pass 1 read 6 of them full (F-179). `docs/reference/pr98-mtgo-current-month-read-2026-09-28.md` holds the reads.
+
+**The change.** Documents alone. No code changed, and no paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approved effective head `f7e7b3b` with one finding, the archive ranges of this file. `da55cae` fixed it, and the thread is resolved. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 7, and OQ-67 and OQ-77.
+
+### 2026-09-27e: the read of the MTGO event fetch, PR-96
+
+**The read found a third fault.** The 302 retry worked, and it read 92 of 98 pages full. But the lane then took 150 minutes, and the timeout stopped the fit (F-184).
+
+**The owner chose a stopgap and a fix.** The session raised the job timeout at once, because the run of 06:00 UTC can fail the same way. The code then stops the MTGO lane after 2 hours (D-982).
+
 ## The resume section of 2026-09-28a
 
 **Pull request #249, PR-97, reads the first scheduled meta job on the image of #248. The job now reads an empty current MTGO month again (F-179, F-183, F-184, F-185, D-983, D-984).**
