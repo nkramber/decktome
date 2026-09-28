@@ -54,8 +54,8 @@ type Job struct {
 	// GoldfishBase override the sites, for the tests.
 	MTGOBase, MTGJSONBase, EDHRECBase, CEDHDBURL, MTGTop8Base, GoldfishBase string
 	// MTGORetryWait is the least time between two reads of an empty
-	// older MTGO month page, default DefaultMTGORetryWait (F-179, D-974,
-	// D-977).
+	// MTGO month page, default DefaultMTGORetryWait (F-179, D-974,
+	// D-977, D-984).
 	MTGORetryWait time.Duration
 	// MTGOBudget is the time from the start of the MTGO lane after
 	// which the lane starts no fetch and no wait, default
@@ -74,7 +74,7 @@ type Job struct {
 // 2026-09-27 (F-179).
 const DefaultMTGORetryWait = 5 * time.Minute
 
-// MTGORetryPasses is how many times the job reads an empty older MTGO
+// MTGORetryPasses is how many times the job reads an empty MTGO
 // month page again. The site served full and empty reads of one page
 // seconds apart on 2026-09-27, so one more read can get the same empty
 // page (F-179, D-977).
@@ -91,7 +91,7 @@ const DefaultMTGOBudget = 2 * time.Hour
 type mtgoRun struct {
 	// slugs holds the covered slugs of each month, newest month first.
 	slugs [][]string
-	// months holds the older month pages with no event link.
+	// months holds the month pages with no event link.
 	months []mtgoMonth
 	seen   map[string]bool
 	stamp  string
@@ -255,8 +255,8 @@ func (j *Job) Run(ctx context.Context) (*Report, error) {
 
 // runMTGO reads the month pages back MTGOMonths and keeps the covered
 // slugs of each month. finishMTGO fetches the event pages after the
-// other sources. An older month page with no event link waits for the
-// retry there (D-974, D-979).
+// other sources. A month page with no event link waits for the retry
+// there (D-974, D-979, D-984).
 func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 	j.mtgo = nil
 	if j.Reparse {
@@ -291,12 +291,10 @@ func (j *Job) runMTGO(ctx context.Context, rep *Report) error {
 			if err := PutRaw(ctx, j.Store, SourceMTGO+"-month-empty", key+"-"+run.stamp, page); err != nil {
 				return err
 			}
-			// The current month can hold no event yet, so only an older
-			// month reads again (D-974).
-			if i > 0 {
-				at := time.Now()
-				run.months = append(run.months, mtgoMonth{key: key, url: url, index: i, first: at, read: at})
-			}
+			// The current month reads again too, because the site can
+			// serve it empty after a full read (F-185, D-984).
+			at := time.Now()
+			run.months = append(run.months, mtgoMonth{key: key, url: url, index: i, first: at, read: at})
 		}
 	}
 	return nil
@@ -317,7 +315,7 @@ func (r *mtgoRun) add(i int, links []string) int {
 }
 
 // finishMTGO ends the MTGO lane after the other sources. It reads each
-// empty older month page again, then fetches the event pages of every
+// empty month page again, then fetches the event pages of every
 // month, newest month first, up to MaxPages. So a month that the retry
 // reads full keeps its place before the older months (F-179, D-979). It
 // then reads each event page that answered 302 again (F-183, D-980).
@@ -343,7 +341,7 @@ func (j *Job) finishMTGO(ctx context.Context, rep *Report) error {
 	return j.retryMTGOEvents(ctx, rep, run, redirected)
 }
 
-// retryMTGOMonths reads each empty older month page of runMTGO again, up
+// retryMTGOMonths reads each empty month page of runMTGO again, up
 // to MTGORetryPasses times. Each pass comes at least MTGORetryWait after
 // the reads of the pass before it, and it reads only the months that are
 // still empty. The store keeps each page that is empty again under its

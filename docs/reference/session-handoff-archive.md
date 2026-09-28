@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-27e
+
+**Pull request #248, PR-96, reads the MTGO event fetch of #247 on a manual run. The run passed its task timeout, so the pull request adds a time budget to the MTGO lane (F-179, F-183, F-184, D-981, D-982).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `e8b2236`, from #247. Cloud Build `b0249c2f` deployed it at 19:33 UTC. The API serves revision `mtg-api-00094-xsc`, and the jobs run `worker:e8b2236`.
+
+**The reads.** The owner chose a manual run over the wait for 06:00 UTC (D-981). The run `mtg-meta-4nps4` read 9 older month pages empty, and 7 stayed empty after pass 3. The 302 retry read 92 of 98 pages full. The task timeout of 9,000 seconds then stopped the quality fit, so the run stored no model (F-184). `docs/reference/pr96-mtgo-events-read-2026-09-27.md` holds the reads.
+
+**The stopgap.** The session raised the task timeout of `mtg-meta` to 240 minutes at 22:21 UTC, with the owner's approval (D-982). The deploy step changes the image alone, so a deploy keeps it. `docs/setup-gcp.md` records it.
+
+**The change.** `MTGOBudget` ends the MTGO lane 2 hours after its start. No MTGO fetch and no MTGO wait starts after that time (D-982). The pages it does not read wait for the next run.
+
+**The tests.** `TestMTGOStopsAtTheTimeBudget` fails when the budget stops no step. No paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approved effective head `48717b9`, and its only finding is closed. The Codex record says Ready for owner merge at `48717b9`, with no open finding. The review-gate check passed after the record push. Pending the owner decision and auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 7, and OQ-67 and OQ-77.
+
+### 2026-09-27c: the read of the MTGO month retry, PR-94
+
+**The owner refused a wait of 22.5 hours.** #245 merged after the run of 06:00 UTC. So the session ran the job by hand, then forced an empty first read on the Mac (D-975, D-976).
+
+**The forced run found the fault on the Mac.** The real retry read empty one minute after a full read. So the fault is of the site, to any client, and the owner chose 3 passes (D-977).
+
 ## The resume section of 2026-09-27d
 
 **Pull request #247, PR-95, reads the 3 MTGO month passes of #246. It fetches the event pages after the retry, and it reads a 302 event page again (F-179, F-183, D-978 to D-980).**
