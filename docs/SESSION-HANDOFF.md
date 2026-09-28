@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the Gitar pass, the owner decision, and the auto-merge.
+**The review.** Gitar approved effective head `98ce8cd` with one finding, the order of correction pass 248 in the roadmap. `98ce8cd` fixed it, and the thread is resolved. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and the auto-merge.
 
 **What waits on the owner.**
 
