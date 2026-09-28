@@ -6,25 +6,25 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-27e)
+## RESUME HERE (2026-09-28a)
 
-**Pull request #248, PR-96, reads the MTGO event fetch of #247 on a manual run. The run passed its task timeout, so the pull request adds a time budget to the MTGO lane (F-179, F-183, F-184, D-981, D-982).**
+**Pull request #249, PR-97, reads the first scheduled meta job on the image of #248. The job now reads an empty current MTGO month again (F-179, F-183, F-184, F-185, D-983, D-984).**
 
 Author provider: Claude Code
 
-**The base.** `main` is `e8b2236`, from #247. Cloud Build `b0249c2f` deployed it at 19:33 UTC. The API serves revision `mtg-api-00094-xsc`, and the jobs run `worker:e8b2236`.
+**The base.** `main` is `220818b`, from #248. Cloud Build `68d50e1e` deployed it at 23:25 UTC on 2026-09-27. The API serves revision `mtg-api-00095-d4v`, and the jobs run `worker:220818b`. The task timeout of `mtg-meta` reads 14,400 seconds.
 
-**The reads.** The owner chose a manual run over the wait for 06:00 UTC (D-981). The run `mtg-meta-4nps4` read 9 older month pages empty, and 7 stayed empty after pass 3. The 302 retry read 92 of 98 pages full. The task timeout of 9,000 seconds then stopped the quality fit, so the run stored no model (F-184). `docs/reference/pr96-mtgo-events-read-2026-09-27.md` holds the reads.
+**The read.** The owner chose the scheduled run of 06:00 UTC over a manual run (D-983). The run `mtg-meta-5c425` ran 7,712 seconds and stored the model `20260928T080018Z`. The time budget held at 08:00:18, before pass 2 of the 302 retry (F-184). `docs/reference/pr97-mtgo-budget-read-2026-09-28.md` holds the reads.
 
-**The stopgap.** The session raised the task timeout of `mtg-meta` to 240 minutes at 22:21 UTC, with the owner's approval (D-982). The deploy step changes the image alone, so a deploy keeps it. `docs/setup-gcp.md` records it.
+**The new fault.** The current month 2026-09 read 0 links, and D-974 gave it no retry (F-185). The owner chose the fix in this pull request (D-984).
 
-**The change.** `MTGOBudget` ends the MTGO lane 2 hours after its start. No MTGO fetch and no MTGO wait starts after that time (D-982). The pages it does not read wait for the next run.
+**The change.** An empty current month page reads again, the same as an older month.
 
-**The tests.** `TestMTGOStopsAtTheTimeBudget` fails when the budget stops no step. No paid target ran.
+**The tests.** `TestMTGORetriesAnEmptyCurrentMonth` fails on the code of #248. `TestMTGORetriesAnEmptyMonth` and `TestMTGORetryWaits` read the new retry. No paid target ran.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approved effective head `48717b9`, and its only finding is closed. The Codex record says Ready for owner merge at `48717b9`, with no open finding. The review-gate check passed after the record push. Pending the owner decision and auto-merge.
+**The review.** Pending Gitar and the Codex review.
 
 **What waits on the owner.**
 
@@ -36,7 +36,7 @@ Author provider: Claude Code
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next step 7, and OQ-67 and OQ-77.
+- Next step 8, and OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -94,12 +94,12 @@ Twenty-two things a fresh session gets wrong without this file.
 - `make feedback-list VERDICT=` of 2026-09-27 at about 01:50 UTC read 6 verdicts, all of one user. The newest is of 2026-09-24 at 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-27 UTC: Cloud Build `b0249c2f` of `deploy-api` built `e8b2236`, from #247, and ended SUCCESS at 19:33:50 UTC on 2026-09-27. The jobs `mtg-meta` and `mtg-snapshot` run `worker:e8b2236`. The service serves revision `mtg-api-00094-xsc`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed API, read 2026-09-28 UTC: Cloud Build `68d50e1e` of `deploy-api` built `220818b`, from #248, and ended SUCCESS at 23:25:59 UTC on 2026-09-27. The jobs `mtg-meta` and `mtg-snapshot` run `worker:220818b`. The service serves revision `mtg-api-00095-d4v`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
 - The deployed web app, read 2026-09-26: build `1a3df566` of `deploy-web` built `b739386`, from #237, and ended SUCCESS at 22:42:31 UTC. `/version.json` names `b739386`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
-- The newest stored quality model, read 2026-09-27: `20260927T182135Z`, from the manual meta job `mtg-meta-87jlg` on `worker:0414f27`. It read 65,611 lists and 1,514 commanders. The EDHREC pass read nothing, because it ran on 2026-09-21. The mtgjson source read no list, because its deck list version differs from the stored table. The MTGO lane read 5,483 lists from 200 pages, and the page cap held (F-183). The manual run `mtg-meta-4nps4` of 2026-09-27 stored no model, because the task timeout stopped its fit (F-184).
+- The newest stored quality model, read 2026-09-28: `20260928T080018Z`, from the scheduled meta job `mtg-meta-5c425` on `worker:220818b`. It read 75,929 lists and 1,510 commanders. The mtgjson source read no list, because its deck list version differs from the stored table. The MTGO lane read 4,756 lists from 171 pages, and the time budget held (F-184). The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 16 now, and run 19 read version 12. Run 34 of 2026-09-21 is the newest whole deck gate run. It rejudges the summaries of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
@@ -111,13 +111,14 @@ Twenty-two things a fresh session gets wrong without this file.
 2. **PR-93: read an empty older MTGO month page again** (F-179, D-973, D-974). It merged as #245.
 3. **PR-94: read the MTGO month retry, and read an empty month up to 3 times** (F-179, D-975, D-976, D-977). It merged as #246.
 4. **PR-95: read the 3 MTGO month passes, and fetch the event pages after the retry** (F-179, F-183, D-978 to D-980). It merged as #247.
-5. **PR-96: read the MTGO event fetch of #247, and stop the MTGO lane at a time budget** (F-179, F-183, F-184, D-981, D-982). This pull request is #248.
-6. **Read the first meta job on the image of this pull request** (F-179, F-183, F-184, D-982). It needs the deploy of this merge. The first action, word for word, is in the block below. No paid target runs.
+5. **PR-96: read the MTGO event fetch of #247, and stop the MTGO lane at a time budget** (F-179, F-183, F-184, D-981, D-982). It merged as #248.
+6. **PR-97: read the first meta job on the image of #248, and read an empty current month again** (F-179, F-183, F-184, F-185, D-983, D-984). This pull request is #249.
+7. **Read the current month on the image of this pull request** (F-179, F-185, D-984). It needs the deploy of this merge. The first action, word for word, is in the block below. No paid target runs.
 
    ```text
-   after the deploy of #248, read the next run of mtg-meta. Find the "mtgo time budget held" line and its stage, and the "meta job done" line. Record the run time against the task timeout of 14,400 seconds (F-184).
+   after the deploy of #249, read the next run of mtg-meta. Find the "mtgo month page" line of the current month. When it reads 0 links, find its "mtgo month page again" lines (F-185).
    ```
-7. **The open items of the roadmap.** Four register rows read 🔧: F-49, F-179, F-183, and F-184 (next step 6). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+8. **The open items of the roadmap.** Four register rows read 🔧: F-49, F-179, F-183, and F-185 (next step 7). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
@@ -135,12 +136,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-27c: the read of the MTGO month retry, PR-94
-
-**The owner refused a wait of 22.5 hours.** #245 merged after the run of 06:00 UTC. So the session ran the job by hand, then forced an empty first read on the Mac (D-975, D-976).
-
-**The forced run found the fault on the Mac.** The real retry read empty one minute after a full read. So the fault is of the site, to any client, and the owner chose 3 passes (D-977).
-
 ### 2026-09-27d: the read of the 3 MTGO month passes, PR-95
 
 **The manual run found a second fault.** The 3 passes read each empty month full. But the page cap held before the retry, so the retry fetched no event page (F-183).
@@ -152,6 +147,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The read found a third fault.** The 302 retry worked, and it read 92 of 98 pages full. But the lane then took 150 minutes, and the timeout stopped the fit (F-184).
 
 **The owner chose a stopgap and a fix.** The session raised the job timeout at once, because the run of 06:00 UTC can fail the same way. The code then stops the MTGO lane after 2 hours (D-982).
+
+### 2026-09-28a: the read of the MTGO time budget, PR-97
+
+**The owner chose the wait.** The deploy of #248 came at 23:25 UTC, and the owner chose the scheduled run of 06:00 UTC over a manual run (D-983).
+
+**The budget held, and the job stored a model.** The run ended in 7,712 of 14,400 seconds. But the current month read empty, and it had no retry. The owner chose the fix in this pull request (F-185, D-984).
 
 ## The archive
 
