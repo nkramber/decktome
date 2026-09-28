@@ -6,9 +6,9 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-09-28 correction pass 247 (PR-98, F-179, F-185, D-985): a manual run on the image of #249 read the current month full on the first read, with 401 links. The owner closed F-185 on that read. Changes: F-179, F-185, PR-98, sequencing step 91.
-
 2026-09-28 correction pass 248 (PR-99, F-179, F-183, D-986, D-987): the manual run `mtg-meta-4wbpp` ended with 0 empty older months and 0 redirected event pages. The owner closed F-179 on two runs in a row, and kept F-183 open for a second run. Changes: F-179, F-183, PR-99, sequencing step 92.
+
+2026-09-28 correction pass 247 (PR-98, F-179, F-185, D-985): a manual run on the image of #249 read the current month full on the first read, with 401 links. The owner closed F-185 on that read. Changes: F-179, F-185, PR-98, sequencing step 91.
 
 2026-09-28 correction pass 246 (PR-97, F-179, F-183, F-184, F-185, D-983, D-984): the scheduled run on the image of #248 ended in 7,712 of 14,400 seconds and stored a model. The time budget held before pass 2 of the 302 retry. The current month read empty, and the job now reads it again. Changes: F-179, F-183, F-184, F-185, PR-97, sequencing step 90.
 
