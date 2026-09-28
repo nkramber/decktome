@@ -2719,7 +2719,7 @@ Gate:
 
 > *In plain English:* after the fix went live, a test run read the list of this month in full on the first try. The owner closed the finding on that result.
 
-**PR-99: Read the open MTGO rows on the manual run of #249 (F-179, F-183, D-986, D-987).** ✅ merged as #PRNUM. The mark comes before any review (D-822).
+**PR-99: Read the open MTGO rows on the manual run of #249 (F-179, F-183, D-986, D-987).** ✅ merged as #251. The mark comes before any review (D-822).
 The item is next step 7 of the hand-off. The owner chose to read the end of the manual run `mtg-meta-4wbpp`. The owner did not wait for the scheduled run of 2026-09-29 (D-986).
 
 - **The run.** `mtg-meta-4wbpp` ended at 18:22 UTC with SUCCESS, and it stored the model `20260928T181312Z`.

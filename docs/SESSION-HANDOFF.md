@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-28c)
 
-**Pull request #PRNUM, PR-99, reads the end of the manual run `mtg-meta-4wbpp`. The owner closed F-179, and kept F-183 open for a second run (D-986, D-987).**
+**Pull request #251, PR-99, reads the end of the manual run `mtg-meta-4wbpp`. The owner closed F-179, and kept F-183 open for a second run (D-986, D-987).**
 
 Author provider: Claude Code
 
@@ -113,7 +113,7 @@ Twenty-two things a fresh session gets wrong without this file.
 4. **PR-96: read the MTGO event fetch of #247, and stop the MTGO lane at a time budget** (F-179, F-183, F-184, D-981, D-982). It merged as #248.
 5. **PR-97: read the first meta job on the image of #248, and read an empty current month again** (F-179, F-183, F-184, F-185, D-983, D-984). It merged as #249.
 6. **PR-98: read the current month on the image of #249** (F-179, F-185, D-984, D-985). The first read was full, and the owner closed F-185. It merged as #250.
-7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waits for a second run. This pull request is #PRNUM.
+7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waits for a second run. This pull request is #251.
 8. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-183. F-183 waits for a read of the scheduled run of 06:00 UTC on 2026-09-29 (D-987). F-179 reads ✅ (PR-99, D-987). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
