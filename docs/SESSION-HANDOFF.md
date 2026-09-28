@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending the Gitar pass and the `review-override` label (D-812). Pending the owner decision and auto-merge.
+**The review.** Gitar approved effective head `f7e7b3b` with one finding, the archive ranges of this file. `da55cae` fixed it, and the thread is resolved. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and auto-merge.
 
 **What waits on the owner.**
 
