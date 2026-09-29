@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Gitar passed on `d2c0e00`, and its only thread is resolved. Codex round 2 fixed P2-1 with one five-second deadline and its regression test. It found P2-2: the Codex gate accepts `Responding to your feedback` when the spinner image is absent. `docs/reviews/pr-253.md` holds the finding. The review record and hand-off need commit and push.
+**The review.** Gitar approved `d2c0e00`, and Gitar accepted the rebuttal of its one finding. Codex round 1 found P2-1, the wait of 8 seconds, and one deadline of 5 seconds fixed it. Round 2 found P2-2: the check missed the status line of a review in progress. `docs/reviews/pr-253-response.md` holds both answers. Pending the Gitar pass and Codex round 3.
 
 **What waits on the owner.**
 
