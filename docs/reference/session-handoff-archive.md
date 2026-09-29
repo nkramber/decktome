@@ -15,6 +15,46 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-29d
+
+**Pull request #255, PR-103, reads the one new verdict after 2026-09-24, and closes F-49 (D-994).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `9736b4d`, from #254.
+
+**The choice.** The owner picked F-49 from next step 11, over OQ-67 and PR-26.
+
+**The verdict.** A free harvest read 1 verdict: an import report of 2026-09-24 20:45 UTC, with the words "Test". The file held `TEST` on 4 lines, and the parser refused it correctly. The owner confirmed a test by hand.
+
+**The triage.** The free dry triage proposed a parse fixture. The session wrote none, because the file names no fault. The local file `.local/feedback/triaged.txt` marks the harvest of 2026-09-29 as read.
+
+**The register.** The owner closed F-49 (D-994). No register row reads 🔧 now.
+
+**The checks.** See the pull request body. No paid target ran.
+
+**The review.** Gitar approved `0292a82` with no finding and no thread. The pull request holds documents alone, so it carries the `review-override` label (D-812). Pending the owner decision and the auto-merge (D-828).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 12, and OQ-67.
+
+### 2026-09-29b: the blocking function of the invite list, PR-101
+
+**The owner chose OQ-77 and the Go route.** The session read the auth configuration of production and the contract of Google. The owner chose a route on `mtg-api` over a Node function (D-990).
+
+**The owner chose a live check of both paths.** After the deploy, the next session registers the trigger. It signs up one address on the list and one address off it (D-991).
+
+**The owner chose a fix of the review check.** Gitar changed its reply to a manual request, and `make codex-review` refused a complete pass. The fix rides in this pull request (D-992).
+
 ## The resume section of 2026-09-29c
 
 **Pull request #254, PR-102, records the registration of the beforeCreate trigger on `decktome-prod`. The live check of D-991 passed on both paths (D-993).**
