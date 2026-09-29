@@ -6,25 +6,25 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-29c)
+## RESUME HERE (2026-09-29d)
 
-**Pull request #254, PR-102, records the registration of the beforeCreate trigger on `decktome-prod`. The live check of D-991 passed on both paths (D-993).**
+**Pull request #255, PR-103, reads the one new verdict after 2026-09-24, and closes F-49 (D-994).**
 
 Author provider: Claude Code
 
-**The base.** `main` is `0bfef4e`, from #253.
+**The base.** `main` is `9736b4d`, from #254.
 
-**The deploy.** The Cloud Build run `d29eef54` deployed `0bfef4e`. The revision `mtg-api-00097-8hd` reads `DEPLOY_COMMIT` `0bfef4e`, and it holds all the traffic. `POST /auth/before-create` answered 400 to an empty body.
+**The choice.** The owner picked F-49 from next step 11, over OQ-67 and PR-26.
 
-**The registration.** The owner confirmed the PATCH (D-993). Identity Platform accepted the URL of the Cloud Run service as `functionUri`. So the check closes the open risk of D-990.
+**The verdict.** A free harvest read 1 verdict: an import report of 2026-09-24 20:45 UTC, with the words "Test". The file held `TEST` on 4 lines, and the parser refused it correctly. The owner confirmed a test by hand.
 
-**The live check.** An invited plus-address of the check account got an account, and the route answered 200. The session deleted the account, and it removed the address from the list. An address off the list got `BLOCKING_FUNCTION_ERROR_RESPONSE` with `not-invited`, and the route answered 403. `docs/reference/pr102-blocking-function-live-check-2026-09-29.md` holds each read.
+**The triage.** The free dry triage proposed a parse fixture. The session wrote none, because the file names no fault. The local file `.local/feedback/triaged.txt` marks the harvest of 2026-09-29 as read.
 
-**The trigger stays on.** Section 8.5 of `docs/deploy-and-rollback.md` removes it. Remove it before a rollback of the API past #253.
+**The register.** The owner closed F-49 (D-994). No register row reads 🔧 now.
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Gitar approved `2fd28b1` with no finding and no thread. The pull request holds documents alone, so it carries the `review-override` label (D-812). Pending the owner decision and the auto-merge (D-828).
+**The review.** Gitar approved `0292a82` with no finding and no thread. The pull request holds documents alone, so it carries the `review-override` label (D-812). Pending the owner decision and the auto-merge (D-828).
 
 **What waits on the owner.**
 
@@ -36,7 +36,7 @@ Author provider: Claude Code
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next step 11, and OQ-67.
+- Next step 12, and OQ-67.
 
 ## How to resume
 
@@ -92,6 +92,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration. A read on 2026-09-12 at 19:24 UTC found the configuration unchanged.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
 - `make feedback-list VERDICT=` of 2026-09-27 at about 01:50 UTC read 6 verdicts, all of one user. The newest is of 2026-09-24 at 20:45 UTC.
+- The harvest of 2026-09-29 read that newest verdict, a test of the owner (D-994). Its watermark is 2026-09-24 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
 - The deployed API, read 2026-09-28 UTC: Cloud Build `0dfd1851` of `deploy-api` built `bdc5b60`, from #249, and ended SUCCESS at 14:20:59 UTC on 2026-09-28. The jobs `mtg-meta` and `mtg-snapshot` run `worker:bdc5b60`. The service serves revision `mtg-api-00096-ldb`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
@@ -116,8 +117,9 @@ Twenty-two things a fresh session gets wrong without this file.
 7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waited for a second run. It merged as #251.
 8. **PR-100: read the scheduled run `mtg-meta-b56rq` for F-183** (F-179, F-183, D-988, D-989). The owner closed F-183, and kept F-179 closed. It merged as #252.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
-10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. This pull request is #254.
-11. **The open items of the roadmap.** One register row reads 🔧: F-49. F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
+11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. This pull request is #255.
+12. **The open items of the roadmap.** No register row reads 🔧. F-49 reads ✅ (PR-103, D-994). F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
@@ -135,12 +137,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-29a: the read of the scheduled MTGO run, PR-100
-
-**The owner chose the wait.** At 18:47 UTC on 2026-09-28 the scheduled run was 11 hours away. The owner chose a wait in the same session (D-988).
-
-**The event pages read 0 at the end, and 9 older months stayed empty.** The owner closed F-183 on two runs in a row, and kept F-179 closed with the read (D-989).
-
 ### 2026-09-29b: the blocking function of the invite list, PR-101
 
 **The owner chose OQ-77 and the Go route.** The session read the auth configuration of production and the contract of Google. The owner chose a route on `mtg-api` over a Node function (D-990).
@@ -155,6 +151,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner confirmed the PATCH.** The trigger names the route of `mtg-api`, and both paths of D-991 passed (D-993). The trigger stays on.
 
+### 2026-09-29d: the verdict of 2026-09-24, PR-103
+
+**The owner chose F-49.** A free dry harvest found 1 new verdict before the choice. The session gave the pros and cons of F-49, OQ-67, and another item.
+
+**The verdict was a test.** The owner confirmed the import report "Test" as a test by hand. The session wrote no fixture, and the owner closed F-49 (D-994).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29b, the records of 2026-08-31 to 2026-09-28c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29c, the records of 2026-08-31 to 2026-09-29a, and 104 more sections, word for word. Read it for the detail behind a decision.
