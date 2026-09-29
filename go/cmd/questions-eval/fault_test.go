@@ -110,3 +110,44 @@ func TestProviderFaultRecordsTheSpend(t *testing.T) {
 		})
 	}
 }
+
+// TestLimitCutIsNoError: an -n cut is the stop the caller asked for, so
+// the run succeeds and still marks its summary partial (T-2). The
+// calibration of `make eval-calibrate` runs two passes with -n, and an
+// error after the first pass stopped the second one.
+func TestLimitCutIsNoError(t *testing.T) {
+	t.Setenv("QUESTIONS_EVAL", "1")
+	dir := t.TempDir()
+	in := filepath.Join(dir, "gate.md")
+	if err := os.WriteFile(in, []byte(twoConversations), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	sc := llm.NewScript(verdictStep(t, "colors"))
+	roles := map[llm.Role]llm.RoleSpec{}
+	for _, r := range llm.Roles {
+		roles[r] = llm.RoleSpec{Provider: llm.FakeName, Model: "gpt-5.6-luna", MaxOutputTokens: 4096}
+	}
+	client, err := llm.New(&llm.Config{VerifiedAt: "2026-08-24", Roles: roles}, []llm.Provider{sc}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	prev := newClient
+	newClient = func() (*llm.Client, error) { return client, nil }
+	t.Cleanup(func() { newClient = prev })
+
+	out, jsonOut := filepath.Join(dir, "eval.md"), filepath.Join(dir, "eval.json")
+	if err := run(in, out, jsonOut, "", 5, 1, 0); err != nil {
+		t.Fatalf("err = %v, want none for an -n cut", err)
+	}
+	raw, err := os.ReadFile(jsonOut) // #nosec G304 -- a test temp file.
+	if err != nil {
+		t.Fatal(err)
+	}
+	var sum tune.Summary
+	if err := json.Unmarshal(raw, &sum); err != nil {
+		t.Fatal(err)
+	}
+	if !sum.Partial || !strings.Contains(sum.StoppedReason, "-n 1 cut") || len(sum.Verdicts) != 1 {
+		t.Errorf("partial = %v, stopped = %q, verdicts = %d, want a partial run of 1", sum.Partial, sum.StoppedReason, len(sum.Verdicts))
+	}
+}
