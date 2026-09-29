@@ -51,7 +51,8 @@ type Price struct {
 	Input       float64 `json:"input"`
 	CachedInput float64 `json:"cached_input"`
 	// CacheWrite is the price of one cache-write token. Anthropic charges
-	// 1.25 x input. OpenAI charges nothing extra, so its rows hold 0.
+	// 1.25 x input. OpenAI charges 1.25 x input for GPT-5.6 and later, and
+	// nothing extra for earlier models, so their rows hold 0.
 	CacheWrite float64 `json:"cache_write"`
 	Output     float64 `json:"output"`
 }
