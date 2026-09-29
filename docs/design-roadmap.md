@@ -2738,7 +2738,7 @@ Gate:
 
 > *In plain English:* a test run read every old monthly list and every event page of Magic Online in the end. The owner closed the finding of the monthly lists, and waits for a second run for the event pages.
 
-**PR-100: Read the scheduled MTGO run of 2026-09-29 for F-183 (F-179, F-183, D-988, D-989).** 🔧 in review.
+**PR-100: Read the scheduled MTGO run of 2026-09-29 for F-183 (F-179, F-183, D-988, D-989).** ✅ merged as #252. The mark comes before any review (D-822).
 The item is next step 8 of the hand-off. At the start of the session the scheduled run was 11 hours away. The owner chose a wait in the same session (D-988).
 
 - **The run.** `mtg-meta-b56rq` ended at 07:05 UTC on 2026-09-29 with SUCCESS, and it stored the model `20260929T065701Z`.
