@@ -15,6 +15,47 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-29b
+
+**Pull request #253, PR-101, adds the beforeCreate blocking function. It refuses an account off the invite list before Identity Platform saves it (D-990, D-991).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `76eee5e`, from #252.
+
+**The choice.** The owner named OQ-77 from next step 9. The owner chose a Go route on `mtg-api` over a Node Cloud Function (D-990).
+
+**The project.** On 2026-09-29 the auth configuration of `decktome-prod` read `subtype: IDENTITY_PLATFORM` and an empty `blockingFunctions`. So the project needs no upgrade.
+
+**The change.** `go/internal/authblock` answers `POST /auth/before-create`. It checks the token of Google, then the invite list. An email off the list gets 403 with `not-invited`, and the web form shows the invite sentence. A list error gets 503, so the sign-up fails closed.
+
+**The review check.** Gitar replied "Running the review now" to a manual request, after its dashboard edit. `make codex-review` read that as a refusal. The owner chose a fix in this pull request (D-992).
+
+**The open risk.** Google documents `functionUri` for a Cloud Function. The registration of a plain Cloud Run URL stays UNVERIFIED until the live check of D-991.
+
+**The checks.** See the pull request body. No paid target ran.
+
+**The review.** Gitar approved `55c2895`, and its only thread is resolved. Codex rounds 1 to 3 found P2-1, P2-2, and P2-3. The fixes pass their regression checks. Round 4 approves effective head `55c2895`. No finding stays open. Every GitHub verify job and `pr-contract` passed. The `review-gate` waits for this record to reach the branch. `docs/reviews/pr-253-response.md` holds each answer. Pending the owner decision and the auto-merge (D-828).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- After the deploy of this merge: the registration of the trigger and the live check of D-991. `docs/setup-gcp.md` section 15.1 holds the steps. Ask first.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 11, and OQ-67.
+
+### 2026-09-28c: the read of the open MTGO rows, PR-99
+
+**The owner chose the end of the run.** The run `mtg-meta-4wbpp` was still in progress at 17:08 UTC. The owner chose its end over the scheduled run of 2026-09-29 (D-986).
+
+**Both rows read 0 at the end.** 0 older months stayed empty, and 0 event pages stayed redirected. The owner closed F-179 on two runs, and kept F-183 open for a second run (D-987).
+
 ## The resume section of 2026-09-29a
 
 **Pull request #252, PR-100, reads the scheduled run `mtg-meta-b56rq`. The owner closed F-183, and kept F-179 closed with the read of its 9 empty months (D-988, D-989).**

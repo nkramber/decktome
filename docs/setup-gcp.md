@@ -355,12 +355,12 @@ The API keeps its `run.app` URL. Cloud Run domain mappings are a preview feature
 2. Open `https://DOMAIN`, create the account with that email, and sign in.
 3. Open the link in the email that Firebase sent, then press Continue on the app (D-903).
 4. Upload a ManaBox export, build a deck, revise it, and export it. This is the PR-22 gate.
-5. Sign in with an email that is not on the list. The first RPC must answer `PermissionDenied` with one sentence.
+5. Create an account with an email off the list. Expect the invite sentence, and no new account (D-592, D-990).
 6. Read the Cloud Run logs: `gcloud run services logs read mtg-api --region REGION --limit 50`.
 
 ### 15.1 Register the blocking function
 
-Identity Platform calls the route `/auth/before-create` of the API before it saves a new account (D-990). The route refuses an email off the allowlist. Each answer that is not 200 fails the sign-up, so do the live check of D-991 at once.
+Identity Platform calls the route `/auth/before-create` of the API before it saves a new account (D-990). The route refuses an email off the allowlist. Identity Platform accepts the URL of a Cloud Run service as `functionUri` (D-993). Each answer that is not 200 fails the sign-up, so do the live check of D-991 at once.
 
 1. Deploy the API that holds the route. A merge to `main` deploys it.
 2. Read the URL of the API: `gcloud run services describe mtg-api --region REGION --format='value(status.url)'`.

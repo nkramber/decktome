@@ -297,7 +297,7 @@ Note: a stored deck or chat session is gzip JSON of a proto message. The decoder
 
 ### 8.5 The blocking function
 
-The `beforeCreate` trigger of D-990 sits in the auth configuration, outside Cloud Build. This command removes it, and a sign-up then skips the route:
+The `beforeCreate` trigger of D-990 sits in the auth configuration, outside Cloud Build. It is on in production since 2026-09-29 (D-993). This command removes it, and a sign-up then skips the route:
 
 ```
 TOKEN=$(gcloud auth print-access-token)
