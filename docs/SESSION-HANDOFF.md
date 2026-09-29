@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. The one paid target was run 35.
 
-**The review.** The bump of `jsdom` is a code change, so the pull request needs the Codex review, not the label. Pending the Gitar pass, the Codex review, and the auto-merge (D-815, D-828).
+**The review.** Gitar approved head `7f49cc7` with no finding. The Codex review found no defect. The review-gate check needs a fresh result after this record reaches the branch. Pending that check, the owner decision, and the auto-merge (D-815, D-828).
 
 **What waits on the owner.**
 
