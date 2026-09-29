@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-29b)
 
-**Pull request #PRNUM, PR-101, adds the beforeCreate blocking function. It refuses an account off the invite list before Identity Platform saves it (D-990, D-991).**
+**Pull request #253, PR-101, adds the beforeCreate blocking function. It refuses an account off the invite list before Identity Platform saves it (D-990, D-991).**
 
 Author provider: Claude Code
 
@@ -116,8 +116,8 @@ Twenty-two things a fresh session gets wrong without this file.
 6. **PR-98: read the current month on the image of #249** (F-179, F-185, D-984, D-985). The first read was full, and the owner closed F-185. It merged as #250.
 7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waited for a second run. It merged as #251.
 8. **PR-100: read the scheduled run `mtg-meta-b56rq` for F-183** (F-179, F-183, D-988, D-989). The owner closed F-183, and kept F-179 closed. It merged as #252.
-9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. This pull request is #PRNUM.
-10. **The registration of the blocking function**, after the deploy of #PRNUM (D-991). Ask the owner first. Then do section 15.1 of `docs/setup-gcp.md`, and read both paths.
+9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. This pull request is #253.
+10. **The registration of the blocking function**, after the deploy of #253 (D-991). Ask the owner first. Then do section 15.1 of `docs/setup-gcp.md`, and read both paths.
 11. **The open items of the roadmap.** One register row reads 🔧: F-49. F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.

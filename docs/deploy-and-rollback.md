@@ -251,7 +251,7 @@ CAUTION: `gcloud run services logs read` crashed with a `TypeError` on gcloud 53
 
 ### 8.1 The API
 
-CAUTION: remove the trigger of section 8.5 before a rollback of the API past #PRNUM. The old API has no route, so each sign-up fails.
+CAUTION: remove the trigger of section 8.5 before a rollback of the API past #253. The old API has no route, so each sign-up fails.
 
 Cloud Run keeps every revision. A rollback moves the traffic, and it needs no build.
 

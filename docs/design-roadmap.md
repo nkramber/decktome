@@ -2756,7 +2756,7 @@ Gate:
 
 > *In plain English:* the daily run read every event page of Magic Online in the end, so the owner closed that finding. The same run read most old monthly lists empty, and the owner kept that finding closed.
 
-**PR-101: Refuse an account off the invite list in a blocking function (F-69, D-990, D-991).** ✅ merged as #PRNUM. The mark comes before any review (D-822).
+**PR-101: Refuse an account off the invite list in a blocking function (F-69, D-990, D-991).** ✅ merged as #253. The mark comes before any review (D-822).
 The item is next step 9 of the hand-off, and it answers OQ-77. The form check of D-592 runs in the browser alone. So a caller who drives the Firebase API directly still makes an account.
 
 - **The route.** `go/internal/authblock` answers `POST /auth/before-create` on `mtg-api`. The API mounts it only when the invite list is on.
