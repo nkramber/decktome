@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Gitar approved `8c30fa2`, and Gitar accepted the rebuttal of its one finding. Codex round 1 found P2-1, the wait of 8 seconds, and one deadline of 5 seconds fixed it. Round 2 found P2-2, the status line, and round 3 found P2-3, the quote style of the spinner tag. The review check reads both now. `docs/reviews/pr-253-response.md` holds each answer. Pending the Gitar pass and Codex round 4.
+**The review.** Gitar approved `55c2895`, and its only thread is resolved. Codex rounds 1 to 3 found P2-1, P2-2, and P2-3. The fixes pass their regression checks. Round 4 approves effective head `55c2895`. No finding stays open. Every GitHub verify job and `pr-contract` passed. The `review-gate` waits for this record to reach the branch. `docs/reviews/pr-253-response.md` holds each answer.
 
 **What waits on the owner.**
 
