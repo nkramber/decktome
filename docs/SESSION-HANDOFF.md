@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body.
 
-**The review.** Pending a current Gitar review, the `review-override` label (D-812), the owner decision, and the auto-merge.
+**The review.** Gitar approved effective head `b21032d` with no finding and no thread. Its CI part names the `review-gate` failure before the label. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and the auto-merge.
 
 **What waits on the owner.**
 
