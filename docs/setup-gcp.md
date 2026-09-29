@@ -20,7 +20,7 @@ The roadmap (PR-22, D-310, D-314) fixes the shape. One table names each part.
 | The database | Firestore, Native mode, Standard edition | Sessions, decks, collections, usage, and the allowlist document `config/allowlist` (D-420) |
 | The bucket | Cloud Storage, `PROJECT_ID-cards` | The card snapshots, three versions kept (`cards.KeepVersions`), and the meta store |
 | The secrets | Secret Manager | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `TOPDECK_API_KEY` (D-492), and the Pushover pair `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` (D-893) |
-| Sign-in | Firebase Authentication, email and password | Open sign-up, and the API refuses every email that is not on the allowlist (D-314) |
+| Sign-in | Firebase Authentication with Identity Platform, email and password | The blocking function of section 15.1 refuses an account off the allowlist (D-990), and the API refuses every email that is not on the allowlist (D-314) |
 | The web app | Firebase Hosting on your domain | The Vite build of `web/apps/web`, with a free managed certificate |
 | The images | Artifact Registry | The two container images |
 | The schedules | Cloud Scheduler, two jobs | Runs the two Cloud Run jobs |
@@ -358,6 +358,38 @@ The API keeps its `run.app` URL. Cloud Run domain mappings are a preview feature
 5. Sign in with an email that is not on the list. The first RPC must answer `PermissionDenied` with one sentence.
 6. Read the Cloud Run logs: `gcloud run services logs read mtg-api --region REGION --limit 50`.
 
+### 15.1 Register the blocking function
+
+Identity Platform calls the route `/auth/before-create` of the API before it saves a new account (D-990). The route refuses an email off the allowlist. Each answer that is not 200 fails the sign-up, so do the live check of D-991 at once.
+
+1. Deploy the API that holds the route. A merge to `main` deploys it.
+2. Read the URL of the API: `gcloud run services describe mtg-api --region REGION --format='value(status.url)'`.
+3. Register the route as the `beforeCreate` trigger. Put the URL of step 2 in place of `API_URL`:
+
+```
+TOKEN=$(gcloud auth print-access-token)
+curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: PROJECT_ID" \
+  -H "Content-Type: application/json" \
+  -d '{"blockingFunctions":{"triggers":{"beforeCreate":{"functionUri":"API_URL/auth/before-create"}}}}' \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/PROJECT_ID/config?updateMask=blockingFunctions.triggers"
+```
+
+4. Add a test address to the allowlist with `make allow`.
+5. Sign up the test address through the REST API, and expect an `idToken`. `API_KEY` is the `apiKey` of section 5:
+
+```
+curl -s -X POST -H "Content-Type: application/json" \
+  -d '{"email":"TEST_EMAIL","password":"TEST_PASSWORD","returnSecureToken":true}' \
+  "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=API_KEY"
+```
+
+6. Delete the test account: POST `{"idToken":"ID_TOKEN"}` to `https://identitytoolkit.googleapis.com/v1/accounts:delete?key=API_KEY`.
+7. Remove the test address with `make disallow`.
+8. Sign up an address off the allowlist. Expect `BLOCKING_FUNCTION_ERROR_RESPONSE` and `not-invited` in the answer.
+9. Read the refusal in the log: `gcloud run services logs read mtg-api --region REGION --limit 20`.
+
+CAUTION: when step 5 fails, remove the trigger at once with section 8.5 of `docs/deploy-and-rollback.md`. Each sign-up fails while a broken trigger stays.
+
 ## 16. Cost estimate for five users and three decks a week each
 
 ### 16.1 The load
@@ -471,6 +503,9 @@ Every fact of this page carries a date. The repo facts read the code and the doc
 | The Google frontend answers `/healthz` on a `run.app` URL, and `/readyz` reaches the app | The deploy of `decktome-prod` on 2026-09-07, five paths compared |
 | The background snapshot load needs `--no-cpu-throttling` | The deploy of `decktome-prod` on 2026-09-07, measured against 1,422 requests |
 | `addFirebase` answers 403 before the account opens the Firebase console, and the Auth config answers 404 before the first use | The deploy of `decktome-prod` on 2026-09-07, with `firebase-debug.log` |
+| Blocking functions need Identity Platform, answer in seven seconds, and fail the sign-up on an error, read 2026-09-29 (page updated 2026-09-24) | https://docs.cloud.google.com/identity-platform/docs/blocking-functions |
+| The `blockingFunctions.triggers` map and its `functionUri`, read 2026-09-29 | https://docs.cloud.google.com/identity-platform/docs/reference/rest/v2/Config |
+| The blocking token: `data.jwt`, the securetoken certificates, and the issuer, read 2026-09-29 | `src/common/providers/identity.ts` of firebase-functions and `src/auth/token-verifier.ts` of firebase-admin-node on GitHub |
 | `ALLOWED_ORIGINS` reads a comma-separated list | `go/internal/auth/cors.go`, `ParseOrigins`, read 2026-09-07 |
 | The `^@^` alternate delimiter of `--set-env-vars` | `gcloud run deploy --help`, gcloud 533.0.0, read 2026-09-07 |
 | The snapshot and meta store sizes, and the three kept versions | `.local/gcs/mtg-local-cards` on 2026-09-05 and `go/internal/cards/refresh.go` |

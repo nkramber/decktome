@@ -27,6 +27,13 @@ export function authCode(err: unknown): string {
   return "";
 }
 
+// isInviteRefusal is true when the beforeCreate blocking function refused
+// the account (D-990). Firebase reports its answer as an internal error,
+// and the message carries the refusal of the function.
+export function isInviteRefusal(err: unknown): boolean {
+  return authCode(err) === "auth/internal-error" && err instanceof Error && err.message.includes("not-invited");
+}
+
 const authErrors: Record<string, string> = {
   "auth/invalid-credential": "The email or the password is wrong.",
   "auth/wrong-password": "The email or the password is wrong.",

@@ -26,6 +26,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/agentsvc"
 	"github.com/nkramber/decktome/go/internal/allowlist"
 	"github.com/nkramber/decktome/go/internal/auth"
+	"github.com/nkramber/decktome/go/internal/authblock"
 	"github.com/nkramber/decktome/go/internal/candidates"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/cardsvc"
@@ -261,6 +262,13 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		append([]connect.HandlerOption{connect.WithInterceptors(
 			inviteLimiter.Interceptor(mtgv1connect.InviteServiceCheckInviteProcedure),
 		)}, probeOpts...)...))
+	// Identity Platform calls this route as beforeCreate, and it refuses
+	// an account off the invite list before the account exists (D-990).
+	// A Google-signed token is its only way in, so it takes no sign-in.
+	if inviteList != nil {
+		mux.Handle("POST "+authblock.Path, authblock.New(project,
+			authblock.NewGoogleKeys(&http.Client{Timeout: 3 * time.Second}), inviteList.Allowed, logger))
+	}
 	// /healthz is liveness: the process answers. /readyz is readiness:
 	// a card index is loaded, so the RPCs can answer.
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {

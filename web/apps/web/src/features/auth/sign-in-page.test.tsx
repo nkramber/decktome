@@ -107,6 +107,26 @@ describe("SignInPage", () => {
     expect(screen.getByLabelText("Email")).toHaveValue("off@example.com");
   });
 
+  // D-990: when the check fails open, the blocking function still
+  // refuses the account, and the form names the same state.
+  it("shows the invite sentence when the blocking function refuses", async () => {
+    checkInvite.mockRejectedValue(new Error("unavailable"));
+    const refused = Object.assign(
+      new Error('Firebase: ((HTTP request returned HTTP error 403: {"error":{"message":"not-invited"}})) (auth/internal-error).'),
+      { code: "auth/internal-error" },
+    );
+    signUp.mockRejectedValueOnce(refused);
+    await renderAt("/sign-in");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Create account/ }));
+    await user.type(screen.getByLabelText("Email"), "off@example.com");
+    await user.type(screen.getByLabelText("Password"), "secret1");
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(notAuthorized);
+    expect(signUp).toHaveBeenCalled();
+  });
+
   it("asks the list before it makes an account, and never on a sign-in", async () => {
     signIn.mockResolvedValue({} as never);
     await renderAt("/sign-in");

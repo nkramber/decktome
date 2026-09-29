@@ -5,7 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { signInErrorMessage } from "../../lib/errors";
+import { isInviteRefusal, signInErrorMessage } from "../../lib/errors";
 import { inviteClient } from "../../lib/api";
 import { createAccount, resetPassword, signIn } from "../../lib/firebase";
 import { useAuth } from "./auth-context";
@@ -19,9 +19,9 @@ export const notAuthorized = "Your email has not been authorized for beta access
 export const resetSent = "If an account holds this email, a link to set a new password is on its way.";
 
 // inviteAllows asks the API whether the email may make an account. A
-// check that fails to answer allows the attempt: the API refuses the
-// call after it in any case, so a person on the list is never stopped
-// by a check that could not run.
+// check that fails to answer allows the attempt: the blocking function
+// refuses the account after it in any case (D-990), so a person on the
+// list is never stopped by a check that could not run.
 async function inviteAllows(email: string): Promise<boolean> {
   try {
     const res = await inviteClient.checkInvite({ email });
@@ -69,7 +69,7 @@ export function SignInPage() {
         await signIn(email, password);
       }
     } catch (err) {
-      setError(signInErrorMessage(err));
+      setError(isInviteRefusal(err) ? notAuthorized : signInErrorMessage(err));
     } finally {
       setBusy(false);
     }
