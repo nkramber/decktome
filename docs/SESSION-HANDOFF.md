@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. The one paid target was run 35.
 
-**The review.** Gitar approved head `7f49cc7` with no finding. The Codex review found no defect. The review-gate check needs a fresh result after this record reaches the branch. Pending that check, the owner decision, and the auto-merge (D-815, D-828).
+**The review.** Gitar approved `21f38ea` with no finding. The Codex record approves effective head `7f49cc7`. The owner decision and the auto-merge remain pending (D-815, D-828).
 
 **What waits on the owner.**
 
