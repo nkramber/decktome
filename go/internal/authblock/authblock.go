@@ -42,8 +42,10 @@ const (
 	skew = time.Minute
 	// maxBody bounds the request body. The token is a few kilobytes.
 	maxBody = 64 << 10
-	// allowTimeout keeps the list read inside the seven-second limit.
-	allowTimeout = 5 * time.Second
+	// Budget bounds the whole answer. The key fetch and the list read
+	// share it, so the answer comes inside the seven-second limit of
+	// Identity Platform, with time left to write it (D-990).
+	Budget = 5 * time.Second
 )
 
 // Allow answers whether an email is on the invite list.
@@ -61,11 +63,18 @@ type Handler struct {
 	allow   Allow
 	logger  *slog.Logger
 	now     func() time.Time
+	budget  time.Duration
 }
 
 // New returns the handler for one project.
 func New(project string, keys Keys, allow Allow, logger *slog.Logger) *Handler {
-	return &Handler{project: project, keys: keys, allow: allow, logger: logger, now: time.Now}
+	return &Handler{project: project, keys: keys, allow: allow, logger: logger, now: time.Now, budget: Budget}
+}
+
+// WithBudget sets the deadline of one answer, for a test.
+func (h *Handler) WithBudget(d time.Duration) *Handler {
+	h.budget = d
+	return h
 }
 
 // WithClock sets the clock of the time checks, for a test.
@@ -100,7 +109,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "INVALID_ARGUMENT", "no token")
 		return
 	}
-	c, err := h.verify(r.Context(), req.Data.JWT, r.Host)
+	ctx, cancel := context.WithTimeout(r.Context(), h.budget)
+	defer cancel()
+	c, err := h.verify(ctx, req.Data.JWT, r.Host)
 	if err != nil {
 		h.logger.Warn("blocking token refused", "err", err)
 		writeError(w, http.StatusUnauthorized, "UNAUTHENTICATED", "bad token")
@@ -115,8 +126,6 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusForbidden, "PERMISSION_DENIED", Refusal)
 		return
 	}
-	ctx, cancel := context.WithTimeout(r.Context(), allowTimeout)
-	defer cancel()
 	ok, err := h.allow(ctx, email)
 	if err != nil {
 		h.logger.Error("sign-up check: invite list unavailable", "err", err)

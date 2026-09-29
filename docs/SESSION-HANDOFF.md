@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Codex reviewed effective head `f7f4f7e`. Verdict: Changes required. P2-1 remains open.
+**The review.** Gitar approved `f7f4f7e`, and Gitar accepted the rebuttal of its one finding. Codex round 1 read `Changes required` at `f7f4f7e`, with P2-1: the key fetch and the list read took up to 8 seconds together. One deadline of 5 seconds now bounds the answer. `docs/reviews/pr-253-response.md` holds the answer. Pending the Gitar pass and Codex round 2.
 
 **What waits on the owner.**
 

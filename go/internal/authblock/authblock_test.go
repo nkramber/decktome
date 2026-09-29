@@ -238,6 +238,50 @@ func TestSmallSkewPasses(t *testing.T) {
 	}
 }
 
+// slowKeys answers the key after a delay, or stops at the deadline.
+type slowKeys struct {
+	key   *rsa.PublicKey
+	delay time.Duration
+}
+
+func (s slowKeys) Key(ctx context.Context, _ string) (*rsa.PublicKey, error) {
+	select {
+	case <-time.After(s.delay):
+		return s.key, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func waitForDeadline(ctx context.Context, _ string) (bool, error) {
+	<-ctx.Done()
+	return false, ctx.Err()
+}
+
+// The key fetch and the list read share one deadline, so a slow cold
+// start still answers inside the seven-second limit (D-990).
+func TestOneDeadlineBoundsTheKeyAndTheList(t *testing.T) {
+	key := newKey(t)
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	budget := 150 * time.Millisecond
+	h := New(testProject, slowKeys{key: &key.PublicKey, delay: 100 * time.Millisecond}, waitForDeadline, logger).
+		WithClock(func() time.Time { return testNow }).WithBudget(budget)
+	start := time.Now()
+	code, _ := call(t, h, http.MethodPost, bodyOf(sign(t, key, testKid, goodClaims("invited@example.com"))))
+	if elapsed := time.Since(start); elapsed > budget+100*time.Millisecond {
+		t.Fatalf("answered after %v, want about %v", elapsed, budget)
+	}
+	if code != http.StatusServiceUnavailable {
+		t.Fatalf("got %d, want 503", code)
+	}
+}
+
+func TestTheBudgetLeavesTimeInsideTheLimit(t *testing.T) {
+	if Budget > 6*time.Second {
+		t.Fatalf("Budget is %v, and Identity Platform waits seven seconds", Budget)
+	}
+}
+
 func TestBadRequests(t *testing.T) {
 	key := newKey(t)
 	h := newHandler(key, allowOnly("invited@example.com"))
