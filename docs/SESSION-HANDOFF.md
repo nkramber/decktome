@@ -6,32 +6,29 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-29b)
+## RESUME HERE (2026-09-29c)
 
-**Pull request #253, PR-101, adds the beforeCreate blocking function. It refuses an account off the invite list before Identity Platform saves it (D-990, D-991).**
+**Pull request #254, PR-102, records the registration of the beforeCreate trigger on `decktome-prod`. The live check of D-991 passed on both paths (D-993).**
 
 Author provider: Claude Code
 
-**The base.** `main` is `76eee5e`, from #252.
+**The base.** `main` is `0bfef4e`, from #253.
 
-**The choice.** The owner named OQ-77 from next step 9. The owner chose a Go route on `mtg-api` over a Node Cloud Function (D-990).
+**The deploy.** The Cloud Build run `d29eef54` deployed `0bfef4e`. The revision `mtg-api-00097-8hd` reads `DEPLOY_COMMIT` `0bfef4e`, and it holds all the traffic. `POST /auth/before-create` answered 400 to an empty body.
 
-**The project.** On 2026-09-29 the auth configuration of `decktome-prod` read `subtype: IDENTITY_PLATFORM` and an empty `blockingFunctions`. So the project needs no upgrade.
+**The registration.** The owner confirmed the PATCH (D-993). Identity Platform accepted the URL of the Cloud Run service as `functionUri`. So the check closes the open risk of D-990.
 
-**The change.** `go/internal/authblock` answers `POST /auth/before-create`. It checks the token of Google, then the invite list. An email off the list gets 403 with `not-invited`, and the web form shows the invite sentence. A list error gets 503, so the sign-up fails closed.
+**The live check.** An invited plus-address of the check account got an account, and the route answered 200. The session deleted the account, and it removed the address from the list. An address off the list got `BLOCKING_FUNCTION_ERROR_RESPONSE` with `not-invited`, and the route answered 403. `docs/reference/pr102-blocking-function-live-check-2026-09-29.md` holds each read.
 
-**The review check.** Gitar replied "Running the review now" to a manual request, after its dashboard edit. `make codex-review` read that as a refusal. The owner chose a fix in this pull request (D-992).
-
-**The open risk.** Google documents `functionUri` for a Cloud Function. The registration of a plain Cloud Run URL stays UNVERIFIED until the live check of D-991.
+**The trigger stays on.** Section 8.5 of `docs/deploy-and-rollback.md` removes it. Remove it before a rollback of the API past #253.
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Gitar approved `55c2895`, and its only thread is resolved. Codex rounds 1 to 3 found P2-1, P2-2, and P2-3. The fixes pass their regression checks. Round 4 approves effective head `55c2895`. No finding stays open. Every GitHub verify job and `pr-contract` passed. The `review-gate` waits for this record to reach the branch. `docs/reviews/pr-253-response.md` holds each answer. Pending the owner decision and the auto-merge (D-828).
+**The review.** The pull request holds documents alone. So it waits for a current Gitar review, then takes the `review-override` label (D-812). Pending the auto-merge (D-828).
 
 **What waits on the owner.**
 
 - The merge of this pull request.
-- After the deploy of this merge: the registration of the trigger and the live check of D-991. `docs/setup-gcp.md` section 15.1 holds the steps. Ask first.
 - The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
 - A deck gate run to grade the new split of the basics of #234. Ask first.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
@@ -118,8 +115,8 @@ Twenty-two things a fresh session gets wrong without this file.
 6. **PR-98: read the current month on the image of #249** (F-179, F-185, D-984, D-985). The first read was full, and the owner closed F-185. It merged as #250.
 7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waited for a second run. It merged as #251.
 8. **PR-100: read the scheduled run `mtg-meta-b56rq` for F-183** (F-179, F-183, D-988, D-989). The owner closed F-183, and kept F-179 closed. It merged as #252.
-9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. This pull request is #253.
-10. **The registration of the blocking function**, after the deploy of #253 (D-991). Ask the owner first. Then do section 15.1 of `docs/setup-gcp.md`, and read both paths.
+9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
+10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. This pull request is #254.
 11. **The open items of the roadmap.** One register row reads 🔧: F-49. F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
@@ -138,11 +135,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-28c: the read of the open MTGO rows, PR-99
-
-**The owner chose the end of the run.** The run `mtg-meta-4wbpp` was still in progress at 17:08 UTC. The owner chose its end over the scheduled run of 2026-09-29 (D-986).
-
-**Both rows read 0 at the end.** 0 older months stayed empty, and 0 event pages stayed redirected. The owner closed F-179 on two runs, and kept F-183 open for a second run (D-987).
 ### 2026-09-29a: the read of the scheduled MTGO run, PR-100
 
 **The owner chose the wait.** At 18:47 UTC on 2026-09-28 the scheduled run was 11 hours away. The owner chose a wait in the same session (D-988).
@@ -157,6 +149,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose a fix of the review check.** Gitar changed its reply to a manual request, and `make codex-review` refused a complete pass. The fix rides in this pull request (D-992).
 
+### 2026-09-29c: the registration of the blocking function, PR-102
+
+**The deploy came first.** At the start, the build of `0bfef4e` was in progress. The session waited for it, then read the revision and the answer to an empty body.
+
+**The owner confirmed the PATCH.** The trigger names the route of `mtg-api`, and both paths of D-991 passed (D-993). The trigger stays on.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29a, the records of 2026-08-31 to 2026-09-28b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29b, the records of 2026-08-31 to 2026-09-28c, and 104 more sections, word for word. Read it for the detail behind a decision.
