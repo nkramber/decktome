@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-29 correction pass 253 (PR-104, PR-105, F-33, D-995 to D-997): deck gate run 35 reads PASS for $3.1278 on generate prompt version 16. The web test tooling moves to `jsdom` 30.1.1 for 3 advisories of `undici`. The owner named PR-105, the move of the model roles. Changes: F-33, PR-104, PR-105, sequencing step 97.
+
 2026-09-29 correction pass 252 (PR-103, F-49, D-994): a free harvest read 1 new verdict, and the owner confirmed it as a test by hand. The owner closed F-49. Changes: F-49, PR-103, sequencing step 96.
 
 2026-09-29 correction pass 251 (PR-102, F-69, D-991, D-993): the owner confirmed the registration of the beforeCreate trigger on production. The live check of D-991 passed on both paths, and the trigger stays on. Changes: F-69, PR-102, sequencing step 95.
@@ -424,7 +426,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-5 | **Oracle tags are community data.** Scryfall Tagger tags are volunteer-made. Coverage is uneven. `lifegain` is rich (3,374 cards). Niche themes may have few tags. Weights are `median` style, not scores. | ⚠ binds PR-6: tags seed the candidate list. They never gate a card. Keywords and type lines are the second signal. The model is the third. |
 | F-31 | **A land upgrade rebuilt one basic land.** Session `vAvg4eteJhmuPEuJwBul`, 2026-09-01: the owner asked for better lands in place of the basics on a three-color Commander deck. The agent asked what kind, the owner answered a mix, and the rebuild moved one Plains to one Island. The shortlist held 40 nonbasic lands, among them Command Tower, the three shock lands of the colors, the fetch lands, and Cavern of Souls. The generator's revision rule asks for the smallest change, the brief named no count, and no check reads a free-text change. Revise gate runs 1 to 4 stopped at the question on both land rows, so the turn after the answer never ran under a bar. | ✅ fixed 2026-09-02 (#55, D-448, D-449), gate met: revise gate run 9 passes 11 of 11 and is the baseline (D-515). The row read "run 5 due" until 2026-09-08. |
 | F-32 | **The theme fills the land bucket.** Revise gate run 5, 2026-09-02: the brief counted 12 basic lands to replace on the Karlov lifegain deck, and the rebuild added one. The land bucket holds 40 lands ranked by theme text first, and "lifegain" sits in the text of dozens of lands. All 40 slots went to tapped lands that gain life, and Godless Shrine, Isolated Chapel, Caves of Koilos, Marsh Flats, and Command Tower were absent. The model was asked for untapped duals and had none to name. The Éowyn deck of F-31 had its staples because "Human" matches few lands. | ✅ fixed 2026-09-02 (#55, D-450), gate met: revise gate run 9 passes 11 of 11, and deck gate run 16 passes 25 of 25 and is the baseline (D-515). The row read "run 6 and run 11 due" until 2026-09-08. |
-| F-33 | **The mana base is model variance.** Deck gate runs 10 and 11, 2026-09-02, read for the lands of every deck. The lifegain Commander prompt got 12 nonbasic lands in run 10, 0 in run 11, and 30 in the base of revise gate run 7, on the same theme and pool. Five two-color Commander decks of run 11 hold 36 basics and no fixing at all, and one holds 3 basics and 33 nonbasic lands. A Standard deck holds 16 tapped lands of 24, and a tournament Modern deck 8 of 24. No rule states what a mana base should be, so the model decides each time. D-450 cut the colorless lands of the 13 shared Commander decks from 91 to 33 and left the tapped count alone. | ✅ fixed by #206 (D-798, D-799). PR-14A merged the land band, the tapped cap by power, and the Karsten sources on 2026-09-02 (#57, D-463). Deck gate run 12 read them: every land count sat in band, and the sources band caught two decks short of a color. The share of nonbasic lands still swings, 0 to 36 on the same prompt, because no band reads the composition. PR-33 (#102) and PR-52 (#181) added the swaps of the mana pass. A count of 2026-09-22 found the swing in runs 19 to 31: 0 to 9 nonbasic lands on one owned two-color prompt. The `fixing_land` band now reads the lands that make two or more deck colors. Its floor is the low quarter of real lists for each count of colors. The prompt names it, and the mana pass trades basic lands for fixing lands up to it at every power. `docs/reference/fixing-floors-2026-09-22.md` holds the counts. |
+| F-33 | **The mana base is model variance.** Deck gate runs 10 and 11, 2026-09-02, read for the lands of every deck. The lifegain Commander prompt got 12 nonbasic lands in run 10, 0 in run 11, and 30 in the base of revise gate run 7, on the same theme and pool. Five two-color Commander decks of run 11 hold 36 basics and no fixing at all, and one holds 3 basics and 33 nonbasic lands. A Standard deck holds 16 tapped lands of 24, and a tournament Modern deck 8 of 24. No rule states what a mana base should be, so the model decides each time. D-450 cut the colorless lands of the 13 shared Commander decks from 91 to 33 and left the tapped count alone. | ✅ fixed by #206 (D-798, D-799). PR-14A merged the land band, the tapped cap by power, and the Karsten sources on 2026-09-02 (#57, D-463). Deck gate run 12 read them: every land count sat in band, and the sources band caught two decks short of a color. The share of nonbasic lands still swings, 0 to 36 on the same prompt, because no band reads the composition. PR-33 (#102) and PR-52 (#181) added the swaps of the mana pass. A count of 2026-09-22 found the swing in runs 19 to 31: 0 to 9 nonbasic lands on one owned two-color prompt. The `fixing_land` band now reads the lands that make two or more deck colors. Its floor is the low quarter of real lists for each count of colors. The prompt names it, and the mana pass trades basic lands for fixing lands up to it at every power. `docs/reference/fixing-floors-2026-09-22.md` holds the counts. Deck gate run 35 read 275 nonbasic lands over 25 decks, against 257 in run 29 (PR-104, D-995). |
 | F-34 | **The bracket cut and the precon share fought, and a failed repair replaced a legal deck.** Deck gate run 14, 2026-09-04: the Goblin Storm upgrade of prompt 17 came back with no cards and a `deck_size` block. The bracket cut of D-468 drops a forbidden shortlist card and keeps only the commanders and the locked cards, so precon cards left the pool. The share rule of D-218 still asked for 67 of 78 names. The repair turn read fewer marked names than the rule demanded, answered no cards, and the builder replaced the legal first deck with the empty one. Run 13b passed the same prompt because its repair did not give up. | ✅ resolved 2026-09-04 (#63, D-509): the share counts the precon names the pool holds, and a repair with a block or a miss after a clean pass leaves the clean pass in place with the note `repair_kept_earlier`. Two tests pin it, and deck gate run 14b passed the prompt with the fix. |
 | F-35 | **The whole-precon check counts basic lands, and the export lacks six of them.** The ManaBox deck binder of Avengers Assemble in the export of 2026-08-24 holds 84 of the 90 printings of the product. The six absent cards are basic lands of three printings, Plains 288, Island 290, and Mountain 294 of MSH. Under D-408 that binder owns no precon, so "not from my precons" excludes nothing for it, and a named product gets the partial note of D-497. The exclusion never removes a basic land (D-37), so the six cards change no deck. | ✅ fixed 2026-09-05 (D-523, D-532): the check reads the nonbasic printings alone, in the chat and in the deck gate. The Avengers fixture is the true export again, with no hand-added row, and the dry run of prompt 25 still excludes 57 cards with 27 spare. |
 | F-36 | **The classifier replaces a named theme with a vague later phrase.** Question gate run 34, 2026-09-04: "poison in a tournament" opens with "An infect deck for a Modern tournament", and the second message says "Modern. The best deck under budget." The theme slot ended as `the best deck under budget`, and the word infect was gone. The reader never changed the theme. The deck would be built on the phrase and not on infect. | ✅ fixed 2026-09-05 (#68, D-535). A superlative phrase never replaces a named theme, and a test of `go/internal/questions/rows_test.go` holds the rule. The guard reads a superlative alone, and a phrase of another kind still reaches the theme slot. The row read 🔧 open until 2026-09-20. |
@@ -2813,6 +2815,53 @@ Gate:
 
 > *In plain English:* the only new report since 2026-09-24 was a test by the owner, and the app answered it correctly. The feedback system is complete, so its finding closes.
 
+**PR-104: Deck gate run 35 of prompt version 16, and the fixed `undici` of the web tests (F-33, D-995, D-997).** ✅ merged as #256. The mark comes before any review (D-822).
+The item is next step 12 of the hand-off. The owner chose a whole deck gate run over OQ-67, F-91, and other items.
+
+- **The verdict.** Run 35 reads PASS for $3.1278 in 1993 seconds. 25 of 25 decks passed every block check, 0 invented names reached the user, and 0 summaries stated a false rule.
+- **The baseline.** `make eval-check` reads the decks suite as PASS against run 19.
+- **The plan judge.** The mean plan score rose from 0.70 in run 29 and 0.74 in run 31 to 0.76. No deck read `theme_fit=no`.
+- **The repair turn (D-916).** Two decks needed it, and both repaired decks hold 0 block findings.
+- **The lands (F-33, D-799, D-951).** The 25 decks hold 275 nonbasic lands, against 257 in run 29 and 261 in run 31. The two decks with no nonbasic land have a white commander alone.
+- **A watch item.** The bracket 2 Gishath deck holds 35 nonbasic lands, with original dual lands and fetch lands. The plan judge read its theme fit as partly, for the cost. This is one sample.
+
+`docs/reference/deck-gate-run35-read-2026-09-29.md` holds the counts.
+
+- **The web test tooling (D-997).** `make verify` failed on 3 high advisories of `undici` 8.10.0, which reaches the repo through `jsdom` alone. The pull request moves `jsdom` from 30.0.1 to 30.1.1, and `undici` to 8.11.2. No deployed code holds `undici`.
+
+Gate:
+- Run 35 reads PASS, and `make eval-check` reads the decks suite as PASS.
+- `pnpm audit --audit-level high` finds no advisory, and the web tests pass on `jsdom` 30.1.1.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* a full test of the newest deck prompt passed. The decks read a little better, and the two decks that needed a fix got one.
+
+**PR-105: Move the model roles to GPT-6, GPT-6.1, and Claude Sonnet 5.5, and measure each move (D-996).** 🔧 planned. The owner named it on 2026-09-29, as the item after PR-104.
+
+| Role or target | Now | Next |
+|---|---|---|
+| classify, setmatch | `gpt-5.6-luna`, effort none | `gpt-6-luna`, effort none |
+| ask | `gpt-5.6-luna`, effort low | `gpt-6-luna`, effort low |
+| eval | `gpt-5.6-luna`, effort low | `gpt-6-luna`, effort low |
+| generate, repair | `gpt-5.6-terra`, effort medium | `gpt-6.1-sol`, effort medium |
+| revise | `gpt-5.6-terra`, effort low | `gpt-6.1-sol`, effort low |
+| judge | `claude-opus-5`, effort medium | `claude-sonnet-5-5`, effort medium |
+| `make eval-calibrate` | `claude-opus-5` | `claude-sonnet-5-5` |
+
+- **The model ids.** On 2026-09-29 the models endpoint of each provider listed `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`. The owner chose `gpt-6.1-sol` over `gpt-6-sol`.
+- **The prices.** Not verified yet. `go/internal/llm/prices.json` needs a row for each new model before the first paid run.
+- **The spend cap.** Each provider gets $5 for the evals of this item. OpenAI pays for the builds, the questions, and the eval. Anthropic pays for the judge and the calibration.
+- **The baseline.** Deck gate run 35 of PR-104 measures the current roles.
+- **The evals.** Each move gets the gate that reads its role. The item plans the order and the cost of each run before the first paid run.
+- **An open point.** One deck gate run with a new judge and a new generator measures two changes at once. A rejudge of the stored decks of run 35 measures the judge alone.
+
+Gate:
+- Each moved role has a gate result at the baseline or above it, or the owner accepts the difference.
+- The spend of each provider stays at $5 or less.
+
+> *In plain English:* the app moves to the newer OpenAI and Anthropic models. Each move gets a test against the current models before it ships, with $5 or less for each provider.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3206,6 +3255,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 94. **PR-101** the blocking function that refuses an account off the invite list (F-69, D-990 to D-992). No paid target ran.
 95. **PR-102** the registration of the blocking function, and the live check of both paths (F-69, D-991, D-993). No paid target ran.
 96. **PR-103** the read of the test verdict of 2026-09-24, and the close of F-49 (F-49, D-994). No paid target ran.
+97. **PR-104** deck gate run 35, the first whole run of generate prompt version 16, and `jsdom` 30.1.1 (F-33, D-995, D-997). It spent $3.1278. Then PR-105, the move of the model roles (D-996).
 
 ## 9. Open questions
 

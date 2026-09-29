@@ -6,37 +6,37 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-29d)
+## RESUME HERE (2026-09-29e)
 
-**Pull request #255, PR-103, reads the one new verdict after 2026-09-24, and closes F-49 (D-994).**
+**Pull request #256, PR-104, records deck gate run 35, the first whole run of generate prompt version 16 (D-995). It also plans PR-105, the move of the model roles (D-996).**
 
 Author provider: Claude Code
 
-**The base.** `main` is `9736b4d`, from #254.
+**The base.** `main` is `3c85ca4`, from #255.
 
-**The choice.** The owner picked F-49 from next step 11, over OQ-67 and PR-26.
+**The choice.** The owner picked a whole deck gate run from next step 12, over OQ-67, F-91, and other items.
 
-**The verdict.** A free harvest read 1 verdict: an import report of 2026-09-24 20:45 UTC, with the words "Test". The file held `TEST` on 4 lines, and the parser refused it correctly. The owner confirmed a test by hand.
+**The run.** Run 35 reads PASS for $3.1278 in 1993 seconds, under a cap of $4. `make eval-check` reads the decks suite as PASS against run 19. The mean plan score is 0.76, against 0.70 in run 29. Two decks needed the repair turn of D-916, and both passed. `docs/reference/deck-gate-run35-read-2026-09-29.md` holds the counts.
 
-**The triage.** The free dry triage proposed a parse fixture. The session wrote none, because the file names no fault. The local file `.local/feedback/triaged.txt` marks the harvest of 2026-09-29 as read.
+**The web test tooling.** `make verify` failed on 3 high advisories of `undici` 8.10.0, through `jsdom`. The owner chose the fix in this pull request: `jsdom` 30.1.1 and `undici` 8.11.2 (D-997).
 
-**The register.** The owner closed F-49 (D-994). No register row reads 🔧 now.
+**A watch item.** The bracket 2 Gishath deck holds 35 nonbasic lands, with original dual lands and fetch lands. The plan judge read its theme fit as partly, for the cost. This is one sample.
 
-**The checks.** See the pull request body. No paid target ran.
+**The next item.** The owner named PR-105 (D-996). The roles move to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with evals and a cap of $5 for each provider. On 2026-09-29 the models endpoint of each provider listed the three ids. The prices are not verified yet.
 
-**The review.** Gitar approved `0292a82` with no finding and no thread. The pull request holds documents alone, so it carries the `review-override` label (D-812). Pending the owner decision and the auto-merge (D-828).
+**The checks.** See the pull request body. The one paid target was run 35.
+
+**The review.** Gitar approved `c12b5ba` with no finding. The Codex record approves effective head `7f49cc7`. The owner decision and the auto-merge remain pending (D-815, D-828).
 
 **What waits on the owner.**
 
 - The merge of this pull request.
 - The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
-- A deck gate run to grade the new split of the basics of #234. Ask first.
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
-- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
-- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- A questions gate run for D-913. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next step 12, and OQ-67.
+- PR-105, next step 13.
 
 ## How to resume
 
@@ -102,7 +102,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 16 now, and run 19 read version 12. Run 34 of 2026-09-21 is the newest whole deck gate run. It rejudges the summaries of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 16 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
@@ -118,10 +118,12 @@ Twenty-two things a fresh session gets wrong without this file.
 8. **PR-100: read the scheduled run `mtg-meta-b56rq` for F-183** (F-179, F-183, D-988, D-989). The owner closed F-183, and kept F-179 closed. It merged as #252.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
-11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. This pull request is #255.
-12. **The open items of the roadmap.** No register row reads 🔧. F-49 reads ✅ (PR-103, D-994). F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
+12. **PR-104: deck gate run 35, and `jsdom` 30.1.1** (F-33, D-995, D-997). It reads PASS for $3.1278. This pull request is #256.
+13. **PR-105: move the model roles, and measure each move** (D-996). Verify the prices of `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5` first. Then plan the gates and the cost of each run, with $5 or less for each provider. A rejudge of run 35 measures the judge alone.
+14. **The open items of the roadmap.** No register row reads 🔧. F-49 reads ✅ (PR-103, D-994). F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. Deck gate run 35 measured them as a whole run (PR-104, D-995).
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
-6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
+6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
 9. **PR-26, the return channels**, waits on OQ-67.
@@ -137,14 +139,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-29b: the blocking function of the invite list, PR-101
-
-**The owner chose OQ-77 and the Go route.** The session read the auth configuration of production and the contract of Google. The owner chose a route on `mtg-api` over a Node function (D-990).
-
-**The owner chose a live check of both paths.** After the deploy, the next session registers the trigger. It signs up one address on the list and one address off it (D-991).
-
-**The owner chose a fix of the review check.** Gitar changed its reply to a manual request, and `make codex-review` refused a complete pass. The fix rides in this pull request (D-992).
-
 ### 2026-09-29c: the registration of the blocking function, PR-102
 
 **The deploy came first.** At the start, the build of `0bfef4e` was in progress. The session waited for it, then read the revision and the answer to an empty body.
@@ -157,6 +151,16 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The verdict was a test.** The owner confirmed the import report "Test" as a test by hand. The session wrote no fixture, and the owner closed F-49 (D-994).
 
+### 2026-09-29e: deck gate run 35, PR-104
+
+**The owner chose the whole deck gate run.** The session gave the pros and cons of OQ-67, F-91, the run, and the gates of D-913 and D-916 (D-995).
+
+**The run passed.** Run 35 cost $3.1278, and it reads PASS against run 19. The session compared the counts under the gate with runs 29 and 31.
+
+**The owner named PR-105.** The first request compared `gpt-5.6-luna` and `gpt-6-luna` at effort medium, but no app role ran Luna at medium. The session listed each role, and the owner named the moves. The owner then chose `gpt-6.1-sol` over `gpt-6-sol` (D-996).
+
+**The owner chose the audit fix here.** `make verify` failed on new advisories of `undici`. The owner chose the bump of `jsdom` in this pull request over a separate one (D-997).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29c, the records of 2026-08-31 to 2026-09-29a, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29d, the records of 2026-08-31 to 2026-09-29b, and 104 more sections, word for word. Read it for the detail behind a decision.
