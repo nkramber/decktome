@@ -6,25 +6,25 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-28c)
+## RESUME HERE (2026-09-29a)
 
-**Pull request #251, PR-99, reads the end of the manual run `mtg-meta-4wbpp`. The owner closed F-179, and kept F-183 open for a second run (D-986, D-987).**
+**Pull request #252, PR-100, reads the scheduled run `mtg-meta-b56rq`. The owner closed F-183, and kept F-179 closed with the read of its 9 empty months (D-988, D-989).**
 
 Author provider: Claude Code
 
-**The base.** `main` is `29d7fcc`, from #250. The jobs run `worker:bdc5b60`, from #249.
+**The base.** `main` is `038efe9`, from #251. The jobs run `worker:bdc5b60`, from #249.
 
-**The read.** At 17:08 UTC the run was still in progress. The owner chose to read its end, and not to wait for the scheduled run of 06:00 UTC on 2026-09-29 (D-986). The run ended at 18:22 UTC with SUCCESS.
+**The wait.** At 18:47 UTC on 2026-09-28 the scheduled run was 11 hours away. The owner chose a wait in the same session (D-988). The run `mtg-meta-b56rq` started at 06:00 UTC on 2026-09-29, and it ended at 07:05 UTC with SUCCESS.
 
-**The older months.** Pass 3 read the last 3 empty older months full, so 0 stayed empty. The run `mtg-meta-5c425` also left 0. The owner closed F-179 on these two runs (D-987).
+**The event pages.** Pass 0 read 2 event pages as 302. The 3 passes left 2, 1, and 0, and the time budget did not hold. The run `mtg-meta-4wbpp` also left 0, so the owner closed F-183 (D-989).
 
-**The event pages.** Pass 0 read 73 event pages as 302. The 3 passes left 15, 1, and 0, and the time budget did not hold. It is the first run with 0 at the end, so F-183 stays open (D-987). `docs/reference/pr99-mtgo-open-rows-read-2026-09-28.md` holds the reads.
+**The older months.** Each of the 11 older months read empty on the first read. The 3 passes read 2026-01 and 2026-06 full, and 9 months stayed empty. So the run listed 436 slugs from 3 months alone. The owner kept F-179 closed, and the read records the 9 months (D-989). `docs/reference/pr100-mtgo-event-pages-read-2026-09-29.md` holds the reads.
 
 **The change.** Documents alone. No code changed, and no paid target ran.
 
 **The checks.** See the pull request body.
 
-**The review.** Gitar approved effective head `98ce8cd` with one finding, the order of correction pass 248 in the roadmap. `98ce8cd` fixed it, and the thread is resolved. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and the auto-merge.
+**The review.** Gitar approved effective head `b21032d` with no finding and no thread. Its CI part names the `review-gate` failure before the label. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and the auto-merge.
 
 **What waits on the owner.**
 
@@ -36,7 +36,7 @@ Author provider: Claude Code
 - A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
 - A questions gate run for D-913, and a deck gate run for D-916. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- Next step 8, and OQ-67 and OQ-77.
+- Next step 9, and OQ-67 and OQ-77.
 
 ## How to resume
 
@@ -99,7 +99,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
-- The newest stored quality model, read 2026-09-28: `20260928T181312Z`, from the manual meta job `mtg-meta-4wbpp` on `worker:bdc5b60`. It read 81,239 lists and 1,510 commanders. The mtgjson source read no list, because its deck list version differs from the stored table. The MTGO lane read 5,199 lists from 169 pages, and the time budget did not hold. The job logs hold each message in `jsonPayload.message`.
+- The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 16 now, and run 19 read version 12. Run 34 of 2026-09-21 is the newest whole deck gate run. It rejudges the summaries of run 31 (D-789), and `make eval-check` reads it as PASS against run 19. Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
@@ -113,8 +113,9 @@ Twenty-two things a fresh session gets wrong without this file.
 4. **PR-96: read the MTGO event fetch of #247, and stop the MTGO lane at a time budget** (F-179, F-183, F-184, D-981, D-982). It merged as #248.
 5. **PR-97: read the first meta job on the image of #248, and read an empty current month again** (F-179, F-183, F-184, F-185, D-983, D-984). It merged as #249.
 6. **PR-98: read the current month on the image of #249** (F-179, F-185, D-984, D-985). The first read was full, and the owner closed F-185. It merged as #250.
-7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waits for a second run. This pull request is #251.
-8. **The open items of the roadmap.** Two register rows read 🔧: F-49 and F-183. F-183 waits for a read of the scheduled run of 06:00 UTC on 2026-09-29 (D-987). F-179 reads ✅ (PR-99, D-987). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
+7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waited for a second run. It merged as #251.
+8. **PR-100: read the scheduled run `mtg-meta-b56rq` for F-183** (F-179, F-183, D-988, D-989). The owner closed F-183, and kept F-179 closed. This pull request is #252.
+9. **The open items of the roadmap.** One register row reads 🔧: F-49. F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. No whole deck gate run measured them yet.
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 29 of 2026-09-20 cost $2.7384 in 1874 seconds, and it reads PASS. Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
@@ -132,12 +133,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-28a: the read of the MTGO time budget, PR-97
-
-**The owner chose the wait.** The deploy of #248 came at 23:25 UTC, and the owner chose the scheduled run of 06:00 UTC over a manual run (D-983).
-
-**The budget held, and the job stored a model.** The run ended in 7,712 of 14,400 seconds. But the current month read empty, and it had no retry. The owner chose the fix in this pull request (F-185, D-984).
-
 ### 2026-09-28b: the read of the current MTGO month, PR-98
 
 **The owner chose a manual run.** The deploy of #249 came at 14:20 UTC. The owner chose a manual run over the wait for the scheduled run of 06:00 UTC (D-985).
@@ -149,7 +144,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner chose the end of the run.** The run `mtg-meta-4wbpp` was still in progress at 17:08 UTC. The owner chose its end over the scheduled run of 2026-09-29 (D-986).
 
 **Both rows read 0 at the end.** 0 older months stayed empty, and 0 event pages stayed redirected. The owner closed F-179 on two runs, and kept F-183 open for a second run (D-987).
+### 2026-09-29a: the read of the scheduled MTGO run, PR-100
+
+**The owner chose the wait.** At 18:47 UTC on 2026-09-28 the scheduled run was 11 hours away. The owner chose a wait in the same session (D-988).
+
+**The event pages read 0 at the end, and 9 older months stayed empty.** The owner closed F-183 on two runs in a row, and kept F-179 closed with the read (D-989).
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-28b, the records of 2026-08-31 to 2026-09-27e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-28c, the records of 2026-08-31 to 2026-09-28a, and 104 more sections, word for word. Read it for the detail behind a decision.

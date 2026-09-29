@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-28c
+
+**Pull request #251, PR-99, reads the end of the manual run `mtg-meta-4wbpp`. The owner closed F-179, and kept F-183 open for a second run (D-986, D-987).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `29d7fcc`, from #250. The jobs run `worker:bdc5b60`, from #249.
+
+**The read.** At 17:08 UTC the run was still in progress. The owner chose to read its end, and not to wait for the scheduled run of 06:00 UTC on 2026-09-29 (D-986). The run ended at 18:22 UTC with SUCCESS.
+
+**The older months.** Pass 3 read the last 3 empty older months full, so 0 stayed empty. The run `mtg-meta-5c425` also left 0. The owner closed F-179 on these two runs (D-987).
+
+**The event pages.** Pass 0 read 73 event pages as 302. The 3 passes left 15, 1, and 0, and the time budget did not hold. It is the first run with 0 at the end, so F-183 stays open (D-987). `docs/reference/pr99-mtgo-open-rows-read-2026-09-28.md` holds the reads.
+
+**The change.** Documents alone. No code changed, and no paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approved effective head `98ce8cd` with one finding, the order of correction pass 248 in the roadmap. `98ce8cd` fixed it, and the thread is resolved. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 8, and OQ-67 and OQ-77.
+
+### 2026-09-28a: the read of the MTGO time budget, PR-97
+
+**The owner chose the wait.** The deploy of #248 came at 23:25 UTC, and the owner chose the scheduled run of 06:00 UTC over a manual run (D-983).
+
+**The budget held, and the job stored a model.** The run ended in 7,712 of 14,400 seconds. But the current month read empty, and it had no retry. The owner chose the fix in this pull request (F-185, D-984).
+
 ## The resume section of 2026-09-28b
 
 **Pull request #250, PR-98, reads the current MTGO month on the image of #249. The first read was full, and the owner closed F-185 (F-179, F-185, D-984, D-985).**
