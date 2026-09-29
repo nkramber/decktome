@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Pending the Gitar pass and the Codex review.
+**The review.** Codex reviewed effective head `f7f4f7e`. Verdict: Changes required. P2-1 remains open.
 
 **What waits on the owner.**
 
