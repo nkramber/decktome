@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. The one paid target was run 35.
 
-**The review.** Gitar approved `21f38ea` with no finding. The Codex record approves effective head `7f49cc7`. The owner decision and the auto-merge remain pending (D-815, D-828).
+**The review.** Gitar approved `c12b5ba` with no finding. The Codex record approves effective head `7f49cc7`. The owner decision and the auto-merge remain pending (D-815, D-828).
 
 **What waits on the owner.**
 
