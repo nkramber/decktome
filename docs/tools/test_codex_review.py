@@ -184,6 +184,11 @@ class GitarPass(unittest.TestCase):
                           "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
         self.assertTrue(any("in progress" in p for p in cr.gitar_problems(PUSHED, [running], [], [])))
 
+    def test_a_finding_that_names_the_spinner_in_prose_passes(self):
+        quoted = comment(GITAR, DASH + "\n> any in-progress state that does not use `gitar-spin.svg`.",
+                         "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+        self.assertEqual(cr.gitar_problems(PUSHED, [quoted], [], []), [])
+
 
 def thread_page(threads, more):
     return {"data": {"repository": {"pullRequest": {"reviewThreads": {

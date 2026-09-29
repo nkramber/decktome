@@ -86,8 +86,9 @@ DASHBOARD = "<b>Code Review</b>"
 # changed, since 2026-09-29 (D-992).
 ACK_BEFORE = "on it"
 ACK_AFTER = "running the review now"
-# The dashboard shows this spinner while a review runs (D-992).
-SPINNER = "gitar-spin.svg"
+# The dashboard shows this spinner image while a review runs (D-992). A
+# quoted finding can name the file in prose, so the image tag counts alone.
+SPINNER = re.compile(r"<img[^>]*\bsrc=\"[^\"]*gitar-spin\.svg\"", re.IGNORECASE)
 SUMMARY = re.compile(r"<summary><b>Code Review</b>.*?</summary>")
 KBD = re.compile(r"<kbd>(.*?)</kbd>")
 TALLY = re.compile(r"^(.+) / (\d+) findings$")
@@ -199,7 +200,7 @@ def gitar_problems(pushed, comments, gitar_runs, threads):
     else:
         newest = max(dashboards, key=lambda c: c["created_at"])
         dashboard = newest["updated_at"]
-        if SPINNER in (newest.get("body") or ""):
+        if SPINNER.search(newest.get("body") or ""):
             problems.append("the Gitar dashboard shows a review in progress. Wait for its end.")
         if dashboard <= pushed:
             problems.append(f"the Gitar dashboard changed at {dashboard}, before the push of the effective head at {pushed}. Ask for a review with the `gitar-review` skill.")
