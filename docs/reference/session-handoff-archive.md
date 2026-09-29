@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-29c
+
+**Pull request #254, PR-102, records the registration of the beforeCreate trigger on `decktome-prod`. The live check of D-991 passed on both paths (D-993).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `0bfef4e`, from #253.
+
+**The deploy.** The Cloud Build run `d29eef54` deployed `0bfef4e`. The revision `mtg-api-00097-8hd` reads `DEPLOY_COMMIT` `0bfef4e`, and it holds all the traffic. `POST /auth/before-create` answered 400 to an empty body.
+
+**The registration.** The owner confirmed the PATCH (D-993). Identity Platform accepted the URL of the Cloud Run service as `functionUri`. So the check closes the open risk of D-990.
+
+**The live check.** An invited plus-address of the check account got an account, and the route answered 200. The session deleted the account, and it removed the address from the list. An address off the list got `BLOCKING_FUNCTION_ERROR_RESPONSE` with `not-invited`, and the route answered 403. `docs/reference/pr102-blocking-function-live-check-2026-09-29.md` holds each read.
+
+**The trigger stays on.** Section 8.5 of `docs/deploy-and-rollback.md` removes it. Remove it before a rollback of the API past #253.
+
+**The checks.** See the pull request body. No paid target ran.
+
+**The review.** Gitar approved `2fd28b1` with no finding and no thread. The pull request holds documents alone, so it carries the `review-override` label (D-812). Pending the owner decision and the auto-merge (D-828).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 11, and OQ-67.
+
+### 2026-09-29a: the read of the scheduled MTGO run, PR-100
+
+**The owner chose the wait.** At 18:47 UTC on 2026-09-28 the scheduled run was 11 hours away. The owner chose a wait in the same session (D-988).
+
+**The event pages read 0 at the end, and 9 older months stayed empty.** The owner closed F-183 on two runs in a row, and kept F-179 closed with the read (D-989).
+
 ## The resume section of 2026-09-29b
 
 **Pull request #253, PR-101, adds the beforeCreate blocking function. It refuses an account off the invite list before Identity Platform saves it (D-990, D-991).**
