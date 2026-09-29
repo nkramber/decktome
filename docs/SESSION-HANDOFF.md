@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Gitar approved `f7f4f7e`, and Gitar accepted the rebuttal of its one finding. Codex round 1 read `Changes required` at `f7f4f7e`, with P2-1: the key fetch and the list read took up to 8 seconds together. One deadline of 5 seconds now bounds the answer. `docs/reviews/pr-253-response.md` holds the answer. Pending the Gitar pass and Codex round 2.
+**The review.** Gitar passed on `d2c0e00`, and its only thread is resolved. Codex round 2 fixed P2-1 with one five-second deadline and its regression test. It found P2-2: the Codex gate accepts `Responding to your feedback` when the spinner image is absent. `docs/reviews/pr-253.md` holds the finding. The review record and hand-off need commit and push.
 
 **What waits on the owner.**
 
