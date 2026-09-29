@@ -1,0 +1,460 @@
+{"suite":"decks","run_id":"pr8-deck-gate-run36","date":"2026-09-29","commit":"9fb2569","roles":{"generate":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"},"judge":{"provider":"anthropic","model":"claude-sonnet-5-5","effort":"medium"},"repair":{"provider":"openai","model":"gpt-5.6-terra","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"generate":16,"plan_rubric":4,"summary_judge":2},"versions":{"precons":"5.3.0+20260923","quality_model":"20260923T202806Z","rejudge_of":"pr8-deck-gate-run35"},"calls":50,"cost_usd":0.3357508,"seconds":142.03887125,"verdict":"PASS","overrides":["judge.model"],"lower":["blocks","invented_names","false_rules","judge_error","excluded_in_deck","warnings","repaired","buy_cost","deck_cost","case_assertions"],"note":"a rejudge of pr8-deck-gate-run35: the decks and the build rows are copied, and the judge rows are new (D-789)"}
+{"item":"1","metric":"built","value":1,"kind":"gate"}
+{"item":"1","metric":"blocks","value":0,"kind":"gate"}
+{"item":"1","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"1","metric":"repaired","value":0,"kind":"info"}
+{"item":"1","metric":"cards","value":99,"kind":"info"}
+{"item":"1","metric":"pool","value":306,"kind":"info"}
+{"item":"1","metric":"warnings","value":0,"kind":"info"}
+{"item":"1","metric":"buy_cost","value":761.88,"kind":"info"}
+{"item":"1","metric":"deck_cost","value":761.88,"kind":"info"}
+{"item":"1","metric":"grade","value":0.0285,"kind":"info","detail":"bad"}
+{"item":"2","metric":"built","value":1,"kind":"gate"}
+{"item":"2","metric":"blocks","value":0,"kind":"gate"}
+{"item":"2","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"2","metric":"repaired","value":0,"kind":"info"}
+{"item":"2","metric":"cards","value":99,"kind":"info"}
+{"item":"2","metric":"pool","value":181,"kind":"info"}
+{"item":"2","metric":"warnings","value":0,"kind":"info"}
+{"item":"2","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"2","metric":"deck_cost","value":166.72000000000006,"kind":"info"}
+{"item":"2","metric":"grade","value":0.3155,"kind":"info","detail":"baseline"}
+{"item":"3","metric":"built","value":1,"kind":"gate"}
+{"item":"3","metric":"blocks","value":0,"kind":"gate"}
+{"item":"3","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"3","metric":"repaired","value":0,"kind":"info"}
+{"item":"3","metric":"cards","value":99,"kind":"info"}
+{"item":"3","metric":"pool","value":318,"kind":"info"}
+{"item":"3","metric":"warnings","value":0,"kind":"info"}
+{"item":"3","metric":"buy_cost","value":4291.429999999997,"kind":"info"}
+{"item":"3","metric":"deck_cost","value":4291.429999999997,"kind":"info"}
+{"item":"3","metric":"grade","value":0.6416,"kind":"info","detail":"typical"}
+{"item":"4","metric":"built","value":1,"kind":"gate"}
+{"item":"4","metric":"blocks","value":0,"kind":"gate"}
+{"item":"4","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"4","metric":"repaired","value":0,"kind":"info"}
+{"item":"4","metric":"cards","value":99,"kind":"info"}
+{"item":"4","metric":"pool","value":299,"kind":"info"}
+{"item":"4","metric":"warnings","value":0,"kind":"info"}
+{"item":"4","metric":"buy_cost","value":1314.0899999999997,"kind":"info"}
+{"item":"4","metric":"deck_cost","value":1314.0899999999997,"kind":"info"}
+{"item":"4","metric":"grade","value":0.0417,"kind":"info","detail":"bad"}
+{"item":"5","metric":"built","value":1,"kind":"gate"}
+{"item":"5","metric":"blocks","value":0,"kind":"gate"}
+{"item":"5","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"5","metric":"repaired","value":0,"kind":"info"}
+{"item":"5","metric":"cards","value":99,"kind":"info"}
+{"item":"5","metric":"pool","value":169,"kind":"info"}
+{"item":"5","metric":"warnings","value":1,"kind":"info"}
+{"item":"5","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"5","metric":"deck_cost","value":132.41000000000003,"kind":"info"}
+{"item":"5","metric":"grade","value":0.4075,"kind":"info","detail":"typical"}
+{"item":"6","metric":"built","value":1,"kind":"gate"}
+{"item":"6","metric":"blocks","value":0,"kind":"gate"}
+{"item":"6","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"6","metric":"repaired","value":0,"kind":"info"}
+{"item":"6","metric":"cards","value":60,"kind":"info"}
+{"item":"6","metric":"pool","value":167,"kind":"info"}
+{"item":"6","metric":"warnings","value":0,"kind":"info"}
+{"item":"6","metric":"buy_cost","value":354.71999999999997,"kind":"info"}
+{"item":"6","metric":"deck_cost","value":354.71999999999997,"kind":"info"}
+{"item":"6","metric":"grade","value":0.4986,"kind":"info","detail":"typical"}
+{"item":"7","metric":"built","value":1,"kind":"gate"}
+{"item":"7","metric":"blocks","value":0,"kind":"gate"}
+{"item":"7","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"7","metric":"repaired","value":0,"kind":"info"}
+{"item":"7","metric":"cards","value":60,"kind":"info"}
+{"item":"7","metric":"pool","value":290,"kind":"info"}
+{"item":"7","metric":"warnings","value":0,"kind":"info"}
+{"item":"7","metric":"buy_cost","value":28.340000000000003,"kind":"info"}
+{"item":"7","metric":"deck_cost","value":28.340000000000003,"kind":"info"}
+{"item":"7","metric":"grade","value":0.3975,"kind":"info","detail":"baseline"}
+{"item":"8","metric":"built","value":1,"kind":"gate"}
+{"item":"8","metric":"blocks","value":0,"kind":"gate"}
+{"item":"8","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"8","metric":"repaired","value":0,"kind":"info"}
+{"item":"8","metric":"cards","value":60,"kind":"info"}
+{"item":"8","metric":"pool","value":301,"kind":"info"}
+{"item":"8","metric":"warnings","value":0,"kind":"info"}
+{"item":"8","metric":"buy_cost","value":898.46,"kind":"info"}
+{"item":"8","metric":"deck_cost","value":898.46,"kind":"info"}
+{"item":"8","metric":"grade","value":0.3484,"kind":"info","detail":"bad"}
+{"item":"9","metric":"built","value":1,"kind":"gate"}
+{"item":"9","metric":"blocks","value":0,"kind":"gate"}
+{"item":"9","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"9","metric":"repaired","value":0,"kind":"info"}
+{"item":"9","metric":"cards","value":60,"kind":"info"}
+{"item":"9","metric":"pool","value":164,"kind":"info"}
+{"item":"9","metric":"warnings","value":0,"kind":"info"}
+{"item":"9","metric":"buy_cost","value":176.5,"kind":"info"}
+{"item":"9","metric":"deck_cost","value":176.5,"kind":"info"}
+{"item":"9","metric":"grade","value":0.2942,"kind":"info","detail":"bad"}
+{"item":"10","metric":"built","value":1,"kind":"gate"}
+{"item":"10","metric":"blocks","value":0,"kind":"gate"}
+{"item":"10","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"10","metric":"repaired","value":0,"kind":"info"}
+{"item":"10","metric":"cards","value":60,"kind":"info"}
+{"item":"10","metric":"pool","value":294,"kind":"info"}
+{"item":"10","metric":"warnings","value":0,"kind":"info"}
+{"item":"10","metric":"buy_cost","value":95.42000000000002,"kind":"info"}
+{"item":"10","metric":"deck_cost","value":95.42000000000002,"kind":"info"}
+{"item":"10","metric":"grade","value":0.3006,"kind":"info","detail":"bad"}
+{"item":"11","metric":"built","value":1,"kind":"gate"}
+{"item":"11","metric":"blocks","value":0,"kind":"gate"}
+{"item":"11","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"11","metric":"repaired","value":0,"kind":"info"}
+{"item":"11","metric":"cards","value":99,"kind":"info"}
+{"item":"11","metric":"pool","value":299,"kind":"info"}
+{"item":"11","metric":"warnings","value":0,"kind":"info"}
+{"item":"11","metric":"buy_cost","value":783.34,"kind":"info"}
+{"item":"11","metric":"deck_cost","value":783.34,"kind":"info"}
+{"item":"11","metric":"grade","value":0.0481,"kind":"info","detail":"baseline"}
+{"item":"12","metric":"built","value":1,"kind":"gate"}
+{"item":"12","metric":"blocks","value":0,"kind":"gate"}
+{"item":"12","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"12","metric":"repaired","value":0,"kind":"info"}
+{"item":"12","metric":"cards","value":99,"kind":"info"}
+{"item":"12","metric":"pool","value":298,"kind":"info"}
+{"item":"12","metric":"warnings","value":0,"kind":"info"}
+{"item":"12","metric":"buy_cost","value":92.82000000000001,"kind":"info"}
+{"item":"12","metric":"deck_cost","value":92.82000000000001,"kind":"info"}
+{"item":"12","metric":"grade","value":0.0138,"kind":"info","detail":"bad"}
+{"item":"13","metric":"built","value":1,"kind":"gate"}
+{"item":"13","metric":"blocks","value":0,"kind":"gate"}
+{"item":"13","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"13","metric":"repaired","value":0,"kind":"info"}
+{"item":"13","metric":"cards","value":99,"kind":"info"}
+{"item":"13","metric":"pool","value":230,"kind":"info"}
+{"item":"13","metric":"warnings","value":1,"kind":"info"}
+{"item":"13","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"13","metric":"deck_cost","value":180.37000000000003,"kind":"info"}
+{"item":"13","metric":"grade","value":0.0578,"kind":"info","detail":"baseline"}
+{"item":"14","metric":"built","value":1,"kind":"gate"}
+{"item":"14","metric":"blocks","value":0,"kind":"gate"}
+{"item":"14","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"14","metric":"repaired","value":0,"kind":"info"}
+{"item":"14","metric":"cards","value":99,"kind":"info"}
+{"item":"14","metric":"pool","value":299,"kind":"info"}
+{"item":"14","metric":"warnings","value":0,"kind":"info"}
+{"item":"14","metric":"buy_cost","value":872.6200000000001,"kind":"info"}
+{"item":"14","metric":"deck_cost","value":872.6200000000001,"kind":"info"}
+{"item":"14","metric":"grade","value":0.0359,"kind":"info","detail":"bad"}
+{"item":"15","metric":"built","value":1,"kind":"gate"}
+{"item":"15","metric":"blocks","value":0,"kind":"gate"}
+{"item":"15","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"15","metric":"repaired","value":1,"kind":"info","detail":"deck_size"}
+{"item":"15","metric":"cards","value":99,"kind":"info"}
+{"item":"15","metric":"pool","value":230,"kind":"info"}
+{"item":"15","metric":"warnings","value":1,"kind":"info"}
+{"item":"15","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"15","metric":"deck_cost","value":187.02,"kind":"info"}
+{"item":"15","metric":"grade","value":0.0473,"kind":"info","detail":"baseline"}
+{"item":"16","metric":"built","value":1,"kind":"gate"}
+{"item":"16","metric":"blocks","value":0,"kind":"gate"}
+{"item":"16","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"16","metric":"repaired","value":0,"kind":"info"}
+{"item":"16","metric":"cards","value":99,"kind":"info"}
+{"item":"16","metric":"pool","value":231,"kind":"info"}
+{"item":"16","metric":"warnings","value":19,"kind":"info"}
+{"item":"16","metric":"buy_cost","value":11.94,"kind":"info"}
+{"item":"16","metric":"deck_cost","value":39.819999999999986,"kind":"info"}
+{"item":"16","metric":"grade","value":0.2649,"kind":"info","detail":"baseline"}
+{"item":"17","metric":"built","value":1,"kind":"gate"}
+{"item":"17","metric":"blocks","value":0,"kind":"gate"}
+{"item":"17","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"17","metric":"repaired","value":0,"kind":"info"}
+{"item":"17","metric":"cards","value":99,"kind":"info"}
+{"item":"17","metric":"pool","value":205,"kind":"info"}
+{"item":"17","metric":"warnings","value":1,"kind":"info"}
+{"item":"17","metric":"buy_cost","value":34.38999999999999,"kind":"info"}
+{"item":"17","metric":"deck_cost","value":218.33,"kind":"info"}
+{"item":"17","metric":"grade","value":0.4722,"kind":"info","detail":"typical"}
+{"item":"18","metric":"built","value":1,"kind":"gate"}
+{"item":"18","metric":"blocks","value":0,"kind":"gate"}
+{"item":"18","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"18","metric":"repaired","value":0,"kind":"info"}
+{"item":"18","metric":"cards","value":99,"kind":"info"}
+{"item":"18","metric":"pool","value":365,"kind":"info"}
+{"item":"18","metric":"warnings","value":3,"kind":"info"}
+{"item":"18","metric":"buy_cost","value":580.5699999999996,"kind":"info"}
+{"item":"18","metric":"deck_cost","value":580.5699999999996,"kind":"info"}
+{"item":"18","metric":"grade","value":0.0379,"kind":"info","detail":"bad"}
+{"item":"19","metric":"built","value":1,"kind":"gate"}
+{"item":"19","metric":"blocks","value":0,"kind":"gate"}
+{"item":"19","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"19","metric":"repaired","value":0,"kind":"info"}
+{"item":"19","metric":"cards","value":99,"kind":"info"}
+{"item":"19","metric":"pool","value":174,"kind":"info"}
+{"item":"19","metric":"warnings","value":1,"kind":"info"}
+{"item":"19","metric":"buy_cost","value":567.46,"kind":"info"}
+{"item":"19","metric":"deck_cost","value":567.46,"kind":"info"}
+{"item":"19","metric":"grade","value":0.0451,"kind":"info","detail":"baseline"}
+{"item":"19","metric":"outside_set","value":0,"kind":"info","detail":"hob,hoc"}
+{"item":"20","metric":"built","value":1,"kind":"gate"}
+{"item":"20","metric":"blocks","value":0,"kind":"gate"}
+{"item":"20","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"20","metric":"repaired","value":1,"kind":"info","detail":"copy_limit, profile_off_band"}
+{"item":"20","metric":"cards","value":99,"kind":"info"}
+{"item":"20","metric":"pool","value":77,"kind":"info"}
+{"item":"20","metric":"warnings","value":0,"kind":"info"}
+{"item":"20","metric":"buy_cost","value":503.32000000000005,"kind":"info"}
+{"item":"20","metric":"deck_cost","value":503.32000000000005,"kind":"info"}
+{"item":"20","metric":"grade","value":0.0489,"kind":"info","detail":"baseline"}
+{"item":"20","metric":"outside_set","value":0,"kind":"info","detail":"hob,hoc"}
+{"item":"21","metric":"built","value":1,"kind":"gate"}
+{"item":"21","metric":"blocks","value":0,"kind":"gate"}
+{"item":"21","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"21","metric":"repaired","value":0,"kind":"info"}
+{"item":"21","metric":"cards","value":99,"kind":"info"}
+{"item":"21","metric":"pool","value":156,"kind":"info"}
+{"item":"21","metric":"warnings","value":1,"kind":"info"}
+{"item":"21","metric":"buy_cost","value":983.8399999999998,"kind":"info"}
+{"item":"21","metric":"deck_cost","value":983.8399999999998,"kind":"info"}
+{"item":"21","metric":"grade","value":0.0712,"kind":"info","detail":"baseline"}
+{"item":"21","metric":"outside_set","value":18,"kind":"info","detail":"hob,hoc"}
+{"item":"22","metric":"built","value":1,"kind":"gate"}
+{"item":"22","metric":"blocks","value":0,"kind":"gate"}
+{"item":"22","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"22","metric":"repaired","value":0,"kind":"info"}
+{"item":"22","metric":"cards","value":99,"kind":"info"}
+{"item":"22","metric":"pool","value":175,"kind":"info"}
+{"item":"22","metric":"warnings","value":2,"kind":"info"}
+{"item":"22","metric":"buy_cost","value":587.5999999999999,"kind":"info"}
+{"item":"22","metric":"deck_cost","value":587.5999999999999,"kind":"info"}
+{"item":"22","metric":"grade","value":0.0705,"kind":"info","detail":"baseline"}
+{"item":"22","metric":"outside_set","value":1,"kind":"info","detail":"hob,hoc"}
+{"item":"23","metric":"built","value":1,"kind":"gate"}
+{"item":"23","metric":"blocks","value":0,"kind":"gate"}
+{"item":"23","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"23","metric":"repaired","value":0,"kind":"info"}
+{"item":"23","metric":"cards","value":99,"kind":"info"}
+{"item":"23","metric":"pool","value":203,"kind":"info"}
+{"item":"23","metric":"warnings","value":1,"kind":"info"}
+{"item":"23","metric":"buy_cost","value":264.0900000000001,"kind":"info"}
+{"item":"23","metric":"deck_cost","value":264.0900000000001,"kind":"info"}
+{"item":"23","metric":"grade","value":0.4728,"kind":"info","detail":"typical"}
+{"item":"23","metric":"outside_set","value":0,"kind":"info","detail":"blb,blc,hob,hoc,pblb"}
+{"item":"24","metric":"built","value":1,"kind":"gate"}
+{"item":"24","metric":"blocks","value":0,"kind":"gate"}
+{"item":"24","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"24","metric":"repaired","value":0,"kind":"info"}
+{"item":"24","metric":"cards","value":60,"kind":"info"}
+{"item":"24","metric":"pool","value":96,"kind":"info"}
+{"item":"24","metric":"warnings","value":0,"kind":"info"}
+{"item":"24","metric":"buy_cost","value":33.86,"kind":"info"}
+{"item":"24","metric":"deck_cost","value":33.86,"kind":"info"}
+{"item":"24","metric":"grade","value":0.3973,"kind":"info","detail":"baseline"}
+{"item":"24","metric":"outside_set","value":0,"kind":"info","detail":"blb,blc,pblb"}
+{"item":"25","metric":"built","value":1,"kind":"gate"}
+{"item":"25","metric":"blocks","value":0,"kind":"gate"}
+{"item":"25","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"25","metric":"repaired","value":0,"kind":"info"}
+{"item":"25","metric":"cards","value":99,"kind":"info"}
+{"item":"25","metric":"pool","value":195,"kind":"info"}
+{"item":"25","metric":"warnings","value":0,"kind":"info"}
+{"item":"25","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"25","metric":"deck_cost","value":179.77000000000004,"kind":"info"}
+{"item":"25","metric":"grade","value":0.2908,"kind":"info","detail":"baseline"}
+{"item":"25","metric":"excluded_in_deck","value":0,"kind":"gate","detail":"Avengers Assemble"}
+{"item":"25","metric":"excluded","value":57,"kind":"info"}
+{"item":"25","metric":"spare","value":27,"kind":"info"}
+{"item":"1","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"1","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"1","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card gains life, protects the engine, or removes blockers and wins through lifegain payoffs like Sanguine Bond, Archangel of Thune, and Angel of Destiny."}
+{"item":"1","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a W/B lifegain deck led by Karlov, with a good number of lifegain payoffs and a bracket 3 feel (Jitte, wraths, no infinite combos)."}
+{"item":"1","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: It has 38 lands plus a dozen mana rocks, a smooth curve, and several win conditions, so it plays as built although the ramp includes some weak artifacts."}
+{"item":"1","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: x"}
+{"item":"1","metric":"plan_score","value":1,"kind":"info"}
+{"item":"1","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"2","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"2","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"2","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Ramp, draw, protection, removal, and wipes are all present, but the sacrifice payoffs and fodder generators are thin, and the wraths work against a creature-based plan."}
+{"item":"2","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a W/B Denethor deck at reasonable power, but the aristocrats theme is weakly represented with few sac outlets, few token makers, and few drain payoffs, and the request's 'from my library first' cannot be seen in the list."}
+{"item":"2","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The mana is stable with plenty of ramp, but 25 basics with 17 Plains against few Swamps strain the black cards, and the win conditions are few and mostly not sacrifice-based."}
+{"item":"2","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: placeholder"}
+{"item":"2","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"2","metric":"plan_reasons_empty","value":1,"kind":"info"}
+{"item":"3","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"3","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"3","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Every card is blue or colorless and feeds one artifact plan of fast mana, tutors, card draw, counterspells, and artifact-creature or alternate wincons under Urza."}
+{"item":"3","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-blue Urza artifact deck with Moxen, Force of Will, and tutors, which matches a bracket 4 high-power request."}
+{"item":"3","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: Cheap mana and artifacts make it functional, but 25 Islands plus 8 nonbasic lands with painful rainbow lands, on top of the many free mana rocks, adds flood risk, while several win conditions are expensive or clunky (Myr Enforcer, Sojourner's Companion) and a few slots (Lion's Eye Diamond, Welding Jar) are weak here."}
+{"item":"3","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary matches most of the list, but it says 'extensive stack interaction' and 'artifact-based removal' while several removal slots are weak or odd, and it leaves out the 26-land count, the heavy fast-mana package, and the rainbow lands that do nothing in a mono-blue deck."}
+{"item":"3","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"3","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"4","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"4","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"4","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Ramp, Dinosaur support, and many Dinosaur threats all feed the Gishath and Dinosaur combat plan, with only a few stray cards like Faithless Looting and Vandalblast."}
+{"item":"4","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Dinosaur Commander deck led by Gishath in its own colors with a wide Dinosaur suite and mostly low-power cards suited to bracket 2, though the expensive fetch and dual lands are less friendly to a new player."}
+{"item":"4","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: There is enough ramp, threats, and protection to function, but about 37 lands in a three-color deck with many painlands and tapped lands leaves too few action cards and makes it clunky for a new player, and Gishath costs eight."}
+{"item":"4","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The Dinosaur combat plan and the removal are real, but the 'few reset buttons' are mostly Vandalblast and pinger-style creatures, and the summary hides a very heavy land count and a greedy three-color mana base."}
+{"item":"4","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"4","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"5","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"5","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"5","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Mono-white with equipment, protection, and removal is loosely coherent, but the deck has few real blink enablers and many unrelated artifacts, so the cards do not clearly serve one blink plan."}
+{"item":"5","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is bracket-3-appropriate mono-white with Gilraen, but the request was for a blink deck and there is little blink, and nothing shows it was built from the person's library first."}
+{"item":"5","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 36 Plains plus about 10 mana rocks the deck will flood, and it has only one real finisher with a thin creature count, so it plays but often sputters."}
+{"item":"5","metric":"plan_summary_honest","value":0,"kind":"info","detail":"no: The summary claims a repeated blink plan and lists Angel of Serenity among several closers, but the list has only Flickerwisp and a few incidental flicker effects, and it holds just one finisher."}
+{"item":"5","metric":"plan_score","value":0.375,"kind":"info"}
+{"item":"5","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"6","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"6","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"6","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The cheap creatures, counters and burn form a coherent tempo core, but Temporal Mastery (7 mana) and Temporal Trespass (11 mana) pull against a low-curve plan and are named as reinforcing it."}
+{"item":"6","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a blue-red Modern deck with cheap threats, counterspells and burn, which matches a tempo request, though it lacks Delver of Secrets itself."}
+{"item":"6","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The core is playable, but 28 lands (too many for this curve) and dead 7- and 11-mana cards leave it flooding with too few threats and win conditions."}
+{"item":"6","metric":"plan_summary_honest","value":0,"kind":"info","detail":"no: It calls the Temporal spells reinforcement for a fast, focused game, though they are near-uncastable in this deck, and it omits that the deck lists 28 lands, plus Mishra's Bauble, with almost no real Delver threats."}
+{"item":"6","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"6","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"7","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"7","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"7","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Bolt, Eidolon and Thermo-Alchemist form a burn core, but four-drop creatures like Hazoret (which wants an empty hand), Barret Wallace and Champion of the Path pull toward a midrange plan, and Browbeat plus Eidolon pulls both ways."}
+{"item":"7","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-red Modern deck built around burn spells, Eidolon and Thermo-Alchemist, which matches the request."}
+{"item":"7","metric":"plan_useful_as_built","value":0,"kind":"info","detail":"no: With 24 Mountains and only 12 real burn spells, the deck floods badly, has too few ways to deal damage and a top-heavy curve of 4-drops, so it will not play as a functioning burn deck."}
+{"item":"7","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: It correctly names Hazoret, burn and spell-synergy creatures, but 'efficient removal' and 'early pressure' overstate a list with only 6 cheap burn spells and a top-heavy creature suite."}
+{"item":"7","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"7","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"8","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"8","metric":"rules_claims","value":1,"kind":"info"}
+{"item":"8","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Cheap lifegain enablers (Guide of Souls, Ocelot Pride, Lembas, Enduring creatures) feed lifegain payoffs (Twinblade Paladin, Archangel of Thune, Sheoldred), backed by removal, so the cards serve one plan."}
+{"item":"8","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a white-black lifegain deck legal for Modern, built from playsets at a power level suited to FNM."}
+{"item":"8","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: The 24-land mana base of shocklands, Caves of Koilos, Shattered Sanctum and basics supports both colors, and the curve has cheap one-drops, four-drops and Solitude, so it plays as it stands, though it has few cheap interaction spells."}
+{"item":"8","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary describes real cards and admits the top-end tradeoff, but it never mentions Sheoldred, Archangel of Thune or Altar of the Pantheon and it calls the deck resilient though it has little interaction beyond Solitude and 2 Riders."}
+{"item":"8","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"8","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"9","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"9","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"9","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The creatures, removal, and card draw all fit a midrange shell, but the protection tricks (four Snakeskin Veil, four Not Dead After All) sit on top of only about 18 creatures, and only 2 Llanowar Elves support six-mana finishers."}
+{"item":"9","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a black-green creature midrange deck in Standard with a reasonable power level for FNM, using both colors and midrange roles."}
+{"item":"9","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 24 lands, 4 Overgrown Tomb, and 4 Verge, the mana is fine, but the deck has 4 Not Dead After All and 4 Snakeskin Veil with few ways to use them well, only 2 Llanowar Elves, and 6-drops with BBB costs, so it will stumble often though it is playable."}
+{"item":"9","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The named cards are all in the list, but the summary presents the deck as coherent and steady while it leaves out the heavy top end and thin ramp, and it ignores the many protection spells that lack good targets."}
+{"item":"9","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"9","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"10","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"10","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"10","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Warleader's Call and the token-ish creatures loosely support a go-wide plan, but the deck has few cheap threats, a top-end Bedhead Beastie at six mana, and several spot enchantments that do not push an aggressive plan."}
+{"item":"10","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is red-white and uses Boros lands and cards, and it is built for Standard as requested, although it plays more midrange than a fast aggro deck."}
+{"item":"10","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 28 lands and a mana base that is fine, the deck can be played, but only 16 creatures and a six-drop leave it short of early pressure and clean ways to close games."}
+{"item":"10","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: placeholder"}
+{"item":"10","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"10","metric":"plan_reasons_empty","value":1,"kind":"info"}
+{"item":"11","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"11","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"11","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is a sacrifice outlet, a death-trigger payoff, or a fodder creature, and the Orzhov colors match the commander's plan of growing from creature deaths."}
+{"item":"11","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Karlov-led Orzhov sacrifice deck in Commander, with the commander in the command zone and the list made of sacrifice outlets and payoffs."}
+{"item":"11","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The 40 or so lands with Sol Ring and two altars are enough mana, and the outlets, drain payoffs, and wipes give it ways to win, but heavy black weighting and the uncounted-for basics leave too little white for its white cards, and the count of real ramp beyond Sol Ring is thin."}
+{"item":"11","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: The summary describes an Orzhov sacrifice deck with outlets, death payoffs, creature value, big threats, and closers, all of which the list carries, and it admits the slower, top-heavy shape."}
+{"item":"11","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"11","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"12","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"12","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"12","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is white and supports a token-and-attack plan with token makers, anthems, doublers, sweepers and finishers all feeding Adeline's wide board."}
+{"item":"12","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-white token Commander deck led by Adeline, with budget-friendly and bracket 2-appropriate cards and no obvious infinite or fast-mana pieces."}
+{"item":"12","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The 30 Plains plus 7 utility lands give a stable mana base and plenty of playable threats, but several ramp and draw artifacts are low-impact filler and the deck has too many clunky top-end cards, so it will feel sluggish."}
+{"item":"12","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The token plan, the card flow and the named finishers are all really in the list, but the summary skips over the weak ramp (Coin of Mastery, Currency Converter, Druidic Satchel and Collector's Vault are marginal) and calls the mana 'plentiful' though the deck makes less mana on turn four than the norm."}
+{"item":"12","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"12","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"13","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"13","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"13","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Lifegain with Karlov is present through Angels and lifegain creatures, but the list is padded with nine mana rocks, a large equipment pile, and three wraths that work against a creature-and-equipment plan."}
+{"item":"13","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a W/B Karlov deck at a plausible bracket 3, but lifegain payoffs are thin and the deck reads more as generic good stuff, with no sign of a library-first choice."}
+{"item":"13","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has 36+ lands plus many rocks and is heavily color-weighted to white, so it will flood, and it has few real lifegain engines and only a handful of finishers, though removal and mana are solid."}
+{"item":"13","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: x"}
+{"item":"13","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"13","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"14","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"14","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"14","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Ramp, Dragon-cost support, and a heavy red Dragon suite all push toward casting big Dragons and attacking, with Atarka as an extra double-strike finisher."}
+{"item":"14","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Gruul Dragon Commander deck led by a Dragon commander, with about 25 Dragons and Dragon-support cards that suit a bracket 3 request."}
+{"item":"14","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has plenty of ramp, draw, and Dragon threats, but 38 lands plus many mana rocks is flood-prone, 12 Mountains against a heavy RR/RRR curve with only a few Forest sources is workable yet clunky, and the multiple Orbs and filler artifacts are weak."}
+{"item":"14","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: placeholder"}
+{"item":"14","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"14","metric":"plan_reasons_empty","value":1,"kind":"info"}
+{"item":"15","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"15","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"15","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Lifegain payoffs (Angel of Vitality, Lyra, Minwu, Exemplar) and equipment fit together, but four board wipes, a mass of loose equipment, and a few off-plan cards (Canyon Crawler, Rooftop Percher) pull against the creature-based plan."}
+{"item":"15","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a WB lifegain deck led by a commander the builder chose, but the request said 'from my library first' and nothing in the list shows that, and Astarion at 6 mana is an odd lifegain pick."}
+{"item":"15","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has plenty of ramp, removal, and flying finishers, but 14 Swamps with a white-heavy spell list (WW and WWW costs) and roughly 39 lands plus rocks give an unbalanced mana base and flood risk."}
+{"item":"15","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary describes lifegain, equipment carriers, flyers, removal, and wipes that are all in the list, but it hides a weak lifegain core, a mana base of 18 Plains and 14 Swamp that is clumsy for a white-heavy deck, and the fact that the deck is over-ramped."}
+{"item":"15","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"15","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"16","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"16","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"16","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Most cards are Orzhov creatures, sacrifice outlets and removal that loosely support an aristocrats plan, but the deck also carries three board wipes, about ten mana rocks (including off-plan ones like Astral Cornucopia and Chromatic Lantern), and generic removal, so the pieces pull in different directions."}
+{"item":"16","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: The deck is a legal Orzhov aristocrats build at a low power level, but the request asked for cards from the user's library first and the 25-dollar budget, and Sol Ring, Skullclamp, Swords to Plowshares, Austere Command and Infernal Grasp make it doubtful the deck respects that limit or bracket 2."}
+{"item":"16","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 27 basics plus 10 utility lands and about ten rocks, the mana is plentiful and consistent, and the deck has removal and plenty of creatures to play, but it lacks reliable sacrifice outlets and drain payoffs, so it may struggle to close games."}
+{"item":"16","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary describes an aristocrats deck with Denethor's sacrifice ability and an end-step Soldier force, and it does name the wipes and removal, but it glosses over the heavy rock package and the mostly incidental sacrifice payoffs, and it never mentions the 'library first' claim beyond calling the mana base library-first."}
+{"item":"16","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"16","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"17","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"17","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"17","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The Goblin token and creature core hangs together, but the many cheap cantrips, Zada-targeting spells, Grapeshot and Past in Flames pull toward a storm plan that the mostly mono-red Goblin board only partly supports."}
+{"item":"17","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-red Goblin Zada deck that keeps the precon's Goblin and Zada-targeting core while adding staples like Sol Ring, Skullclamp and Krenko."}
+{"item":"17","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has 38 or so lands and rocks with plenty of Goblins and token makers, but the many low-impact filler spells and slow mana on turn four make it clunky, and Great Train Heist is a weak finisher."}
+{"item":"17","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: placeholder"}
+{"item":"17","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"17","metric":"plan_reasons_empty","value":1,"kind":"info"}
+{"item":"18","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"18","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"18","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Most cards are Mutant/Ninja/Turtle creatures feeding Heroes in a Half Shell's combat plan, but a pile of loose five-color goodstuff, several sweepers, and a couple of vehicle/artifact pieces pull away from a single attack-focused plan."}
+{"item":"18","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It keeps Heroes in a Half Shell as commander and the TMNT creature core, in five colors, as an upgrade of the Turtle Power precon."}
+{"item":"18","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: With dual lands, Sol Ring, Signet, Lantern, and Cultivate, the five-color mana is reliable, the curve is low, and there are enough creatures and finishers to play the deck as it stands."}
+{"item":"18","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The creature-and-combat plan and named finishers do appear in the list, but the summary calls the deck cleaner and quicker while the land count sits well above the norm, and it never mentions the sweepers or the lack of ramp beyond a few rocks."}
+{"item":"18","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"18","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"19","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"19","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"19","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The Elf creatures, ramp, and draw pieces fit one Elf plan, but the heavy black removal, three sweepers, and Witch-king finishers pull against a wide board of Elf creatures."}
+{"item":"19","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Sultai Thranduil, the Elvenking deck built entirely from Hobbit and Hobbit commander set cards with an Elf focus, which fits the request."}
+{"item":"19","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 35 lands, a dozen ramp pieces, and plenty of draw it should run smoothly, but the mana is a heavy three-color spread with many basics and few fixers, and the finishers are thin and the sweepers clash with the creature plan."}
+{"item":"19","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The Elf, ramp, removal, and Witch-king claims all match the list, but the summary says nothing of the thin Elf count in black and the sweepers that undo its own board, and it calls the Witch-kings 'chief' finishers when the deck has few real ways to win."}
+{"item":"19","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"19","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"20","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"20","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"20","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Treasure making, equipment, and Dragons all appear, but the list is a pile of about 16 equipment pieces and vanilla-ish Goblins and Dwarves with only a few cards actually feeding Smaug's Treasure payoff."}
+{"item":"20","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-red Dragon commander, Smaug the Magnificent, with every card from the Hobbit sets, matching the request."}
+{"item":"20","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 36 lands and mono-red mana it casts its spells, but the deck has many low-impact equipment and Goblin cards and few reliable ways to win, so it plays sluggishly."}
+{"item":"20","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: Treasure, equipment, Dragons and sweepers are all present, but the claim of a plan that turns treasure into damage and the description of multiple routes to a finish overstate a deck with only a handful of real finishers."}
+{"item":"20","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"20","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"21","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"21","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"21","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Ramp into big Dragons and legends with removal and wipes is a clear shape, but a large pile of situational equipment (Sting, Glamdring, both Andúrils, Lances, Mattock) has few creatures to carry it and pulls away from the ramp-and-finish plan."}
+{"item":"21","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Rakdos Commander deck led by Smaug the Impenetrable, built almost entirely from Hobbit-set cards with off-set lands allowed, and it fits a mid-power bracket 3 game."}
+{"item":"21","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The 37-land base with fixing is stable, but few real ramp pieces, about a dozen weak equipment cards, and a thin creature count leave the deck slow and short on ways to win."}
+{"item":"21","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary describes ramp, big threats, removal and wipes accurately, but calling Smaug a chief finisher and promising fast mana overstates a deck that makes less mana on turn four and carries many low-impact equipment cards."}
+{"item":"21","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"21","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"22","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"22","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"22","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: There is a real Elf-tribal core led by Thranduil, but the deck also packs three sweepers, many equipment pieces and artifact-draw cards, and a Witch-king top end that pull against a wide Elf board."}
+{"item":"22","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Sultai Thranduil deck built from the Hobbit sets with Sol Ring kept in, as the request asked, and it looks like a bracket 3 deck."}
+{"item":"22","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has about 27 basics plus 9 nonbasic lands and lots of ramp and draw, but the three-color mana with many double-pip cards in each color, the sweepers that hurt its own creatures, and only a few real finishers make it clunky."}
+{"item":"22","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: placeholder"}
+{"item":"22","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"22","metric":"plan_reasons_empty","value":1,"kind":"info"}
+{"item":"23","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"23","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"23","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Equipment, artifact mana and cheap Dwarves broadly point at one Kíli equip plan, but the list also holds sweepers, spot removal and assorted value cards, and it has only a thin creature count to carry all those pieces."}
+{"item":"23","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: Every card comes from the Hobbit and Bloomburrow sets, the deck is mono-white with a fitting Hobbit commander, and the Dwarf and Equipment plan suits a bracket 3 build."}
+{"item":"23","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 28 Plains and 8 utility lands plus a lot of cheap mana rocks it will cast its spells, but it has very few creatures to carry equipment, wipes that work against its own plan, and only one true finisher."}
+{"item":"23","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary describes the Dwarf and Equipment plan accurately, but it names Angel of the Ruins, Helm of the Host and Sunscorch Regent as major closers when Helm is a slow equipment, and it says nothing about the heavy pile of sweepers and the single real finisher."}
+{"item":"23","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"23","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"24","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"24","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"24","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The deck is all red creatures and burn, but 24 Mountains with a top-heavy curve of 4- and 5-drops pulls against an aggro plan, and the spells hold little synergy with the Mouse/Lizard/Raccoon mix."}
+{"item":"24","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is mono-red, made entirely of Bloomburrow cards, and built around creatures and burn, which matches a casual aggro request in Modern."}
+{"item":"24","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It is castable and has plenty of creatures and removal, but 24 lands for a deck with only 2 one-drops and many 4-5 drops is flood-prone and slow, with weak reach to close games."}
+{"item":"24","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary is broadly accurate about creatures and removal, but calling Dragonhawk the chief threat while playing only 2 copies, and claiming a 'focused, consistent' attack, hides the clunky curve and heavy land count."}
+{"item":"24","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"24","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"25","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"25","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"25","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Heroes and Equipment in mono-white is a real plan, but three board wipes and a pile of generic ramp rocks in a 35-Plains deck pull against the creature-forward Hero plan."}
+{"item":"25","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a mono-white Avengers Commander deck led by Captain America with many Marvel Heroes, but many filler non-Marvel cards dilute the theme, and nothing shows the deck was built from the player's library or kept clear of the Avengers Assemble precon."}
+{"item":"25","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 35 Plains and 10 ramp artifacts the mana works, but Chromatic Lantern, Astral Cornucopia and Bender's Waterskin add little, the deck is land-heavy with few threats, and the finishers are thin."}
+{"item":"25","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The Heroes, Equipment and named threats are all present, but the summary skips the heavy artifact ramp and three board wipes, and it says 'protecting the team' while the deck also contains sweepers that hurt that team."}
+{"item":"25","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"25","metric":"plan_reasons_empty","value":0,"kind":"info"}

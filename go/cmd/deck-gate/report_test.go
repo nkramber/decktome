@@ -317,9 +317,9 @@ func TestRunRowsMirrorTheVerdict(t *testing.T) {
 func TestPlanJudgeRowsAreInformation(t *testing.T) {
 	graded := goodResult()
 	graded.plan = &generate.PlanJudgement{
-		PlanCoherent:  generate.PlanGrade{Grade: "yes", Why: "one plan"},
-		ThemeFit:      generate.PlanGrade{Grade: "partly", Why: "half the theme"},
-		UsefulAsBuilt: generate.PlanGrade{Grade: "no", Why: "no lands"},
+		PlanCoherent:  generate.PlanGrade{Grade: "yes", Why: "the cards serve one plan"},
+		ThemeFit:      generate.PlanGrade{Grade: "partly", Why: "half the theme is here"},
+		UsefulAsBuilt: generate.PlanGrade{Grade: "no", Why: "the deck has no lands"},
 		SummaryHonest: generate.PlanGrade{Grade: "yes", Why: "placeholder"},
 	}
 	failed := goodResult()
@@ -333,7 +333,7 @@ func TestPlanJudgeRowsAreInformation(t *testing.T) {
 	}
 	doc := b.String()
 	for _, want := range []string{
-		"- PLAN plan_coherent=yes: one plan\n", "- PLAN useful_as_built=no: no lands\n",
+		"- PLAN plan_coherent=yes: the cards serve one plan\n", "- PLAN useful_as_built=no: the deck has no lands\n",
 		"- PLAN JUDGE ERROR: the judge timed out\n",
 		"| Decks the plan judge read (PR-15, information) | 1 |\n", "| Mean plan score, 0 to 1 | 0.62 |\n",
 		"| Plan reasons the judge left empty | 1 |\n",
@@ -346,7 +346,7 @@ func TestPlanJudgeRowsAreInformation(t *testing.T) {
 	for _, row := range run.Rows {
 		got[row.Item+"/"+row.Metric] = row
 	}
-	if r := got["1/plan_theme_fit"]; r.Value != 0.5 || r.Kind != evalrun.KindInfo || r.Detail != "partly: half the theme" {
+	if r := got["1/plan_theme_fit"]; r.Value != 0.5 || r.Kind != evalrun.KindInfo || r.Detail != "partly: half the theme is here" {
 		t.Errorf("theme_fit row = %+v", r)
 	}
 	if r := got["1/plan_score"]; r.Value != 0.625 {
