@@ -169,6 +169,21 @@ class GitarPass(unittest.TestCase):
         self.assertTrue(cr.gitar_problems(PUSHED, [before, ask, reply], [], []))
         self.assertEqual(cr.gitar_problems(PUSHED, [after, ask, reply], [], []), [])
 
+    # D-992: since 2026-09-29 Gitar posts "Running the review now" after
+    # the dashboard changed. A dashboard edit after the request counts.
+    def test_a_reply_after_the_review_needs_a_dashboard_after_the_request(self):
+        reply = comment(GITAR, "> Gitar review\n\nRunning the review now \u2014 results will show up in the dashboard comment shortly.", "2026-09-23T10:05:00Z")
+        ask = comment("nkramber", "Gitar review", "2026-09-23T10:04:00Z")
+        between = comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:04:50Z")
+        stale = comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:03:00Z")
+        self.assertEqual(cr.gitar_problems(PUSHED, [between, ask, reply], [], []), [])
+        self.assertTrue(any("not changed the dashboard" in p for p in cr.gitar_problems(PUSHED, [stale, ask, reply], [], [])))
+
+    def test_a_dashboard_with_the_spinner_fails(self):
+        running = comment(GITAR, '<kbd><img src="https://x/gitar-spin.svg"> Responding to your feedback</kbd>\n' + DASH,
+                          "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+        self.assertTrue(any("in progress" in p for p in cr.gitar_problems(PUSHED, [running], [], [])))
+
 
 def thread_page(threads, more):
     return {"data": {"repository": {"pullRequest": {"reviewThreads": {

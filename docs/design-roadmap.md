@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-09-29 correction pass 250 (PR-101, F-69, D-990, D-991): the owner answered OQ-77. A Go route on `mtg-api` answers the beforeCreate blocking function, and it refuses an account off the invite list. The registration of the trigger waits for the deploy and the live check of D-991. Changes: F-69, PR-101, sequencing step 94.
+2026-09-29 correction pass 250 (PR-101, F-69, D-990, D-991): the owner answered OQ-77. A Go route on `mtg-api` answers the beforeCreate blocking function, and it refuses an account off the invite list. The registration of the trigger waits for the deploy and the live check of D-991. Changes: F-69, PR-101, sequencing step 94. The Codex review check accepts the new Gitar reply "Running the review now" (D-992).
 2026-09-29 correction pass 249 (PR-100, F-179, F-183, D-988, D-989): the scheduled run `mtg-meta-b56rq` left 0 redirected event pages and 9 empty older months. The owner closed F-183 on two runs in a row, and kept F-179 closed. Changes: F-179, F-183, PR-100, sequencing step 93.
 
 2026-09-28 correction pass 248 (PR-99, F-179, F-183, D-986, D-987): the manual run `mtg-meta-4wbpp` ended with 0 empty older months and 0 redirected event pages. The owner closed F-179 on two runs in a row, and kept F-183 open for a second run. Changes: F-179, F-183, PR-99, sequencing step 92.
@@ -2763,6 +2763,7 @@ The item is next step 9 of the hand-off, and it answers OQ-77. The form check of
 - **The token.** The route checks the RS256 signature, the issuer of the project, an audience that names the host, the time claims, and the event type.
 - **The answer.** An email on the list gets 200. An email off the list gets 403 with `not-invited`. A list error gets 503, so the sign-up fails closed.
 - **The form.** The web form finds `not-invited` in the auth error, and it shows the invite sentence of D-592.
+- **The review check.** Gitar changed its reply to a manual request on 2026-09-29. `docs/tools/codex_review.py` and the `gitar-review` skill accept the new reply (D-992).
 
 The registration of the trigger changes the auth configuration of production. It waits for the merge, the deploy, and the live check of D-991. `docs/setup-gcp.md` holds the steps, and `docs/deploy-and-rollback.md` holds the removal. No paid target ran.
 
@@ -3164,7 +3165,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 91. **PR-98** the read of the current MTGO month on the image of #249 (F-179, F-185, D-985). No paid target ran.
 92. **PR-99** the read of the open MTGO rows on the manual run `mtg-meta-4wbpp` (F-179, F-183, D-986, D-987). No paid target ran.
 93. **PR-100** the read of the scheduled MTGO run `mtg-meta-b56rq` (F-179, F-183, D-988, D-989). No paid target ran.
-94. **PR-101** the blocking function that refuses an account off the invite list (F-69, D-990, D-991). No paid target ran.
+94. **PR-101** the blocking function that refuses an account off the invite list (F-69, D-990 to D-992). No paid target ran.
 
 ## 9. Open questions
 

@@ -20,6 +20,8 @@ Author provider: Claude Code
 
 **The change.** `go/internal/authblock` answers `POST /auth/before-create`. It checks the token of Google, then the invite list. An email off the list gets 403 with `not-invited`, and the web form shows the invite sentence. A list error gets 503, so the sign-up fails closed.
 
+**The review check.** Gitar replied "Running the review now" to a manual request, after its dashboard edit. `make codex-review` read that as a refusal. The owner chose a fix in this pull request (D-992).
+
 **The open risk.** Google documents `functionUri` for a Cloud Function. The registration of a plain Cloud Run URL stays UNVERIFIED until the live check of D-991.
 
 **The checks.** See the pull request body. No paid target ran.
@@ -152,6 +154,8 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner chose OQ-77 and the Go route.** The session read the auth configuration of production and the contract of Google. The owner chose a route on `mtg-api` over a Node function (D-990).
 
 **The owner chose a live check of both paths.** After the deploy, the next session registers the trigger. It signs up one address on the list and one address off it (D-991).
+
+**The owner chose a fix of the review check.** Gitar changed its reply to a manual request, and `make codex-review` refused a complete pass. The fix rides in this pull request (D-992).
 
 ## The archive
 
