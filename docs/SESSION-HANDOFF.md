@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** The pull request holds documents alone. So it waits for a current Gitar review, then takes the `review-override` label (D-812). Pending the auto-merge (D-828).
+**The review.** Gitar approved `2fd28b1` with no finding and no thread. The pull request holds documents alone, so it carries the `review-override` label (D-812). Pending the owner decision and the auto-merge (D-828).
 
 **What waits on the owner.**
 
