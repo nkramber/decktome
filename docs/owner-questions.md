@@ -14,7 +14,6 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
-| OQ-77 | An account off the invite list: is the form check enough, or do you want a blocking function of Identity Platform that refuses the account server-side? **The cost objection is gone**: Firebase reads "Authentication with Identity Platform" as no-cost up to 50,000 monthly active users (firebase.google.com/pricing, read 2026-09-07). The app has three. What is left is the work and one more moving part: a `beforeCreate` function to deploy, and a seven-second answer limit that fails the sign-up when it passes. | It changes the sign-in path of every reader. | The last hole of the invite gate. A caller who drives the Firebase API directly still makes an account today, and that account reads nothing: the API refuses every call and the Firestore rules deny all. |
 | OQ-67 | Stage B channels: web push through Cloud Messaging, an email digest, or both? And which events: a legality change on a deck, new cards for a deck, a finished build? | Each channel asks a user for a permission in your name. | The Stage B PR after PR-23. |
 
 ## The two numbers M-5 exists to set

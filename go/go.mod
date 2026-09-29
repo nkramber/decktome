@@ -8,6 +8,7 @@ require (
 	connectrpc.com/connect v1.20.0
 	firebase.google.com/go/v4 v4.21.0
 	github.com/anthropics/anthropic-sdk-go v1.71.0
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/openai/openai-go/v3 v3.56.0
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3
 	golang.org/x/text v0.41.0
@@ -69,7 +70,6 @@ require (
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gofrs/flock v0.13.0 // indirect
-	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/cel-go v0.29.2 // indirect
 	github.com/google/go-containerregistry v0.21.7 // indirect

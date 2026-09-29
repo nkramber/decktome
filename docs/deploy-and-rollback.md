@@ -251,6 +251,8 @@ CAUTION: `gcloud run services logs read` crashed with a `TypeError` on gcloud 53
 
 ### 8.1 The API
 
+CAUTION: remove the trigger of section 8.5 before a rollback of the API past #253. The old API has no route, so each sign-up fails.
+
 Cloud Run keeps every revision. A rollback moves the traffic, and it needs no build.
 
 1. Run `gcloud run revisions list --service mtg-api --region us-central1`.
@@ -292,6 +294,19 @@ firebase-tools 14.14.0 has no `hosting:rollback` command. Two paths return the s
 CAUTION: a rollback of the code does not undo a change of the data. A new version can write a document that an old version cannot read. Read the store code of the merge before a rollback. Check the package under `go/internal` that writes the document for a schema change.
 
 Note: a stored deck or chat session is gzip JSON of a proto message. The decoder of `go/internal/gzstore` drops each field that the proto of the old version does not know, so the old version reads the document (REV-014). A write of the old version then loses those fields. A new proto field alone needs no other step.
+
+### 8.5 The blocking function
+
+The `beforeCreate` trigger of D-990 sits in the auth configuration, outside Cloud Build. This command removes it, and a sign-up then skips the route:
+
+```
+TOKEN=$(gcloud auth print-access-token)
+curl -s -X PATCH -H "Authorization: Bearer $TOKEN" -H "x-goog-user-project: PROJECT_ID" \
+  -H "Content-Type: application/json" -d '{"blockingFunctions":{"triggers":{}}}' \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/PROJECT_ID/config?updateMask=blockingFunctions.triggers"
+```
+
+Read the configuration again with a GET of the same URL, and expect no trigger. The form check of D-592 and the API gate of D-314 still hold without the trigger.
 
 ## 9. What a rollback does not repair
 
@@ -337,6 +352,7 @@ The digests of 2026-09-25 are the first ones. A merge that touches `go/` then bu
 
 | Fact | Source |
 |---|---|
+| The `blockingFunctions.triggers` map of the auth configuration, read 2026-09-29 | https://docs.cloud.google.com/identity-platform/docs/reference/rest/v2/Config |
 | The Cloud Run rollback command and the `--to-revisions` form | `gcloud run services update-traffic --help`, gcloud 533.0.0, read 2026-09-07 |
 | The `--image` flag of a job update | `gcloud run jobs update --help`, read 2026-09-07 |
 | firebase-tools has no `hosting:rollback` command | `firebase --help`, firebase-tools 14.14.0, read 2026-09-07 |

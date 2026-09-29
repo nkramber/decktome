@@ -10,7 +10,7 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 
 ## Asked, waiting
 
-OQ-67 and OQ-77 sit in `docs/owner-questions.md`, the decision queue. This file does not repeat them.
+OQ-67 sits in `docs/owner-questions.md`, the decision queue. This file does not repeat it. D-990 answered OQ-77.
 
 ## Deferred by the owner
 

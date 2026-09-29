@@ -42,7 +42,7 @@ Do these steps after each push.
 9. Apply the rule in "Prove that a review is current".
 10. When the review is current, go to step 17.
 11. When the review is stale, or you cannot prove that it is current, comment `Gitar review` on the pull request.
-12. Read the Gitar reply to that comment with command B. When the reply is "On it", go to step 15.
+12. Read the Gitar reply with command B. When it is "On it" or "Running the review now", go to step 15.
 13. When the reply is "You've sent several Gitar comments in a short window", no review started. Wait ten minutes, then go to step 11.
 14. When no reply comes in five minutes, go to step 11.
 15. Do not push while the manual review runs. A push at this time makes the review stale.
@@ -65,7 +65,8 @@ Do these steps after each push.
 
 - The Gitar check on the tip completed.
 - The newest dashboard comment changed after the push of the effective head. The first check suite of that push gives its time.
-- A `Gitar review` comment after that push has the reply "On it", and a later change of the dashboard.
+- A `Gitar review` comment after that push has an accepted reply and a later change of the dashboard. "Prove that a review is current" gives the order.
+- The dashboard shows no spinner of a review in progress.
 - No review thread of the pull request is open.
 
 A top-level Gitar comment is not a review thread, so no check reads its answer. Read each one with command B before the target runs. Read them again before the auto-merge.
@@ -90,6 +91,8 @@ A review is current only when each of these conditions is true:
 - The head from command B is the head that you recorded in step 3. A later commit of the metadata set also passes this condition (D-752).
 - The dashboard comment has an edit time later than the push time that you recorded in step 3.
 - After a `Gitar review` comment, Gitar replied "On it", and the dashboard comment has an edit time later than that reply.
+- Since 2026-09-29, Gitar can reply "Running the review now" after the review ends (D-992). Then the dashboard edit time must be later than the request.
+- The dashboard shows no spinner and no "Responding to your feedback" line. These mark a review in progress.
 - You read the newest dashboard comment. Gitar can delete the dashboard comment and post a new one with a new id.
 
 The summary is not a condition. A review that adds no finding can keep the summary of the older review, word for word. On 2026-09-16, the review of a correction push did this, and its three times proved it current. Do not ask for a review again only because the summary did not change.
@@ -160,7 +163,7 @@ echo "head:      $(gh pr view "$n" --json headRefOid --jq .headRefOid)"
 echo "requested: $(gh api --paginate "repos/$repo/issues/$n/comments" \
   --jq '.[] | select(.body | test("^\\s*gitar review\\s*$"; "i")) | .created_at' | tail -1)"
 
-# The time and the first line of the newest Gitar reply to a request: "On it", or a refusal.
+# The time and the first line of the newest Gitar reply to a request: "On it", "Running the review now", or a refusal.
 echo "reply:     $(gh api --paginate "repos/$repo/issues/$n/comments" \
   --jq '.[] | select(.user.login == "gitar-bot[bot]")
         | select(.body | test("^> gitar review"; "i"))

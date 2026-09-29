@@ -169,6 +169,41 @@ class GitarPass(unittest.TestCase):
         self.assertTrue(cr.gitar_problems(PUSHED, [before, ask, reply], [], []))
         self.assertEqual(cr.gitar_problems(PUSHED, [after, ask, reply], [], []), [])
 
+    # D-992: since 2026-09-29 Gitar posts "Running the review now" after
+    # the dashboard changed. A dashboard edit after the request counts.
+    def test_a_reply_after_the_review_needs_a_dashboard_after_the_request(self):
+        reply = comment(GITAR, "> Gitar review\n\nRunning the review now \u2014 results will show up in the dashboard comment shortly.", "2026-09-23T10:05:00Z")
+        ask = comment("nkramber", "Gitar review", "2026-09-23T10:04:00Z")
+        between = comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:04:50Z")
+        stale = comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:03:00Z")
+        self.assertEqual(cr.gitar_problems(PUSHED, [between, ask, reply], [], []), [])
+        self.assertTrue(any("not changed the dashboard" in p for p in cr.gitar_problems(PUSHED, [stale, ask, reply], [], [])))
+
+    def test_a_dashboard_with_the_spinner_fails(self):
+        running = comment(GITAR, '<kbd><img src="https://x/gitar-spin.svg"> Responding to your feedback</kbd>\n' + DASH,
+                          "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+        self.assertTrue(any("in progress" in p for p in cr.gitar_problems(PUSHED, [running], [], [])))
+
+    def test_the_spinner_fails_with_any_quote_style(self):
+        for tag in ('<img src="https://x/gitar-spin.svg">', "<img src='https://x/gitar-spin.svg'>", "<img src=https://x/gitar-spin.svg>"):
+            running = comment(GITAR, tag + "\n" + DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+            self.assertTrue(any("in progress" in p for p in cr.gitar_problems(PUSHED, [running], [], [])), tag)
+
+    def test_a_status_line_with_no_spinner_fails(self):
+        for status in ("Responding to your feedback\n", "<kbd> Responding to your feedback</kbd>\n"):
+            running = comment(GITAR, status + DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+            self.assertTrue(any("in progress" in p for p in cr.gitar_problems(PUSHED, [running], [], [])), status)
+
+    def test_a_finding_that_quotes_the_status_line_passes(self):
+        quoted = comment(GITAR, DASH + "\n> the dashboard said Responding to your feedback.",
+                         "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+        self.assertEqual(cr.gitar_problems(PUSHED, [quoted], [], []), [])
+
+    def test_a_finding_that_names_the_spinner_in_prose_passes(self):
+        quoted = comment(GITAR, DASH + "\n> any in-progress state that does not use `gitar-spin.svg`.",
+                         "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+        self.assertEqual(cr.gitar_problems(PUSHED, [quoted], [], []), [])
+
 
 def thread_page(threads, more):
     return {"data": {"repository": {"pullRequest": {"reviewThreads": {

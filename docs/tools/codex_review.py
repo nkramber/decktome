@@ -81,6 +81,17 @@ HASH = re.compile(r"`([0-9a-fA-F]{7,40})`")
 REQUEST = re.compile(r"^\s*gitar review\s*$", re.IGNORECASE)
 REPLY = re.compile(r"^> gitar review", re.IGNORECASE)
 DASHBOARD = "<b>Code Review</b>"
+# Gitar accepts a request with one of these replies. "On it" comes before
+# the review, and "running the review now" comes after the dashboard
+# changed, since 2026-09-29 (D-992).
+ACK_BEFORE = "on it"
+ACK_AFTER = "running the review now"
+# The dashboard shows this spinner image while a review runs (D-992). A
+# quoted finding can name the file in prose, so the image tag counts alone.
+SPINNER = re.compile(r"<img\b[^>]*gitar-spin\.svg", re.IGNORECASE)
+# The status line of a review in progress, at the start of a line or of a
+# <kbd> element. A quoted finding does not start the line with it (D-992).
+RESPONDING = re.compile(r"(?:^|<kbd>)\s*(?:<img[^>]*>\s*)?responding to your feedback", re.IGNORECASE | re.MULTILINE)
 SUMMARY = re.compile(r"<summary><b>Code Review</b>.*?</summary>")
 KBD = re.compile(r"<kbd>(.*?)</kbd>")
 TALLY = re.compile(r"^(.+) / (\d+) findings$")
@@ -190,7 +201,11 @@ def gitar_problems(pushed, comments, gitar_runs, threads):
         problems.append("the pull request holds no Gitar dashboard comment.")
         dashboard = None
     else:
-        dashboard = max(dashboards, key=lambda c: c["created_at"])["updated_at"]
+        newest = max(dashboards, key=lambda c: c["created_at"])
+        dashboard = newest["updated_at"]
+        text = newest.get("body") or ""
+        if SPINNER.search(text) or RESPONDING.search(text):
+            problems.append("the Gitar dashboard shows a review in progress. Wait for its end.")
         if dashboard <= pushed:
             problems.append(f"the Gitar dashboard changed at {dashboard}, before the push of the effective head at {pushed}. Ask for a review with the `gitar-review` skill.")
     requests = [c for c in comments if REQUEST.match(c.get("body") or "") and c["created_at"] > pushed]
@@ -201,9 +216,15 @@ def gitar_problems(pushed, comments, gitar_runs, threads):
             problems.append(f"Gitar gave no reply to the request of {asked}.")
         else:
             reply = max(replies, key=lambda c: c["created_at"])
-            if "on it" not in reply["body"].lower():
+            body = reply["body"].lower()
+            if ACK_BEFORE in body:
+                changed = dashboard > reply["created_at"]
+            elif ACK_AFTER in body:
+                changed = dashboard > asked
+            else:
                 problems.append(f"Gitar refused the request of {asked}. Wait, then ask again.")
-            elif dashboard <= reply["created_at"]:
+                changed = True
+            if not changed:
                 problems.append(f"the manual review of {asked} has not changed the dashboard yet.")
     problems.extend(thread_problems(threads))
     return problems

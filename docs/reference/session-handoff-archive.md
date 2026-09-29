@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-29a
+
+**Pull request #252, PR-100, reads the scheduled run `mtg-meta-b56rq`. The owner closed F-183, and kept F-179 closed with the read of its 9 empty months (D-988, D-989).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `038efe9`, from #251. The jobs run `worker:bdc5b60`, from #249.
+
+**The wait.** At 18:47 UTC on 2026-09-28 the scheduled run was 11 hours away. The owner chose a wait in the same session (D-988). The run `mtg-meta-b56rq` started at 06:00 UTC on 2026-09-29, and it ended at 07:05 UTC with SUCCESS.
+
+**The event pages.** Pass 0 read 2 event pages as 302. The 3 passes left 2, 1, and 0, and the time budget did not hold. The run `mtg-meta-4wbpp` also left 0, so the owner closed F-183 (D-989).
+
+**The older months.** Each of the 11 older months read empty on the first read. The 3 passes read 2026-01 and 2026-06 full, and 9 months stayed empty. So the run listed 436 slugs from 3 months alone. The owner kept F-179 closed, and the read records the 9 months (D-989). `docs/reference/pr100-mtgo-event-pages-read-2026-09-29.md` holds the reads.
+
+**The change.** Documents alone. No code changed, and no paid target ran.
+
+**The checks.** See the pull request body.
+
+**The review.** Gitar approved effective head `b21032d` with no finding and no thread. Its CI part names the `review-gate` failure before the label. The pull request holds documents alone, so it takes the `review-override` label (D-812). Pending the owner decision and the auto-merge.
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- A deck gate run to grade the new split of the basics of #234. Ask first.
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A whole deck gate run of prompt version 16 and the fixing floor of F-33. Ask first.
+- A questions gate run for D-913, and a deck gate run for D-916. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- Next step 9, and OQ-67 and OQ-77.
+
+### 2026-09-28b: the read of the current MTGO month, PR-98
+
+**The owner chose a manual run.** The deploy of #249 came at 14:20 UTC. The owner chose a manual run over the wait for the scheduled run of 06:00 UTC (D-985).
+
+**The current month read full on the first read.** The run read 2026-09 with 401 links, so the retry did not start. The owner closed F-185 on that read (D-985).
+
 ## The resume section of 2026-09-28c
 
 **Pull request #251, PR-99, reads the end of the manual run `mtg-meta-4wbpp`. The owner closed F-179, and kept F-183 open for a second run (D-986, D-987).**

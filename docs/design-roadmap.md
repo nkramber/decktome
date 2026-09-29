@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-29 correction pass 250 (PR-101, F-69, D-990, D-991): the owner answered OQ-77. A Go route on `mtg-api` answers the beforeCreate blocking function, and it refuses an account off the invite list. The registration of the trigger waits for the deploy and the live check of D-991. Changes: F-69, PR-101, sequencing step 94. The Codex review check accepts the new Gitar reply "Running the review now" (D-992).
 2026-09-29 correction pass 249 (PR-100, F-179, F-183, D-988, D-989): the scheduled run `mtg-meta-b56rq` left 0 redirected event pages and 9 empty older months. The owner closed F-183 on two runs in a row, and kept F-179 closed. Changes: F-179, F-183, PR-100, sequencing step 93.
 
 2026-09-28 correction pass 248 (PR-99, F-179, F-183, D-986, D-987): the manual run `mtg-meta-4wbpp` ended with 0 empty older months and 0 redirected event pages. The owner closed F-179 on two runs in a row, and kept F-183 open for a second run. Changes: F-179, F-183, PR-99, sequencing step 92.
@@ -456,7 +457,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-66 | **Three commits landed on a branch whose pull request was merged already, and they reached no reader.** The session pushed a fix to branch `fix-setup-placeholders`, the owner merged it as #84 with a squash, and the session then pushed three more commits to the same branch. A squash merge leaves the branch outside `main`, so the later commits stranded there. The same day the session committed to `main` twice and deployed images built from a branch. The cause is one: the session acted on the tree, and it read the state of the tree after. Found 2026-09-07 by the owner. Binds no code. | ✅ fixed 2026-09-07 (D-585): `make where` prints the state, and the pre-commit hook refuses a commit on `main` and on a merged branch. |
 | F-67 | **The new chat drew three deck placeholders that a reader with no deck never fills.** `RecentDecks` answered a pending list with three boxes of 160 pixels, and it answered an empty list with nothing. A reader with no deck read three boxes that appeared and left, and so did a reader on their first load. Found 2026-09-07 by the owner on the deployed app. Binds PR-19. | ✅ fixed 2026-09-07: the store keeps a mark of the last read, and a placeholder draws only when a deck follows it. |
 | F-68 | **The classifier writes over the card pool the reader chose.** A reader who picks a collection and "Only cards I own", then names a set, reads "Pool: any card". `apply` in `internal/questions/agent.go` writes `pool_rule` from the classifier with no guard for a choice the reader already made. The classifier reads a set phrase as a pool answer, which is the D-371 collision from the other side. The flip also turns the buy list on (`build.go`), so the deck names cards the reader does not own. Found 2026-09-07 by the owner in session `Wh7MdP2MucgpMl5IRTD5` of the deployed app. Binds PR-19. | ✅ fixed 2026-09-07 (D-591): the request marks the reader's choice, and the classifier never writes over a marked rule. |
-| F-69 | **An email off the invite list still becomes a Firebase account.** The create-account form calls Firebase first, so the account exists before anything reads the list. The reader then meets the invite gate (D-590), and the project holds an account it never invited. Found 2026-09-07 by the owner on the deployed app. Binds PR-22. | ✅ fixed 2026-09-07 (D-592): `InviteService.CheckInvite` answers before the account is made, and the form stays where it is with a red line. The Firebase API itself still needs a blocking function (OQ-77). |
+| F-69 | **An email off the invite list still becomes a Firebase account.** The create-account form calls Firebase first, so the account exists before anything reads the list. The reader then meets the invite gate (D-590), and the project holds an account it never invited. Found 2026-09-07 by the owner on the deployed app. Binds PR-22. | ✅ fixed 2026-09-07 (D-592): `InviteService.CheckInvite` answers before the account is made, and the form stays where it is with a red line. The Firebase API itself still needs a blocking function (OQ-77). PR-101 adds it (D-990), and its registration waits for the live check of D-991. |
 | F-70 | **A chat stops for good when the power answer names the option of its own row.** `withAnswers` folds an option index into the message as the option text, and the prompt asks for `"bracket 4"`. The field is free text, so a model that echoes the option writes "4 optimized", and `power` in `internal/questions/agent.go` reads it as no answer. None of the five options of the row parsed. The slot stays asked, the readiness gate waits on it, and the agent never repeats a question, so no build starts and no question comes. It is the dead conversation of D-351 through another door. Found 2026-09-07 by the owner in session `oUZMC0F2vHe7GGl24LIP` of the deployed app. Binds PR-12. | ✅ fixed 2026-09-07 (D-593): `power` reads a leading number of 1 to 5, so every option of the row reads. |
 | F-71 | **A reader can not report a chat that stops.** The thumbs of PR-27 read one question, one card, or one deck. A chat that stops between questions belongs to none of them, so a reader of session `oUZMC0F2vHe7GGl24LIP` had nothing to press. Found 2026-09-07 by the owner. Binds PR-27. | ✅ fixed 2026-09-07 (D-594): `FEEDBACK_KIND_CHAT` names the session alone, and "Report a problem" sits under the message box. |
 | F-72 | **A turn asks nothing, builds nothing, and says nothing.** A question is out, the reader answered it, and the classifier read no value. The planner then has nothing to ask, because the agent never repeats a question, and the session is not ready, because a key is still asked. `CloseStalled` holds that key for two turns (D-351, D-386), so the turn ends with no question, no deck, and no word. The reader reads an app that stopped. Found 2026-09-07 by the owner in session `oUZMC0F2vHe7GGl24LIP`. Binds PR-12. | ✅ fixed 2026-09-07 (D-598): the turn names the state and the way on, and a test fails a silent turn. |
@@ -2755,6 +2756,25 @@ Gate:
 
 > *In plain English:* the daily run read every event page of Magic Online in the end, so the owner closed that finding. The same run read most old monthly lists empty, and the owner kept that finding closed.
 
+**PR-101: Refuse an account off the invite list in a blocking function (F-69, D-990, D-991).** ✅ merged as #253. The mark comes before any review (D-822).
+The item is next step 9 of the hand-off, and it answers OQ-77. The form check of D-592 runs in the browser alone. So a caller who drives the Firebase API directly still makes an account.
+
+- **The route.** `go/internal/authblock` answers `POST /auth/before-create` on `mtg-api`. The API mounts it only when the invite list is on.
+- **The token.** The route checks the RS256 signature, the issuer of the project, an audience that names the host, the time claims, and the event type.
+- **The answer.** An email on the list gets 200. An email off the list gets 403 with `not-invited`. A list error gets 503, so the sign-up fails closed.
+- **The form.** The web form finds `not-invited` in the auth error, and it shows the invite sentence of D-592.
+- **The review check.** Gitar changed its reply to a manual request on 2026-09-29. `docs/tools/codex_review.py` and the `gitar-review` skill accept the new reply (D-992).
+
+The registration of the trigger changes the auth configuration of production. It waits for the merge, the deploy, and the live check of D-991. `docs/setup-gcp.md` holds the steps, and `docs/deploy-and-rollback.md` holds the removal. No paid target ran.
+
+Gate:
+- The tests of `go/internal/authblock` refuse each bad token, and they read no list for one.
+- The web tests show the invite sentence when the function refuses the account.
+- After the deploy, the live check of D-991 passes on both paths.
+- A current Gitar review, and a Codex review that approves the effective head.
+
+> *In plain English:* a person who did not use the sign-up form still made an account, although the account read nothing. Now Google asks the app before it saves a new account, and the app refuses an email that is not on the invite list.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3145,6 +3165,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 91. **PR-98** the read of the current MTGO month on the image of #249 (F-179, F-185, D-985). No paid target ran.
 92. **PR-99** the read of the open MTGO rows on the manual run `mtg-meta-4wbpp` (F-179, F-183, D-986, D-987). No paid target ran.
 93. **PR-100** the read of the scheduled MTGO run `mtg-meta-b56rq` (F-179, F-183, D-988, D-989). No paid target ran.
+94. **PR-101** the blocking function that refuses an account off the invite list (F-69, D-990 to D-992). No paid target ran.
 
 ## 9. Open questions
 
