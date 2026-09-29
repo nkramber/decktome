@@ -15,3 +15,10 @@ The author answers the Codex record of `docs/reviews/pr-253.md`. That record rea
 - The evidence: the `gitar-review` skill names two marks of a review in progress, the spinner and the line "Responding to your feedback". The check read the spinner image alone.
 - The correction: `RESPONDING` reads the status line at the start of a line or of a `<kbd>` element. A quoted finding does not start the line with it, so a quote does not count. D-992 names the rule.
 - The regression check: `test_a_status_line_with_no_spinner_fails` fails on `d2c0e00` and passes with the fix. `test_a_finding_that_quotes_the_status_line_passes` keeps a quote out. The finished dashboard of #253 reads as not in progress.
+
+## P2-3: The Gitar gate misses valid spinner image tags
+
+- The result: full merit.
+- The evidence: the spinner pattern needed a `src` value in double quotes. An image tag with single quotes or with no quotes did not match. Gitar used double quotes on each dashboard of #253, but D-992 names each image tag of the spinner.
+- The correction: `SPINNER` reads any `<img>` tag that names `gitar-spin.svg`. A finding that names the file in prose has no image tag, so it does not count.
+- The regression check: `test_the_spinner_fails_with_any_quote_style` fails on `8c30fa2` and passes with the fix. `test_a_finding_that_names_the_spinner_in_prose_passes` still passes.

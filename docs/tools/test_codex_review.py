@@ -184,6 +184,11 @@ class GitarPass(unittest.TestCase):
                           "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
         self.assertTrue(any("in progress" in p for p in cr.gitar_problems(PUSHED, [running], [], [])))
 
+    def test_the_spinner_fails_with_any_quote_style(self):
+        for tag in ('<img src="https://x/gitar-spin.svg">', "<img src='https://x/gitar-spin.svg'>", "<img src=https://x/gitar-spin.svg>"):
+            running = comment(GITAR, tag + "\n" + DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")
+            self.assertTrue(any("in progress" in p for p in cr.gitar_problems(PUSHED, [running], [], [])), tag)
+
     def test_a_status_line_with_no_spinner_fails(self):
         for status in ("Responding to your feedback\n", "<kbd> Responding to your feedback</kbd>\n"):
             running = comment(GITAR, status + DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")

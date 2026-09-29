@@ -88,7 +88,7 @@ ACK_BEFORE = "on it"
 ACK_AFTER = "running the review now"
 # The dashboard shows this spinner image while a review runs (D-992). A
 # quoted finding can name the file in prose, so the image tag counts alone.
-SPINNER = re.compile(r"<img[^>]*\bsrc=\"[^\"]*gitar-spin\.svg\"", re.IGNORECASE)
+SPINNER = re.compile(r"<img\b[^>]*gitar-spin\.svg", re.IGNORECASE)
 # The status line of a review in progress, at the start of a line or of a
 # <kbd> element. A quoted finding does not start the line with it (D-992).
 RESPONDING = re.compile(r"(?:^|<kbd>)\s*(?:<img[^>]*>\s*)?responding to your feedback", re.IGNORECASE | re.MULTILINE)

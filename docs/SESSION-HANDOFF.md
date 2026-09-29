@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body. No paid target ran.
 
-**The review.** Gitar approved head `8c30fa2`, and its only thread is resolved. Review round 1 found P2-1, the wait of 8 seconds, and one deadline of 5 seconds fixed it. Round 2 found P2-2, the text status check missed a review in progress. The current review marks P2-2 fixed and found P2-3: the spinner check misses single-quoted and unquoted `src` values. Local `make verify` passed. GitHub `verify:go` failed on a dependency download error. The review record holds the current verdict, and P2-3 stays open.
+**The review.** Gitar approved `8c30fa2`, and Gitar accepted the rebuttal of its one finding. Codex round 1 found P2-1, the wait of 8 seconds, and one deadline of 5 seconds fixed it. Round 2 found P2-2, the status line, and round 3 found P2-3, the quote style of the spinner tag. The review check reads both now. `docs/reviews/pr-253-response.md` holds each answer. Pending the Gitar pass and Codex round 4.
 
 **What waits on the owner.**
 
