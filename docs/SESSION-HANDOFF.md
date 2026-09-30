@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body for `make verify`. The emulator tests of `go/internal/push` join the CI step and `make store-check`.
 
-**The review.** Gitar found one issue: one browser ID stayed under two accounts after a failed sign-out. The fix `2089b50` gives each ID one owner, and Gitar approved it. Codex round 1 read Changes required with P2-1: a browser that refuses to store the flag skipped the release. The fix asks the API then, and `docs/reviews/pr-258-response.md` holds the answer. The repeat review waits.
+**The review.** P2-1 is fixed at `6c49dd6`. P1-1 stays open at the effective head. Verdict: Changes required.
 
 **What waits on the owner.**
 
