@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** The pull request body holds them.
 
-**The review.** Gitar found one issue, fixed at `2089b50`. Codex round 1 found P2-1, fixed at `6c49dd6`. Round 2 found P1-1, and `verify:web` found advisories. Both now pass. Round 3 read Blocked on `49dda67` for the live check alone, and the owner put that check after the deploy (D-1007). `docs/reviews/pr-258-response.md` answers each round.
+**The review.** Gitar found one issue, fixed at `2089b50`. Codex round 1 found P2-1, fixed at `6c49dd6`. Round 2 found P1-1, and `verify:web` found advisories. Both now pass. Round 3 read Blocked on `49dda67` for the live check alone. D-1007 puts that check after the deploy. Round 4 reads Ready for owner merge on `f06b518`, with no open finding. `docs/reviews/pr-258-response.md` answers each round.
 
 **What waits on the owner.**
 
