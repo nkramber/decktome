@@ -398,22 +398,24 @@ Five users who build three decks a week make 15 decks a week, which is about 65 
 
 ### 16.2 The model calls
 
-The provider prices come from `go/internal/llm/prices.json`, verified on 2026-08-24. The roles come from `roles.json`: classify and ask on `gpt-5.6-luna`, generate, repair, and revise on `gpt-5.6-terra`. The judge role runs in the gates alone, and no production build calls it.
+The provider prices come from `go/internal/llm/prices.json`, verified on 2026-09-29. The roles come from `roles.json` (D-996, D-1003): classify, ask, and setmatch on `gpt-6-luna`, and generate, repair, and revise on `gpt-6.1-sol`. The judge role runs in the gates alone, and no production build calls it.
 
 | Model | Input, per 1M tokens | Cached input | Output |
 |---|---|---|---|
-| `gpt-5.6-luna` | $0.20 | $0.02 | $1.20 |
-| `gpt-5.6-terra` | $2.00 | $0.20 | $12.00 |
+| `gpt-6-luna` | $0.10 | $0.01 | $0.50 |
+| `gpt-6.1-sol` | $2.00 | $0.10 | $10.00 |
+
+OpenAI also bills a cache write at 1.25 times the input price (D-998).
 
 The measured run costs of the gates give the price of each step.
 
 | Step | Measured on | Cost per unit |
 |---|---|---|
-| One question turn | Question gate runs 38 to 41, 2026-09-05: $0.14 to $0.19 for 108 conversations of 2 to 4 turns | Under $0.002 a turn |
-| One build with repairs | Deck gate runs 12 to 14, 2026-09-02 to 2026-09-03: $2.24 to $2.64 for 24 decks | $0.09 to $0.11 a deck |
-| One revision turn | Revise gate run 9, 2026-09-04: $1.07 for 11 turns | About $0.10 a turn |
+| One question turn | Question gate run 56, 2026-09-30: $0.1039 for 109 conversations of 2 to 4 turns | Under $0.001 a turn |
+| One build with repairs | Deck gate run 38, 2026-09-29: $1.6749 for 25 decks | About $0.07 a deck |
+| One revision turn | Revise gate run 11, 2026-09-30: $0.5390 for 11 turns | About $0.05 a turn |
 
-One deck with one revision costs about $0.22. The month costs $8 with no revisions, $14 with one revision a deck, and $20 with two. The per-user cap of D-421 bounds the whole at $25 a month for five users.
+One deck with one revision costs about $0.12. The month costs $5 with no revisions, $8 with one revision a deck, and $11 with two. The per-user cap of D-421 bounds the whole at $25 a month for five users.
 
 ### 16.3 Google Cloud
 
@@ -439,10 +441,10 @@ Every line reads the free tier of the Google Cloud free program document, 2026-0
 
 | Line | A month |
 |---|---|
-| Model calls, 65 decks | $8 to $20 |
+| Model calls, 65 decks | $5 to $11 |
 | Google Cloud at idle, measured 2026-09-09 | $3.81 gross, and $1.62 after the free tier |
 | The domain | $1 to $2 |
-| Total | $13 to $24 |
+| Total | $8 to $17 |
 
 **The measured cost at idle (2026-09-09, D-633).** The first read was $9.54 a month gross, and $5.58 after the Cloud Run free tier. The snapshot cron held $7.65 of it, and 3 of its 4 ticks each hour did nothing but start a container and exit. D-634 takes the tick to one hour, which leaves $3.81 gross. The meta job holds $1.83 of that, the two stores hold $0.07, and the API service holds nothing because it scales to zero.
 

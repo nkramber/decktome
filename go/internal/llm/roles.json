@@ -1,52 +1,52 @@
 {
-  "verified_at": "2026-08-24",
-  "note": "Owner decisions D-38 and D-39 (2026-08-24). Baseline: OpenAI serves classify and ask on gpt-5.6-luna (cost tier) and generate and repair on gpt-5.6-terra (middle tier). Anthropic serves judge on claude-opus-5 (D-430, amends D-4) so the judge never shares the generator's provider (D-22). Model ids verified against developers.openai.com/api/docs/models and the claude-api skill on 2026-08-24. No bake-off has run yet: PR-15 measures these defaults. Override one field with LLM_<ROLE>_<PROVIDER|MODEL|EFFORT>. Judge (D-4, 2026-08-24): thinking stays on (Sonnet 5 runs adaptive thinking when the request omits the thinking field). Effort is medium, not high, so a judge answer fits the 8192-token cap and the 120-second attempt timeout. A truncation retry escalates the cap to 65536, and high effort at that cap can outrun the timeout. Eval (D-133, 2026-08-26): the automated question scorer runs on gpt-5.6-luna, the cost tier, so a whole run of the 104-conversation set costs cents. That model also serves classify and ask, so the eval role rates work its own model produced. `make eval-calibrate` measures that bias against claude-opus-5 on a sample (D-428). Override with LLM_EVAL_MODEL. Revise (D-283, D-284): the revision brief after a build runs on gpt-5.6-terra at low effort, the same provider as generate, because the brief and the build must read a request the same way. Setmatch (D-581, 2026-09-07): the set matcher runs on gpt-5.6-luna, the cost tier, and it fires only when the set table settles nothing. The call carries the set list of the snapshot, about 6,000 input tokens, and the caller checks every code it returns against the table.",
+  "verified_at": "2026-09-29",
+  "note": "Owner decisions D-38 and D-39 (2026-08-24), moved by PR-105 (D-996, D-1000, D-1003, 2026-09-29). OpenAI serves classify, ask, eval, and setmatch on gpt-6-luna (cost tier), and generate, repair, and revise on gpt-6.1-sol. Anthropic serves judge on claude-sonnet-5-5 (D-1000, amends D-430) so the judge never shares the generator's provider (D-22). On 2026-09-29 the models endpoint of each provider listed the three ids, and each move has a gate result in the PR-105 roadmap entry. Override one field with LLM_<ROLE>_<PROVIDER|MODEL|EFFORT>. Judge (D-4): thinking stays on. Effort is medium, not high, so a judge answer fits the 8192-token cap and the 120-second attempt timeout. A truncation retry escalates the cap to 65536, and high effort at that cap can outrun the timeout. Eval (D-133): the automated question scorer runs on the cost tier, so a whole run of the conversation set costs cents. That model also serves classify and ask, so the eval role rates work its own model produced. `make eval-calibrate` measures that bias against claude-sonnet-5-5 on a sample (D-428, D-1000). Override with LLM_EVAL_MODEL. Revise (D-283, D-284): the revision brief after a build runs at low effort on the model of generate, because the brief and the build must read a request the same way. Setmatch (D-581): the set matcher runs on the cost tier, and it fires only when the set table settles nothing. The call carries the set list of the snapshot, about 6,000 input tokens, and the caller checks every code it returns against the table.",
   "roles": {
     "classify": {
       "provider": "openai",
-      "model": "gpt-5.6-luna",
+      "model": "gpt-6-luna",
       "effort": "none",
       "max_output_tokens": 1024
     },
     "ask": {
       "provider": "openai",
-      "model": "gpt-5.6-luna",
+      "model": "gpt-6-luna",
       "effort": "low",
       "max_output_tokens": 2048
     },
     "generate": {
       "provider": "openai",
-      "model": "gpt-5.6-terra",
+      "model": "gpt-6.1-sol",
       "effort": "medium",
       "max_output_tokens": 16384
     },
     "repair": {
       "provider": "openai",
-      "model": "gpt-5.6-terra",
+      "model": "gpt-6.1-sol",
       "effort": "medium",
       "max_output_tokens": 16384
     },
     "judge": {
       "provider": "anthropic",
-      "model": "claude-opus-5",
+      "model": "claude-sonnet-5-5",
       "effort": "medium",
       "max_output_tokens": 8192
     },
     "eval": {
       "provider": "openai",
-      "model": "gpt-5.6-luna",
+      "model": "gpt-6-luna",
       "effort": "low",
       "max_output_tokens": 4096
     },
     "revise": {
       "provider": "openai",
-      "model": "gpt-5.6-terra",
+      "model": "gpt-6.1-sol",
       "effort": "low",
       "max_output_tokens": 4096
     },
     "setmatch": {
       "provider": "openai",
-      "model": "gpt-5.6-luna",
+      "model": "gpt-6-luna",
       "effort": "none",
       "max_output_tokens": 512
     }

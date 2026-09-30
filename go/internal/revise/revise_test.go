@@ -132,6 +132,16 @@ func TestInputTellsTheModelThePriorWasAnswered(t *testing.T) {
 	}
 }
 
+// TestInstructionsSettleAMixedAnswer: gpt-6.1-sol asked a second
+// question after "A mix." answered its question about lands (D-1003).
+func TestInstructionsSettleAMixedAnswer(t *testing.T) {
+	for _, want := range []string{`"a mix"`, "settles the question too", "Never ask a second question about a request the user answered."} {
+		if !strings.Contains(instructions, want) {
+			t.Errorf("the instructions lack %q", want)
+		}
+	}
+}
+
 type nameSource map[string]string
 
 func (n nameSource) ByOracleID(id string) (*mtgv1.Card, bool) {

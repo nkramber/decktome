@@ -19,7 +19,7 @@ import (
 
 // PlanRubricVersion changes when a field or its words change. A change
 // starts a new epoch of the plan rows.
-const PlanRubricVersion = 4
+const PlanRubricVersion = 5
 
 const planJudgeInstructions = `You read one deck a deck builder made for a person, with the request the person wrote and the summary the builder wrote for them. You grade the deck on four fields. Each field takes one of three words: no, partly, or yes.
 
@@ -28,7 +28,7 @@ const planJudgeInstructions = `You read one deck a deck builder made for a perso
 - useful_as_built: a person can pick this deck up and play it as it stands. A deck with a broken mana base, a curve that never lands its spells, or too few ways to win reads no.
 - summary_honest: the summary claims nothing the deck lacks and hides nothing the deck does. A summary that names a strategy the list does not carry reads no.
 
-Give one sentence of reason per field. Judge the deck as it is. Do not grade the power of the deck against tournament lists: that is the job of another judge. Do not grade the format legality, the color identity, or the card counts: code checked them against the card data of the run date before you read the deck, and your knowledge of the card pool can be older than that data.
+Write the reason of each field as one full sentence about this deck. Never write a placeholder. The reason of summary_honest names one claim of the summary that you checked against the list. Judge the deck as it is. Do not grade the power of the deck against tournament lists: that is the job of another judge. Do not grade the format legality, the color identity, or the card counts: code checked them against the card data of the run date before you read the deck, and your knowledge of the card pool can be older than that data.
 
 Each card line gives the mana cost and the type line from the card data, and a Commander deck names the color identity of its commander. When the request names sets, a line names their codes, and each card line reads in the sets or outside the sets. Read the colors, the costs, the card types, and the sets from those facts, and not from your memory of the cards.`
 
@@ -66,14 +66,18 @@ func (g PlanGrade) Value() float64 {
 	return 0
 }
 
-// ReasonEmpty reads a reason the judge did not write: blank, or the one
-// word "placeholder". A grade with no reason still counts, because a bar
-// reads the number and never the prose (lesson 11), and the count of
-// empty reasons is a number of its own.
+// ReasonEmpty reads a reason the judge did not write: blank, the word
+// "placeholder", or fewer than minReasonWords words. Claude Sonnet 5.5
+// wrote "x" as a reason (D-1000). A grade with no reason still counts,
+// because a bar reads the number and never the prose (lesson 11), and the
+// count of empty reasons is a number of its own.
 func (g PlanGrade) ReasonEmpty() bool {
 	w := strings.ToLower(strings.TrimSpace(g.Why))
-	return w == "" || w == "placeholder"
+	return w == "placeholder" || len(strings.Fields(w)) < minReasonWords
 }
+
+// minReasonWords is the fewest words of a written reason.
+const minReasonWords = 3
 
 // PlanJudgement is the judge's four grades for one deck.
 type PlanJudgement struct {
@@ -125,13 +129,31 @@ func (j PlanJudgement) Score() float64 {
 // judge sees the request, the summary, and the card list with the cost
 // and the type of each card. setCodes are the sets the request names, and
 // they are empty for a request that names none.
+//
+// An answer with an empty reason gets one more call, and the answer with
+// fewer empty reasons stands (D-1000). A failed second call keeps the
+// first answer.
 func JudgePlan(ctx context.Context, c *llm.Client, request string, deck *mtgv1.Deck, cards rules.CardSource, setCodes []string, acc *llm.Accumulator) (*PlanJudgement, error) {
-	res, err := c.Complete(ctx, llm.RoleJudge, llm.Request{
+	req := llm.Request{
 		Instructions: planJudgeInstructions,
 		Input:        "Request: " + request + "\n\nFormat: " + FormatWord(deck.GetFormat().GetId()) + "\n\nSummary:\n" + deck.GetSummary() + "\n\n" + factsDeckText(deck, cards, setCodes),
 		SchemaName:   "plan_check",
 		Schema:       json.RawMessage(planJudgeSchema),
-	}, acc)
+	}
+	out, err := judgePlanOnce(ctx, c, req, acc)
+	if err != nil {
+		return nil, err
+	}
+	if out.EmptyReasons() > 0 {
+		if again, err := judgePlanOnce(ctx, c, req, acc); err == nil && again.EmptyReasons() < out.EmptyReasons() {
+			out = again
+		}
+	}
+	return out, nil
+}
+
+func judgePlanOnce(ctx context.Context, c *llm.Client, req llm.Request, acc *llm.Accumulator) (*PlanJudgement, error) {
+	res, err := c.Complete(ctx, llm.RoleJudge, req, acc)
 	if err != nil {
 		return nil, fmt.Errorf("judge plan: %w", err)
 	}

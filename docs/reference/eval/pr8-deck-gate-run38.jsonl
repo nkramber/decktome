@@ -1,0 +1,460 @@
+{"suite":"decks","run_id":"pr8-deck-gate-run38","date":"2026-09-29","commit":"6cdb2e1","roles":{"generate":{"provider":"openai","model":"gpt-6.1-sol","effort":"medium"},"judge":{"provider":"anthropic","model":"claude-sonnet-5-5","effort":"medium"},"repair":{"provider":"openai","model":"gpt-6.1-sol","effort":"medium"}},"snapshot":"2026-09-04","prompts":{"generate":16,"plan_rubric":5,"summary_judge":2},"versions":{"precons":"5.3.0+20260923","quality_model":"20260923T202806Z"},"calls":81,"cost_usd":1.6748618000000004,"seconds":1913.915619084,"verdict":"PASS","overrides":["generate.model","judge.model","repair.model"],"lower":["blocks","invented_names","false_rules","judge_error","excluded_in_deck","warnings","repaired","buy_cost","deck_cost","case_assertions"]}
+{"item":"1","metric":"built","value":1,"kind":"gate"}
+{"item":"1","metric":"blocks","value":0,"kind":"gate"}
+{"item":"1","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"1","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"1","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"1","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card gains life or rewards it: Karlov, Aetherflux Reservoir, Archangel of Thune, Elenda, Vito, Righteous Valkyrie, Cosmos Elixir and Test of Endurance all feed one lifegain-into-combat plan."}
+{"item":"1","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a white-black lifegain deck led by Karlov of the Ghost Council with a lifegain payoff suite and power level that fits bracket 3."}
+{"item":"1","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The 40-land mana base with many duals plus a dozen mana rocks casts everything reliably, but the ramp packages include several low-impact artifacts and the deck is clunky and over-landed, so it may flood and lack pressure early."}
+{"item":"1","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The claim that Karlov turns lifegain into a growing attacker is backed by the list, but the claim of dedicated finishers and steady midgame draw overstates it, since several draw and ramp slots are weak artifacts like Orazca Relic and Phial of Galadriel that do little for the plan."}
+{"item":"1","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"1","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"1","metric":"repaired","value":0,"kind":"info"}
+{"item":"1","metric":"cards","value":99,"kind":"info"}
+{"item":"1","metric":"pool","value":306,"kind":"info"}
+{"item":"1","metric":"warnings","value":0,"kind":"info"}
+{"item":"1","metric":"buy_cost","value":962.2200000000006,"kind":"info"}
+{"item":"1","metric":"deck_cost","value":962.2200000000006,"kind":"info"}
+{"item":"1","metric":"grade","value":0.0514,"kind":"info","detail":"baseline"}
+{"item":"2","metric":"built","value":1,"kind":"gate"}
+{"item":"2","metric":"blocks","value":0,"kind":"gate"}
+{"item":"2","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"2","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"2","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"2","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Denethor, Skullclamp, Grave Venerations and a few sacrifice outlets point at aristocrats, but four board wipes, many equipment pieces, and a pile of generic ramp and removal pull the list toward a durable good-stuff pile rather than one sacrifice engine."}
+{"item":"2","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: The deck is white-black Commander led by Denethor at a reasonable power level, but it carries few actual sacrifice outlets, death-trigger payoffs, or token makers, so it only loosely answers an aristocrats request."}
+{"item":"2","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 25 basic lands plus many fixers and 10+ mana rocks it will cast its spells, but the 17 Plains to 8 Swamp split strains black cards like Massacre Girl and Archfiend, and the thin creature and sacrifice count means it often lacks fodder or a real closing plan."}
+{"item":"2","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary promises accumulated drain as the main route to victory, but the list has almost no drain effects beyond Grave Venerations and Archfiend of Ifnir, and it also skips mentioning the four sweepers that work against the 'keep creatures' plan."}
+{"item":"2","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"2","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"2","metric":"repaired","value":0,"kind":"info"}
+{"item":"2","metric":"cards","value":99,"kind":"info"}
+{"item":"2","metric":"pool","value":181,"kind":"info"}
+{"item":"2","metric":"warnings","value":0,"kind":"info"}
+{"item":"2","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"2","metric":"deck_cost","value":191.78000000000003,"kind":"info"}
+{"item":"2","metric":"grade","value":0.3572,"kind":"info","detail":"baseline"}
+{"item":"3","metric":"built","value":1,"kind":"gate"}
+{"item":"3","metric":"blocks","value":0,"kind":"gate"}
+{"item":"3","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"3","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"3","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"3","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is a blue or colorless artifact, artifact-synergy piece, cheap ramp, cantrip or counterspell, all feeding Urza's artifact engine, with Aetherflux Reservoir, Mechanized Production and Kappa Cannoneer as clear finishers."}
+{"item":"3","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is a mono-blue artifact list led by Urza, Lord High Artificer with fast mana such as Sol Ring, Mana Vault and multiple Moxen, free counterspells, and a high-power feel appropriate for bracket 4."}
+{"item":"3","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The deck has abundant fast mana, card draw and interaction and is playable, but the mana base includes painlands and multicolor-fixing lands like City of Brass, Mana Confluence and Command Tower that do nothing for a mono-blue deck, and some cards like Unable to Scream and Ravenform are weak filler."}
+{"item":"3","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary claims the deck wins through artifact-backed combat pressure and alternative finishers, which the creature and Aetherflux Reservoir lines support, but it says it trades away lean combo lines while the list holds Krark-Clan Ironworks, Mono-U Transmute Artifact and Whir of Invention, and it is vague about how many finishers are actually present."}
+{"item":"3","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"3","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"3","metric":"repaired","value":0,"kind":"info"}
+{"item":"3","metric":"cards","value":99,"kind":"info"}
+{"item":"3","metric":"pool","value":318,"kind":"info"}
+{"item":"3","metric":"warnings","value":0,"kind":"info"}
+{"item":"3","metric":"buy_cost","value":6837.809999999999,"kind":"info"}
+{"item":"3","metric":"deck_cost","value":6837.809999999999,"kind":"info"}
+{"item":"3","metric":"grade","value":0.5977,"kind":"info","detail":"typical"}
+{"item":"4","metric":"built","value":1,"kind":"gate"}
+{"item":"4","metric":"blocks","value":0,"kind":"gate"}
+{"item":"4","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"4","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"4","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"4","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every nonland card is a Dinosaur, a ramp piece, or a draw or protection piece, and together they push toward casting big Dinosaurs and attacking with Gishath."}
+{"item":"4","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Gishath Dinosaur Commander deck in his three colors and is built around a friendly, creature-based plan suitable for a new player at bracket 2."}
+{"item":"4","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The ramp and Dinosaur count make it playable, but the mana base has many tapped and painful lands across three colors, and Blasphemous Act and Harsh Mercy sit awkwardly in a creature deck, so a new player could find it clunky."}
+{"item":"4","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: The summary says Bonehoard Dracosaur and Dinosaurs on a Spaceship are finishers, and both are in the list tagged as wincons, alongside the Dinosaur herd, sweepers like Blasphemous Act and Harsh Mercy, and the equipment protection it describes."}
+{"item":"4","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"4","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"4","metric":"repaired","value":0,"kind":"info"}
+{"item":"4","metric":"cards","value":99,"kind":"info"}
+{"item":"4","metric":"pool","value":299,"kind":"info"}
+{"item":"4","metric":"warnings","value":0,"kind":"info"}
+{"item":"4","metric":"buy_cost","value":1106.9299999999998,"kind":"info"}
+{"item":"4","metric":"deck_cost","value":1106.9299999999998,"kind":"info"}
+{"item":"4","metric":"grade","value":0.044,"kind":"info","detail":"bad"}
+{"item":"5","metric":"built","value":1,"kind":"gate"}
+{"item":"5","metric":"blocks","value":0,"kind":"gate"}
+{"item":"5","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"5","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"5","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"5","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Mono-white blink pieces like Flickerwisp, Palace Jailer, Fiend Hunter and Angel of Serenity share a plan, but three board wipes, a stack of mana rocks and equipment and non-blink filler pull it toward a generic pile of goodstuff."}
+{"item":"5","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a mono-white Commander deck led by Gilraen with real blink enablers such as Flickerwisp, Palace Jailer and Fiend Hunter, but the request for a blink deck is only lightly served, since few cards actually reflicker and Gilraen is not a blink commander."}
+{"item":"5","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 37 lands, plenty of cheap rocks and draw, and lots of removal it will function in play, but the 33 Plains plus rocks is flood-prone, and there are few ways to win beyond Angel of Serenity and Angel of Sanctions."}
+{"item":"5","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary names Angel of Serenity as the chief closer and Angels as the finishing pressure, and those are in the list, but it calls the deck a balanced creature blink deck while the list runs three wipes and about a dozen mana rocks and holds only one real finisher."}
+{"item":"5","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"5","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"5","metric":"repaired","value":0,"kind":"info"}
+{"item":"5","metric":"cards","value":99,"kind":"info"}
+{"item":"5","metric":"pool","value":169,"kind":"info"}
+{"item":"5","metric":"warnings","value":1,"kind":"info"}
+{"item":"5","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"5","metric":"deck_cost","value":89.92000000000004,"kind":"info"}
+{"item":"5","metric":"grade","value":0.4316,"kind":"info","detail":"typical"}
+{"item":"6","metric":"built","value":1,"kind":"gate"}
+{"item":"6","metric":"blocks","value":0,"kind":"gate"}
+{"item":"6","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"6","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"6","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"6","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Cheap creatures, burn, counters and cantrips all serve one tempo plan of pressuring early and protecting the lead."}
+{"item":"6","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a blue-red tempo deck in Modern, but it has no Delver of Secrets or other Delver-style flip creature, so the named Delver theme is only loosely met."}
+{"item":"6","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: It has 24 lands with many dual lands, a very low curve, 12 cantrips or cheap artifacts, and enough creatures and burn to win, so it plays as it stands."}
+{"item":"6","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: x"}
+{"item":"6","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"6","metric":"plan_reasons_empty","value":1,"kind":"info"}
+{"item":"6","metric":"repaired","value":0,"kind":"info"}
+{"item":"6","metric":"cards","value":60,"kind":"info"}
+{"item":"6","metric":"pool","value":167,"kind":"info"}
+{"item":"6","metric":"warnings","value":0,"kind":"info"}
+{"item":"6","metric":"buy_cost","value":652.0799999999999,"kind":"info"}
+{"item":"6","metric":"deck_cost","value":652.0799999999999,"kind":"info"}
+{"item":"6","metric":"grade","value":0.5431,"kind":"info","detail":"typical"}
+{"item":"7","metric":"built","value":1,"kind":"gate"}
+{"item":"7","metric":"blocks","value":0,"kind":"gate"}
+{"item":"7","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"7","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"7","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"7","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The burn spells and Torbran point toward a burn plan, but Eidolon of the Great Revel hurts the deck's own casting of its four-drops, and the 24 lands with few cheap creatures leave the aggro and midrange halves poorly joined."}
+{"item":"7","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is entirely mono-red, is built around Lightning Bolt, Burst Lightning, Boltwave and Torbran, and is casual in tone, so it matches the request for a mono-red burn deck."}
+{"item":"7","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The mana base is clean and it can be played as it stands, but 24 lands is too many for a burn deck, only 6 cheap burn spells besides Boltwave leave few ways to close, and Eidolon punishes its own four-mana threats."}
+{"item":"7","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary claims a substantial creature package and draw support, which the list does carry through Ashcloud Phoenix, Tectonic Giant, Hazoret, Risk Factor and Browbeat, but it presents them as sustaining draw when Risk Factor and Browbeat are really burn-to-face options and it never mentions the heavy 24-land count."}
+{"item":"7","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"7","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"7","metric":"repaired","value":0,"kind":"info"}
+{"item":"7","metric":"cards","value":60,"kind":"info"}
+{"item":"7","metric":"pool","value":290,"kind":"info"}
+{"item":"7","metric":"warnings","value":0,"kind":"info"}
+{"item":"7","metric":"buy_cost","value":55.67,"kind":"info"}
+{"item":"7","metric":"deck_cost","value":55.67,"kind":"info"}
+{"item":"7","metric":"grade","value":0.4612,"kind":"info","detail":"typical"}
+{"item":"8","metric":"built","value":1,"kind":"gate"}
+{"item":"8","metric":"blocks","value":0,"kind":"gate"}
+{"item":"8","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"8","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"8","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"8","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Soul Warden, Guide of Souls, Enduring Tenacity, Archangel of Thune and Elenda all reward gaining life, while Solitude and Gumdrop Poisoner remove blockers and Sheoldred adds pressure, so the cards serve one lifegain-midrange plan."}
+{"item":"8","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is white-black, built around lifegain payoffs like Guide of Souls, Soul Warden and Archangel of Thune, and made of Modern-playable cards at a casual FNM power level."}
+{"item":"8","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The mana base of 24 lands with many dual lands supports the WW and BB costs, but Enduring Innocence at 4 copies and Soul Warden are weak, the deck has few ways to gain life, and the many one-drops and top-end creatures pull the curve in two directions."}
+{"item":"8","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: The summary names Enduring Tenacity, Sheoldred, and the Angels as finishers, and the list runs 4 Tenacity, 3 Sheoldred, 2 Archangel of Thune and 1 Gisela, so the claim of a creature-heavy midrange deck with removal matches the cards."}
+{"item":"8","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"8","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"8","metric":"repaired","value":0,"kind":"info"}
+{"item":"8","metric":"cards","value":60,"kind":"info"}
+{"item":"8","metric":"pool","value":301,"kind":"info"}
+{"item":"8","metric":"warnings","value":0,"kind":"info"}
+{"item":"8","metric":"buy_cost","value":702.99,"kind":"info"}
+{"item":"8","metric":"deck_cost","value":702.99,"kind":"info"}
+{"item":"8","metric":"grade","value":0.4194,"kind":"info","detail":"typical"}
+{"item":"9","metric":"built","value":1,"kind":"gate"}
+{"item":"9","metric":"blocks","value":0,"kind":"gate"}
+{"item":"9","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"9","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"9","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"9","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The deck is black-green midrange with removal, card draw and creatures, but Massacre Girl's board wipe, Not Dead After All and the Room and Siege enchantments pull in slightly different directions from a creature-pressure plan."}
+{"item":"9","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is a black-green midrange list in Standard with creatures, removal and card advantage, which matches the FNM-level request."}
+{"item":"9","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The 24-land mana base covers both colors well with dual lands, but only 12 creatures and just 2 Llanowar Elves give a thin board, and the top end of 4 Massacre Girl-type effects plus several situational spells makes it clunky to play."}
+{"item":"9","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary says the deck clears away blockers and keeps drawing cards, which the removal, Massacre Girl, Darkstar Augur and Midnight Reaper support, but it mentions a sideboard that broadens answers to graveyard strategies and artifacts, and no sideboard appears in the list."}
+{"item":"9","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"9","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"9","metric":"repaired","value":0,"kind":"info"}
+{"item":"9","metric":"cards","value":60,"kind":"info"}
+{"item":"9","metric":"pool","value":164,"kind":"info"}
+{"item":"9","metric":"warnings","value":0,"kind":"info"}
+{"item":"9","metric":"buy_cost","value":157.04000000000002,"kind":"info"}
+{"item":"9","metric":"deck_cost","value":157.04000000000002,"kind":"info"}
+{"item":"9","metric":"grade","value":0.4306,"kind":"info","detail":"baseline"}
+{"item":"10","metric":"built","value":1,"kind":"gate"}
+{"item":"10","metric":"blocks","value":0,"kind":"gate"}
+{"item":"10","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"10","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"10","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"10","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The deck is a red-white creature deck with cheap removal and auras, but the curve tops out with four copies each of 5-drop Starfield Shepherd and 6-drop Twinmaw Stormbrood, which pull against a fast aggro plan."}
+{"item":"10","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is built in red and white with creatures, burn and auras aimed at attacking, in the Standard format the person asked for."}
+{"item":"10","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The mana base of 12 dual lands plus basics supports both colors, but the deck has only 4 two-drops of real board presence, plenty of four- to six-drops and no sideboard visible in the list, so it will stumble against faster decks."}
+{"item":"10","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary says Fugitive Codebreaker and Tersa Lightshatter sustain the offense, and both are in the list, but Tersa is only a 2-of and the summary omits the top-heavy curve that undercuts its claim of focused aggression."}
+{"item":"10","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"10","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"10","metric":"repaired","value":0,"kind":"info"}
+{"item":"10","metric":"cards","value":60,"kind":"info"}
+{"item":"10","metric":"pool","value":294,"kind":"info"}
+{"item":"10","metric":"warnings","value":0,"kind":"info"}
+{"item":"10","metric":"buy_cost","value":135.05999999999997,"kind":"info"}
+{"item":"10","metric":"deck_cost","value":135.05999999999997,"kind":"info"}
+{"item":"10","metric":"grade","value":0.3025,"kind":"info","detail":"bad"}
+{"item":"11","metric":"built","value":1,"kind":"gate"}
+{"item":"11","metric":"blocks","value":0,"kind":"gate"}
+{"item":"11","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"11","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"11","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"11","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is a sacrifice outlet, fodder, death payoff, or recursion piece, so the list serves one aristocrats plan around Karlov."}
+{"item":"11","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Commander deck led by Karlov of the Ghost Council in white-black and is built around sacrifice outlets and death payoffs, exactly as requested."}
+{"item":"11","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The deck has plenty of outlets, fodder, and payoffs, but the land count is high with heavy black requirements and several painful or tapped lands, and the fodder count is modest, and the two board wipes work against its own creature plan, so it will function but with clunky draws."}
+{"item":"11","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The claim of repeated life gain that grows Karlov is only lightly supported, since few cards gain life (Cartel Aristocrat, Ayli, Vindictive Vampire, Zulaport), and Toxic Deluge and Austere Command are wipes that the summary does not mention."}
+{"item":"11","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"11","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"11","metric":"repaired","value":0,"kind":"info"}
+{"item":"11","metric":"cards","value":99,"kind":"info"}
+{"item":"11","metric":"pool","value":299,"kind":"info"}
+{"item":"11","metric":"warnings","value":0,"kind":"info"}
+{"item":"11","metric":"buy_cost","value":898.4299999999998,"kind":"info"}
+{"item":"11","metric":"deck_cost","value":898.4299999999998,"kind":"info"}
+{"item":"11","metric":"grade","value":0.0646,"kind":"info","detail":"baseline"}
+{"item":"12","metric":"built","value":1,"kind":"gate"}
+{"item":"12","metric":"blocks","value":0,"kind":"gate"}
+{"item":"12","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"12","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"12","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"12","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is a white token maker, anthem, Human or Knight attacker, or equipment, so the whole list supports Adeline's go-wide combat plan."}
+{"item":"12","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-white token deck led by Adeline with many token makers, and it avoids expensive staples so it plausibly fits the budget and bracket 2 casual power."}
+{"item":"12","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The deck has plenty of token makers, removal, and planeswalkers, but 39 lands including 35 Plains plus about ten low-impact rocks such as Currency Converter and Collector's Vault crowd out real threats, and the deck makes less mana on turn four than the norm."}
+{"item":"12","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary claims Halo Fountain and Sword of Body and Mind as dedicated finishers, and both are in the list, but Halo Fountain needs many untapped creatures and the Sword is only a modest closer; it also skips that the deck holds 39 lands and a lot of filler mana rocks, and it calls the mana base dependable while the fast-mana claim is downplayed."}
+{"item":"12","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"12","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"12","metric":"repaired","value":0,"kind":"info"}
+{"item":"12","metric":"cards","value":99,"kind":"info"}
+{"item":"12","metric":"pool","value":298,"kind":"info"}
+{"item":"12","metric":"warnings","value":0,"kind":"info"}
+{"item":"12","metric":"buy_cost","value":93.96999999999998,"kind":"info"}
+{"item":"12","metric":"deck_cost","value":93.96999999999998,"kind":"info"}
+{"item":"12","metric":"grade","value":0.0304,"kind":"info","detail":"bad"}
+{"item":"13","metric":"built","value":1,"kind":"gate"}
+{"item":"13","metric":"blocks","value":0,"kind":"gate"}
+{"item":"13","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"13","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"13","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"13","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: Most of the cards support a lifegain creature board around Karlov, but a lot of the list is generic value, equipment and removal, and the three wraths (Fumigate, Austere Command, Dusk // Dawn) pull against the creature-board plan."}
+{"item":"13","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: Karlov is not in the list as a card line and the colors are right, yet the deck is a generic white-black good-stuff pile with only some lifegain payoffs, and nothing shows it was built from the person's library first."}
+{"item":"13","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: The deck has plenty of lands and mana rocks, cheap draw, a wide spread of removal and several strong finishers, so it can be played as it stands even though the land count is high."}
+{"item":"13","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary says Angels are a second line of pressure led by Lyra Dawnbringer, and the list does carry Lyra, Angel of Invention, Shattered Angel, Victory's Herald and others, but it never mentions the three board wipes or the large amount of ramp and equipment."}
+{"item":"13","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"13","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"13","metric":"repaired","value":0,"kind":"info"}
+{"item":"13","metric":"cards","value":99,"kind":"info"}
+{"item":"13","metric":"pool","value":230,"kind":"info"}
+{"item":"13","metric":"warnings","value":1,"kind":"info"}
+{"item":"13","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"13","metric":"deck_cost","value":233.88000000000002,"kind":"info"}
+{"item":"13","metric":"grade","value":0.0802,"kind":"info","detail":"baseline"}
+{"item":"14","metric":"built","value":1,"kind":"gate"}
+{"item":"14","metric":"blocks","value":0,"kind":"gate"}
+{"item":"14","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"14","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"14","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"14","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The core of Dragon creatures with ramp and card draw pulls together, but filler like Wheel of Fortune, Pyroblast, Red Elemental Blast, Guardian Project and Beast Whisperer serves no Dragon plan."}
+{"item":"14","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Dragon tribal Commander deck led by a Dragon commander in red-green, with roughly two dozen Dragons and Dragon-support cards, which matches the request for a dragons deck at bracket 3."}
+{"item":"14","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The deck has plenty of lands, ramp and Dragons to play, but it runs 10 basic Mountains against only 2 Forests, has several green-heavy cards like Beast Whisperer and Harmonize that are hard to cast, and includes dead-ish cards such as Pyroblast and Red Elemental Blast."}
+{"item":"14","metric":"plan_summary_honest","value":0,"kind":"info","detail":"no: The summary says the commander makes 'double-strike attacks' to close the game, but Atarka, World Render is not listed with double strike here, and the deck's real payoff is Dragon count and haste-style beats rather than that claim."}
+{"item":"14","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"14","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"14","metric":"repaired","value":0,"kind":"info"}
+{"item":"14","metric":"cards","value":99,"kind":"info"}
+{"item":"14","metric":"pool","value":299,"kind":"info"}
+{"item":"14","metric":"warnings","value":0,"kind":"info"}
+{"item":"14","metric":"buy_cost","value":1264.9900000000002,"kind":"info"}
+{"item":"14","metric":"deck_cost","value":1264.9900000000002,"kind":"info"}
+{"item":"14","metric":"grade","value":0.0238,"kind":"info","detail":"bad"}
+{"item":"15","metric":"built","value":1,"kind":"gate"}
+{"item":"15","metric":"blocks","value":0,"kind":"gate"}
+{"item":"15","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"15","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"15","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"15","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The cards mostly point at a white-heavy lifegain creature deck with Angels, protection and removal, but two board wipes plus a third in Dusk // Dawn work against a creature-based plan, and much of the ramp and draw is generic filler that doesn't advance lifegain."}
+{"item":"15","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a white-black lifegain Commander deck led by Astarion, the Decadent, whose end-step life choices fit the theme, and it carries many lifegain payoffs and Angels at a modest power level suited to bracket 2, though the request's 'from my library first' cannot be verified from the list."}
+{"item":"15","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The deck has plenty of ramp, draw, removal and finishers, but 30 basics plus 7 nonbasic lands is a very high land count next to 10 mana rocks and a mana-producing creature, so flooding is likely, and few cards actually gain life or use it as a payoff."}
+{"item":"15","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The claim that Angels provide combat pressure, with Lyra Dawnbringer chief among them, checks out against the list (Angel of Invention, Shattered Angel, Victory's Herald, Exemplar of Light, and others), but the summary never mentions the three board wipes and calls the deck patient without noting how many generic artifacts it runs."}
+{"item":"15","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"15","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"15","metric":"repaired","value":0,"kind":"info"}
+{"item":"15","metric":"cards","value":99,"kind":"info"}
+{"item":"15","metric":"pool","value":230,"kind":"info"}
+{"item":"15","metric":"warnings","value":1,"kind":"info"}
+{"item":"15","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"15","metric":"deck_cost","value":153.70000000000002,"kind":"info"}
+{"item":"15","metric":"grade","value":0.0493,"kind":"info","detail":"baseline"}
+{"item":"16","metric":"built","value":1,"kind":"gate"}
+{"item":"16","metric":"blocks","value":0,"kind":"gate"}
+{"item":"16","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"16","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"16","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"16","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card feeds the aristocrats plan: cheap sacrifice fodder, Skullclamp and Blood Artist style drain payoffs, sacrifice outlets, and a supporting suite of ramp, removal, and draw."}
+{"item":"16","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a white-black aristocrats deck led by Denethor at a bracket-2 power level, but the 25-dollar budget is doubtful with Sol Ring, Skullclamp, Lightning Greaves, Swiftfoot Boots, Marsh Flats and other pricey cards, and nothing shows it was built from the person's own library first."}
+{"item":"16","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has plenty of ramp, draw, removal, and drain payoffs so it plays as built, but the mana base of 27 basics with 10 nonbasics plus 10 mana rocks is heavy, and the model found turn-four mana below the norm and few cards with strong performance."}
+{"item":"16","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: The summary says Bastion of Remembrance and Zulaport Cutthroat close out the game, and both are in the list as wincons alongside Denethor and the draw engines, while the wipes it warns about (Austere Command, Martial Coup, Dusk // Dawn) are also present."}
+{"item":"16","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"16","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"16","metric":"repaired","value":0,"kind":"info"}
+{"item":"16","metric":"cards","value":99,"kind":"info"}
+{"item":"16","metric":"pool","value":231,"kind":"info"}
+{"item":"16","metric":"warnings","value":26,"kind":"info"}
+{"item":"16","metric":"buy_cost","value":24.930000000000003,"kind":"info"}
+{"item":"16","metric":"deck_cost","value":141.07,"kind":"info"}
+{"item":"16","metric":"grade","value":0.3154,"kind":"info","detail":"baseline"}
+{"item":"17","metric":"built","value":1,"kind":"gate"}
+{"item":"17","metric":"blocks","value":0,"kind":"gate"}
+{"item":"17","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"17","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"17","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"17","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is a red Goblin creature, token maker, ritual, or cheap draw spell, and they all feed one Goblin storm plan with Impact Tremors, Goblin Bombardment, Grapeshot, and Past in Flames as payoffs."}
+{"item":"17","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a mono-red Goblin storm Commander deck led by Zada, Hedron Grinder, which matches the request to upgrade a Goblin Storm precon at bracket 3, with Sol Ring, Skullclamp, and rituals as upgrades."}
+{"item":"17","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: With 37 lands, 24 of them Mountains, plus many rituals and cheap Goblins, the deck casts its spells on curve and has several ways to win, so it plays as it stands."}
+{"item":"17","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary names Great Train Heist and Assault on Osgiliath as chief finishers, and both are in the list, but they are marginal ones compared with Grapeshot, Goblin Bombardment, Krenko, and Impact Tremors, which do most of the finishing."}
+{"item":"17","metric":"plan_score","value":0.875,"kind":"info"}
+{"item":"17","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"17","metric":"repaired","value":0,"kind":"info"}
+{"item":"17","metric":"cards","value":99,"kind":"info"}
+{"item":"17","metric":"pool","value":205,"kind":"info"}
+{"item":"17","metric":"warnings","value":1,"kind":"info"}
+{"item":"17","metric":"buy_cost","value":33.89,"kind":"info"}
+{"item":"17","metric":"deck_cost","value":233.99000000000004,"kind":"info"}
+{"item":"17","metric":"grade","value":0.5756,"kind":"info","detail":"typical"}
+{"item":"18","metric":"built","value":1,"kind":"gate"}
+{"item":"18","metric":"blocks","value":0,"kind":"gate"}
+{"item":"18","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"18","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"18","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"18","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The deck leans toward a Turtle, Mutant, and Ninja attack plan with plenty of ramp, but a five-color spread of mostly one-of legends, a few wipes that fight the creature board, and loose pieces like Fast Forward and Lessons from Life pull it in different directions."}
+{"item":"18","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is built around Heroes in a Half Shell with the Turtle Power precon's Mutant Ninja Turtle characters and Universes Beyond cards, in the commander's five colors, and the added staples like Sol Ring and dual lands fit an upgrade at bracket 3."}
+{"item":"18","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has plenty of ramp, fixing, and creatures at every point of the curve so it can be played, but the very high land count plus mana rocks leaves fewer real threats and card flow, and expensive cards like Vanquish the Horde and Leatherhead clog the hand while few cards actually win the game."}
+{"item":"18","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary says Shared Animosity supports a tribal plan and Raphael is a finisher, and both are in the list, but Shared Animosity only rewards sharing a creature type and the list has many singleton types, and the summary does not mention that the deck packs three board wipes (Blasphemous Act, Wave Goodbye, Vanquish the Horde) that work against its own attacking board, though it does admit the vulnerability to resets."}
+{"item":"18","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"18","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"18","metric":"repaired","value":0,"kind":"info"}
+{"item":"18","metric":"cards","value":99,"kind":"info"}
+{"item":"18","metric":"pool","value":365,"kind":"info"}
+{"item":"18","metric":"warnings","value":4,"kind":"info"}
+{"item":"18","metric":"buy_cost","value":2668.45,"kind":"info"}
+{"item":"18","metric":"deck_cost","value":2668.45,"kind":"info"}
+{"item":"18","metric":"grade","value":0.0594,"kind":"info","detail":"baseline"}
+{"item":"19","metric":"built","value":1,"kind":"gate"}
+{"item":"19","metric":"blocks","value":0,"kind":"gate"}
+{"item":"19","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"19","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"19","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"19","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The Elf tribal core with draw and ramp is a clear plan, but the black finishers, Witch-kings and Troll, sit awkwardly with a green-blue Elf base, and several cards such as the Rings and Mox Amber do little for it."}
+{"item":"19","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: It is a Thranduil, the Elvenking commander deck in UBG with every card from the Hobbit sets and an Elf-heavy list, which matches the request for a Hobbit set deck."}
+{"item":"19","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: With 28 basics and nonbasics split across three colors, plenty of cheap ramp, draw, removal and sweepers, the deck can be played as it stands, though a few lands and the three-color split may cause color friction."}
+{"item":"19","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary names Witch-king of Angmar, Witch-king, Bringer of Ruin and Troll of Khazad-dûm as finishers and they are in the list, but it says an Elf-filled graveyard gives options when the deck has almost no self-mill or recursion, so the graveyard claim is thin."}
+{"item":"19","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"19","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"19","metric":"repaired","value":0,"kind":"info"}
+{"item":"19","metric":"cards","value":99,"kind":"info"}
+{"item":"19","metric":"pool","value":174,"kind":"info"}
+{"item":"19","metric":"warnings","value":1,"kind":"info"}
+{"item":"19","metric":"buy_cost","value":546.1799999999998,"kind":"info"}
+{"item":"19","metric":"deck_cost","value":546.1799999999998,"kind":"info"}
+{"item":"19","metric":"grade","value":0.0602,"kind":"info","detail":"baseline"}
+{"item":"19","metric":"outside_set","value":0,"kind":"info","detail":"hob,hoc"}
+{"item":"20","metric":"built","value":1,"kind":"gate"}
+{"item":"20","metric":"blocks","value":0,"kind":"gate"}
+{"item":"20","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"20","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"20","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"20","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The red Treasure, Dwarf, Goblin and equipment cards loosely support a combat plan, but the list is a pile of 1-of pieces with many weak equipment and filler cards, and only three Dragons back the summary's claim of a deep Dragon roster."}
+{"item":"20","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: It is a mono-red Hobbit-set Commander deck led by Smaug the Magnificent, which fits the set and the dragon commander, but Dragons are barely present in the 99 so the dragons theme is thin."}
+{"item":"20","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: With 38 lands (34 Mountains) plus many mana rocks the deck will cast its spells, but it is flooded with mana, has few threats that win the game, and includes many low-impact equipment and filler cards, so it plays clunkily."}
+{"item":"20","metric":"plan_summary_honest","value":0,"kind":"info","detail":"no: The summary claims a deep roster of Dragons and abundant card draw, but the list has only Smaug plus three Dragon finishers (Cavern-Hoard Dragon, Desert Were-Worm, Smaug the Great Calamity) and just a handful of modest draw cards."}
+{"item":"20","metric":"plan_score","value":0.375,"kind":"info"}
+{"item":"20","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"20","metric":"repaired","value":0,"kind":"info"}
+{"item":"20","metric":"cards","value":99,"kind":"info"}
+{"item":"20","metric":"pool","value":77,"kind":"info"}
+{"item":"20","metric":"warnings","value":1,"kind":"info"}
+{"item":"20","metric":"buy_cost","value":518.81,"kind":"info"}
+{"item":"20","metric":"deck_cost","value":518.81,"kind":"info"}
+{"item":"20","metric":"grade","value":0.0631,"kind":"info","detail":"baseline"}
+{"item":"20","metric":"outside_set","value":0,"kind":"info","detail":"hob,hoc"}
+{"item":"21","metric":"built","value":1,"kind":"gate"}
+{"item":"21","metric":"blocks","value":0,"kind":"gate"}
+{"item":"21","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"21","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"21","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"21","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The cards mostly share a black-red Hobbit goblin-and-equipment shell with ramp into Dragons, but about a dozen equipment pieces and several vanilla-ish goblins have no real payoff, and the board wipes pull against a creature-heavy plan."}
+{"item":"21","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is led by Smaug the Impenetrable, stays in black-red, draws nearly every nonland card from the Hobbit sets, and takes only its lands and Arcane Signet from outside, as the request allowed."}
+{"item":"21","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The mana base of 19 basics plus duals and fetches is playable and hits two to four lands often, but the low count of real ramp, the number of low-impact equipment cards, and few strong finishers leave it slow and clunky at bracket 3."}
+{"item":"21","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The claim that equipment keeps creature combat central holds since the list has around a dozen equipment pieces, but the claim of a resource-building plan with Dragon finishers is thin because only a few Dragons appear and many ramp slots are just equipment or sagas."}
+{"item":"21","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"21","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"21","metric":"repaired","value":0,"kind":"info"}
+{"item":"21","metric":"cards","value":99,"kind":"info"}
+{"item":"21","metric":"pool","value":156,"kind":"info"}
+{"item":"21","metric":"warnings","value":1,"kind":"info"}
+{"item":"21","metric":"buy_cost","value":708.6100000000002,"kind":"info"}
+{"item":"21","metric":"deck_cost","value":708.6100000000002,"kind":"info"}
+{"item":"21","metric":"grade","value":0.0335,"kind":"info","detail":"baseline"}
+{"item":"21","metric":"outside_set","value":14,"kind":"info","detail":"hob,hoc"}
+{"item":"22","metric":"built","value":1,"kind":"gate"}
+{"item":"22","metric":"blocks","value":0,"kind":"gate"}
+{"item":"22","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"22","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"22","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"22","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The Elf creature core, card draw, and ramp all point toward a Thranduil midrange plan, but the black cards (Languish, Bowmasters, Witch-kings, removal) and the many blue cards spread the deck across three colors with little link to the Elf theme."}
+{"item":"22","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is led by Thranduil, the Elvenking, is drawn almost entirely from the Hobbit sets, stays in his UBG colors, is built around Elves, and includes the requested Sol Ring."}
+{"item":"22","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: It has plenty of ramp, draw, removal and creatures, but 27 basics plus only eight nonbasics leave a three-color mana base strained by cards like BB wipes and GG creatures, and the finishers are thin."}
+{"item":"22","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary's claim of an Elf midrange deck with ramp, interaction, wipes and a broad creature cast matches the list, but it says legendary Elves become fresh cards while few cards in the list actually do that, and it lists 'designated finishers' when the wincon slot holds only a Troll and two Witch-kings."}
+{"item":"22","metric":"plan_score","value":0.625,"kind":"info"}
+{"item":"22","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"22","metric":"repaired","value":0,"kind":"info"}
+{"item":"22","metric":"cards","value":99,"kind":"info"}
+{"item":"22","metric":"pool","value":175,"kind":"info"}
+{"item":"22","metric":"warnings","value":3,"kind":"info"}
+{"item":"22","metric":"buy_cost","value":550.9699999999999,"kind":"info"}
+{"item":"22","metric":"deck_cost","value":550.9699999999999,"kind":"info"}
+{"item":"22","metric":"grade","value":0.0454,"kind":"info","detail":"baseline"}
+{"item":"22","metric":"outside_set","value":1,"kind":"info","detail":"hob,hoc"}
+{"item":"23","metric":"built","value":1,"kind":"gate"}
+{"item":"23","metric":"blocks","value":0,"kind":"gate"}
+{"item":"23","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"23","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"23","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"23","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is a white creature, Equipment, or artifact that feeds the Dwarf-and-Equipment plan, with ramp and draw pieces supporting it and no off-plan cards pulling elsewhere."}
+{"item":"23","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: Every card is from the Hobbit and Bloomburrow sets, the commander is a Hobbit Dwarf, and the mono-white Equipment plan is a sensible pick for a bracket 3 game."}
+{"item":"23","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The mana base of 30 Plains plus utility lands and a dozen mana rocks casts everything smoothly and the deck has plenty of ramp, draw, and removal, but with a single finisher and many low-impact Equipment pieces it may struggle to close out games."}
+{"item":"23","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: The summary says Angel of the Ruins is a dedicated finishing threat and it is in the list, but it also calls the Equipment-backed attacks the main route, and the deck holds only one real finisher, and Kíli's 'equip support' is not clearly what the commander does."}
+{"item":"23","metric":"plan_score","value":0.75,"kind":"info"}
+{"item":"23","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"23","metric":"repaired","value":0,"kind":"info"}
+{"item":"23","metric":"cards","value":99,"kind":"info"}
+{"item":"23","metric":"pool","value":203,"kind":"info"}
+{"item":"23","metric":"warnings","value":1,"kind":"info"}
+{"item":"23","metric":"buy_cost","value":320.46000000000004,"kind":"info"}
+{"item":"23","metric":"deck_cost","value":320.46000000000004,"kind":"info"}
+{"item":"23","metric":"grade","value":0.4512,"kind":"info","detail":"typical"}
+{"item":"23","metric":"outside_set","value":0,"kind":"info","detail":"blb,blc,hob,hoc,pblb"}
+{"item":"24","metric":"built","value":1,"kind":"gate"}
+{"item":"24","metric":"blocks","value":0,"kind":"gate"}
+{"item":"24","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"24","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"24","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"24","metric":"plan_plan_coherent","value":1,"kind":"info","detail":"yes: Nearly every card is a cheap red creature, mostly Mice, backed by cheap burn and Might of the Meek to push damage, so the list carries one aggressive plan."}
+{"item":"24","metric":"plan_theme_fit","value":1,"kind":"info","detail":"yes: The deck is mono-red aggro built entirely from Bloomburrow cards and lands, matching the request for casual Modern."}
+{"item":"24","metric":"plan_useful_as_built","value":1,"kind":"info","detail":"yes: With 24 lands, a low curve topped by two five-drops, and a full set of one-drops and two-drops, the deck can be played as it stands, though 24 lands is a bit heavy for such a low curve."}
+{"item":"24","metric":"plan_summary_honest","value":1,"kind":"info","detail":"yes: The summary says the offense centers on Mice with red creatures and burn, and the list has 14 Mice-type creatures plus Take Out the Trash and Rabid Gnaw, with Dragonhawk as a two-copy top-end finisher."}
+{"item":"24","metric":"plan_score","value":1,"kind":"info"}
+{"item":"24","metric":"plan_reasons_empty","value":0,"kind":"info"}
+{"item":"24","metric":"repaired","value":0,"kind":"info"}
+{"item":"24","metric":"cards","value":60,"kind":"info"}
+{"item":"24","metric":"pool","value":96,"kind":"info"}
+{"item":"24","metric":"warnings","value":0,"kind":"info"}
+{"item":"24","metric":"buy_cost","value":25.220000000000002,"kind":"info"}
+{"item":"24","metric":"deck_cost","value":25.220000000000002,"kind":"info"}
+{"item":"24","metric":"grade","value":0.3648,"kind":"info","detail":"baseline"}
+{"item":"24","metric":"outside_set","value":0,"kind":"info","detail":"blb,blc,pblb"}
+{"item":"25","metric":"built","value":1,"kind":"gate"}
+{"item":"25","metric":"blocks","value":0,"kind":"gate"}
+{"item":"25","metric":"invented_names","value":0,"kind":"gate"}
+{"item":"25","metric":"false_rules","value":0,"kind":"gate"}
+{"item":"25","metric":"rules_claims","value":0,"kind":"info"}
+{"item":"25","metric":"plan_plan_coherent","value":0.5,"kind":"info","detail":"partly: The white Hero creatures, equipment, and removal broadly pull toward a mono-white superhero team, but 13 mana rocks and three board wipes sit awkwardly beside a creature-pressure plan with few real finishers."}
+{"item":"25","metric":"plan_theme_fit","value":0.5,"kind":"info","detail":"partly: The commander is a white Avengers hero and the list is full of Hero creatures, but it includes Avengers Assemble! and Origin of the Avengers, which look like cards from the precon the person excluded, and the library-first constraint cannot be confirmed."}
+{"item":"25","metric":"plan_useful_as_built","value":0.5,"kind":"info","detail":"partly: The deck is castable with mono-white mana and plenty of cheap interaction, but 38 lands plus 13 rocks leaves too little action, and off-color lands like Command Tower and Chromatic Lantern add little."}
+{"item":"25","metric":"plan_summary_honest","value":0.5,"kind":"info","detail":"partly: placeholder"}
+{"item":"25","metric":"plan_score","value":0.5,"kind":"info"}
+{"item":"25","metric":"plan_reasons_empty","value":1,"kind":"info"}
+{"item":"25","metric":"repaired","value":0,"kind":"info"}
+{"item":"25","metric":"cards","value":99,"kind":"info"}
+{"item":"25","metric":"pool","value":195,"kind":"info"}
+{"item":"25","metric":"warnings","value":0,"kind":"info"}
+{"item":"25","metric":"buy_cost","value":0,"kind":"info"}
+{"item":"25","metric":"deck_cost","value":138.50000000000003,"kind":"info"}
+{"item":"25","metric":"grade","value":0.4312,"kind":"info","detail":"typical"}
+{"item":"25","metric":"excluded_in_deck","value":0,"kind":"gate","detail":"Avengers Assemble"}
+{"item":"25","metric":"excluded","value":57,"kind":"info"}
+{"item":"25","metric":"spare","value":27,"kind":"info"}

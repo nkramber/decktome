@@ -98,7 +98,7 @@ type adapterCase struct {
 const openaiOK = `{"id":"resp_1","object":"response","status":"completed","model":"gpt-5.6-luna",
  "output":[{"type":"message","id":"msg_1","role":"assistant","status":"completed",
    "content":[{"type":"output_text","text":"{\"format\":\"commander\"}","annotations":[]}]}],
- "usage":{"input_tokens":10,"input_tokens_details":{"cached_tokens":4},"output_tokens":5,
+ "usage":{"input_tokens":10,"input_tokens_details":{"cached_tokens":4,"cache_write_tokens":3},"output_tokens":5,
    "output_tokens_details":{"reasoning_tokens":2},"total_tokens":15}}`
 
 const anthropicOK = `{"id":"msg_1","type":"message","role":"assistant","model":"claude-sonnet-5",
@@ -143,7 +143,7 @@ func adapterCases() []adapterCase {
 				}
 			},
 			checkUsage: func(t *testing.T, u *Usage) {
-				want := Usage{InputTokens: 10, CachedInputTokens: 4, OutputTokens: 5, ReasoningTokens: 2}
+				want := Usage{InputTokens: 10, CachedInputTokens: 4, CacheWriteTokens: 3, OutputTokens: 5, ReasoningTokens: 2}
 				if *u != want {
 					t.Errorf("usage = %+v, want %+v", *u, want)
 				}

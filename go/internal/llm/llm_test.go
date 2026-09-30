@@ -163,7 +163,7 @@ func TestCompleteHappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Attempts != 1 || res.Provider != FakeName || res.Model != "gpt-5.6-luna" {
+	if res.Attempts != 1 || res.Provider != FakeName || res.Model != "gpt-6-luna" {
 		t.Errorf("res = %+v", res)
 	}
 	call := sc.Calls[0]
@@ -353,14 +353,14 @@ func TestAccumulatorNullSemantics(t *testing.T) {
 	if rep.ByRole[RoleClassify].Calls != 2 || rep.ByRole[RoleClassify].Tokens.OutputTokens != 1_000_000 {
 		t.Errorf("by role = %+v", rep.ByRole[RoleClassify])
 	}
-	// Anthropic cache writes cost 1.25 x input: 1M in = 0.2M fresh at $3
-	// + 0.5M read at $0.30 + 0.3M write at $3.75, plus 1M out at $15.
-	acc.Record(RoleJudge, "claude-sonnet-5", &Usage{InputTokens: 1_000_000, CachedInputTokens: 500_000, CacheWriteTokens: 300_000, OutputTokens: 1_000_000}, 2*time.Millisecond)
+	// Anthropic cache writes cost 1.25 x input: 1M in = 0.2M fresh at $2
+	// + 0.5M read at $0.20 + 0.3M write at $2.50, plus 1M out at $10.
+	acc.Record(RoleJudge, "claude-sonnet-5-5", &Usage{InputTokens: 1_000_000, CachedInputTokens: 500_000, CacheWriteTokens: 300_000, OutputTokens: 1_000_000}, 2*time.Millisecond)
 	rep = acc.Report()
 	if rep.CostUSD == nil {
 		t.Fatalf("report = %+v", rep)
 	}
-	if want := 1.31 + 0.60 + 0.15 + 1.125 + 15.0; *rep.CostUSD < want-1e-9 || *rep.CostUSD > want+1e-9 {
+	if want := 1.31 + 0.40 + 0.10 + 0.75 + 10.0; *rep.CostUSD < want-1e-9 || *rep.CostUSD > want+1e-9 {
 		t.Errorf("cost = %v, want %v", *rep.CostUSD, want)
 	}
 	if rep.Tokens.CacheWriteTokens != 300_000 || rep.LatencyMS != 4 {

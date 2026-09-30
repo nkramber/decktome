@@ -19,8 +19,9 @@ const OpenAIName = "openai"
 
 // OpenAI calls the Responses API with strict JSON Schema output (D-21).
 // Prompt caching is automatic above 1,024 tokens. CacheKey routes a
-// session's calls to the same cache. The SDK's own retries are off: the
-// Client owns the budget.
+// session's calls to the same cache. GPT-5.6 and later bill a cache write
+// at 1.25 x input, so Usage carries the write count (D-998). The SDK's own
+// retries are off: the Client owns the budget.
 type OpenAI struct {
 	client openai.Client
 }
@@ -80,6 +81,7 @@ func (o *OpenAI) Complete(ctx context.Context, call Call) (Response, error) {
 		out.Usage = &Usage{
 			InputTokens:       resp.Usage.InputTokens,
 			CachedInputTokens: resp.Usage.InputTokensDetails.CachedTokens,
+			CacheWriteTokens:  resp.Usage.InputTokensDetails.CacheWriteTokens,
 			OutputTokens:      resp.Usage.OutputTokens,
 			ReasoningTokens:   resp.Usage.OutputTokensDetails.ReasoningTokens,
 		}

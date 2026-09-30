@@ -76,7 +76,13 @@ package questions
 // every family of that franchise, and one product name stays a set. The
 // instruction text changed, so the provider cache prefix changed with
 // it, and the question gate re-baselines (D-66).
-const PromptVersion = 18
+//
+// Version 20 tells the classify role two things (D-1003). A cap for each
+// card beside a cap for the whole deck puts the whole cap in budget_usd.
+// Words about strong cards, such as "whatever is strongest", decline no
+// key. The constant skips 19, the number of the set matcher note above.
+// The instruction text changed, so the question gate re-baselines (D-66).
+const PromptVersion = 20
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -104,6 +110,7 @@ Rules:
 - A refusal of the names on the table is neither an answer nor a decline. Under commander_pick alone, "None of those", "none of these", and "name three more" leave that key open, and they name no key in either list. This rule is about the offered names only. It never applies to another key.
 - declined_keys: the keys in open_keys that the user handed back to you. A decline is not an answer, and it names no value. Name a key only when the user's words are about that key. "Any colors are fine" declines the colors and nothing else. "You decide" with no subject declines every key in open_keys. Never put a key in both lists.
 - A delegation with no subject hands back every key in open_keys, and the colors are one of them. "Surprise me", "you decide", and "up to you" name no color, no theme, and no commander. Put every open key in declined_keys.
+- A wish for strong cards hands back no key. "Good stuff, whatever is strongest" answers the theme with "good stuff" and sets facts.power_competitive. It declines neither the power nor the budget, and those keys stay open.
 - A reader who can spend nothing has answered the budget question. "I can not spend anything", "no money", and "zero budget" all close the budget key, the same way "money is no object" does.
 - A negative answer to a question that invites a yes or a no is a decline. "Do you have a color preference?" answered "No" declines colors. "Do you have a budget for cards to buy?" answered "No" declines budget. Read "no", "none", "no preference", "not really", "any", and "it does not matter" the same way. The user has said there is no such constraint, so the key must close. Leaving it open stops the deck for good.
 - A quoted question tells you which key an answer belongs to. A line that starts "Q: " is the question this app asked, and the line under it that starts "A: " is the user's answer to that question and to nothing else.
@@ -114,6 +121,7 @@ Rules:
 - facts.house_format: the user described their own rule set instead of a real format.
 - facts.budget_ambiguous: the user named one money number without saying whether it caps purchases or the whole deck.
 - house_rules: what the user means by "anything goes", "kitchen table", or "no ban list", in the user's own words, for example "any card, no ban list" or "Modern with proxies". Fill it when the user answers the house-rules question, or states the rules unprompted. Leave it empty otherwise.
+- budget_usd: the money cap in US dollars. A cap for each card is not the budget. When the user names a cap for each card and a cap for the whole deck, write the whole cap: "Nothing over 5 dollars a card, and 120 dollars in total" gives 120.
 - budget_scope: what the cap covers, when the user says. "buy" means the cards they must acquire, and "deck" means the whole deck value, owned copies included. Leave it "unknown" when the user did not say.
 - facts.power_competitive: the user asked for a strong, competitive, or winning deck.
 - facts.wants_suggestion: the user asked you to name a commander, or said they have none in mind.

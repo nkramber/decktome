@@ -24,17 +24,17 @@ func planClient(t *testing.T, output string) *llm.Client {
 // read no as 0, partly as 0.5, and yes as 1, and the score is the mean.
 func TestJudgePlanReadsTheFourGrades(t *testing.T) {
 	c := planClient(t, `{
-		"plan_coherent": {"grade": "yes", "why": "one plan"},
-		"theme_fit": {"grade": "partly", "why": "half the theme"},
-		"useful_as_built": {"grade": "no", "why": "no lands"},
-		"summary_honest": {"grade": "yes", "why": "plain"}
+		"plan_coherent": {"grade": "yes", "why": "the cards serve one plan"},
+		"theme_fit": {"grade": "partly", "why": "half the theme is here"},
+		"useful_as_built": {"grade": "no", "why": "the deck has no lands"},
+		"summary_honest": {"grade": "yes", "why": "the summary is plain"}
 	}`)
 	deck := &mtgv1.Deck{Summary: "a deck", Cards: []*mtgv1.DeckCard{{Name: "Sol Ring", Count: 1}}}
 	j, err := JudgePlan(context.Background(), c, "a lifegain deck", deck, source{}, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if j.ThemeFit.Value() != 0.5 || j.UsefulAsBuilt.Value() != 0 || j.Grade("summary_honest").Why != "plain" {
+	if j.ThemeFit.Value() != 0.5 || j.UsefulAsBuilt.Value() != 0 || j.Grade("summary_honest").Why != "the summary is plain" {
 		t.Errorf("judgement = %+v", j)
 	}
 	if j.Score() != 0.625 {
@@ -69,10 +69,11 @@ func TestJudgePlanRefusesAWordOutsideTheScale(t *testing.T) {
 	}
 }
 
-// TestPlanReasonEmpty: a blank reason and the word "placeholder" count as
-// no reason, and a sentence counts as one.
+// TestPlanReasonEmpty: a blank reason, the word "placeholder", and a
+// reason of fewer than 3 words count as no reason, and a sentence counts
+// as one (D-1000).
 func TestPlanReasonEmpty(t *testing.T) {
-	for _, why := range []string{"", "  ", "placeholder", "Placeholder"} {
+	for _, why := range []string{"", "  ", "placeholder", "Placeholder", "x", "one plan"} {
 		if !(PlanGrade{Grade: "yes", Why: why}).ReasonEmpty() {
 			t.Errorf("%q must read as no reason", why)
 		}
@@ -81,13 +82,51 @@ func TestPlanReasonEmpty(t *testing.T) {
 		t.Error("a sentence is a reason")
 	}
 	j := PlanJudgement{
-		PlanCoherent:  PlanGrade{Grade: "yes", Why: "one plan"},
+		PlanCoherent:  PlanGrade{Grade: "yes", Why: "the cards serve one plan"},
 		ThemeFit:      PlanGrade{Grade: "yes", Why: "placeholder"},
 		UsefulAsBuilt: PlanGrade{Grade: "yes", Why: ""},
-		SummaryHonest: PlanGrade{Grade: "yes", Why: "plain"},
+		SummaryHonest: PlanGrade{Grade: "yes", Why: "the summary is plain"},
 	}
 	if n := j.EmptyReasons(); n != 2 {
 		t.Errorf("EmptyReasons = %d, want 2", n)
+	}
+}
+
+// TestJudgePlanAsksAgainForAnEmptyReason: an answer with an empty reason
+// gets one more call, and the answer with fewer empty reasons stands
+// (D-1000). An answer with every reason written gets no second call.
+func TestJudgePlanAsksAgainForAnEmptyReason(t *testing.T) {
+	junk := `{
+		"plan_coherent": {"grade": "yes", "why": "the cards serve one plan"},
+		"theme_fit": {"grade": "yes", "why": "the theme is the request"},
+		"useful_as_built": {"grade": "yes", "why": "the mana base is sound"},
+		"summary_honest": {"grade": "partly", "why": "placeholder"}
+	}`
+	good := strings.Replace(junk, `"partly", "why": "placeholder"`, `"yes", "why": "the summary names the lifegain plan"`, 1)
+	sc := llm.NewScript(llm.Step{Output: json.RawMessage(junk)}, llm.Step{Output: json.RawMessage(good)})
+	c, err := llm.New(fakeConfig(), []llm.Provider{sc}, llm.WithoutJitter())
+	if err != nil {
+		t.Fatal(err)
+	}
+	acc := llm.NewAccumulator(nil)
+	j, err := JudgePlan(context.Background(), c, "a lifegain deck", &mtgv1.Deck{}, source{}, nil, acc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if j.EmptyReasons() != 0 || j.SummaryHonest.Grade != "yes" {
+		t.Errorf("judgement = %+v, want the second answer", j)
+	}
+	if n := acc.Report().Calls; n != 2 {
+		t.Errorf("calls = %d, want 2", n)
+	}
+
+	c = planClient(t, good)
+	acc = llm.NewAccumulator(nil)
+	if _, err := JudgePlan(context.Background(), c, "a lifegain deck", &mtgv1.Deck{}, source{}, nil, acc); err != nil {
+		t.Fatal(err)
+	}
+	if n := acc.Report().Calls; n != 1 {
+		t.Errorf("calls = %d, want 1 for an answer with every reason", n)
 	}
 }
 

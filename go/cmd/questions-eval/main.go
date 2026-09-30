@@ -104,6 +104,8 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 		convs = convs[:limit]
 		stopped = fmt.Sprintf("-n %d cut the run to %d of %d conversations", limit, limit, len(gate.Conversations))
 	}
+	// The -n cut is the stop the caller asked for, so it is no error.
+	asked := stopped
 	var verdicts []tune.Verdict
 	missed := map[string][]string{}
 	unjudged := map[string]string{}
@@ -216,7 +218,7 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 	if fault != nil {
 		return fault
 	}
-	if stopped != "" {
+	if stopped != "" && stopped != asked {
 		return fmt.Errorf("%s", stopped)
 	}
 	return nil
