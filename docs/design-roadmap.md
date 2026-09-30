@@ -2839,7 +2839,7 @@ Gate:
 
 > *In plain English:* a full test of the newest deck prompt passed. The decks read a little better, and the two decks that needed a fix got one.
 
-**PR-105: Move the model roles to GPT-6, GPT-6.1, and Claude Sonnet 5.5, and measure each move (D-996).** 🔧 in review. The owner named it on 2026-09-29, as the item after PR-104.
+**PR-105: Move the model roles to GPT-6, GPT-6.1, and Claude Sonnet 5.5, and measure each move (D-996).** ✅ merged as #257. The mark comes before any review (D-822). The owner named it on 2026-09-29, as the item after PR-104.
 
 | Role or target | Before | After | The gate result |
 |---|---|---|---|

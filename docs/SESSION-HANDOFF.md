@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-30)
 
-**Pull request #PRNUM, PR-105, moves the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003).**
+**Pull request #257, PR-105, moves the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003).**
 
 Author provider: Claude Code
 
@@ -120,7 +120,7 @@ Twenty-two things a fresh session gets wrong without this file.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
 12. **PR-104: deck gate run 35, and `jsdom` 30.1.1** (F-33, D-995, D-997). It reads PASS for $3.1278. This pull request is #256.
-13. **PR-105: move the model roles, and measure each move** (D-996, D-998 to D-1003). Each move reads PASS on its gate. This pull request is #PRNUM.
+13. **PR-105: move the model roles, and measure each move** (D-996, D-998 to D-1003). Each move reads PASS on its gate. This pull request is #257.
 14. **The open items of the roadmap.** No register row reads 🔧. F-49 reads ✅ (PR-103, D-994). F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. Deck gate run 35 measured them as a whole run (PR-104, D-995).
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
