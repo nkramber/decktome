@@ -156,8 +156,20 @@ export async function disablePush(): Promise<PushState> {
 // registration with Cloud Messaging ends when the API call fails, and the
 // API gives the ID to the next account that turns push on. A failure
 // never stops the sign-out.
+//
+// The flag saves a read, but a browser can refuse to store it. So with no
+// flag, a browser that granted the permission asks the API, which is the
+// source of truth. A read that fails releases the device all the same.
 export async function releasePushOnSignOut(): Promise<void> {
-  if (!readFlag()) return;
+  if (!readFlag()) {
+    if (!pushConfigured() || typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    try {
+      const res = await pushClient.getDevice({ installationId: await installationId() });
+      if (!res.registered) return;
+    } catch {
+      // The state is not known, so the release goes on.
+    }
+  }
   try {
     await disablePush();
   } catch {

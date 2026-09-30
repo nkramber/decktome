@@ -157,6 +157,34 @@ describe("releasePushOnSignOut", () => {
   it("does nothing on a browser that never turned push on", async () => {
     await releasePushOnSignOut();
     expect(unregisterDevice).not.toHaveBeenCalled();
+    expect(getDevice).not.toHaveBeenCalled();
+  });
+
+  // P2-1 of the review of #258: a browser can refuse to store the flag.
+  // The API then says whether the device is registered.
+  it("releases a device the API holds when the flag is missing", async () => {
+    permission = "granted";
+    getDevice.mockResolvedValue({ registered: true });
+    await releasePushOnSignOut();
+    expect(getDevice).toHaveBeenCalledWith({ installationId: "fid-1" });
+    expect(unregisterDevice).toHaveBeenCalledWith({ installationId: "fid-1" });
+    expect(messaging.unregister).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves a device the API does not hold when the flag is missing", async () => {
+    permission = "granted";
+    getDevice.mockResolvedValue({ registered: false });
+    await releasePushOnSignOut();
+    expect(unregisterDevice).not.toHaveBeenCalled();
+    expect(messaging.unregister).not.toHaveBeenCalled();
+  });
+
+  it("releases the device when the read of the API fails and the flag is missing", async () => {
+    permission = "granted";
+    getDevice.mockRejectedValue(new Error("offline"));
+    await releasePushOnSignOut();
+    expect(unregisterDevice).toHaveBeenCalled();
+    expect(messaging.unregister).toHaveBeenCalledTimes(1);
   });
 
   it("removes the device, and a failure never stops the sign-out", async () => {
