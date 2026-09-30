@@ -834,6 +834,91 @@ func TestDisconnectMidBuildStillStoresTheDeck(t *testing.T) {
 	}
 }
 
+// fakePush records each push of a stored deck.
+type fakePush struct {
+	mu    sync.Mutex
+	decks []string
+}
+
+func (f *fakePush) DeckReady(_ context.Context, uid string, d *mtgv1.Deck) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.decks = append(f.decks, uid+"/"+d.GetId())
+}
+
+func (f *fakePush) sent() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]string(nil), f.decks...)
+}
+
+// TestPushAfterTheClientLeft is D-1005. A build that ends after the
+// client left sends one push for the stored deck, and a build the user
+// reads in the stream sends none.
+func TestPushAfterTheClientLeft(t *testing.T) {
+	store := newFakeStore()
+	ds := &fakeDeckStore{}
+	pn := &fakePush{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}, started: make(chan struct{}), release: make(chan struct{})}
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(ds), WithPush(pn)), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		stream, err := client.Chat(ctx, connect.NewRequest(&mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"}))
+		if err != nil {
+			return
+		}
+		for stream.Receive() {
+		}
+		_ = stream.Close()
+	}()
+	select {
+	case <-fd.started:
+	case <-time.After(5 * time.Second):
+		close(fd.release)
+		t.Fatal("the build never started")
+	}
+	cancel()
+	<-done
+	// The server sees the closed connection a moment after the client
+	// does. A real build runs for minutes after the user leaves.
+	time.Sleep(200 * time.Millisecond)
+	close(fd.release)
+	deadline := time.After(5 * time.Second)
+	for len(pn.sent()) == 0 {
+		select {
+		case <-deadline:
+			t.Fatalf("no push after the client left: decks kept %d", len(ds.put))
+		case <-time.After(20 * time.Millisecond):
+		}
+	}
+	if got := pn.sent(); len(got) != 1 || !strings.HasSuffix(got[0], "/"+fd.got.DeckID) {
+		t.Errorf("pushes = %v, want one for deck %s", got, fd.got.DeckID)
+	}
+}
+
+// TestNoPushWhileTheClientReads is D-1005: the user who reads the stream
+// to its end gets the deck there and no push.
+func TestNoPushWhileTheClientReads(t *testing.T) {
+	store := newFakeStore()
+	pn := &fakePush{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}}
+	client, _ := testServerOpts(t, store, append(buildOpts(t, fd), WithDeckStore(&fakeDeckStore{}), WithPush(pn)), readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if second.deck == nil {
+		t.Fatalf("no deck: %v", second.order)
+	}
+	if got := pn.sent(); len(got) != 0 {
+		t.Errorf("pushes = %v, want none for a user on the page", got)
+	}
+}
+
 // TestDeckIDWriteRetriesAfterAConflict is D-303. Another write lands
 // between the turn's Put and the deck id write, and the id is appended
 // to the current session instead of lost.

@@ -215,7 +215,7 @@ jobs:
       - name: firestore tests
         run: |
           firebase emulators:exec --only firestore --project mtg-local \
-            "FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 go -C go test -race -count=1 ./internal/sessions/ ./internal/decks/"
+            "FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 go -C go test -race -count=1 ./internal/sessions/ ./internal/decks/ ./internal/push/"
       # The script seeds the fake GCS from the trimmed snapshot, and it fails
       # unless TestLiveFakeGCS passes by name (D-658). `make gcs-check` runs
       # the same script.

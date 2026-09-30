@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
+
+// PushService keeps the devices that take a web push for the caller
+// (PR-26, D-1004, D-1005). A device is one browser install, named by its
+// Firebase Installation ID. A user with no device gets no push, so a
+// registered device is the opt-in.
+//
+// The one event is a finished build for a user who left the page. The
+// API sends it through Firebase Cloud Messaging.
+service PushService {
+  // RegisterDevice turns push on for one device of the caller. A second
+  // call for the same device keeps one entry.
+  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse) {}
+  // UnregisterDevice turns push off for one device of the caller. A
+  // device the caller does not hold is not an error.
+  rpc UnregisterDevice(UnregisterDeviceRequest) returns (UnregisterDeviceResponse) {}
+  // GetDevice says whether push is on for one device of the caller. The
+  // API removes a device that Cloud Messaging refuses, so the answer can
+  // change with no call of the web app.
+  rpc GetDevice(GetDeviceRequest) returns (GetDeviceResponse) {}
+}
+
+message RegisterDeviceRequest {
+  // installation_id is the Firebase Installation ID of the browser.
+  string installation_id = 1;
+}
+
+message RegisterDeviceResponse {}
+
+message UnregisterDeviceRequest {
+  string installation_id = 1;
+}
+
+message UnregisterDeviceResponse {}
+
+message GetDeviceRequest {
+  string installation_id = 1;
+}
+
+message GetDeviceResponse {
+  // registered is true when the caller holds the device.
+  bool registered = 1;
+}

@@ -1,4 +1,5 @@
 import { signOutOfApp } from "../../lib/firebase";
+import { releasePushOnSignOut } from "../push/push";
 import { resetInviteState } from "./invite-state";
 
 // clearAccountState clears the persisted ids, the query cache, and the
@@ -10,8 +11,11 @@ export function clearAccountState(reset: () => void, clear: () => void) {
   resetInviteState();
 }
 
-// signOutAndClear ends the session, then clears the account state.
+// signOutAndClear ends the session, then clears the account state. The
+// push device of this browser leaves the account first, while the token
+// still holds (D-1005).
 export async function signOutAndClear(reset: () => void, clear: () => void) {
+  await releasePushOnSignOut();
   await signOutOfApp();
   clearAccountState(reset, clear);
 }

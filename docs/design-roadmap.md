@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-29 correction pass 255 (PR-26, D-1004, D-1005): the owner answered OQ-67. PR-26 builds web push alone, with one event, a finished build. The email digest, the legality event, and the new-cards event wait. Changes: PR-26, sequencing step 99.
+
 2026-09-30 correction pass 254 (PR-105, D-996, D-998 to D-1003): the model roles move to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`. Each move has a gate result that reads PASS. Two prompt fixes cover the misreads of the new models. Changes: PR-105, sequencing step 98.
 
 2026-09-29 correction pass 253 (PR-104, PR-105, F-33, D-995 to D-997): deck gate run 35 reads PASS for $3.1278 on generate prompt version 16. The web test tooling moves to `jsdom` 30.1.1 for 3 advisories of `undici`. The owner named PR-105, the move of the model roles. Changes: F-33, PR-104, PR-105, sequencing step 97.
@@ -1047,7 +1049,7 @@ The four flows of D-312 come in this order:
 - PR-22, the deploy for invited users.
 - PR-23, the Playwright smoke flow.
 - PR-25, the installable web app, Stage A of the mobile proposal (D-547).
-- PR-26, the return channels, Stage B of the mobile proposal (OQ-67).
+- PR-26, the return channels, Stage B of the mobile proposal (D-1004, D-1005).
 - PR-32, the commander the reader named, and the pool they chose (F-75, F-76).
 
 > *In plain English:* what exists today is a test bench with a browser on it. This phase makes it an app a person can use every day, on a laptop or a phone, and later from anywhere with an invitation.
@@ -1283,7 +1285,18 @@ The free half holds. `src/lib/pwa.test.ts` reads every field an install rests on
 **The phone walk passed on 2026-09-08** (D-627). The install works, the app opens with no browser chrome, the page reads up and down alone, and the chat input stays above the keyboard. The walk found four faults on the way, and every one is fixed and deployed: F-82, F-83, D-625, and D-626.
 > *In plain English:* the app becomes something you add to your phone's home screen and open like any other app. It starts with no signal, and the collection file from ManaBox goes in with two taps.
 
-**PR-26: The return channels (OQ-67).** ❓ needs owner input on the channels and the events. Stage B of the proposal.
+**PR-26: The return channels (D-1004, D-1005).** 🔧 the web push of a finished build. The mark comes before any review (D-822). Stage B of the proposal.
+
+2026-09-29: the owner answered OQ-67 (D-1004). PR-26 builds web push through Firebase Cloud Messaging, with one event: a finished build for a user who left the page. The email digest waits for a later pull request. The legality event waits for the staleness job of I-1, because no code sets the `stale` flag yet. The new-cards event waits too.
+
+The build: `go/internal/push` keeps the devices under `users/<uid>/push_devices` and sends through Cloud Messaging. `go/internal/pushsvc` serves `PushService`, and the account menu holds the toggle. The API sends the push after it stores the deck, only when the client left the stream. The handler joins the worker of PR-25 (`web/apps/web/public/push-handler.js`). D-1005 holds each choice.
+
+Gate of this pull request: the unit tests hold each rule. A build after the client left sends one push, and a build the user reads sends none. A user with no device gets nothing. A gone device leaves the store, and a sign-out removes the device. The emulator tests hold the cap of 10 devices.
+
+The live check after the deploy: a real build on a real device, with the page closed, shows the notification. A tap opens the deck.
+> *In plain English:* turn on notifications in the account menu, start a deck, and close the page. When the deck is ready, your phone or computer tells you, and a tap opens it.
+
+The plan of 2026-09-05 follows, and D-1004 narrows it.
 Push through Firebase Cloud Messaging and a weekly email digest, each an opt-in per event. Three events come from data the product keeps. A legality change touches a deck, a new set holds cards for a deck, or a build finished. One Cloud Run job reads weekly, and one Firestore document per user holds the opt-ins and the device tokens.
 
 The digest carries one suggested revision, and the revise turn runs on a tap alone, about $0.10, inside the cap of D-421. It follows the ban rerun item, which carries the `stale` flag. Cloud Messaging is free, and the digest sits inside the free tier of one email provider (read 2026-09-05).
@@ -3265,6 +3278,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 96. **PR-103** the read of the test verdict of 2026-09-24, and the close of F-49 (F-49, D-994). No paid target ran.
 97. **PR-104** deck gate run 35, the first whole run of generate prompt version 16, and `jsdom` 30.1.1 (F-33, D-995, D-997). It spent $3.1278. Then PR-105, the move of the model roles (D-996).
 98. **PR-105** the move of the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003). It spent about $4.1 at OpenAI and $1.04 at Anthropic.
+99. **PR-26** the web push of a finished build, Stage B of the mobile proposal (D-1004, D-1005). The email digest, the legality event, and the new-cards event wait.
 
 ## 9. Open questions
 

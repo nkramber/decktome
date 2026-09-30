@@ -30,6 +30,10 @@ export default defineConfig({
         // The API answers a POST per user, so no response of it is ever
         // cached, and the navigation fallback never swallows its routes.
         navigateFallbackDenylist: [/^\/mtg\.v1\./, /^\/healthz/, /^\/readyz/],
+        // The push handler of PR-26 joins this worker, so the app keeps
+        // one worker, which is what an iPhone on the Home Screen needs
+        // (D-1005). The file sits in `public`.
+        importScripts: ["push-handler.js"],
       },
       // The service worker belongs to a build. `make dev` and the smoke
       // flow of PR-23 run the dev server, and neither registers one.

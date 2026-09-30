@@ -45,6 +45,8 @@ import (
 	"github.com/nkramber/decktome/go/internal/notify"
 	"github.com/nkramber/decktome/go/internal/precons"
 	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/push"
+	"github.com/nkramber/decktome/go/internal/pushsvc"
 	"github.com/nkramber/decktome/go/internal/quality"
 	"github.com/nkramber/decktome/go/internal/questions"
 	"github.com/nkramber/decktome/go/internal/ratelimit"
@@ -219,7 +221,21 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// of PR-24 (D-407, D-408). No table excludes nothing, and the turn
 	// says so.
 	tableSrc := &preconTableSource{}
-	agentServer, err := agentService(llmClient, fs, cardServer, collectionRepo, deckRepo, rulesCfg, preconSrc, tableSrc, scorer, userFn, logger)
+	// The devices that take a web push sit under each user (PR-26,
+	// D-1005). Cloud Run sends through Cloud Messaging with the service
+	// account, and local mode keeps the devices and sends nothing.
+	pushRepo := push.NewRepo(fs)
+	pushServer := pushsvc.New(pushRepo, userFn)
+	var agentExtra []agentsvc.Option
+	if gcpenv.OnCloudRun() {
+		fcm, err := push.NewFCM(ctx, project)
+		if err != nil {
+			return fmt.Errorf("push init: %w", err)
+		}
+		agentExtra = append(agentExtra, agentsvc.WithPush(push.NewNotifier(pushRepo, fcm, logger)))
+		logger.Info("the push of a finished build is on")
+	}
+	agentServer, err := agentService(llmClient, fs, cardServer, collectionRepo, deckRepo, rulesCfg, preconSrc, tableSrc, scorer, userFn, logger, agentExtra...)
 	if err != nil {
 		return fmt.Errorf("agent service: %w", err)
 	}
@@ -254,6 +270,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, deckOpts...))
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
 	mux.Handle(mtgv1connect.NewFeedbackServiceHandler(feedbackServer, opts...))
+	mux.Handle(mtgv1connect.NewPushServiceHandler(pushServer, opts...))
 	// CheckInvite needs no sign-in: it runs before an account exists
 	// (D-592). It reads a person's input, so the same limiter that
 	// bounds the shared deck reads bounds it, per client address (D-315).
@@ -555,7 +572,7 @@ func preconTableLoop(ctx context.Context, store meta.ObjectStore, src *preconTab
 // A missing price table only costs the cost field of the usage event.
 func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Server,
 	cols *collections.Repo, deckRepo *decks.Repo, rulesCfg *rules.Config, preconSrc agentsvc.PreconSource,
-	tableSrc agentsvc.PreconTableSource, scorer *quality.Scorer, userFn auth.UserFunc, logger *slog.Logger) (*agentsvc.Server, error) {
+	tableSrc agentsvc.PreconTableSource, scorer *quality.Scorer, userFn auth.UserFunc, logger *slog.Logger, extra ...agentsvc.Option) (*agentsvc.Server, error) {
 	cat, err := questions.Load()
 	if err != nil {
 		return nil, err
@@ -610,6 +627,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 			logger.Info("the spend cap has overrides", "emails", len(over))
 		}
 	}
+	opts = append(opts, extra...)
 	return agentsvc.New(cat, client, sessions.NewRepo(fs), userFn, opts...)
 }
 
