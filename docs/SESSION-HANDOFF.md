@@ -12,22 +12,21 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The base.** `main` is `b0a44cd`, from #257. Cloud Build `deploy-api` built `b0a44cd` with SUCCESS, so the new model roles are live. No web file changed in #257, so no `deploy-web` ran.
+**The base.** `main` is `b0a44cd`, from #257. Cloud Build `deploy-api` built it with SUCCESS, so the new model roles are live.
 
-**The owner answers.** OQ-67: web push first, and one event, a finished build (D-1004). The toggle sits in the account menu, and the session made the grant of the role (D-1005).
+**The owner answers.** OQ-67: web push first, and one event, a finished build (D-1004). The toggle sits in the account menu, and the session made the grant of the role (D-1005). The audit fix of `brace-expansion` goes here too (D-1006).
 
-**The grant.** The session gave `mtg-api` the role `roles/firebasecloudmessaging.admin` on `decktome-prod`. The two FCM APIs were on already. The app uses the default VAPID key of the SDK, so the console needs no key.
+**The grant.** `mtg-api` holds `roles/firebasecloudmessaging.admin` on `decktome-prod`. The app uses the default VAPID key of the SDK.
 
 **The code.**
 
 - `go/internal/push` keeps the devices, at most 10 for each user, and sends through Cloud Messaging by Firebase Installation ID. One ID has one owner, in `push_owners/<id>`.
 - `go/internal/pushsvc` serves `PushService`. The agent service sends after it stores a deck, only when the client left the stream.
 - The web app adds the toggle, `web/apps/web/src/features/push/push.ts`, and the worker handler `web/apps/web/public/push-handler.js`.
-- `cloudbuild/web.yaml` passes the sender id, the project number.
 
-**The checks.** See the pull request body for `make verify`. The emulator tests of `go/internal/push` join the CI step and `make store-check`.
+**The checks.** The pull request body holds them.
 
-**The review.** P2-1 is fixed at `6c49dd6`. P1-1 stays open at the effective head. Verdict: Changes required.
+**The review.** Gitar found one issue, fixed at `2089b50`. Codex round 1 found P2-1, fixed at `6c49dd6`. Round 2 found P1-1, the size of this file, and `verify:web` failed on new advisories. `docs/reviews/pr-258-response.md` answers both.
 
 **What waits on the owner.**
 

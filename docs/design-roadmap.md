@@ -1291,7 +1291,7 @@ The free half holds. `src/lib/pwa.test.ts` reads every field an install rests on
 
 The build: `go/internal/push` keeps the devices under `users/<uid>/push_devices` and sends through Cloud Messaging. `go/internal/pushsvc` serves `PushService`, and the account menu holds the toggle. The API sends the push after it stores the deck, only when the client left the stream. The handler joins the worker of PR-25 (`web/apps/web/public/push-handler.js`). D-1005 holds each choice.
 
-The ID belongs to the browser, so `push_owners/<id>` names one owner, and a second account takes the ID from the first. A sign-out ends the registration with Cloud Messaging also when the API call fails (Gitar finding on #258).
+The ID belongs to the browser, so `push_owners/<id>` names one owner, and a second account takes the ID from the first. A sign-out ends the registration with Cloud Messaging also when the API call fails (Gitar finding on #258). The audit fix of `brace-expansion` rides in the same pull request (D-1006).
 
 Gate of this pull request: the unit tests hold each rule. A build after the client left sends one push, and a build the user reads sends none. A user with no device gets nothing. A gone device leaves the store, and a sign-out removes the device. The emulator tests hold the cap of 10 devices and one owner for each ID.
 

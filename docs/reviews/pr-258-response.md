@@ -12,3 +12,21 @@ The author answers the Codex record of `docs/reviews/pr-258.md`. That record rea
 ## A note on the verification of the record
 
 The record says that `make verify` failed at web test startup with `ERR_REQUIRE_ESM` under Node 20.17.0. The author ran `make verify` with Node 22 on the PATH, and it passed on `be954ee`. The web tests of the repo need Node 22, and pnpm runs from the Node 20 bin.
+
+# Response to round 2
+
+The Codex record read `Changes required` at head `6c49dd6`, with one finding.
+
+## P1-1: The hand-off exceeds the context budget
+
+- The result: full merit.
+- The evidence: the review line of `6c49dd6` took `docs/SESSION-HANDOFF.md` to 24,013 bytes, over the limit of 24,000 (D-749). The author ran `make context-budget` before that last edit, and not after it. `verify:shell` failed on `6c49dd6`.
+- The correction: the record commit `84dec9f` took the file to 23,735 bytes. The author shortened the resume section again, to 23,621 bytes, so the next review line has room. The hand-off is in the metadata set, so the effective head does not move for this correction (D-752).
+- The regression check: `make context-budget` reads 23,621 of 24,000 bytes, and `verify:shell` reads success on `84dec9f` in run 36665252826.
+
+## The audit failure of `verify:web`
+
+`verify:web` failed on `6c49dd6` at `pnpm audit --audit-level high`. The cause is new: advisories GHSA-qhr7-859c-m2p7 and GHSA-6j4f-fj2g-mc7p on `brace-expansion`. `main` holds the same lockfile, so its audit fails too. The owner chose the fix in this pull request (D-1006).
+
+- The correction: `pnpm --dir web update -r brace-expansion` changes `web/pnpm-lock.yaml` alone. The package moves to 1.1.21, 2.1.7, and 5.0.12.
+- The regression check: the audit reads 1 moderate advisory and no high one. `pnpm install --frozen-lockfile` passes, and the whole web suite passes, 443 of 443, with lint and typecheck.
