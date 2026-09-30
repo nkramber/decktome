@@ -7,7 +7,7 @@
 # Each image names its digest, so a new release of an image changes no
 # build (D-931). docs/deploy-and-rollback.md holds the refresh.
 #
-# The four VITE_FIREBASE_ values reach the browser in the bundle, so they
+# The five VITE_FIREBASE_ values reach the browser in the bundle, so they
 # are plain substitutions and never secrets.
 #
 # The API has its own trigger, so the two builds run apart. The guard
@@ -25,6 +25,7 @@ steps:
       - VITE_FIREBASE_AUTH_DOMAIN=${_FIREBASE_AUTH_DOMAIN}
       - VITE_FIREBASE_PROJECT_ID=${_FIREBASE_PROJECT_ID}
       - VITE_FIREBASE_APP_ID=${_FIREBASE_APP_ID}
+      - VITE_FIREBASE_MESSAGING_SENDER_ID=${_FIREBASE_MESSAGING_SENDER_ID}
     args:
       - -c
       - |
@@ -93,6 +94,9 @@ substitutions:
   _FIREBASE_AUTH_DOMAIN: decktome-prod.firebaseapp.com
   _FIREBASE_PROJECT_ID: decktome-prod
   _FIREBASE_APP_ID: "1:492774632746:web:6908f4f365bf98766e8253"
+  # The sender id is the project number, and it turns on the web push of
+  # PR-26 (D-1005).
+  _FIREBASE_MESSAGING_SENDER_ID: "492774632746"
 
 # The default pool runs 10 build CPUs at a time, and the API build takes 8.
 # So the web takes 2, and the two builds run together. With 8 here, the

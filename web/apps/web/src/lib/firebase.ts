@@ -1,3 +1,4 @@
+import type { FirebaseApp } from "firebase/app";
 import type { Auth } from "firebase/auth";
 
 import { authCode } from "./errors";
@@ -7,10 +8,11 @@ import { authCode } from "./errors";
 // code. Every caller awaits loadAuth().
 type AuthModule = typeof import("firebase/auth");
 
-let pending: Promise<{ auth: Auth; mod: AuthModule }> | null = null;
+let pending: Promise<{ app: FirebaseApp; auth: Auth; mod: AuthModule }> | null = null;
 
 // loadAuth downloads the SDK once and returns the same instance after that.
-export function loadAuth(): Promise<{ auth: Auth; mod: AuthModule }> {
+// The push module of PR-26 takes the app from it too.
+export function loadAuth(): Promise<{ app: FirebaseApp; auth: Auth; mod: AuthModule }> {
   pending ??= start();
   return pending;
 }
@@ -20,13 +22,16 @@ async function start() {
 
   // The project id must match the one the emulator and the API agree on (D-275).
   // A deployed build carries the real Firebase web configuration through the
-  // four VITE_FIREBASE_ variables (PR-22). The dev defaults serve the emulator.
+  // VITE_FIREBASE_ variables (PR-22). The dev defaults serve the emulator.
+  // Cloud Messaging needs the sender id, and a build with none shows no
+  // push toggle (D-1005).
   const env = import.meta.env;
   const app = initializeApp({
     apiKey: env.VITE_FIREBASE_API_KEY || "demo-key",
     projectId: env.VITE_FIREBASE_PROJECT_ID || "mtg-local",
     authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "localhost",
     appId: env.VITE_FIREBASE_APP_ID || undefined,
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || undefined,
   });
 
   // browserLocalPersistence keeps the session across a reload.
@@ -38,7 +43,7 @@ async function start() {
   if (emulatorHost) {
     mod.connectAuthEmulator(auth, `http://${emulatorHost}`, { disableWarnings: true });
   }
-  return { auth, mod };
+  return { app, auth, mod };
 }
 
 // A token refresh that fails with one of these codes can never succeed

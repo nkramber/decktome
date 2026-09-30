@@ -20,3 +20,6 @@ createRoot(root).render(
   </StrictMode>,
 );
 startServiceWorker();
+// A browser that turned push on registers its device again after the
+// first paint (D-1005). The module and the SDK load then, and not before.
+setTimeout(() => void import("./features/push/push").then((m) => m.refreshPush()), 5_000);

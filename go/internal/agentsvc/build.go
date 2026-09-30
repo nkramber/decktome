@@ -770,6 +770,15 @@ func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		s.log.ErrorContext(ctx, "the deck id was not recorded on the session",
 			"session", session.GetId(), "deck", d.GetId(), "err", err)
 	}
+	// The stream context ends when the client leaves, and the build runs
+	// on (D-303). So a done context means the user left the page, and a
+	// device that took push hears that the deck is ready (D-1005). A user
+	// on the page reads the deck in the stream and gets no push.
+	if s.push != nil && ctx.Err() != nil {
+		pctx, pcancel := detached(ctx, pushLimit)
+		defer pcancel()
+		s.push.DeckReady(pctx, uid, d)
+	}
 }
 
 // sendRevision runs the turn after a build: the revise call reads the

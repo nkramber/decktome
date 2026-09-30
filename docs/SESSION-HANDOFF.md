@@ -6,32 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-30)
+## RESUME HERE (2026-09-29g)
 
-**Pull request #257, PR-105, moves the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003).**
+**Pull request #258, PR-26, sends a web push when a build ends after the user left the page (D-1004, D-1005).**
 
 Author provider: Claude Code
 
-**The base.** `main` is `a340af0`, from #256.
+**The base.** `main` is `b0a44cd`, from #257. Cloud Build `deploy-api` built it with SUCCESS, so the new model roles are live.
 
-**The moves.** `go/internal/llm/roles.json` now names the new models. The roadmap entry of PR-105 holds the table of each role and its gate result.
+**The owner answers.** OQ-67: web push first, and one event, a finished build (D-1004). The toggle sits in the account menu, and the session made the grant of the role (D-1005). The audit fix of `brace-expansion` goes here too (D-1006).
 
-**The fixes (D-1003).**
+**The grant.** `mtg-api` holds `roles/firebasecloudmessaging.admin` on `decktome-prod`. The app uses the default VAPID key of the SDK.
 
-- Revise prompt version 3 reads "A mix." as an answer that settles the question. Revise run 10 read FAIL, 10 of 11, and run 11 reads PASS, 11 of 11, for $0.5390.
-- Questions prompt version 20 keeps a cap for each card out of the budget, and it reads "whatever is strongest" as no decline. Runs 54 and 55 read FAIL, and run 56 reads PASS for $0.1039.
-- Two probes came first. Conversations 72 and 93 met every slot in 20 of 20 plays for $0.0100. Base deck 1 of the revise gate read PASS for $0.1246.
-- `REVISE_GATE_ARGS` now passes flags to `make revise-gate`.
+**The code.**
 
-**The checks.** `make eval-check` reads PASS for the decks, questions, and revise suites. See the pull request body for `make verify`.
+- `go/internal/push` keeps the devices, at most 10 for each user, and sends through Cloud Messaging by Firebase Installation ID. One ID has one owner, in `push_owners/<id>`.
+- `go/internal/pushsvc` serves `PushService`. The agent service sends after it stores a deck, only when the client left the stream.
+- The web app adds the toggle, `web/apps/web/src/features/push/push.ts`, and the worker handler `web/apps/web/public/push-handler.js`.
 
-**The spend.** OpenAI spent about $4.1 of its $5. Anthropic spent about $1.04 of its $5.
+**The checks.** The pull request body holds them.
 
-**The review.** Gitar passed. The Codex record approves effective head `2cd7760`. No finding stays open. The auto-merge waits on the owner (D-828).
+**The review.** Gitar found one issue, fixed at `2089b50`. Codex round 1 found P2-1, fixed at `6c49dd6`. Round 2 found P1-1, and `verify:web` found advisories. Both now pass. Round 3 read Blocked on `49dda67` for the live check alone. D-1007 puts that check after the deploy. Round 4 reads Ready for owner merge on `f06b518`, with no open finding. `docs/reviews/pr-258-response.md` answers each round. The merge waits on the owner, then on the auto-merge (D-828).
 
 **What waits on the owner.**
 
 - The merge of this pull request.
+- The live check after the deploy: turn on push, start a build, close the page, and read the notification. It is a paid build, so ask first. UNVERIFIED: the front end of Cloud Run ends the request context when the browser leaves (D-1005).
 - The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
@@ -126,7 +126,7 @@ Twenty-two things a fresh session gets wrong without this file.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **PR-26, the return channels**, waits on OQ-67.
+9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. The email digest, the legality event, and the new-cards event wait.
 10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
@@ -138,12 +138,6 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 The repository is public (D-639). The rulesets API answers, and the ruleset of `main` can require each job of `verify` (D-828). `docs/reference/merge-rules.md` holds the rules, and `make ruleset-check` compares them with GitHub.
 
 ## The three most recent sessions
-
-### 2026-09-29d: the verdict of 2026-09-24, PR-103
-
-**The owner chose F-49.** A free dry harvest found 1 new verdict before the choice. The session gave the pros and cons of F-49, OQ-67, and another item.
-
-**The verdict was a test.** The owner confirmed the import report "Test" as a test by hand. The session wrote no fixture, and the owner closed F-49 (D-994).
 
 ### 2026-09-29e: deck gate run 35, PR-104
 
@@ -161,6 +155,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The second session fixed the two FAIL results.** The owner chose a fix of each model over a stay on the old one, and the move of classify, ask, and setmatch together (D-1003). The session probed each fix first, then ran questions run 56 and revise run 11. Both read PASS.
 
+### 2026-09-29g: the web push of a finished build, PR-26
+
+**The owner chose PR-26.** The session found no staleness job for I-1, so the legality event has no source. The owner chose web push and the finished build alone (D-1004).
+
+**The console had no key page for the owner.** The session read the default VAPID key in the SDK, and the step left the plan. The owner chose the grant by the session and the toggle in the account menu (D-1005).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29e, the records of 2026-08-31 to 2026-09-29c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-30, the records of 2026-08-31 to 2026-09-29d, and 104 more sections, word for word. Read it for the detail behind a decision.

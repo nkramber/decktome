@@ -121,6 +121,10 @@ const TurnReserveUSD = 0.25
 // (D-303).
 const storeLimit = 30 * time.Second
 
+// pushLimit bounds the push after a stored deck. The client has left,
+// so the wait holds only the build lease.
+const pushLimit = 10 * time.Second
+
 // CollectionSource gives the owned count per Oracle id (D-37).
 type CollectionSource interface {
 	OracleCounts(ctx context.Context, userID, collectionID string) (map[string]int32, error)
@@ -168,7 +172,11 @@ type Server struct {
 	// users counts what a reader makes, on the user record (D-638). A
 	// nil one records nothing, which is what every test wires.
 	users users.Noter
-	log   *slog.Logger
+	// push tells a user who left the page that a deck is ready (D-1005).
+	// A nil one sends nothing, which is local mode and every test that
+	// does not wire it.
+	push PushNotifier
+	log  *slog.Logger
 }
 
 // Option configures the server.
@@ -312,6 +320,16 @@ func WithClock(f func() time.Time) Option { return func(s *Server) { s.now = f }
 // WithUsers counts the decks, the revisions, and the chats of a reader
 // on the user record (D-638).
 func WithUsers(n users.Noter) Option { return func(s *Server) { s.users = n } }
+
+// PushNotifier sends the push of a stored deck to each device of the
+// user (PR-26, D-1005). It returns when the send ends, and it logs each
+// failure itself.
+type PushNotifier interface {
+	DeckReady(ctx context.Context, uid string, d *mtgv1.Deck)
+}
+
+// WithPush sends a push when a build ends after the client left.
+func WithPush(p PushNotifier) Option { return func(s *Server) { s.push = p } }
 
 // New wires the service.
 func New(cat *questions.Catalog, client *llm.Client, store Store, userFn auth.UserFunc, opts ...Option) (*Server, error) {

@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-30
+
+**Pull request #257, PR-105, moves the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `a340af0`, from #256.
+
+**The moves.** `go/internal/llm/roles.json` now names the new models. The roadmap entry of PR-105 holds the table of each role and its gate result.
+
+**The fixes (D-1003).**
+
+- Revise prompt version 3 reads "A mix." as an answer that settles the question. Revise run 10 read FAIL, 10 of 11, and run 11 reads PASS, 11 of 11, for $0.5390.
+- Questions prompt version 20 keeps a cap for each card out of the budget, and it reads "whatever is strongest" as no decline. Runs 54 and 55 read FAIL, and run 56 reads PASS for $0.1039.
+- Two probes came first. Conversations 72 and 93 met every slot in 20 of 20 plays for $0.0100. Base deck 1 of the revise gate read PASS for $0.1246.
+- `REVISE_GATE_ARGS` now passes flags to `make revise-gate`.
+
+**The checks.** `make eval-check` reads PASS for the decks, questions, and revise suites. See the pull request body for `make verify`.
+
+**The spend.** OpenAI spent about $4.1 of its $5. Anthropic spent about $1.04 of its $5.
+
+**The review.** Gitar passed. The Codex record approves effective head `2cd7760`. No finding stays open. The auto-merge waits on the owner (D-828).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A questions gate run for D-913. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+
+### 2026-09-29d: the verdict of 2026-09-24, PR-103
+
+**The owner chose F-49.** A free dry harvest found 1 new verdict before the choice. The session gave the pros and cons of F-49, OQ-67, and another item.
+
+**The verdict was a test.** The owner confirmed the import report "Test" as a test by hand. The session wrote no fixture, and the owner closed F-49 (D-994).
+
 ## The resume section of 2026-09-29e
 
 **Pull request #256, PR-104, records deck gate run 35, the first whole run of generate prompt version 16 (D-995). It also plans PR-105, the move of the model roles (D-996).**

@@ -580,10 +580,10 @@ read-session: ## Read one chat session of the deployed project for debugging: ma
 	@[ -n "$(SESSION)" ] || { echo "read-session: set SESSION=... to the session id"; exit 1; }
 	@scripts/read-session.sh "$(SESSION)" $(UID)
 
-store-check: ## Run the session, deck, collection, usage, allowlist, feedback, and user stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+store-check: ## Run the session, deck, collection, usage, allowlist, feedback, user, and push stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
-	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/feedback ./internal/users ./internal/decks ./internal/collections -count=1
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/feedback ./internal/users ./internal/decks ./internal/collections ./internal/push -count=1
 
 gcs-check: ## Run TestLiveFakeGCS against a fake-gcs-server seeded from the trimmed snapshot, as the CI step does (free, D-658)
 	@scripts/gcs-check.sh
