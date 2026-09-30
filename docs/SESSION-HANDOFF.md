@@ -31,7 +31,6 @@ Author provider: Claude Code
 **What waits on the owner.**
 
 - The merge of this pull request.
-- The live check after the deploy: turn on push, start a build, close the page, and read the notification. It is a paid build, so ask first. UNVERIFIED: the front end of Cloud Run ends the request context when the browser leaves (D-1005).
 - The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
@@ -108,6 +107,9 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
+0. **The first pull request after I-1: fix F-186, F-187, F-189, and F-193** (D-1009, D-1010, D-1012, D-1013, D-1017). The server stores a new session at the end of its first turn, so a reload before then reads "session not found". Add a 16px buffer at the top and bottom edges of the installed app. Add a back control to the chat. On a phone, open a deck with the chat collapsed.
+0. **The second pull request after I-1: fix F-188 and F-191** (D-1011, D-1012, D-1014). Remove the "Only cards I own" checkbox. Remove "You decide" from the commander pick row. Ask OQ-88 and OQ-89 first.
+0. **The third pull request after I-1: investigate F-190, and fix F-192** (D-1015, D-1016). The installed app on a phone fails too easily when the connection drops. The push misses a switch of apps. Ask OQ-90 first.
 1. **PR-93: read an empty older MTGO month page again** (F-179, D-973, D-974). It merged as #245.
 2. **PR-94: read the MTGO month retry, and read an empty month up to 3 times** (F-179, D-975, D-976, D-977). It merged as #246.
 3. **PR-95: read the 3 MTGO month passes, and fetch the event pages after the retry** (F-179, F-183, D-978 to D-980). It merged as #247.

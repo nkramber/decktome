@@ -6,7 +6,9 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 
 | # | Question | Why it matters | Ask when |
 |---|---|---|---|
-| OQ-18 | Rerun depth rule: when does a ban trigger a full rebuild instead of a patch? | D-29 asks for a rerun scoped to the nature of the change. The rule needs a threshold (for example: a banned commander or win condition means a full rebuild). | Before I-1 ships. |
+| OQ-88 | How does the agent find that a collection can not meet the request (D-1011)? For example: the request names a card or commander the user does not own, or the owned cards give no legal deck. | The question of F-188 comes only on this signal. A weak signal asks too often, or builds a deck that misses the request. | At the start of the pull request of F-188. |
+| OQ-89 | Which options does the gap question of D-1011 offer, and when in the turn does it come? For example: fill from the whole card database, change the request, or build a smaller owned deck. | The answer sets the pool rule of the build. It replaces the checkbox and the step of D-359. | At the start of the pull request of F-188. |
+| OQ-90 | Which rule sends the push of a finished build (F-192)? For example: always send, and the service worker shows it only when no page of the app is visible. Or the page tells the server when it goes to the background. | The rule of D-1005 misses a switch of apps. UNVERIFIED: iOS Safari can revoke the permission after a push that shows no notification. | At the start of the pull request of F-190. |
 
 ## Asked, waiting
 
@@ -47,3 +49,4 @@ These questions wait for work, and not for an answer of the owner.
 - OQ-54 answered 2026-09-02 (D-479): the owner created the Topdeck.gg key, and a live probe of the API passed the same day.
 - OQ-51 closed 2026-09-02 (D-470): no session can check the Moxfield bracket field. The deck page, the v2 API, and the v3 API answer 403 to a plain client, so PR-14B reads no Moxfield list.
 - OQ-81 answered 2026-09-08 (D-611): the low-effort measurement of the generate role runs before PR-33, against the run 16 baseline.
+- OQ-18 answered 2026-09-30 (D-1008): a ban of the commander, of a win condition, or of 10% of the nonland slots causes a full rebuild.
