@@ -30,3 +30,14 @@ The Codex record read `Changes required` at head `6c49dd6`, with one finding.
 
 - The correction: `pnpm --dir web update -r brace-expansion` changes `web/pnpm-lock.yaml` alone. The package moves to 1.1.21, 2.1.7, and 5.0.12.
 - The regression check: the audit reads 1 moderate advisory and no high one. `pnpm install --frozen-lockfile` passes, and the whole web suite passes, 443 of 443, with lint and typecheck.
+
+# Response to round 3
+
+The Codex record read `Blocked` at head `49dda67`, with no open finding. The one reason: the live gate of the roadmap needs paid evidence on a real device.
+
+## The live gate
+
+- The result: no merit for the merge. The owner decided the order (D-1007).
+- The evidence: the live check needs the new API on Cloud Run. Production deploys from `main` alone (D-579, hard rule 9), so no pull request can run the check before its merge. The roadmap entry of PR-26 already named the unit tests and the emulator tests as the gate of this pull request. It named the live check as a step after the deploy. PR-101 and PR-102 took the same order for the blocking function.
+- The correction: D-1007 records the order. The roadmap entry now says that the live check comes after the merge, and that it does not stop it. The hand-off names the check as the first action of the next session, and that session asks the owner before the paid build.
+- The regression check: none, because no code changed. `make verify` passed on `49dda67` in the record itself.

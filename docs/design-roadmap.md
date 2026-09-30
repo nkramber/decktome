@@ -1295,7 +1295,7 @@ The ID belongs to the browser, so `push_owners/<id>` names one owner, and a seco
 
 Gate of this pull request: the unit tests hold each rule. A build after the client left sends one push, and a build the user reads sends none. A user with no device gets nothing. A gone device leaves the store, and a sign-out removes the device. The emulator tests hold the cap of 10 devices and one owner for each ID.
 
-The live check after the deploy: a real build on a real device, with the page closed, shows the notification. A tap opens the deck.
+The live check after the deploy: a real build on a real device, with the page closed, shows the notification. A tap opens the deck. Production deploys from `main` alone (D-579), so this check comes after the merge, and it does not stop it (D-1007).
 > *In plain English:* turn on notifications in the account menu, start a deck, and close the page. When the deck is ready, your phone or computer tells you, and a tap opens it.
 
 The plan of 2026-09-05 follows, and D-1004 narrows it.
