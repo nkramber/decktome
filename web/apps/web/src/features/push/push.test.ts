@@ -23,7 +23,7 @@ const messaging = vi.hoisted(() => ({
 vi.mock("firebase/messaging", () => messaging);
 vi.mock("firebase/installations", () => ({ getInstallations: () => ({}), getId: () => Promise.resolve("fid-1") }));
 
-import { disablePush, enablePush, pushFlagKey, pushState, releasePushOnSignOut } from "./push";
+import { disablePush, enablePush, pushFlagKey, pushReleaseKey, pushState, refreshPush, releasePushOnSignOut } from "./push";
 
 const worker = {} as ServiceWorkerRegistration;
 let permission: NotificationPermission;
@@ -165,5 +165,28 @@ describe("releasePushOnSignOut", () => {
     await expect(releasePushOnSignOut()).resolves.toBeUndefined();
     expect(unregisterDevice).toHaveBeenCalled();
     expect(localStorage.getItem(pushFlagKey)).toBeNull();
+  });
+
+  // The review finding of #258: a failed API call must still end the
+  // registration, or the next account on the browser gets the pushes of
+  // the last one.
+  it("ends the registration when the API call fails", async () => {
+    localStorage.setItem(pushFlagKey, "1");
+    unregisterDevice.mockRejectedValue(new Error("token expired"));
+    await releasePushOnSignOut();
+    expect(messaging.unregister).toHaveBeenCalledTimes(1);
+    expect(localStorage.getItem(pushReleaseKey)).toBeNull();
+  });
+
+  it("leaves a marker when the registration can not end, and the next start ends it", async () => {
+    localStorage.setItem(pushFlagKey, "1");
+    unregisterDevice.mockRejectedValue(new Error("offline"));
+    messaging.unregister.mockRejectedValueOnce(new Error("offline"));
+    await releasePushOnSignOut();
+    expect(localStorage.getItem(pushReleaseKey)).toBe("1");
+    await refreshPush();
+    expect(messaging.unregister).toHaveBeenCalledTimes(2);
+    expect(localStorage.getItem(pushReleaseKey)).toBeNull();
+    expect(registerDevice).not.toHaveBeenCalled();
   });
 });

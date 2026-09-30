@@ -5,6 +5,10 @@
 // A device is one browser install, named by its Firebase Installation
 // ID. The devices of a user sit under users/<uid>/push_devices. A user
 // with no device gets no push, so a registered device is the opt-in.
+//
+// The ID belongs to the browser and not to an account, so one ID has one
+// owner at a time. The document push_owners/<id> names the owner, and a
+// registration by a second account moves the ID to that account.
 package push
 
 import (
@@ -27,6 +31,9 @@ import (
 
 // Collection is the subcollection of users/<uid> that holds the devices.
 const Collection = "push_devices"
+
+// Owners is the top-level collection that names the owner of each ID.
+const Owners = "push_owners"
 
 // MaxDevices caps the devices of one user. A new device past the cap
 // removes the device of the oldest registration, so one user can never
@@ -79,13 +86,48 @@ func (r *Repo) col(uid string) *firestore.CollectionRef {
 	return r.client.Collection("users").Doc(uid).Collection(Collection)
 }
 
+func (r *Repo) owner(id string) *firestore.DocumentRef {
+	return r.client.Collection(Owners).Doc(id)
+}
+
+// ownerOf reads the owner of the ID in the transaction, or "" for none.
+func (r *Repo) ownerOf(tx *firestore.Transaction, id string) (string, error) {
+	snap, err := tx.Get(r.owner(id))
+	if status.Code(err) == codes.NotFound {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	uid, _ := snap.Data()["uid"].(string)
+	return uid, nil
+}
+
 // Add stores the device, or moves the time of a device the user holds.
-// Then it removes each device past MaxDevices, the oldest first.
+// An ID that another account holds leaves that account in the same
+// transaction, so a push of one account never reaches the next account
+// on the browser. Then Add removes each device past MaxDevices, the
+// oldest first.
 func (r *Repo) Add(ctx context.Context, uid, id string, at time.Time) error {
 	if !ValidID(id) {
 		return ErrBadID
 	}
-	if _, err := r.col(uid).Doc(id).Set(ctx, Device{InstallationID: id, RegisteredAt: at.UTC()}); err != nil {
+	err := r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		prev, err := r.ownerOf(tx, id)
+		if err != nil {
+			return err
+		}
+		if prev != "" && prev != uid {
+			if err := tx.Delete(r.col(prev).Doc(id)); err != nil {
+				return err
+			}
+		}
+		if err := tx.Set(r.owner(id), map[string]any{"uid": uid, "registered_at": at.UTC()}); err != nil {
+			return err
+		}
+		return tx.Set(r.col(uid).Doc(id), Device{InstallationID: id, RegisteredAt: at.UTC()})
+	})
+	if err != nil {
 		return fmt.Errorf("push: add device: %w", err)
 	}
 	it := r.col(uid).OrderBy("registered_at", firestore.Desc).Offset(MaxDevices).Documents(ctx)
@@ -98,7 +140,7 @@ func (r *Repo) Add(ctx context.Context, uid, id string, at time.Time) error {
 		if err != nil {
 			return fmt.Errorf("push: read devices past the cap: %w", err)
 		}
-		if _, err := snap.Ref.Delete(ctx); err != nil {
+		if err := r.remove(ctx, uid, snap.Ref.ID); err != nil {
 			return fmt.Errorf("push: remove a device past the cap: %w", err)
 		}
 	}
@@ -110,10 +152,27 @@ func (r *Repo) Remove(ctx context.Context, uid, id string) error {
 	if !ValidID(id) {
 		return ErrBadID
 	}
-	if _, err := r.col(uid).Doc(id).Delete(ctx); err != nil {
+	if err := r.remove(ctx, uid, id); err != nil {
 		return fmt.Errorf("push: remove device: %w", err)
 	}
 	return nil
+}
+
+// remove deletes the device of the user, and the owner document when it
+// names the user. An owner document of another account stays.
+func (r *Repo) remove(ctx context.Context, uid, id string) error {
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		owner, err := r.ownerOf(tx, id)
+		if err != nil {
+			return err
+		}
+		if owner == uid {
+			if err := tx.Delete(r.owner(id)); err != nil {
+				return err
+			}
+		}
+		return tx.Delete(r.col(uid).Doc(id))
+	})
 }
 
 // Has says whether the user holds the device.

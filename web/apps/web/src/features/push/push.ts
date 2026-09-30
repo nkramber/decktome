@@ -16,6 +16,10 @@ export type PushState = "unavailable" | "blocked" | "off" | "on";
 // read for each browser that never did. The API is the source of truth.
 export const pushFlagKey = "decktome.push";
 
+// The release marker says that the end of a registration with Cloud
+// Messaging failed, for example offline. The next start tries again.
+export const pushReleaseKey = "decktome.push.release";
+
 // A build with no service worker never resolves `ready`, so the wait
 // ends here.
 const workerWaitMs = 10_000;
@@ -32,12 +36,37 @@ function readFlag(): boolean {
   }
 }
 
-function writeFlag(on: boolean) {
+function writeKey(key: string, on: boolean) {
   try {
-    if (on) localStorage.setItem(pushFlagKey, "1");
-    else localStorage.removeItem(pushFlagKey);
+    if (on) localStorage.setItem(key, "1");
+    else localStorage.removeItem(key);
   } catch {
     // A browser with no storage asks the API on each menu open.
+  }
+}
+
+function writeFlag(on: boolean) {
+  writeKey(pushFlagKey, on);
+}
+
+function releasePending(): boolean {
+  try {
+    return localStorage.getItem(pushReleaseKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
+// endRegistration ends the registration with Cloud Messaging. After it,
+// no push reaches this browser, whatever the API still holds, and the
+// next send removes the device as gone.
+async function endRegistration(): Promise<void> {
+  try {
+    const { mod, messaging: m } = await messaging();
+    await mod.unregister(m);
+    writeKey(pushReleaseKey, false);
+  } catch {
+    writeKey(pushReleaseKey, true);
   }
 }
 
@@ -109,25 +138,30 @@ export async function enablePush(): Promise<PushState> {
   return "on";
 }
 
-// disablePush removes the device from the API first, so no push can
-// reach it, then ends the registration with Cloud Messaging.
+// disablePush removes the device from the API first, then ends the
+// registration with Cloud Messaging. The registration ends also when the
+// API call fails, so no push can reach this browser after it.
 export async function disablePush(): Promise<PushState> {
-  await pushClient.unregisterDevice({ installationId: await installationId() });
-  writeFlag(false);
-  const { mod, messaging: m } = await messaging();
-  await mod.unregister(m).catch(() => {});
+  try {
+    await pushClient.unregisterDevice({ installationId: await installationId() });
+  } finally {
+    writeFlag(false);
+    await endRegistration();
+  }
   return "off";
 }
 
 // releasePushOnSignOut runs before a sign-out. The next account on this
-// browser must never see a push with the deck of the last one. A failure
+// browser must never see a push with the deck of the last one. So the
+// registration with Cloud Messaging ends when the API call fails, and the
+// API gives the ID to the next account that turns push on. A failure
 // never stops the sign-out.
 export async function releasePushOnSignOut(): Promise<void> {
   if (!readFlag()) return;
   try {
     await disablePush();
   } catch {
-    writeFlag(false);
+    // disablePush ended the registration, or it left the release marker.
   }
 }
 
@@ -135,6 +169,7 @@ export async function releasePushOnSignOut(): Promise<void> {
 // turned push on. The SDK keeps a registration fresh this way, and a
 // device the API removed as gone comes back with its new registration.
 export async function refreshPush(): Promise<void> {
+  if (releasePending()) await endRegistration();
   if (!readFlag()) return;
   try {
     if (!(await browserSupports()) || Notification.permission !== "granted") {

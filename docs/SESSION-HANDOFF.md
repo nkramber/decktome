@@ -20,14 +20,14 @@ Author provider: Claude Code
 
 **The code.**
 
-- `go/internal/push` keeps the devices, at most 10 for each user, and sends through Cloud Messaging by Firebase Installation ID.
+- `go/internal/push` keeps the devices, at most 10 for each user, and sends through Cloud Messaging by Firebase Installation ID. One ID has one owner, in `push_owners/<id>`.
 - `go/internal/pushsvc` serves `PushService`. The agent service sends after it stores a deck, only when the client left the stream.
 - The web app adds the toggle, `web/apps/web/src/features/push/push.ts`, and the worker handler `web/apps/web/public/push-handler.js`.
 - `cloudbuild/web.yaml` passes the sender id, the project number.
 
 **The checks.** See the pull request body for `make verify`. The emulator tests of `go/internal/push` join the CI step and `make store-check`.
 
-**The review.** Gitar and the Codex review wait. The auto-merge waits on the owner (D-828).
+**The review.** Gitar found one issue: one browser ID stayed under two accounts after a failed sign-out. The fix gives each ID one owner, and a sign-out ends the registration also when the API call fails. The Codex review waits. The auto-merge waits on the owner (D-828).
 
 **What waits on the owner.**
 

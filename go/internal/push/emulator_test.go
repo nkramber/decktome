@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,6 +67,41 @@ func TestAddHasRemove(t *testing.T) {
 	}
 	if err := r.Add(ctx, uid, "a/b", at); !errors.Is(err, ErrBadID) {
 		t.Errorf("Add of a path = %v, want ErrBadID", err)
+	}
+}
+
+// TestOneOwnerForEachID is the review finding of #258: the ID belongs
+// to the browser, so a second account that registers it takes it from
+// the first. A late remove by the first account leaves the second one.
+func TestOneOwnerForEachID(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	a, b := uniqueUID()+"a", uniqueUID()+"b"
+	id := "fid" + strings.ReplaceAll(uniqueUID(), ".", "")
+	at := time.Date(2026, 9, 29, 10, 0, 0, 0, time.UTC)
+	if err := r.Add(ctx, a, id, at); err != nil {
+		t.Fatalf("Add a: %v", err)
+	}
+	if err := r.Add(ctx, b, id, at.Add(time.Minute)); err != nil {
+		t.Fatalf("Add b: %v", err)
+	}
+	if ids, _ := r.IDs(ctx, a); len(ids) != 0 {
+		t.Errorf("the first account keeps %v after the second registered the ID", ids)
+	}
+	if ok, _ := r.Has(ctx, b, id); !ok {
+		t.Fatal("the second account does not hold the ID")
+	}
+	if err := r.Remove(ctx, a, id); err != nil {
+		t.Fatalf("a late Remove of a: %v", err)
+	}
+	if ok, _ := r.Has(ctx, b, id); !ok {
+		t.Error("a late remove by the first account took the ID from the second")
+	}
+	if err := r.Add(ctx, a, id, at.Add(2*time.Minute)); err != nil {
+		t.Fatalf("Add a again: %v", err)
+	}
+	if ok, _ := r.Has(ctx, b, id); ok {
+		t.Error("the ID stayed with the second account after the first took it back")
 	}
 }
 
