@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** The pull request body holds them.
 
-**The review.** Gitar found one issue, fixed at `2089b50`. Codex round 1 found P2-1, fixed at `6c49dd6`. Round 2 found P1-1, the size of this file, and `verify:web` failed on new advisories. `docs/reviews/pr-258-response.md` answers both.
+**The review.** Gitar found one issue, fixed at `2089b50`. Codex round 1 found P2-1, fixed at `6c49dd6`. Round 2 found P1-1, and `verify:web` found advisories. Both now pass. Round 3 reviews `49dda67` and is Blocked on the live check in D-1005. `docs/reviews/pr-258-response.md` answers the findings.
 
 **What waits on the owner.**
 
