@@ -6,37 +6,43 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-29e)
+## RESUME HERE (2026-09-29f)
 
-**Pull request #256, PR-104, records deck gate run 35, the first whole run of generate prompt version 16 (D-995). It also plans PR-105, the move of the model roles (D-996).**
+**PR-105 moves the model roles and measures each move (D-996). The work sits on branch `feat/move-model-roles`, and no pull request is open yet.**
 
 Author provider: Claude Code
 
-**The base.** `main` is `3c85ca4`, from #255.
+**The base.** `main` is `a340af0`, from #256.
 
-**The choice.** The owner picked a whole deck gate run from next step 12, over OQ-67, F-91, and other items.
+**The checkpoint.** The session passed 300K tokens of context and stopped at a safe point (D-946). No run is active.
 
-**The run.** Run 35 reads PASS for $3.1278 in 1993 seconds, under a cap of $4. `make eval-check` reads the decks suite as PASS against run 19. The mean plan score is 0.76, against 0.70 in run 29. Two decks needed the repair turn of D-916, and both passed. `docs/reference/deck-gate-run35-read-2026-09-29.md` holds the counts.
+**Done and committed.**
 
-**The web test tooling.** `make verify` failed on 3 high advisories of `undici` 8.10.0, through `jsdom`. The owner chose the fix in this pull request: `jsdom` 30.1.1 and `undici` 8.11.2 (D-997).
+- The prices of `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, read 2026-09-29, are in `go/internal/llm/prices.json`.
+- OpenAI bills a cache write since GPT-5.6, and `go/internal/llm/openai.go` now counts it (D-998).
+- The judge moves to Sonnet 5.5 with a written reason for each field, plan rubric version 5 (D-1000). Runs 36 and 37 and the bracket calibration read PASS.
+- `make eval-calibrate` finishes its `-n` cut, and its reference is `claude-sonnet-5-5`.
+- Classify and ask stay on `gpt-5.6-luna` after runs 54 and 55 read FAIL (D-1001).
+- The eval on `gpt-6-luna` agrees with `gpt-5.6-luna` on 97 percent of run 54, for $0.0424 against $0.0977.
+- Deck gate run 38 on `gpt-6.1-sol` reads PASS for $1.6749. The plan score is 0.685 against 0.640 in run 37.
+- An empty OpenAI balance voided three runs, and the owner added credits (D-1002).
 
-**A watch item.** The bracket 2 Gishath deck holds 35 nonbasic lands, with original dual lands and fetch lands. The plan judge read its theme fit as partly, for the cost. This is one sample.
+**The revise result.** Revise gate run 10 on `gpt-6.1-sol` reads FAIL, 10 of 11, for $0.5583. After the answer "A mix.", revise asked a second question. `docs/reference/pr12b-revise-gate-run10.md` holds it.
 
-**The next item.** The owner named PR-105 (D-996). The roles move to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with evals and a cap of $5 for each provider. On 2026-09-29 the models endpoint of each provider listed the three ids. The prices are not verified yet.
+**Open: the owner answers of the last question need a check.** The session offered three revise options and two setmatch options. The owner wrote "Fix gpt-6.1-sol" for revise, and "Fix gpt-6-luna, switch" for setmatch. The session reads them so: fix the re-ask of revise on `gpt-6.1-sol`, and fix the misreads of `gpt-6-luna` before a switch. Ask the owner whether the switch covers setmatch alone, or classify and ask too. Record the answer as the next decision in `docs/decisions.md`.
 
-**The checks.** See the pull request body. The one paid target was run 35.
+**Not done yet.** `go/internal/llm/roles.json` still names the old models. The roadmap entry of PR-105, `docs/setup-gcp.md` section 16.2, and the facts below still read the old roles. No pull request exists.
 
-**The review.** Gitar approved `c12b5ba` with no finding. The Codex record approves effective head `7f49cc7`. The owner decision and the auto-merge remain pending (D-815, D-828).
+**The spend.** Anthropic spent about $1.04 of its $5. OpenAI spent about $3.3 of its $5, with about $0.40 in the voided run 38.
 
 **What waits on the owner.**
 
-- The merge of this pull request.
+- The scope of the two fixes above.
 - The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
 - A questions gate run for D-913. Ask first.
 - UNVERIFIED: the Moxfield import of the deck list that the app exports.
-- PR-105, next step 13.
 
 ## How to resume
 
@@ -120,7 +126,7 @@ Twenty-two things a fresh session gets wrong without this file.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
 12. **PR-104: deck gate run 35, and `jsdom` 30.1.1** (F-33, D-995, D-997). It reads PASS for $3.1278. This pull request is #256.
-13. **PR-105: move the model roles, and measure each move** (D-996). Verify the prices of `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5` first. Then plan the gates and the cost of each run, with $5 or less for each provider. A rejudge of run 35 measures the judge alone.
+13. **PR-105: move the model roles, and measure each move** (D-996, D-998 to D-1002). The prices are verified, and the judge and generate moves read PASS. The next action waits on the owner: the scope of the revise fix and the `gpt-6-luna` fix.
 14. **The open items of the roadmap.** No register row reads 🔧. F-49 reads ✅ (PR-103, D-994). F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. Deck gate run 35 measured them as a whole run (PR-104, D-995).
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
