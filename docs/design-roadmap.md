@@ -1285,7 +1285,7 @@ The free half holds. `src/lib/pwa.test.ts` reads every field an install rests on
 **The phone walk passed on 2026-09-08** (D-627). The install works, the app opens with no browser chrome, the page reads up and down alone, and the chat input stays above the keyboard. The walk found four faults on the way, and every one is fixed and deployed: F-82, F-83, D-625, and D-626.
 > *In plain English:* the app becomes something you add to your phone's home screen and open like any other app. It starts with no signal, and the collection file from ManaBox goes in with two taps.
 
-**PR-26: The return channels (D-1004, D-1005).** 🔧 the web push of a finished build. The mark comes before any review (D-822). Stage B of the proposal.
+**PR-26: The return channels (D-1004, D-1005).** ✅ merged as #258: the web push of a finished build. The mark comes before any review (D-822). Stage B of the proposal.
 
 2026-09-29: the owner answered OQ-67 (D-1004). PR-26 builds web push through Firebase Cloud Messaging, with one event: a finished build for a user who left the page. The email digest waits for a later pull request. The legality event waits for the staleness job of I-1, because no code sets the `stale` flag yet. The new-cards event waits too.
 

@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-29g)
 
-**Pull request #PRNUM, PR-26, sends a web push when a build ends after the user left the page (D-1004, D-1005).**
+**Pull request #258, PR-26, sends a web push when a build ends after the user left the page (D-1004, D-1005).**
 
 Author provider: Claude Code
 
@@ -127,7 +127,7 @@ Twenty-two things a fresh session gets wrong without this file.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #PRNUM. The email digest, the legality event, and the new-cards event wait.
+9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. The email digest, the legality event, and the new-cards event wait.
 10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
