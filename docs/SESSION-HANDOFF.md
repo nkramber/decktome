@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The spend.** OpenAI spent about $4.1 of its $5. Anthropic spent about $1.04 of its $5.
 
-**The review.** Pending the Gitar pass, the Codex review, and the auto-merge (D-828).
+**The review.** Gitar passed. The Codex record approves effective head `2cd7760`. No finding stays open. The auto-merge waits on the owner (D-828).
 
 **What waits on the owner.**
 
