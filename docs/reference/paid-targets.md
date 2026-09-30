@@ -21,7 +21,7 @@ Seventeen targets and two loop scripts spend money: `make codex-review`, `make q
 
 `make questions-gate` calls the real providers. One run of the 109 conversations (78 gate and 31 probe since D-730) costs $0.18 to $0.19 and takes about 20 minutes, measured on runs 33 to 35 (2026-09-04). Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
-`make questions-eval` scores a gate run with the eval role. One run costs $0.09 to $0.10 (runs 33 to 35) and takes about 13 minutes. `make eval-calibrate` measures the eval model against `claude-opus-5` (D-428). It cost $0.25 to $0.30 on Sonnet 5, and Opus 5 costs about 1.7 times that.
+`make questions-eval` scores a gate run with the eval role. One run costs $0.09 to $0.10 (runs 33 to 35) and takes about 13 minutes. On `gpt-6-luna`, the eval of gate run 54 cost $0.0424 on 2026-09-29, against $0.0977 on `gpt-5.6-luna` (PR-105). `make eval-calibrate` measures the eval model against `claude-sonnet-5-5` since PR-105 (D-996). On 2026-09-29 it cost $0.0031 for the base pass and $0.0609 for the Sonnet 5.5 pass. Before PR-105, the `-n` cut of the calibration made the base pass exit 1, so the second pass never ran.
 
 `make autotune` is free. It prints the loop instructions and starts nothing. `scripts/autotune.sh` is the paid loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
 
@@ -39,7 +39,9 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35. `DECK_GATE_ARGS="-only 25"` runs the precon exclusion prompt of PR-24 alone, for about $0.13. `GATE_ARGS` passes flags to `make questions-gate`, and `GATE_ARGS="-only 109"` runs the group set probe of D-525 alone. Runs 36 and 37 cost about $0.001 each and took about 10 seconds. A partial run reads its item bars alone and never stands as the gate (D-526).
 
-`DECK_GATE_ARGS="-rejudge <absolute path of a gate document>"` judges the stored decks of a whole run again, with no build (D-789). It copies the build rows of the source run and writes new judge rows. So its run stands as a whole run of the decks suite. Run 32 judged the 25 decks of run 31 for $1.2453, and a full run costs about $2.83.
+`DECK_GATE_ARGS="-rejudge <absolute path of a gate document>"` judges the stored decks of a whole run again, with no build (D-789). It copies the build rows of the source run and writes new judge rows. So its run stands as a whole run of the decks suite. Run 32 judged the 25 decks of run 31 for $1.2453 on Opus 5, and a full run costs about $2.83.
+
+On Sonnet 5.5, run 36 judged the decks of run 35 for $0.3358. Run 37 did it again for $0.3929 with plan rubric version 5 (D-1000). On Sonnet 5.5, the bracket calibration decks cost $0.1226 on 2026-09-29.
 
 Add `-keep <absolute path of an earlier rejudge run file>` to judge again only the decks that the earlier rejudge lost. Run 33 judged 6 decks again for $0.3482. Add `-summary-only` beside `-keep` to judge every summary again and keep the plan rows. Run 34 did that for $0.4653. Prove a change to a judge alone with this lane, and never with a rebuild.
 
