@@ -422,3 +422,78 @@ func (r *Repo) Update(ctx context.Context, uid, id string, name *string, favorit
 	}
 	return out, nil
 }
+
+// Scan reads every stored deck of every user, one user at a time, for
+// the stale pass of I-1. It lists the user documents by reference alone,
+// so it never reads the user record (D-638). A deck that does not unpack
+// stops the scan, because the pass must not skip a deck in silence.
+func (r *Repo) Scan(ctx context.Context, fn func(uid string, d *mtgv1.Deck) error) error {
+	users := r.client.Collection("users").DocumentRefs(ctx)
+	for {
+		user, err := users.Next()
+		if errors.Is(err, iterator.Done) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if err := r.scanUser(ctx, user.ID, fn); err != nil {
+			return err
+		}
+	}
+}
+
+func (r *Repo) scanUser(ctx context.Context, uid string, fn func(uid string, d *mtgv1.Deck) error) error {
+	it := r.col(uid).Select("deck_gz").Documents(ctx)
+	defer it.Stop()
+	for {
+		snap, err := it.Next()
+		if errors.Is(err, iterator.Done) {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		var sd storedDeck
+		if err := snap.DataTo(&sd); err != nil {
+			return fmt.Errorf("deck %s/%s: %w", uid, snap.Ref.ID, err)
+		}
+		d := &mtgv1.Deck{}
+		if err := gzstore.UnmarshalProto(sd.DeckGz, d); err != nil {
+			return fmt.Errorf("deck %s/%s: %w", uid, snap.Ref.ID, err)
+		}
+		d.Id = snap.Ref.ID
+		if err := fn(uid, d); err != nil {
+			return err
+		}
+	}
+}
+
+// Mark changes one stored deck through fn inside a transaction, and it
+// writes the deck only when fn reports a change. fn reads the deck as the
+// store holds it now, so a deck that changed after a Scan is read again
+// and never overwritten. The create time and the share link stay.
+func (r *Repo) Mark(ctx context.Context, uid, id string, fn func(d *mtgv1.Deck) bool) (bool, error) {
+	doc := r.doc(uid, id)
+	var changed bool
+	err := r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		changed = false
+		sd, cur, err := readStored(tx, doc)
+		if err != nil {
+			return err
+		}
+		if cur.GetId() == "" {
+			cur.Id = id
+		}
+		if !fn(cur) {
+			return nil
+		}
+		updated, err := restore(cur, sd)
+		if err != nil {
+			return err
+		}
+		changed = true
+		return tx.Set(doc, updated)
+	})
+	return changed, err
+}

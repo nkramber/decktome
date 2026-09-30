@@ -4494,3 +4494,10 @@ CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build rep
 ### 2026-09-19b: the repair-turn gate of PR-56
 
 **The owner chose the repair gate alone, and the record of the thin pool** (D-762, D-763). A free replay of the M-18 request names the card of its `not_owned` finding. It is the commander the reader named, and the export of 2026-09-02 holds no copy. No answer of the model changes a commander, so each M-18 build spent a repair call on a block that survives it. `fixable` drops such a finding before the build decides. The uncapped owned pool reaches 1 Game Changer and 1 tutor, against the bracket 5 floors of 8 and 4. So F-157 closes with its measurement. A second session wrote this checkout during the work, and the owner stopped it. The session ran no paid target.
+
+## Next steps moved from the hand-off on 2026-09-30
+
+1. **PR-93: read an empty older MTGO month page again** (F-179, D-973, D-974). It merged as #245.
+2. **PR-94: read the MTGO month retry, and read an empty month up to 3 times** (F-179, D-975, D-976, D-977). It merged as #246.
+3. **PR-95: read the 3 MTGO month passes, and fetch the event pages after the retry** (F-179, F-183, D-978 to D-980). It merged as #247.
+4. **PR-96: read the MTGO event fetch of #247, and stop the MTGO lane at a time budget** (F-179, F-183, F-184, D-981, D-982). It merged as #248.

@@ -473,8 +473,11 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if uid == "" {
 		return connect.NewError(connect.CodeUnauthenticated, errNoUser)
 	}
-	if strings.TrimSpace(req.Msg.GetMessage()) == "" && len(req.Msg.GetAnswers()) == 0 {
+	if strings.TrimSpace(req.Msg.GetMessage()) == "" && len(req.Msg.GetAnswers()) == 0 && req.Msg.GetRerunDeckId() == "" {
 		return connect.NewError(connect.CodeInvalidArgument, errNoMessage)
+	}
+	if err := checkRerun(req.Msg); err != nil {
+		return err
 	}
 	if err := tooLong(req.Msg); err != nil {
 		return connect.NewError(connect.CodeInvalidArgument, err)
@@ -574,6 +577,26 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if len(message) > maxFoldedBytes {
 		return connect.NewError(connect.CodeInvalidArgument, errTooLong)
 	}
+	// userText is the user line the turn keeps.
+	userText := req.Msg.GetMessage()
+	// A rerun of a stale deck (I-1, D-1008). With a legal commander, the
+	// deck names the rerun, so no classify call runs. A banned commander
+	// goes through the turn with the commander cleared, and the pick row
+	// asks for a new one (D-1021).
+	if id := req.Msg.GetRerunDeckId(); id != "" {
+		d, err := s.rerunDeck(ctx, uid, session, id)
+		if err != nil {
+			return err
+		}
+		if !rerunNeedsCommander(d) {
+			return s.sendRerun(ctx, uid, session, st, version, owned, d, stream)
+		}
+		prepareRerun(st, d)
+		message, userText = rerunPickMessage, rerunText
+		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: d.GetStaleReason()}}); err != nil {
+			return err
+		}
+	}
 	// The slots before the turn. A turn after a build that changes none
 	// of them is a revision of the deck, and one that changes any is a
 	// full rebuild (D-241).
@@ -616,7 +639,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	session.Usage = addUsage(cloneUsage(usageBefore), acc.Report())
 	session.UpdatedAt = timestamppb.New(s.now())
 	turn := &mtgv1.Turn{
-		UserMessage: req.Msg.GetMessage(),
+		UserMessage: userText,
 		Answers:     req.Msg.GetAnswers(),
 		At:          timestamppb.New(s.now()),
 	}

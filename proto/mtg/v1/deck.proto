@@ -33,10 +33,12 @@ message Deck {
   reserved "seed";
   string session_id = 11;
   google.protobuf.Timestamp created_at = 12;
-  // stale is reserved for the staleness pass (D-29, I-1), unset today.
+  // stale says a card of the deck is no longer legal in its format. The
+  // stale pass of the snapshot job sets it after a legality change, and
+  // clears it when every card is legal again (D-29, I-1).
   bool stale = 13;
-  // stale_oracle_ids is reserved for the staleness pass (D-29, I-1),
-  // unset today.
+  // stale_oracle_ids names each card that is no longer legal, commanders
+  // included. Empty when the deck is not stale.
   repeated string stale_oracle_ids = 14;
   // sideboard holds up to 15 cards in 60-card formats. Empty in Commander.
   repeated DeckCard sideboard = 15;
@@ -98,6 +100,21 @@ message Deck {
   // because the bracket judge did not answer (D-854). The next open of
   // the deck asks the judge again.
   bool bracket_estimated = 29;
+  // rerun_case is the rerun that a stale deck offers (D-1008). UNSPECIFIED
+  // when the deck is not stale.
+  RerunCase rerun_case = 30;
+  // stale_reason says why the rerun is a patch or a rebuild, in the words
+  // the banner shows (D-1008).
+  string stale_reason = 31;
+}
+
+// RerunCase is the rerun of a stale deck (D-1008). A patch replaces the
+// stale cards alone (D-1019). A rebuild builds the deck again from its
+// conversation (D-1020).
+enum RerunCase {
+  RERUN_CASE_UNSPECIFIED = 0;
+  RERUN_CASE_PATCH = 1;
+  RERUN_CASE_REBUILD = 2;
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The

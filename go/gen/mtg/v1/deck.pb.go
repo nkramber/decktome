@@ -22,6 +22,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// RerunCase is the rerun of a stale deck (D-1008). A patch replaces the
+// stale cards alone (D-1019). A rebuild builds the deck again from its
+// conversation (D-1020).
+type RerunCase int32
+
+const (
+	RerunCase_RERUN_CASE_UNSPECIFIED RerunCase = 0
+	RerunCase_RERUN_CASE_PATCH       RerunCase = 1
+	RerunCase_RERUN_CASE_REBUILD     RerunCase = 2
+)
+
+// Enum value maps for RerunCase.
+var (
+	RerunCase_name = map[int32]string{
+		0: "RERUN_CASE_UNSPECIFIED",
+		1: "RERUN_CASE_PATCH",
+		2: "RERUN_CASE_REBUILD",
+	}
+	RerunCase_value = map[string]int32{
+		"RERUN_CASE_UNSPECIFIED": 0,
+		"RERUN_CASE_PATCH":       1,
+		"RERUN_CASE_REBUILD":     2,
+	}
+)
+
+func (x RerunCase) Enum() *RerunCase {
+	p := new(RerunCase)
+	*p = x
+	return p
+}
+
+func (x RerunCase) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (RerunCase) Descriptor() protoreflect.EnumDescriptor {
+	return file_mtg_v1_deck_proto_enumTypes[0].Descriptor()
+}
+
+func (RerunCase) Type() protoreflect.EnumType {
+	return &file_mtg_v1_deck_proto_enumTypes[0]
+}
+
+func (x RerunCase) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use RerunCase.Descriptor instead.
+func (RerunCase) EnumDescriptor() ([]byte, []int) {
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{0}
+}
+
 // CardRole is the job a card does in the deck (corpus section 6).
 type CardRole int32
 
@@ -80,11 +132,11 @@ func (x CardRole) String() string {
 }
 
 func (CardRole) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_deck_proto_enumTypes[0].Descriptor()
+	return file_mtg_v1_deck_proto_enumTypes[1].Descriptor()
 }
 
 func (CardRole) Type() protoreflect.EnumType {
-	return &file_mtg_v1_deck_proto_enumTypes[0]
+	return &file_mtg_v1_deck_proto_enumTypes[1]
 }
 
 func (x CardRole) Number() protoreflect.EnumNumber {
@@ -93,7 +145,7 @@ func (x CardRole) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CardRole.Descriptor instead.
 func (CardRole) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{0}
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{1}
 }
 
 // Severity says what a finding blocks.
@@ -134,11 +186,11 @@ func (x Severity) String() string {
 }
 
 func (Severity) Descriptor() protoreflect.EnumDescriptor {
-	return file_mtg_v1_deck_proto_enumTypes[1].Descriptor()
+	return file_mtg_v1_deck_proto_enumTypes[2].Descriptor()
 }
 
 func (Severity) Type() protoreflect.EnumType {
-	return &file_mtg_v1_deck_proto_enumTypes[1]
+	return &file_mtg_v1_deck_proto_enumTypes[2]
 }
 
 func (x Severity) Number() protoreflect.EnumNumber {
@@ -147,7 +199,7 @@ func (x Severity) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Severity.Descriptor instead.
 func (Severity) EnumDescriptor() ([]byte, []int) {
-	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{1}
+	return file_mtg_v1_deck_proto_rawDescGZIP(), []int{2}
 }
 
 // Deck is one generated deck.
@@ -169,10 +221,12 @@ type Deck struct {
 	LegalityAsOf string                 `protobuf:"bytes,9,opt,name=legality_as_of,json=legalityAsOf,proto3" json:"legality_as_of,omitempty"`
 	SessionId    string                 `protobuf:"bytes,11,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	CreatedAt    *timestamppb.Timestamp `protobuf:"bytes,12,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	// stale is reserved for the staleness pass (D-29, I-1), unset today.
+	// stale says a card of the deck is no longer legal in its format. The
+	// stale pass of the snapshot job sets it after a legality change, and
+	// clears it when every card is legal again (D-29, I-1).
 	Stale bool `protobuf:"varint,13,opt,name=stale,proto3" json:"stale,omitempty"`
-	// stale_oracle_ids is reserved for the staleness pass (D-29, I-1),
-	// unset today.
+	// stale_oracle_ids names each card that is no longer legal, commanders
+	// included. Empty when the deck is not stale.
 	StaleOracleIds []string `protobuf:"bytes,14,rep,name=stale_oracle_ids,json=staleOracleIds,proto3" json:"stale_oracle_ids,omitempty"`
 	// sideboard holds up to 15 cards in 60-card formats. Empty in Commander.
 	Sideboard []*DeckCard `protobuf:"bytes,15,rep,name=sideboard,proto3" json:"sideboard,omitempty"`
@@ -234,8 +288,14 @@ type Deck struct {
 	// because the bracket judge did not answer (D-854). The next open of
 	// the deck asks the judge again.
 	BracketEstimated bool `protobuf:"varint,29,opt,name=bracket_estimated,json=bracketEstimated,proto3" json:"bracket_estimated,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// rerun_case is the rerun that a stale deck offers (D-1008). UNSPECIFIED
+	// when the deck is not stale.
+	RerunCase RerunCase `protobuf:"varint,30,opt,name=rerun_case,json=rerunCase,proto3,enum=mtg.v1.RerunCase" json:"rerun_case,omitempty"`
+	// stale_reason says why the rerun is a patch or a rebuild, in the words
+	// the banner shows (D-1008).
+	StaleReason   string `protobuf:"bytes,31,opt,name=stale_reason,json=staleReason,proto3" json:"stale_reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Deck) Reset() {
@@ -462,6 +522,20 @@ func (x *Deck) GetBracketEstimated() bool {
 		return x.BracketEstimated
 	}
 	return false
+}
+
+func (x *Deck) GetRerunCase() RerunCase {
+	if x != nil {
+		return x.RerunCase
+	}
+	return RerunCase_RERUN_CASE_UNSPECIFIED
+}
+
+func (x *Deck) GetStaleReason() string {
+	if x != nil {
+		return x.StaleReason
+	}
+	return ""
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The
@@ -1652,7 +1726,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd4\b\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa9\t\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1689,7 +1763,10 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"commanders\x18\x1b \x03(\v2\x10.mtg.v1.DeckCardR\n" +
 	"commanders\x12\x1a\n" +
 	"\bimported\x18\x1c \x01(\bR\bimported\x12+\n" +
-	"\x11bracket_estimated\x18\x1d \x01(\bR\x10bracketEstimatedJ\x04\b\n" +
+	"\x11bracket_estimated\x18\x1d \x01(\bR\x10bracketEstimated\x120\n" +
+	"\n" +
+	"rerun_case\x18\x1e \x01(\x0e2\x11.mtg.v1.RerunCaseR\trerunCase\x12!\n" +
+	"\fstale_reason\x18\x1f \x01(\tR\vstaleReasonJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +
@@ -1793,7 +1870,11 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\bfindings\x18\x04 \x03(\x05R\bfindings\x12\x1c\n" +
 	"\tshortlist\x18\x05 \x01(\x05R\tshortlist\x12#\n" +
 	"\x05usage\x18\x06 \x01(\v2\r.mtg.v1.UsageR\x05usage\x12)\n" +
-	"\x10commander_source\x18\a \x01(\tR\x0fcommanderSource*\xff\x01\n" +
+	"\x10commander_source\x18\a \x01(\tR\x0fcommanderSource*U\n" +
+	"\tRerunCase\x12\x1a\n" +
+	"\x16RERUN_CASE_UNSPECIFIED\x10\x00\x12\x14\n" +
+	"\x10RERUN_CASE_PATCH\x10\x01\x12\x16\n" +
+	"\x12RERUN_CASE_REBUILD\x10\x02*\xff\x01\n" +
 	"\bCardRole\x12\x19\n" +
 	"\x15CARD_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eCARD_ROLE_LAND\x10\x01\x12\x12\n" +
@@ -1825,70 +1906,72 @@ func file_mtg_v1_deck_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_deck_proto_rawDescData
 }
 
-var file_mtg_v1_deck_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_mtg_v1_deck_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_mtg_v1_deck_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_mtg_v1_deck_proto_goTypes = []any{
-	(CardRole)(0),                 // 0: mtg.v1.CardRole
-	(Severity)(0),                 // 1: mtg.v1.Severity
-	(*Deck)(nil),                  // 2: mtg.v1.Deck
-	(*DeckQuality)(nil),           // 3: mtg.v1.DeckQuality
-	(*TierProbability)(nil),       // 4: mtg.v1.TierProbability
-	(*DeckProfile)(nil),           // 5: mtg.v1.DeckProfile
-	(*ProfileFeature)(nil),        // 6: mtg.v1.ProfileFeature
-	(*Goldfish)(nil),              // 7: mtg.v1.Goldfish
-	(*ContentCheck)(nil),          // 8: mtg.v1.ContentCheck
-	(*ComboHit)(nil),              // 9: mtg.v1.ComboHit
-	(*SharedDeck)(nil),            // 10: mtg.v1.SharedDeck
-	(*SharedCard)(nil),            // 11: mtg.v1.SharedCard
-	(*DeckCard)(nil),              // 12: mtg.v1.DeckCard
-	(*ValidationResult)(nil),      // 13: mtg.v1.ValidationResult
-	(*Finding)(nil),               // 14: mtg.v1.Finding
-	(*BuildMetrics)(nil),          // 15: mtg.v1.BuildMetrics
-	(*Format)(nil),                // 16: mtg.v1.Format
-	(*PowerLevel)(nil),            // 17: mtg.v1.PowerLevel
-	(*timestamppb.Timestamp)(nil), // 18: google.protobuf.Timestamp
-	(*Card)(nil),                  // 19: mtg.v1.Card
-	(*Printing)(nil),              // 20: mtg.v1.Printing
-	(PoolRule)(0),                 // 21: mtg.v1.PoolRule
-	(FormatId)(0),                 // 22: mtg.v1.FormatId
-	(*Usage)(nil),                 // 23: mtg.v1.Usage
+	(RerunCase)(0),                // 0: mtg.v1.RerunCase
+	(CardRole)(0),                 // 1: mtg.v1.CardRole
+	(Severity)(0),                 // 2: mtg.v1.Severity
+	(*Deck)(nil),                  // 3: mtg.v1.Deck
+	(*DeckQuality)(nil),           // 4: mtg.v1.DeckQuality
+	(*TierProbability)(nil),       // 5: mtg.v1.TierProbability
+	(*DeckProfile)(nil),           // 6: mtg.v1.DeckProfile
+	(*ProfileFeature)(nil),        // 7: mtg.v1.ProfileFeature
+	(*Goldfish)(nil),              // 8: mtg.v1.Goldfish
+	(*ContentCheck)(nil),          // 9: mtg.v1.ContentCheck
+	(*ComboHit)(nil),              // 10: mtg.v1.ComboHit
+	(*SharedDeck)(nil),            // 11: mtg.v1.SharedDeck
+	(*SharedCard)(nil),            // 12: mtg.v1.SharedCard
+	(*DeckCard)(nil),              // 13: mtg.v1.DeckCard
+	(*ValidationResult)(nil),      // 14: mtg.v1.ValidationResult
+	(*Finding)(nil),               // 15: mtg.v1.Finding
+	(*BuildMetrics)(nil),          // 16: mtg.v1.BuildMetrics
+	(*Format)(nil),                // 17: mtg.v1.Format
+	(*PowerLevel)(nil),            // 18: mtg.v1.PowerLevel
+	(*timestamppb.Timestamp)(nil), // 19: google.protobuf.Timestamp
+	(*Card)(nil),                  // 20: mtg.v1.Card
+	(*Printing)(nil),              // 21: mtg.v1.Printing
+	(PoolRule)(0),                 // 22: mtg.v1.PoolRule
+	(FormatId)(0),                 // 23: mtg.v1.FormatId
+	(*Usage)(nil),                 // 24: mtg.v1.Usage
 }
 var file_mtg_v1_deck_proto_depIdxs = []int32{
-	16, // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
-	17, // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
-	12, // 2: mtg.v1.Deck.cards:type_name -> mtg.v1.DeckCard
-	13, // 3: mtg.v1.Deck.validation:type_name -> mtg.v1.ValidationResult
-	18, // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
-	12, // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
-	12, // 6: mtg.v1.Deck.upgrades:type_name -> mtg.v1.DeckCard
-	5,  // 7: mtg.v1.Deck.profile:type_name -> mtg.v1.DeckProfile
-	3,  // 8: mtg.v1.Deck.quality:type_name -> mtg.v1.DeckQuality
-	15, // 9: mtg.v1.Deck.build:type_name -> mtg.v1.BuildMetrics
-	12, // 10: mtg.v1.Deck.commanders:type_name -> mtg.v1.DeckCard
-	4,  // 11: mtg.v1.DeckQuality.probabilities:type_name -> mtg.v1.TierProbability
-	6,  // 12: mtg.v1.DeckProfile.features:type_name -> mtg.v1.ProfileFeature
-	7,  // 13: mtg.v1.DeckProfile.goldfish:type_name -> mtg.v1.Goldfish
-	8,  // 14: mtg.v1.DeckProfile.content:type_name -> mtg.v1.ContentCheck
-	9,  // 15: mtg.v1.ContentCheck.combos:type_name -> mtg.v1.ComboHit
-	16, // 16: mtg.v1.SharedDeck.format:type_name -> mtg.v1.Format
-	17, // 17: mtg.v1.SharedDeck.power:type_name -> mtg.v1.PowerLevel
-	11, // 18: mtg.v1.SharedDeck.cards:type_name -> mtg.v1.SharedCard
-	11, // 19: mtg.v1.SharedDeck.sideboard:type_name -> mtg.v1.SharedCard
-	11, // 20: mtg.v1.SharedDeck.commanders:type_name -> mtg.v1.SharedCard
-	0,  // 21: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
-	19, // 22: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
-	0,  // 23: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	20, // 24: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
-	14, // 25: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	21, // 26: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
-	22, // 27: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
-	1,  // 28: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	23, // 29: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
-	30, // [30:30] is the sub-list for method output_type
-	30, // [30:30] is the sub-list for method input_type
-	30, // [30:30] is the sub-list for extension type_name
-	30, // [30:30] is the sub-list for extension extendee
-	0,  // [0:30] is the sub-list for field type_name
+	17, // 0: mtg.v1.Deck.format:type_name -> mtg.v1.Format
+	18, // 1: mtg.v1.Deck.power:type_name -> mtg.v1.PowerLevel
+	13, // 2: mtg.v1.Deck.cards:type_name -> mtg.v1.DeckCard
+	14, // 3: mtg.v1.Deck.validation:type_name -> mtg.v1.ValidationResult
+	19, // 4: mtg.v1.Deck.created_at:type_name -> google.protobuf.Timestamp
+	13, // 5: mtg.v1.Deck.sideboard:type_name -> mtg.v1.DeckCard
+	13, // 6: mtg.v1.Deck.upgrades:type_name -> mtg.v1.DeckCard
+	6,  // 7: mtg.v1.Deck.profile:type_name -> mtg.v1.DeckProfile
+	4,  // 8: mtg.v1.Deck.quality:type_name -> mtg.v1.DeckQuality
+	16, // 9: mtg.v1.Deck.build:type_name -> mtg.v1.BuildMetrics
+	13, // 10: mtg.v1.Deck.commanders:type_name -> mtg.v1.DeckCard
+	0,  // 11: mtg.v1.Deck.rerun_case:type_name -> mtg.v1.RerunCase
+	5,  // 12: mtg.v1.DeckQuality.probabilities:type_name -> mtg.v1.TierProbability
+	7,  // 13: mtg.v1.DeckProfile.features:type_name -> mtg.v1.ProfileFeature
+	8,  // 14: mtg.v1.DeckProfile.goldfish:type_name -> mtg.v1.Goldfish
+	9,  // 15: mtg.v1.DeckProfile.content:type_name -> mtg.v1.ContentCheck
+	10, // 16: mtg.v1.ContentCheck.combos:type_name -> mtg.v1.ComboHit
+	17, // 17: mtg.v1.SharedDeck.format:type_name -> mtg.v1.Format
+	18, // 18: mtg.v1.SharedDeck.power:type_name -> mtg.v1.PowerLevel
+	12, // 19: mtg.v1.SharedDeck.cards:type_name -> mtg.v1.SharedCard
+	12, // 20: mtg.v1.SharedDeck.sideboard:type_name -> mtg.v1.SharedCard
+	12, // 21: mtg.v1.SharedDeck.commanders:type_name -> mtg.v1.SharedCard
+	1,  // 22: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
+	20, // 23: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
+	1,  // 24: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
+	21, // 25: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
+	15, // 26: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	22, // 27: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	23, // 28: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	2,  // 29: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	24, // 30: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
+	31, // [31:31] is the sub-list for method output_type
+	31, // [31:31] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }
@@ -1904,7 +1987,7 @@ func file_mtg_v1_deck_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_deck_proto_rawDesc), len(file_mtg_v1_deck_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      3,
 			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,

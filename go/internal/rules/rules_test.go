@@ -133,6 +133,9 @@ func wantPass(t *testing.T, name string, ds deckSpec) {
 		if !res.Passed {
 			t.Errorf("deck must pass, blocks: %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
 		}
+		// The gate of I-1: each synthetic ban of a good deck reads
+		// stale, the engine agrees, and the case follows D-1008.
+		checkSyntheticBans(t, ds.build(t))
 	})
 }
 

@@ -500,7 +500,11 @@ type ChatRequest struct {
 	// The chat screen knows the answer already: the reader named a
 	// collection and said whether the deck may reach past it. UNSPECIFIED
 	// leaves the question to the agent.
-	PoolRule      PoolRule `protobuf:"varint,7,opt,name=pool_rule,json=poolRule,proto3,enum=mtg.v1.PoolRule" json:"pool_rule,omitempty"`
+	PoolRule PoolRule `protobuf:"varint,7,opt,name=pool_rule,json=poolRule,proto3,enum=mtg.v1.PoolRule" json:"pool_rule,omitempty"`
+	// rerun_deck_id asks for the rerun of one stale deck of the session
+	// (D-1008). The turn carries no message and no answer. The deck says
+	// which rerun it takes: a patch, or a rebuild (D-1019, D-1020).
+	RerunDeckId   string `protobuf:"bytes,8,opt,name=rerun_deck_id,json=rerunDeckId,proto3" json:"rerun_deck_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -568,6 +572,13 @@ func (x *ChatRequest) GetPoolRule() PoolRule {
 		return x.PoolRule
 	}
 	return PoolRule_POOL_RULE_UNSPECIFIED
+}
+
+func (x *ChatRequest) GetRerunDeckId() string {
+	if x != nil {
+		return x.RerunDeckId
+	}
+	return ""
 }
 
 // AgentError is a failure the UI can act on.
@@ -1249,14 +1260,15 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\x14DeleteSessionRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\"\x17\n" +
-	"\x15DeleteSessionResponse\"\xe7\x01\n" +
+	"\x15DeleteSessionResponse\"\x8b\x02\n" +
 	"\vChatRequest\x12\x1d\n" +
 	"\n" +
 	"session_id\x18\x01 \x01(\tR\tsessionId\x12#\n" +
 	"\rcollection_id\x18\x02 \x01(\tR\fcollectionId\x12\x18\n" +
 	"\amessage\x18\x03 \x01(\tR\amessage\x12(\n" +
 	"\aanswers\x18\x04 \x03(\v2\x0e.mtg.v1.AnswerR\aanswers\x12-\n" +
-	"\tpool_rule\x18\a \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRuleJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x04seedR\x0fkeep_oracle_ids\"X\n" +
+	"\tpool_rule\x18\a \x01(\x0e2\x10.mtg.v1.PoolRuleR\bpoolRule\x12\"\n" +
+	"\rrerun_deck_id\x18\b \x01(\tR\vrerunDeckIdJ\x04\b\x05\x10\x06J\x04\b\x06\x10\aR\x04seedR\x0fkeep_oracle_ids\"X\n" +
 	"\n" +
 	"AgentError\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x18\n" +

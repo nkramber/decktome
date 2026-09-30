@@ -17,6 +17,7 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { type PoolMode, useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
+import { StaleBanner } from "../deck/stale-banner";
 import { ReportProblem } from "../feedback/report-problem";
 import { PoolPicker, useCollections } from "./pool-picker";
 import { BuildStepper } from "./build-stepper";
@@ -697,6 +698,11 @@ export function ChatPanel({
             </p>
           )}
           {actions}
+          <StaleBanner
+            deck={builtDeck}
+            busy={state.busy}
+            onRerun={() => void send({ message: "", answers: [], rerunDeckId: builtDeck.id })}
+          />
           <section aria-label="Deck">
             <DeckView deck={builtDeck} base={deckOverride ? baseOverride : state.baseDeck} />
           </section>

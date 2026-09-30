@@ -6,36 +6,38 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-29g)
+## RESUME HERE (2026-09-30)
 
-**Pull request #258, PR-26, sends a web push when a build ends after the user left the page (D-1004, D-1005).**
+**Branch `feat/ban-list-watch`: I-1, the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1021).** No pull request is open yet.
 
 Author provider: Claude Code
 
-**The base.** `main` is `b0a44cd`, from #257. Cloud Build `deploy-api` built it with SUCCESS, so the new model roles are live.
+**The base.** `main` is `0ff7f28`, from #258. Cloud Build `deploy-api` and `deploy-web` built it with SUCCESS on 2026-09-30.
 
-**The owner answers.** OQ-67: web push first, and one event, a finished build (D-1004). The toggle sits in the account menu, and the session made the grant of the role (D-1005). The audit fix of `brace-expansion` goes here too (D-1006).
+**The live push check of D-1007 failed** (D-1016, F-192). The owner switched apps during a build, and no push arrived. The fix waits for the third pull request after I-1.
 
-**The grant.** `mtg-api` holds `roles/firebasecloudmessaging.admin` on `decktome-prod`. The app uses the default VAPID key of the SDK.
+**The owner answers.** OQ-18 (D-1008). One pull request (D-1018). The patch is a revision turn (D-1019). The rebuild reads the conversation (D-1020). A banned commander asks with the pick row (D-1021). The owner queued F-186 to F-193 for three pull requests after I-1 (D-1009 to D-1017).
 
-**The code.**
+**The code, done and tested.**
 
-- `go/internal/push` keeps the devices, at most 10 for each user, and sends through Cloud Messaging by Firebase Installation ID. One ID has one owner, in `push_owners/<id>`.
-- `go/internal/pushsvc` serves `PushService`. The agent service sends after it stores a deck, only when the client left the stream.
-- The web app adds the toggle, `web/apps/web/src/features/push/push.ts`, and the worker handler `web/apps/web/public/push-handler.js`.
+- `go/internal/stale` finds the stale cards, and it names the case of D-1008.
+- `go/internal/cards` reads the legalities alone, and the diff marker records the end of the pass.
+- `go/internal/decks` has `Scan` and `Mark`. The emulator test passes.
+- `go/cmd/worker/stalepass.go` runs the pass after the refresh.
+- `go/internal/agentsvc/rerun.go` is the rerun branch of `Chat`. `reviseDeck` is the second half of `sendRevision`.
+- The proto adds `Deck.rerun_case`, `Deck.stale_reason`, and `ChatRequest.rerun_deck_id`.
+- The web adds `web/apps/web/src/features/deck/stale-banner.tsx` and the rerun send.
+- The gate is `go/internal/rules/stale_gate_test.go`: 33 decks and 220 bans.
 
-**The checks.** The pull request body holds them.
+**The checks so far.** `go test ./...` passes. The web tests of the banner, the session page, and the deck screen pass. `make verify` did not run yet.
 
-**The review.** Gitar found one issue, fixed at `2089b50`. Codex round 1 found P2-1, fixed at `6c49dd6`. Round 2 found P1-1, and `verify:web` found advisories. Both now pass. Round 3 read Blocked on `49dda67` for the live check alone. D-1007 puts that check after the deploy. Round 4 reads Ready for owner merge on `f06b518`, with no open finding. `docs/reviews/pr-258-response.md` answers each round. The merge waits on the owner, then on the auto-merge (D-828).
+**The open work, in order.**
 
-**What waits on the owner.**
-
-- The merge of this pull request.
-- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
-- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
-- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
-- A questions gate run for D-913. Ask first.
-- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+1. Run `make verify`, and read its real exit code.
+2. Write the body with the documentation matrix, then run `make pr-check`.
+3. Open the pull request, and mark I-1 `✅ merged as #N` (D-822).
+4. Do the Gitar pass, then `make codex-review`.
+5. After the deploy, ask the owner for a paid live rerun on a stale deck.
 
 ## How to resume
 
@@ -110,10 +112,6 @@ Twenty-two things a fresh session gets wrong without this file.
 0. **The first pull request after I-1: fix F-186, F-187, F-189, and F-193** (D-1009, D-1010, D-1012, D-1013, D-1017). The server stores a new session at the end of its first turn, so a reload before then reads "session not found". Add a 16px buffer at the top and bottom edges of the installed app. Add a back control to the chat. On a phone, open a deck with the chat collapsed.
 0. **The second pull request after I-1: fix F-188 and F-191** (D-1011, D-1012, D-1014). Remove the "Only cards I own" checkbox. Remove "You decide" from the commander pick row. Ask OQ-88 and OQ-89 first.
 0. **The third pull request after I-1: investigate F-190, and fix F-192** (D-1015, D-1016). The installed app on a phone fails too easily when the connection drops. The push misses a switch of apps. Ask OQ-90 first.
-1. **PR-93: read an empty older MTGO month page again** (F-179, D-973, D-974). It merged as #245.
-2. **PR-94: read the MTGO month retry, and read an empty month up to 3 times** (F-179, D-975, D-976, D-977). It merged as #246.
-3. **PR-95: read the 3 MTGO month passes, and fetch the event pages after the retry** (F-179, F-183, D-978 to D-980). It merged as #247.
-4. **PR-96: read the MTGO event fetch of #247, and stop the MTGO lane at a time budget** (F-179, F-183, F-184, D-981, D-982). It merged as #248.
 5. **PR-97: read the first meta job on the image of #248, and read an empty current month again** (F-179, F-183, F-184, F-185, D-983, D-984). It merged as #249.
 6. **PR-98: read the current month on the image of #249** (F-179, F-185, D-984, D-985). The first read was full, and the owner closed F-185. It merged as #250.
 7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waited for a second run. It merged as #251.

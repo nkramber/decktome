@@ -3136,17 +3136,17 @@ A build that loses its deadline returns the last legal deck. No feature with a b
 Deck gate run 18 is the paid measure, and it reads PASS (D-617). Repair turns fell from 12 of 25 to 3 of 25. A block bought each of the three, and never a band. The wall clock fell 27 percent and the cost 28 percent. On the decks the mana pass runs on, the off-band findings fell from 4 to 2. The two precon upgrades hold 8 of the 10 that are left, and the pass skips an upgrade by design (D-249).
 > *In plain English:* the app builds a deck and reads it as a little off the power level you asked for. It then pays a minute to ask the model to fix it. Twice it ran out of time and gave you nothing. The app can fix the mana itself, in less than a second.
 
-**I-1: Ban-list watch, stale-deck banner, and scoped rerun (D-29).**
-A job reads the Wizards announcement feed and detects the Scryfall snapshot that reflects it. It then re-validates every stored deck in the affected formats. 
+**I-1: Ban-list watch, stale-deck banner, and scoped rerun (D-29, D-1008, D-1018).**
+The snapshot job finds a ban as a legality diff between two snapshots, and the announcement calendar sets how often it looks (C-2). The job needs no feed of Wizards. After a new diff, the job runs the stale pass, in the same run or the next one. The pass reads the legalities of the newest snapshot, and it checks each stored deck against its format (`go/internal/stale`). The account of the job already holds `roles/datastore.user` (D-1018).
 
-A deck with a now-illegal card gets a `stale` flag with the list of affected cards. The UI shows a banner on that deck with a "rerun" button.
+A deck with a card that is no longer legal gets the `stale` flag, the list of those cards, a rerun case, and a reason. An unban clears them. The marker of the diff records the end of the pass, so a pass that stops runs again in the next hour.
 
-An impact classifier scopes the rerun. Its inputs: how many cards the change touches, which roles they filled, and whether the commander or a win condition is among them. 
+The rule of the case is D-1008. A ban of the commander or a partner causes a rebuild. So does a ban of a card with the role `CARD_ROLE_WINCON`, or of 10% or more of the nonland copies. Each other ban takes a patch. An imported list takes the patch, except when the ban hits its commander (D-1020).
 
-Low impact: a patch turn that replaces only the affected cards from the same candidate list. 
+The deck screen shows a banner with the cards, the reason, and one button. A patch is a revision of the stale deck with the stale cards in `Remove`, and no revise call (D-1019). A rebuild is a new build turn in the conversation of the deck (D-1020). No seed exists, because D-256 removed it. A banned commander goes through the pick row first (D-1021).
 
-High impact (threshold OQ-18): a full rebuild with the original slots and a new seed. The banner states which case applies and why. Gate: on the golden decks, every synthetic ban produces the correct case and a legal deck.
-> *In plain English:* when Wizards bans a card, every deck we built that uses it gets a warning and a rerun button. If the ban only touches one filler card, we swap that card. If it guts the deck, we rebuild it from your answers.
+Gate: the good golden decks of the rules tests take a synthetic ban of each card. Each ban reads stale, the rules engine blocks the same card, and the case follows D-1008. The first run read 33 decks and 220 bans. The rules engine checks the rerun deck at each build, so the deck is legal. UNVERIFIED: no live rerun ran before the merge. The 10% threshold rests on no measurement.
+> *In plain English:* when Wizards bans a card, every deck we built that uses it gets a warning and a rerun button. If the ban only touches a card or two, we swap them. If it takes the commander, a win condition, or a large part of the deck, we rebuild it from your conversation.
 
 **I-2: Price-aware buy list** (D-17, F-16). USD. Each card carries the lowest Scryfall NM market price across legal printings and finishes. It is a 7-day rolling average, and the average rejects an outlier day. An outlier is a day more than 2x the 7-day median (D-26). Digital-only and gold-bordered printings excluded. The UI labels it "NM market estimate" with the price date.
 
@@ -3289,13 +3289,14 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 97. **PR-104** deck gate run 35, the first whole run of generate prompt version 16, and `jsdom` 30.1.1 (F-33, D-995, D-997). It spent $3.1278. Then PR-105, the move of the model roles (D-996).
 98. **PR-105** the move of the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003). It spent about $4.1 at OpenAI and $1.04 at Anthropic.
 99. **PR-26** the web push of a finished build, Stage B of the mobile proposal (D-1004, D-1005). The email digest, the legality event, and the new-cards event wait.
+100. **I-1** the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1021).
 
 ## 9. Open questions
 
 See `docs/open-questions.md` for the full list with "ask when" dates. The ones that gate a phase:
 
 1. **OQ-19 scoring rubric** answered 2026-08-24 (D-66). M-5 is no longer gated on it.
-2. **OQ-18 rerun depth rule** gates I-1.
+2. **OQ-18 rerun depth rule** answered 2026-09-30 (D-1008). I-1 applies it.
 3. **OQ-20 public anonymized ManaBox exports** closed 2026-09-01 (D-431). The fixture set is the owner's export and a generator from the card snapshot.
 4. PR-9's 30% variance number is a placeholder until PR-15 measures it. PR-9 is out of the MVP (D-256), so nothing waits on it.
 5. **OQ-45 the allowlist store** answered 2026-09-01 (D-420): one Firestore document, written by a make target. The old text stays below. D-314 allows one env var or one Firestore document. An env var needs a deploy per change, and a document needs an admin write path. PR-22 decides, and the owner confirms. Ask before PR-22.

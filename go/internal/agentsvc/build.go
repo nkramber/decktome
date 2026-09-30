@@ -871,13 +871,24 @@ func (s *Server) sendRevision(ctx context.Context, uid string, session *mtgv1.Se
 		s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_TextDelta{TextDelta: note}})
 		return nil
 	}
+	return s.reviseDeck(ctx, uid, session, st, version, owned, acc, usageBefore, base, brief, cards, turn, stream)
+}
+
+// reviseDeck builds a revision of base from a brief, and stores and
+// sends the deck. The revision turn gives it the brief of the revise
+// call. The patch rerun of a stale deck gives it a brief of its own,
+// with the stale cards in Remove (D-1019).
+func (s *Server) reviseDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
+	version int64, owned map[string]int32, acc *llm.Accumulator, usageBefore *mtgv1.Usage, base *mtgv1.Deck,
+	brief *revise.Brief, cards revise.CardSource, turn *mtgv1.Turn, stream *connect.ServerStream[mtgv1.ChatResponse]) error {
+	slots := session.GetSlots()
 	// A card the brief removes is not a card to keep, whatever the
 	// classify call read from the same message. The state drops the lock
 	// before the build, and the stored state follows (D-301).
 	for _, name := range brief.Remove {
 		st.Unlock(name)
 	}
-	snap = st.Snapshot()
+	snap := st.Snapshot()
 	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "revising the deck"}})
 	bctx, cancel := detached(ctx, s.buildDeadline())
 	defer cancel()

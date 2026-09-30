@@ -425,3 +425,67 @@ func TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck(t *testing.T) {
 		t.Errorf("the deleted deck came back: %v", err)
 	}
 }
+
+// TestEmulatorScanAndMark reads the decks of each user, and writes the
+// stale state of one deck without a move in the list (I-1).
+func TestEmulatorScanAndMark(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	ctx := t.Context()
+	at := time.Date(2026, 9, 1, 12, 0, 0, 0, time.UTC)
+	ids := map[string]string{}
+	for _, uid := range []string{"u-scan-1", "u-scan-2"} {
+		id := repo.NewID(uid)
+		if err := repo.Put(ctx, uid, sampleDeck(id, at)); err != nil {
+			t.Fatal(err)
+		}
+		ids[uid] = id
+	}
+	seen := map[string]bool{}
+	err := repo.Scan(ctx, func(uid string, d *mtgv1.Deck) error {
+		if ids[uid] == d.GetId() && len(d.GetCards()) == 1 {
+			seen[uid] = true
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !seen["u-scan-1"] || !seen["u-scan-2"] {
+		t.Fatalf("scan saw %v", seen)
+	}
+
+	uid, id := "u-scan-1", ids["u-scan-1"]
+	changed, err := repo.Mark(ctx, uid, id, func(d *mtgv1.Deck) bool {
+		d.Stale, d.StaleOracleIds = true, []string{"o-welcome"}
+		d.RerunCase, d.StaleReason = mtgv1.RerunCase_RERUN_CASE_PATCH, "a reason"
+		return true
+	})
+	if err != nil || !changed {
+		t.Fatalf("mark: changed %v err %v", changed, err)
+	}
+	got, err := repo.Get(ctx, uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.GetStale() || got.GetRerunCase() != mtgv1.RerunCase_RERUN_CASE_PATCH || got.GetStaleReason() != "a reason" {
+		t.Fatalf("got = stale %v case %v reason %q", got.GetStale(), got.GetRerunCase(), got.GetStaleReason())
+	}
+	if !got.GetCreatedAt().AsTime().Equal(at) {
+		t.Errorf("the mark moved the deck in the list: %v", got.GetCreatedAt().AsTime())
+	}
+	listed, err := repo.List(ctx, uid, Filter{}, 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listed) == 0 || !listed[0].GetStale() {
+		t.Errorf("the list does not show the stale flag")
+	}
+	changed, err = repo.Mark(ctx, uid, id, func(*mtgv1.Deck) bool { return false })
+	if err != nil || changed {
+		t.Fatalf("a mark with no change: changed %v err %v", changed, err)
+	}
+	if _, err := repo.Mark(ctx, uid, "no-such-deck", func(*mtgv1.Deck) bool { return true }); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("a missing deck: err %v", err)
+	}
+}
