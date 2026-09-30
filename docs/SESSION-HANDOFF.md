@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** See the pull request body for `make verify`. The emulator tests of `go/internal/push` join the CI step and `make store-check`.
 
-**The review.** Gitar found one issue: one browser ID stayed under two accounts after a failed sign-out. The fix gives each ID one owner, and a sign-out ends the registration also when the API call fails. The Codex review waits. The auto-merge waits on the owner (D-828).
+**The review.** Codex reviewed effective head `2089b50`. Verdict: Changes required. Open finding: P2-1.
 
 **What waits on the owner.**
 
