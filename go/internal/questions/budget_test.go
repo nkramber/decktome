@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"strings"
 	"testing"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -229,5 +230,19 @@ func TestBudgetNumberAnswersTheCardsToBuyQuestion(t *testing.T) {
 	ruleBudgetScope(a, st, turnWords{Message: "no", Open: []string{"budget"}})
 	if st.Slots.GetBudgetScope() != mtgv1.BudgetScope_BUDGET_SCOPE_UNSPECIFIED {
 		t.Errorf("scope = %v, want unspecified", st.Slots.GetBudgetScope())
+	}
+}
+
+// TestClassifyInstructionsReadTheLunaMisses: gpt-6-luna put the cap for
+// each card in budget_usd, and it read "whatever is strongest" as a
+// decline of the power and the budget (D-1003).
+func TestClassifyInstructionsReadTheLunaMisses(t *testing.T) {
+	for _, want := range []string{
+		`"Nothing over 5 dollars a card, and 120 dollars in total" gives 120.`,
+		`It declines neither the power nor the budget, and those keys stay open.`,
+	} {
+		if !strings.Contains(classifyInstructions, want) {
+			t.Errorf("the classify instructions lack %q", want)
+		}
 	}
 }

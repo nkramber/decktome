@@ -216,8 +216,9 @@ even when you drop the rest. They are what the next night learns from.
 
 ## What it costs
 
-One iteration is about $0.25 and 33 to 35 minutes. The gate and the eval
-run on `gpt-5.6-luna` and they bill per token. A partial keep adds a gate
+One iteration is about $0.15 and 33 to 35 minutes. The gate and the eval
+run on `gpt-6-luna` (D-1003), and they bill per token. On 2026-09-29 a
+gate run cost about $0.10, and the eval of run 54 cost $0.0424. A partial keep adds a gate
 and an eval over a few conversations, which is cents.
 
 A budget of $3.00 buys about 12 iterations, which is about six hours. Wall

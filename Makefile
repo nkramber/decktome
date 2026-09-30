@@ -347,6 +347,9 @@ deck-gate-trim: ## Rewrite the trimmed snapshot from the local store, after a pr
 REVISE_GATE_OUT ?= docs/reference/pr12b-revise-gate.md
 # REVISE_GATE_RUN is the run file of PR-15, named after the document.
 REVISE_GATE_RUN ?= docs/reference/eval/$(notdir $(basename $(REVISE_GATE_OUT))).jsonl
+# REVISE_GATE_ARGS passes flags to the gate, for example -only 1 to run
+# the first base deck and its revisions alone (D-1003).
+REVISE_GATE_ARGS ?=
 
 revise-gate: ## Write the PR-12B revise gate document. CAUTION: calls a real provider and costs money
 	@[ -f .env ] || { echo "revise-gate: .env is absent."; exit 1; }
@@ -355,7 +358,7 @@ revise-gate: ## Write the PR-12B revise gate document. CAUTION: calls a real pro
 	@test ! -f $(REVISE_GATE_RUN) || { echo "$(REVISE_GATE_RUN) exists. Set REVISE_GATE_RUN to a new file."; exit 1; }
 	@set -a && . ./.env && set +a && \
 		REVISE_GATE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/revise-gate -run-out $(abspath $(REVISE_GATE_RUN)) > $(REVISE_GATE_OUT)
+		$(GO) run ./cmd/revise-gate -run-out $(abspath $(REVISE_GATE_RUN)) $(REVISE_GATE_ARGS) > $(REVISE_GATE_OUT)
 	@echo "wrote $(REVISE_GATE_OUT) and $(REVISE_GATE_RUN)"
 
 chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real providers and costs money

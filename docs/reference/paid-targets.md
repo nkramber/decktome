@@ -35,7 +35,7 @@ Five more targets spend money, and each has an overwrite guard and an env guard.
 
 `SIXTY_GATE_ARGS="-split dev -reads 1"` reads the 15 dev lists once, and that document holds no verdict. Run 1 cost $4.1086 and run 2 cost $3.9736, for 180 reads each. `-exclude <documents>` leaves out the tournament lists of earlier runs (D-876). `make sixty-gate-dry` prints the split for free.
 
-`make revise-gate` builds three base decks and runs nine revisions over them, twelve turns with the answered questions (PR-12B, D-448). It has the same two guards. Run 7 cost $0.74 for eleven turns, run 8 cost $1.23, and runs 4 to 6 cost $0.54 to $0.81.
+`make revise-gate` builds three base decks and runs nine revisions over them, twelve turns with the answered questions (PR-12B, D-448). It has the same two guards. Run 7 cost $0.74 for eleven turns, run 8 cost $1.23, and runs 4 to 6 cost $0.54 to $0.81. `REVISE_GATE_ARGS="-only 1"` runs the first base deck and its revisions alone (D-1003).
 
 `DECK_GATE_ARGS` passes flags to `make deck-gate`. `DECK_GATE_ARGS="-only 19,20,21,22,23,24"` runs the six set prompts of PR-17B alone, for about $0.35. `DECK_GATE_ARGS="-only 25"` runs the precon exclusion prompt of PR-24 alone, for about $0.13. `GATE_ARGS` passes flags to `make questions-gate`, and `GATE_ARGS="-only 109"` runs the group set probe of D-525 alone. Runs 36 and 37 cost about $0.001 each and took about 10 seconds. A partial run reads its item bars alone and never stands as the gate (D-526).
 

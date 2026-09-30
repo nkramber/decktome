@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-09-30 correction pass 254 (PR-105, D-996, D-998 to D-1003): the model roles move to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`. Each move has a gate result that reads PASS. Two prompt fixes cover the misreads of the new models. Changes: PR-105, sequencing step 98.
+
 2026-09-29 correction pass 253 (PR-104, PR-105, F-33, D-995 to D-997): deck gate run 35 reads PASS for $3.1278 on generate prompt version 16. The web test tooling moves to `jsdom` 30.1.1 for 3 advisories of `undici`. The owner named PR-105, the move of the model roles. Changes: F-33, PR-104, PR-105, sequencing step 97.
 
 2026-09-29 correction pass 252 (PR-103, F-49, D-994): a free harvest read 1 new verdict, and the owner confirmed it as a test by hand. The owner closed F-49. Changes: F-49, PR-103, sequencing step 96.
@@ -2837,30 +2839,36 @@ Gate:
 
 > *In plain English:* a full test of the newest deck prompt passed. The decks read a little better, and the two decks that needed a fix got one.
 
-**PR-105: Move the model roles to GPT-6, GPT-6.1, and Claude Sonnet 5.5, and measure each move (D-996).** 🔧 planned. The owner named it on 2026-09-29, as the item after PR-104.
+**PR-105: Move the model roles to GPT-6, GPT-6.1, and Claude Sonnet 5.5, and measure each move (D-996).** 🔧 in review. The owner named it on 2026-09-29, as the item after PR-104.
 
-| Role or target | Now | Next |
-|---|---|---|
-| classify, setmatch | `gpt-5.6-luna`, effort none | `gpt-6-luna`, effort none |
-| ask | `gpt-5.6-luna`, effort low | `gpt-6-luna`, effort low |
-| eval | `gpt-5.6-luna`, effort low | `gpt-6-luna`, effort low |
-| generate, repair | `gpt-5.6-terra`, effort medium | `gpt-6.1-sol`, effort medium |
-| revise | `gpt-5.6-terra`, effort low | `gpt-6.1-sol`, effort low |
-| judge | `claude-opus-5`, effort medium | `claude-sonnet-5-5`, effort medium |
-| `make eval-calibrate` | `claude-opus-5` | `claude-sonnet-5-5` |
+| Role or target | Before | After | The gate result |
+|---|---|---|---|
+| classify, setmatch | `gpt-5.6-luna`, effort none | `gpt-6-luna`, effort none | Questions run 56 PASS |
+| ask | `gpt-5.6-luna`, effort low | `gpt-6-luna`, effort low | Questions run 56 PASS |
+| eval | `gpt-5.6-luna`, effort low | `gpt-6-luna`, effort low | 97 percent agreement on run 54 |
+| generate, repair | `gpt-5.6-terra`, effort medium | `gpt-6.1-sol`, effort medium | Deck run 38 PASS |
+| revise | `gpt-5.6-terra`, effort low | `gpt-6.1-sol`, effort low | Revise run 11 PASS |
+| judge | `claude-opus-5`, effort medium | `claude-sonnet-5-5`, effort medium | Deck runs 36 and 37, and the bracket calibration, PASS |
+| `make eval-calibrate` | `claude-opus-5` | `claude-sonnet-5-5` | 87 percent agreement on run 54 |
 
-- **The model ids.** On 2026-09-29 the models endpoint of each provider listed `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`. The owner chose `gpt-6.1-sol` over `gpt-6-sol`.
-- **The prices.** Not verified yet. `go/internal/llm/prices.json` needs a row for each new model before the first paid run.
-- **The spend cap.** Each provider gets $5 for the evals of this item. OpenAI pays for the builds, the questions, and the eval. Anthropic pays for the judge and the calibration.
-- **The baseline.** Deck gate run 35 of PR-104 measures the current roles.
-- **The evals.** Each move gets the gate that reads its role. The item plans the order and the cost of each run before the first paid run.
-- **An open point.** One deck gate run with a new judge and a new generator measures two changes at once. A rejudge of the stored decks of run 35 measures the judge alone.
+- **The model ids and the prices.** On 2026-09-29 the models endpoint of each provider listed `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`. The owner chose `gpt-6.1-sol` over `gpt-6-sol`. `go/internal/llm/prices.json` holds the price of each, read 2026-09-29.
+- **The cache write (D-998).** OpenAI bills a cache write since GPT-5.6. `go/internal/llm/openai.go` now counts it.
+- **The judge (D-1000).** Sonnet 5.5 wrote "placeholder" or "x" as a reason on 7 of 25 decks. Plan rubric version 5 asks for a full sentence, and one more judge call follows an empty reason. Run 37 reads PASS for $0.3929.
+- **The builder.** Deck gate run 38 on `gpt-6.1-sol` reads PASS, 25 of 25, for $1.6749. The plan score is 0.685, against 0.640 for run 37 on the builds of run 35.
+- **The revise fix (D-1003).** Revise run 10 reads FAIL, 10 of 11. After the answer "A mix.", `gpt-6.1-sol` asked a second question. Revise prompt version 3 reads a mix of the offered readings as a settled answer. A probe of base deck 1 reads PASS, 5 of 5, for $0.1246. Run 11 reads PASS, 11 of 11, for $0.5390.
+- **The classify fix (D-1001, D-1003).** Questions runs 54 and 55 on `gpt-6-luna` read FAIL. "Good stuff, whatever is strongest" declined the power and the budget. "Nothing over 5 dollars a card, and 120 dollars in total" put 5 in the budget. Questions prompt version 20 names both cases. A probe played conversations 72 and 93 ten times each, and 20 of 20 plays met every slot for $0.0100. Run 56 reads PASS for $0.1039, and every slot of the 75 counted conversations ended on its expected value.
+- **The setmatch move.** No gate reads setmatch alone, and the run 56 header names no setmatch role. The caller checks each set code against the set table (D-581), and the owner accepted the move on that check (D-1003).
+- **A watch item.** Against baseline run 42, run 56 moved 17 information rows the worse way. Four conversations went from 0 stalls to 1, and each still met every slot.
+- **The spend.** OpenAI spent about $4.1 of its $5, with $0.5366 in the first deck gate run 38, which the empty balance voided (D-1002). Anthropic spent about $1.04 of its $5.
 
 Gate:
-- Each moved role has a gate result at the baseline or above it, or the owner accepts the difference.
-- The spend of each provider stays at $5 or less.
+- Each moved role has a gate result at the baseline or above it, or the owner accepts the difference. ✅ D-1003 accepts setmatch.
+- The spend of each provider stays at $5 or less. ✅
+- `make eval-check` reads PASS for the decks, questions, and revise suites.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
 
-> *In plain English:* the app moves to the newer OpenAI and Anthropic models. Each move gets a test against the current models before it ships, with $5 or less for each provider.
+> *In plain English:* the app moves to the newer OpenAI and Anthropic models. Two new models misread a few answers, so the prompts now name those cases, and the tests pass.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -3256,6 +3264,7 @@ High impact (threshold OQ-18): a full rebuild with the original slots and a new 
 95. **PR-102** the registration of the blocking function, and the live check of both paths (F-69, D-991, D-993). No paid target ran.
 96. **PR-103** the read of the test verdict of 2026-09-24, and the close of F-49 (F-49, D-994). No paid target ran.
 97. **PR-104** deck gate run 35, the first whole run of generate prompt version 16, and `jsdom` 30.1.1 (F-33, D-995, D-997). It spent $3.1278. Then PR-105, the move of the model roles (D-996).
+98. **PR-105** the move of the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003). It spent about $4.1 at OpenAI and $1.04 at Anthropic.
 
 ## 9. Open questions
 

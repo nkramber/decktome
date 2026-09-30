@@ -18,8 +18,8 @@ The owner scored 32 questions by hand and it took hours. A gate run asks about 2
 Eight steps, in a loop.
 
 1. Hand the last report and the lessons file to a fixer agent. It commits each change on its own, with the rows it means to move (D-181, D-182).
-2. Run the question gate. It asks every conversation of `conversations.json` on `gpt-5.6-luna`, and it writes a document. The file holds 104 on 2026-08-28.
-3. Score every question with the eval role, also on `gpt-5.6-luna` (D-133).
+2. Run the question gate. It asks every conversation of `conversations.json` on the classify and ask models of `roles.json`, and it writes a document. The file holds 104 on 2026-08-28.
+3. Score every question with the eval role, on the cost-tier model of `roles.json` (D-133).
 4. Compare the run with the best accepted run of the night, question by question (D-271). Charge every moved question to the change that declared its row.
 5. Keep the changes that helped. Drop the ones that hurt. Keep the evidence of a dropped change under `.local/tune/rejected/` (D-180).
 6. When the loop keeps some changes and drops others, run the gate again on the conversations of the kept rows. Fold that into the baseline.

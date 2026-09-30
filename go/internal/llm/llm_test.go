@@ -163,7 +163,7 @@ func TestCompleteHappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Attempts != 1 || res.Provider != FakeName || res.Model != "gpt-5.6-luna" {
+	if res.Attempts != 1 || res.Provider != FakeName || res.Model != "gpt-6-luna" {
 		t.Errorf("res = %+v", res)
 	}
 	call := sc.Calls[0]

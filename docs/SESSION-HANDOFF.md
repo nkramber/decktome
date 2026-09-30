@@ -6,38 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-29f)
+## RESUME HERE (2026-09-30)
 
-**PR-105 moves the model roles and measures each move (D-996). The work sits on branch `feat/move-model-roles`, and no pull request is open yet.**
+**Pull request #PRNUM, PR-105, moves the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003).**
 
 Author provider: Claude Code
 
 **The base.** `main` is `a340af0`, from #256.
 
-**The checkpoint.** The session passed 300K tokens of context and stopped at a safe point (D-946). No run is active.
+**The moves.** `go/internal/llm/roles.json` now names the new models. The roadmap entry of PR-105 holds the table of each role and its gate result.
 
-**Done and committed.**
+**The fixes (D-1003).**
 
-- The prices of `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, read 2026-09-29, are in `go/internal/llm/prices.json`.
-- OpenAI bills a cache write since GPT-5.6, and `go/internal/llm/openai.go` now counts it (D-998).
-- The judge moves to Sonnet 5.5 with a written reason for each field, plan rubric version 5 (D-1000). Runs 36 and 37 and the bracket calibration read PASS.
-- `make eval-calibrate` finishes its `-n` cut, and its reference is `claude-sonnet-5-5`.
-- Classify and ask stay on `gpt-5.6-luna` after runs 54 and 55 read FAIL (D-1001).
-- The eval on `gpt-6-luna` agrees with `gpt-5.6-luna` on 97 percent of run 54, for $0.0424 against $0.0977.
-- Deck gate run 38 on `gpt-6.1-sol` reads PASS for $1.6749. The plan score is 0.685 against 0.640 in run 37.
-- An empty OpenAI balance voided three runs, and the owner added credits (D-1002).
+- Revise prompt version 3 reads "A mix." as an answer that settles the question. Revise run 10 read FAIL, 10 of 11, and run 11 reads PASS, 11 of 11, for $0.5390.
+- Questions prompt version 20 keeps a cap for each card out of the budget, and it reads "whatever is strongest" as no decline. Runs 54 and 55 read FAIL, and run 56 reads PASS for $0.1039.
+- Two probes came first. Conversations 72 and 93 met every slot in 20 of 20 plays for $0.0100. Base deck 1 of the revise gate read PASS for $0.1246.
+- `REVISE_GATE_ARGS` now passes flags to `make revise-gate`.
 
-**The revise result.** Revise gate run 10 on `gpt-6.1-sol` reads FAIL, 10 of 11, for $0.5583. After the answer "A mix.", revise asked a second question. `docs/reference/pr12b-revise-gate-run10.md` holds it.
+**The checks.** `make eval-check` reads PASS for the decks, questions, and revise suites. See the pull request body for `make verify`.
 
-**Open: the owner answers of the last question need a check.** The session offered three revise options and two setmatch options. The owner wrote "Fix gpt-6.1-sol" for revise, and "Fix gpt-6-luna, switch" for setmatch. The session reads them so: fix the re-ask of revise on `gpt-6.1-sol`, and fix the misreads of `gpt-6-luna` before a switch. Ask the owner whether the switch covers setmatch alone, or classify and ask too. Record the answer as the next decision in `docs/decisions.md`.
+**The spend.** OpenAI spent about $4.1 of its $5. Anthropic spent about $1.04 of its $5.
 
-**Not done yet.** `go/internal/llm/roles.json` still names the old models. The roadmap entry of PR-105, `docs/setup-gcp.md` section 16.2, and the facts below still read the old roles. No pull request exists.
-
-**The spend.** Anthropic spent about $1.04 of its $5. OpenAI spent about $3.3 of its $5, with about $0.40 in the voided run 38.
+**The review.** Pending the Gitar pass, the Codex review, and the auto-merge (D-828).
 
 **What waits on the owner.**
 
-- The scope of the two fixes above.
+- The merge of this pull request.
 - The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
 - UNVERIFIED: a copy of a deck list on an iPhone (D-935).
 - A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
@@ -93,7 +87,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
 - The theme table `themes.json` reads `verified_at` 2026-09-20. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-20. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
-- LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-08-24. The max output per provider in `llm/client.go`, verified 2026-08-29. The OpenAI rows are unverified by anyone but the owner. The judge role runs on Opus 5 (D-430).
+- LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-09-29 (D-996). The max output per provider in `llm/client.go`, verified 2026-08-29. The judge role runs on Sonnet 5.5 (D-1000).
 - The owner repaired the application default credentials of this Mac on 2026-09-23, after the failure of 2026-09-13. The harvest then read `decktome-prod`, and the sandbox let it read the feedback of each user.
 - CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration. A read on 2026-09-12 at 19:24 UTC found the configuration unchanged.
 - The backfill of 2026-09-09 read one user with a record to seed: 1 collection, 1 thumbs up, and 2 thumbs down. It counted no deck and no chat, because the reader deleted both (D-635).
@@ -126,7 +120,7 @@ Twenty-two things a fresh session gets wrong without this file.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
 12. **PR-104: deck gate run 35, and `jsdom` 30.1.1** (F-33, D-995, D-997). It reads PASS for $3.1278. This pull request is #256.
-13. **PR-105: move the model roles, and measure each move** (D-996, D-998 to D-1002). The prices are verified, and the judge and generate moves read PASS. The next action waits on the owner: the scope of the revise fix and the `gpt-6-luna` fix.
+13. **PR-105: move the model roles, and measure each move** (D-996, D-998 to D-1003). Each move reads PASS on its gate. This pull request is #PRNUM.
 14. **The open items of the roadmap.** No register row reads 🔧. F-49 reads ✅ (PR-103, D-994). F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. Deck gate run 35 measured them as a whole run (PR-104, D-995).
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
@@ -145,12 +139,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-29c: the registration of the blocking function, PR-102
-
-**The deploy came first.** At the start, the build of `0bfef4e` was in progress. The session waited for it, then read the revision and the answer to an empty body.
-
-**The owner confirmed the PATCH.** The trigger names the route of `mtg-api`, and both paths of D-991 passed (D-993). The trigger stays on.
-
 ### 2026-09-29d: the verdict of 2026-09-24, PR-103
 
 **The owner chose F-49.** A free dry harvest found 1 new verdict before the choice. The session gave the pros and cons of F-49, OQ-67, and another item.
@@ -167,6 +155,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose the audit fix here.** `make verify` failed on new advisories of `undici`. The owner chose the bump of `jsdom` in this pull request over a separate one (D-997).
 
+### 2026-09-29f and 2026-09-30: the move of the model roles, PR-105
+
+**The first session measured each move.** The judge moved to Sonnet 5.5 with a fix of its empty reasons (D-1000). Deck gate run 38 on `gpt-6.1-sol` read PASS. Questions runs 54 and 55 on `gpt-6-luna` and revise run 10 read FAIL. An empty OpenAI balance voided three runs (D-1002). The session stopped at 300K tokens (D-946).
+
+**The second session fixed the two FAIL results.** The owner chose a fix of each model over a stay on the old one, and the move of classify, ask, and setmatch together (D-1003). The session probed each fix first, then ran questions run 56 and revise run 11. Both read PASS.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29d, the records of 2026-08-31 to 2026-09-29b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-29e, the records of 2026-08-31 to 2026-09-29c, and 104 more sections, word for word. Read it for the detail behind a decision.

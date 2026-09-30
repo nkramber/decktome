@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-29e
+
+**Pull request #256, PR-104, records deck gate run 35, the first whole run of generate prompt version 16 (D-995). It also plans PR-105, the move of the model roles (D-996).**
+
+Author provider: Claude Code
+
+**The base.** `main` is `3c85ca4`, from #255.
+
+**The choice.** The owner picked a whole deck gate run from next step 12, over OQ-67, F-91, and other items.
+
+**The run.** Run 35 reads PASS for $3.1278 in 1993 seconds, under a cap of $4. `make eval-check` reads the decks suite as PASS against run 19. The mean plan score is 0.76, against 0.70 in run 29. Two decks needed the repair turn of D-916, and both passed. `docs/reference/deck-gate-run35-read-2026-09-29.md` holds the counts.
+
+**The web test tooling.** `make verify` failed on 3 high advisories of `undici` 8.10.0, through `jsdom`. The owner chose the fix in this pull request: `jsdom` 30.1.1 and `undici` 8.11.2 (D-997).
+
+**A watch item.** The bracket 2 Gishath deck holds 35 nonbasic lands, with original dual lands and fetch lands. The plan judge read its theme fit as partly, for the cost. This is one sample.
+
+**The next item.** The owner named PR-105 (D-996). The roles move to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with evals and a cap of $5 for each provider. On 2026-09-29 the models endpoint of each provider listed the three ids. The prices are not verified yet.
+
+**The checks.** See the pull request body. The one paid target was run 35.
+
+**The review.** Gitar approved `c12b5ba` with no finding. The Codex record approves effective head `7f49cc7`. The owner decision and the auto-merge remain pending (D-815, D-828).
+
+**What waits on the owner.**
+
+- The merge of this pull request.
+- The deletion of the old checkout `/Users/nate/Repos/decktome` (D-971).
+- UNVERIFIED: a copy of a deck list on an iPhone (D-935).
+- A check of a frame rule and a script policy on a Hosting preview channel (D-923). It is a deploy, so ask first.
+- A questions gate run for D-913. Ask first.
+- UNVERIFIED: the Moxfield import of the deck list that the app exports.
+- PR-105, next step 13.
+
+### 2026-09-29c: the registration of the blocking function, PR-102
+
+**The deploy came first.** At the start, the build of `0bfef4e` was in progress. The session waited for it, then read the revision and the answer to an empty body.
+
+**The owner confirmed the PATCH.** The trigger names the route of `mtg-api`, and both paths of D-991 passed (D-993). The trigger stays on.
+
 ## The resume section of 2026-09-29d
 
 **Pull request #255, PR-103, reads the one new verdict after 2026-09-24, and closes F-49 (D-994).**
