@@ -15,6 +15,41 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-30b, PR-106
+
+**Branch `fix/session-reload-and-phone-layout`: PR-106, four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** The pull request is #263.
+
+Author provider: Claude Code
+
+**The base.** `main` is `c63e2c2`, from #261. Cloud Build `deploy-api` `03de9539` and `deploy-web` `fc767a99` built it with SUCCESS on 2026-10-01 at 02:14 and 02:15 UTC. The jobs `mtg-snapshot` and `mtg-meta` run `worker:c63e2c2`, which holds the stale pass of I-1. The pass did not run before 02:24 UTC.
+
+**The live rerun of I-1 waits** (D-1023). No deck is stale, and a session can not mark one. The rerun waits for a real stale deck after the ban announcement of 2026-10-12.
+
+**The owner answers.** D-1023 for the rerun. The owner asked for research of the iOS 27 blur, then chose a sticky header with the 16px buffer inside it (D-1024).
+
+**The code, done and tested.**
+
+- F-186: `Chat` stores a first turn with its user line under the lease, then sends `session_started` (D-1025). `go/internal/agentsvc/reload_test.go` failed with `not_found` before the fix.
+- F-187: the header is sticky and opaque. `--edge-top` and `--edge-bottom` read 16px in the installed app alone (D-1024).
+- F-189: "New chat" over the title of a chat opens `/session/new` (D-1026).
+- F-193: below `lg`, the chat of the deck screen starts collapsed (D-1026).
+
+**The checks.** `make verify` passes on the code of the four fixes: "every check passed", with 458 of 458 web tests. `go test -race ./internal/agentsvc` passes. A mutation of the lease token fails the build test.
+
+**The review.** Gitar reviewed `8f4c97f` and approved it. Its two findings have answers, and both threads are resolved. The Codex review is Ready for owner merge at effective head `8f4c97f89db74f331ba1283527e338df58e57e52`, with no open finding. The local web test workers need Node 22.12 or later, and GitHub's web checks pass. The iPhone check remains after deploy (D-1010, D-1024).
+
+**The open work, in order.**
+
+1. Ask the owner for the merge, then turn on the auto-merge (D-828).
+2. After the deploy, the owner reads the header and both edges on a real iPhone (D-1010, D-1024).
+3. Read the log line `stale pass ended` of the first `mtg-snapshot` run on `worker:c63e2c2`.
+
+### 2026-09-29f and 2026-09-30: the move of the model roles, PR-105
+
+**The first session measured each move.** The judge moved to Sonnet 5.5 with a fix of its empty reasons (D-1000). Deck gate run 38 on `gpt-6.1-sol` read PASS. Questions runs 54 and 55 on `gpt-6-luna` and revise run 10 read FAIL. An empty OpenAI balance voided three runs (D-1002). The session stopped at 300K tokens (D-946).
+
+**The second session fixed the two FAIL results.** The owner chose a fix of each model over a stay on the old one, and the move of classify, ask, and setmatch together (D-1003). The session probed each fix first, then ran questions run 56 and revise run 11. Both read PASS.
+
 ## The resume section of 2026-09-30b
 
 **Branch `feat/ban-list-watch`: I-1, the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1022).** The pull request is #261.

@@ -6,34 +6,35 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-09-30)
+## RESUME HERE (2026-10-01)
 
-**Branch `fix/session-reload-and-phone-layout`: PR-106, four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** The pull request is #263.
+**Branch `fix/owned-pool-and-commander-pick`: PR-107, the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** The pull request is not open yet.
 
 Author provider: Claude Code
 
-**The base.** `main` is `c63e2c2`, from #261. Cloud Build `deploy-api` `03de9539` and `deploy-web` `fc767a99` built it with SUCCESS on 2026-10-01 at 02:14 and 02:15 UTC. The jobs `mtg-snapshot` and `mtg-meta` run `worker:c63e2c2`, which holds the stale pass of I-1. The pass did not run before 02:24 UTC.
+**The base.** `main` is `07203ba`, from #263. Cloud Build `deploy-api` `7b4cbb1f` and `deploy-web` `4aaed5e2` built it with SUCCESS on 2026-10-01 at 03:44:08 and 03:44:53 UTC. The first `mtg-snapshot` run on `worker:c63e2c2` started at 03:00 UTC and logged no `stale pass ended`. No snapshot holds a legality diff marker, so the pass ends with no line. The line waits for a real legality change (D-1023).
 
-**The live rerun of I-1 waits** (D-1023). No deck is stale, and a session can not mark one. The rerun waits for a real stale deck after the ban announcement of 2026-10-12.
-
-**The owner answers.** D-1023 for the rerun. The owner asked for research of the iOS 27 blur, then chose a sticky header with the 16px buffer inside it (D-1024).
+**The owner answers.** OQ-88 (D-1027) and OQ-89 (D-1028). The iPhone check of PR-106 passes (D-1029). The toast fix joins this pull request (D-1030). A named card stays under "Only my cards" (D-1031). The theme floor is 15 for a 60-card format (D-1032).
 
 **The code, done and tested.**
 
-- F-186: `Chat` stores a first turn with its user line under the lease, then sends `session_started` (D-1025). `go/internal/agentsvc/reload_test.go` failed with `not_found` before the fix.
-- F-187: the header is sticky and opaque. `--edge-top` and `--edge-bottom` read 16px in the installed app alone (D-1024).
-- F-189: "New chat" over the title of a chat opens `/session/new` (D-1026).
-- F-193: below `lg`, the chat of the deck screen starts collapsed (D-1026).
+- F-191: the row `commander_pick` sets `no_decline` (D-1014).
+- F-194: at 600px or less, a toast shows under the header. The layout writes `--header-height` (D-1030).
+- F-188: the web has no checkbox, and a chosen collection sends `POOL_RULE_OWNED_ONLY` (D-1011).
+- `go/internal/questions/pool_gap.go` runs the three checks. The row `pool_gap` asks on its own key.
+- The rules engine warns for a named card the collection lacks. The buy table names an unowned commander (D-1031).
+- `e2e/smoke.spec.ts` and `e2e/phone.spec.ts` answer the gap question.
 
-**The checks.** `make verify` passes on the code of the four fixes: "every check passed", with 458 of 458 web tests. `go test -race ./internal/agentsvc` passes. A mutation of the lease token fails the build test.
+**The smoke run.** A Firestore emulator of the owner holds port 8281, so `make smoke` can not start. The owner chose the workflow `smoke.yml` on the branch after the push.
 
-**The review.** Gitar reviewed `8f4c97f` and approved it. Its two findings have answers, and both threads are resolved. The Codex review is Ready for owner merge at effective head `8f4c97f89db74f331ba1283527e338df58e57e52`, with no open finding. The local web test workers need Node 22.12 or later, and GitHub's web checks pass. The iPhone check remains after deploy (D-1010, D-1024).
+**The review.** Not started.
 
 **The open work, in order.**
 
-1. Ask the owner for the merge, then turn on the auto-merge (D-828).
-2. After the deploy, the owner reads the header and both edges on a real iPhone (D-1010, D-1024).
-3. Read the log line `stale pass ended` of the first `mtg-snapshot` run on `worker:c63e2c2`.
+1. Run `make verify`, push, open the pull request, and mark PR-107 merged (D-822).
+2. Run `smoke.yml` on the branch.
+3. The Gitar pass, then `make codex-review`.
+4. Ask the owner for the merge, then turn on the auto-merge (D-828).
 
 ## How to resume
 
@@ -92,8 +93,8 @@ Twenty-two things a fresh session gets wrong without this file.
 - The harvest of 2026-09-29 read that newest verdict, a test of the owner (D-994). Its watermark is 2026-09-24 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-10-01 UTC: Cloud Build `03de9539` of `deploy-api` built `c63e2c2`, from #261, and ended SUCCESS at 02:14:45 UTC. The jobs `mtg-meta` and `mtg-snapshot` run `worker:c63e2c2`. The service serves revision `mtg-api-00100-957`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
-- The deployed web app, read 2026-10-01: build `fc767a99` of `deploy-web` built `c63e2c2`, from #261, and ended SUCCESS at 02:15:16 UTC. `/version.json` names `c63e2c2`.
+- The deployed API, read 2026-10-01 UTC: Cloud Build `7b4cbb1f` of `deploy-api` built `07203ba`, from #263, and ended SUCCESS at 03:44:08 UTC. The jobs `mtg-meta` and `mtg-snapshot` run `worker:07203ba`. The service serves revision `mtg-api-00101-xxh`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed web app, read 2026-10-01: build `4aaed5e2` of `deploy-web` built `07203ba`, from #263, and ended SUCCESS at 03:44:53 UTC. `/version.json` names `07203ba`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
@@ -106,7 +107,6 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The second pull request after I-1: fix F-188 and F-191** (D-1011, D-1012, D-1014). Remove the "Only cards I own" checkbox. Remove "You decide" from the commander pick row. Ask OQ-88 and OQ-89 first.
 0. **The third pull request after I-1: investigate F-190, and fix F-192** (D-1015, D-1016). The installed app on a phone fails too easily when the connection drops. The push misses a switch of apps. Ask OQ-90 first.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
@@ -131,12 +131,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-29f and 2026-09-30: the move of the model roles, PR-105
-
-**The first session measured each move.** The judge moved to Sonnet 5.5 with a fix of its empty reasons (D-1000). Deck gate run 38 on `gpt-6.1-sol` read PASS. Questions runs 54 and 55 on `gpt-6-luna` and revise run 10 read FAIL. An empty OpenAI balance voided three runs (D-1002). The session stopped at 300K tokens (D-946).
-
-**The second session fixed the two FAIL results.** The owner chose a fix of each model over a stay on the old one, and the move of classify, ask, and setmatch together (D-1003). The session probed each fix first, then ran questions run 56 and revise run 11. Both read PASS.
-
 ### 2026-09-29g: the web push of a finished build, PR-26
 
 **The owner chose PR-26.** The session found no staleness job for I-1, so the legality event has no source. The owner chose web push and the finished build alone (D-1004).
@@ -149,6 +143,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for research before the F-187 fix.** The session read the WebKit code and five reports of the iOS 26 and iOS 27 blur. A 16px buffer alone leaves the header in the blur, so the owner chose a sticky header (D-1024).
 
+### 2026-10-01: the owned pool and its gap question, PR-107
+
+**The owner answered OQ-88 and OQ-89 first.** Three fixed checks find a gap, and two answers come in the plan (D-1027, D-1028). Two more points came up in the code: a named card under "Only my cards", and the theme floor of a 60-card deck (D-1031, D-1032).
+
+**The owner sent a screenshot of a toast over a button.** The owner chose a toast under the header on a phone, in this pull request (D-1030, F-194).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-30b, the records of 2026-08-31 to 2026-09-29e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-30b, the records of 2026-08-31 to 2026-09-30, and 104 more sections, word for word. Read it for the detail behind a decision.
