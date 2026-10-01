@@ -321,6 +321,16 @@ export function ChatPanel({
     wasBusy.current = state.busy;
   }, [state.busy, showComposer]);
   const openCount = state.openQuestions.length;
+  // Below the lg width the deck screen opens with the chat collapsed, so
+  // the deck comes first (F-193, D-1017). A turn that works or asks opens
+  // it again, because its reader must see the turn.
+  const chatNeeded = state.busy || openCount > 0 || serverBuild;
+  const [chatOpen, setChatOpen] = useState(chatNeeded);
+  const [seenNeeded, setSeenNeeded] = useState(chatNeeded);
+  if (chatNeeded !== seenNeeded) {
+    setSeenNeeded(chatNeeded);
+    if (chatNeeded) setChatOpen(true);
+  }
   const prevOpenCount = useRef(initial.openQuestions.length);
   useEffect(() => {
     if (openCount > prevOpenCount.current) questionsForm.current?.focus();
@@ -677,10 +687,22 @@ export function ChatPanel({
           aria-labelledby="chat-title"
           className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[26.62rem] print:hidden"
         >
-          <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
-            Chat
-          </h1>
-          <div className="flex min-h-0 grow flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
+              Chat
+            </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              aria-expanded={chatOpen}
+              aria-controls="chat-body"
+              onClick={() => setChatOpen((open) => !open)}
+            >
+              {chatOpen ? "Hide chat" : "Show chat"}
+            </Button>
+          </div>
+          <div id="chat-body" className={cn("min-h-0 grow flex-col gap-2 lg:flex", chatOpen ? "flex" : "hidden")}>
             <div ref={threadScroll} className="min-h-0 grow overflow-y-auto overscroll-contain">
               {thread}
               <div ref={end} />

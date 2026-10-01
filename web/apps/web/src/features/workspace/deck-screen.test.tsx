@@ -142,6 +142,22 @@ describe("DeckScreen", () => {
     expect(getDeck).toHaveBeenCalledWith({ deckId: "d1" });
   });
 
+  // jsdom reads no media query, so the test reads the classes: hidden
+  // below lg, and shown at lg (F-193, D-1017).
+  it("opens with the chat collapsed on a phone, and one tap opens it", async () => {
+    await renderAt("/decks/d1");
+    const toggle = await screen.findByRole("button", { name: "Show chat" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle).toHaveClass("lg:hidden");
+    const body = document.getElementById(toggle.getAttribute("aria-controls") ?? "");
+    expect(body).toHaveClass("hidden", "lg:flex");
+
+    await userEvent.setup().click(toggle);
+    expect(screen.getByRole("button", { name: "Hide chat" })).toHaveAttribute("aria-expanded", "true");
+    expect(body).toHaveClass("flex");
+    expect(body).not.toHaveClass("hidden");
+  });
+
   it("renames the deck and reports it", async () => {
     await renderAt("/decks/d1");
     const user = userEvent.setup();
