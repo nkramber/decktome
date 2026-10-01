@@ -6,8 +6,6 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 
 | # | Question | Why it matters | Ask when |
 |---|---|---|---|
-| OQ-88 | How does the agent find that a collection can not meet the request (D-1011)? For example: the request names a card or commander the user does not own, or the owned cards give no legal deck. | The question of F-188 comes only on this signal. A weak signal asks too often, or builds a deck that misses the request. | At the start of the pull request of F-188. |
-| OQ-89 | Which options does the gap question of D-1011 offer, and when in the turn does it come? For example: fill from the whole card database, change the request, or build a smaller owned deck. | The answer sets the pool rule of the build. It replaces the checkbox and the step of D-359. | At the start of the pull request of F-188. |
 | OQ-90 | Which rule sends the push of a finished build (F-192)? For example: always send, and the service worker shows it only when no page of the app is visible. Or the page tells the server when it goes to the background. | The rule of D-1005 misses a switch of apps. UNVERIFIED: iOS Safari can revoke the permission after a push that shows no notification. | At the start of the pull request of F-190. |
 
 ## Asked, waiting

@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link, Outlet } from "react-router";
 
 import { useAuth } from "../features/auth/auth-context";
@@ -30,6 +30,21 @@ export function Layout() {
   // so the first click on a menu or a nav entry opens at once.
   useEffect(scheduleWarm, []);
 
+  // A toast on a phone shows under the header, so the toaster reads the
+  // height of the header from --header-height (F-194, D-1030). The
+  // header wraps on a narrow screen, so its height can change.
+  const header = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = header.current;
+    if (!el) return;
+    const write = () => document.documentElement.style.setProperty("--header-height", `${el.offsetHeight}px`);
+    write();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(write);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   async function onSignOut() {
     try {
       await signOutAndClear(reset, () => queryClient.clear());
@@ -50,7 +65,7 @@ export function Layout() {
     // is that box, and it holds the top buffer inside it, so its color
     // covers the edge (F-187, D-1010).
     <div className="flex h-dvh flex-col overflow-hidden bg-background pb-(--edge-bottom) text-foreground print:h-auto print:overflow-visible">
-      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 pt-[calc(0.75rem+var(--edge-top))] pb-3 md:px-6 print:hidden">
+      <header ref={header} className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 pt-[calc(0.75rem+var(--edge-top))] pb-3 md:px-6 print:hidden">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-card bg-accent text-accent-foreground">
             <TomeMark />

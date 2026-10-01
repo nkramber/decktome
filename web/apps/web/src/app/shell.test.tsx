@@ -88,6 +88,18 @@ describe("the edges of the installed app", () => {
     expect(css).toMatch(/:root \{\s*--edge-top: 0px;\s*--edge-bottom: 0px;\s*\}/);
     expect(css).toMatch(/@media \(display-mode: standalone\) \{\s*:root \{\s*--edge-top: 16px;\s*--edge-bottom: 16px;\s*\}/);
   });
+  // A toast on a phone shows under the header, at the height the layout
+  // writes (F-194, D-1030).
+  it("writes the height of the header for the toaster", async () => {
+    const height = vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockReturnValue(97);
+    try {
+      await renderAt("/decks");
+      await screen.findByRole("navigation", { name: "Main" });
+      expect(document.documentElement.style.getPropertyValue("--header-height")).toBe("97px");
+    } finally {
+      height.mockRestore();
+    }
+  });
 });
 
 describe("axe", () => {
