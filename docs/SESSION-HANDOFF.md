@@ -29,12 +29,9 @@ Author provider: Claude Code
 
 **The review.** Gitar approved the current head, and its one finding is fixed and resolved. Codex reviewed effective head `509e7c6` with no finding. The verdict is Ready for owner merge. Smoke run `36939627381` passed on branch tip `601c892` after the cache fix.
 
-**The context checkpoint.** The session ended at 300K tokens of context (D-946). A new clean session continues PR #264.
+**The context checkpoint.** The first session ended at 300K tokens of context (D-946). A second clean session ran the Codex review.
 
-**The open work, in order.**
-
-1. Run `make codex-review PR=264` in the background, and answer each finding.
-2. Ask the owner for the merge, then turn on the auto-merge (D-828).
+**The open work.** The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828, D-834). No finding stays open.
 
 ## How to resume
 
