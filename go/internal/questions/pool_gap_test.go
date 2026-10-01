@@ -94,6 +94,27 @@ func TestPoolGapChecks(t *testing.T) {
 		}
 	})
 
+	// The classifier can name a set inside the turn, after the first read
+	// of the facts. The cached answer must not serve the new limit.
+	t.Run("a set limit named inside the turn reads again", func(t *testing.T) {
+		h := gapHints(t, 80, 80, true)
+		if g := h.PoolGap("", nil, []string{"Heliod, Sun-Crowned"}); g.Kind != "" {
+			t.Fatalf("gap = %+v, want none before the set limit", g)
+		}
+		h.UseSets([]string{"neo"})
+		if g := h.PoolGap("", nil, []string{"Heliod, Sun-Crowned"}); g.Kind != GapColors || g.Have != 0 {
+			t.Errorf("gap = %+v, want 0 cards in a set the collection does not hold", g)
+		}
+	})
+
+	t.Run("a colorless request counts colorless cards alone", func(t *testing.T) {
+		h := gapHints(t, 80, 80, true)
+		h.UseColorless(true)
+		if g := h.PoolGap("", nil, nil); g.Kind != GapColors || g.Have != 0 {
+			t.Errorf("gap = %+v, want 0: the collection holds no colorless card", g)
+		}
+	})
+
 	t.Run("a 60-card format halves the floors", func(t *testing.T) {
 		h := gapHints(t, 80, 30, true)
 		h.Format = mtgv1.FormatId_FORMAT_ID_MODERN

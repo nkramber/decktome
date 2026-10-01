@@ -3,6 +3,7 @@ package questions
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -78,12 +79,15 @@ func refreshGap(s *State, src FactSource) {
 //
 // A commander the user named sets the colors when the colors slot is
 // empty, as the build does, so the counts read the deck that will be
-// built. The answer is cached by every value it reads.
+// built. The answer is cached by every value it reads, the set limit and
+// the colorless flag included, because the classifier can set either
+// inside the turn.
 func (h *CandidateHints) PoolGap(theme string, named, commanders []string) Gap {
 	if h == nil || h.Index == nil || len(h.Owned) == 0 {
 		return Gap{}
 	}
-	key := h.key(theme) + "|" + strings.Join(named, ",") + "|" + strings.Join(commanders, ",")
+	key := h.key(theme) + "|" + strings.Join(h.SetCodes, ",") + "|" + strconv.FormatBool(h.Colorless) +
+		"|" + strings.Join(named, ",") + "|" + strings.Join(commanders, ",")
 	if g, ok := h.gaps[key]; ok {
 		return g
 	}
@@ -109,14 +113,15 @@ func (h *CandidateHints) poolGap(theme string, named, commanders []string) Gap {
 	}
 
 	req := candidates.Request{
-		Format:   h.Format,
-		Theme:    theme,
-		Colors:   h.Colors,
-		PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
-		Owned:    h.Owned,
-		SetCodes: h.SetCodes,
+		Format:    h.Format,
+		Theme:     theme,
+		Colors:    h.Colors,
+		PoolRule:  mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
+		Owned:     h.Owned,
+		SetCodes:  h.SetCodes,
+		Colorless: h.Colorless,
 	}
-	if len(req.Colors) == 0 && len(commanders) > 0 {
+	if len(req.Colors) == 0 && !req.Colorless && len(commanders) > 0 {
 		req.Colors, req.Colorless = h.commanderColors(commanders)
 	}
 	if strings.TrimSpace(theme) != "" && h.Builder != nil {
