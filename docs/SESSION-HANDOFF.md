@@ -33,9 +33,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on `c73a0e2`: "every check passed", with 449 of 449 web tests. The first runs failed on staticcheck S1011 and on the marks of D-924. `make store-check` passes for `go/internal/decks`. One test of `go/internal/collections` fails on old emulator data under its fixed user, with no change from this branch.
 
+**The review.** Gitar passed on `f3ff561`. Codex reads Changes required at this head. Findings P2-1 and P2-2 stay open in `docs/reviews/pr-261.md`.
+
 **The open work, in order.**
 
-1. Do the Gitar pass, then `make codex-review`.
+1. Fix P2-1 and P2-2 from `docs/reviews/pr-261.md`, then run the focused checks.
 2. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
 3. After the deploy, ask the owner for a paid live rerun on a stale deck.
 
