@@ -4501,3 +4501,7 @@ CAUTION: the first-paint bar of D-323 is 130 kB gzipped. Read the Vite build rep
 2. **PR-94: read the MTGO month retry, and read an empty month up to 3 times** (F-179, D-975, D-976, D-977). It merged as #246.
 3. **PR-95: read the 3 MTGO month passes, and fetch the event pages after the retry** (F-179, F-183, D-978 to D-980). It merged as #247.
 4. **PR-96: read the MTGO event fetch of #247, and stop the MTGO lane at a time budget** (F-179, F-183, F-184, D-981, D-982). It merged as #248.
+5. **PR-97: read the first meta job on the image of #248, and read an empty current month again** (F-179, F-183, F-184, F-185, D-983, D-984). It merged as #249.
+6. **PR-98: read the current month on the image of #249** (F-179, F-185, D-984, D-985). The first read was full, and the owner closed F-185. It merged as #250.
+7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waited for a second run. It merged as #251.
+8. **PR-100: read the scheduled run `mtg-meta-b56rq` for F-183** (F-179, F-183, D-988, D-989). The owner closed F-183, and kept F-179 closed. It merged as #252.

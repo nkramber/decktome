@@ -29,15 +29,16 @@ Author provider: Claude Code
 - The web adds `web/apps/web/src/features/deck/stale-banner.tsx` and the rerun send.
 - The gate is `go/internal/rules/stale_gate_test.go`: 33 decks and 220 bans.
 
-**The checks so far.** `go test ./...` passes. The web tests of the banner, the session page, and the deck screen pass. `make verify` did not run yet.
+**The audit fix** (D-1022). `pnpm audit` found the high advisory GHSA-m9gg-hp2v-232j on `@grpc/grpc-js` 1.9.16. `web/package.json` overrides it to `^1.13.6`, and the lockfile reads 1.14.5.
+
+**The checks.** `make verify` passes on `c73a0e2`: "every check passed", with 449 of 449 web tests. The first runs failed on staticcheck S1011 and on the marks of D-924. `make store-check` passes for `go/internal/decks`. One test of `go/internal/collections` fails on old emulator data under its fixed user, with no change from this branch.
 
 **The open work, in order.**
 
-1. Run `make verify`, and read its real exit code.
-2. Write the body with the documentation matrix, then run `make pr-check`.
-3. Open the pull request, and mark I-1 `✅ merged as #N` (D-822).
-4. Do the Gitar pass, then `make codex-review`.
-5. After the deploy, ask the owner for a paid live rerun on a stale deck.
+1. Open the pull request, and mark I-1 `✅ merged as #N` (D-822).
+2. Do the Gitar pass, then `make codex-review`.
+3. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
+4. After the deploy, ask the owner for a paid live rerun on a stale deck.
 
 ## How to resume
 
@@ -112,10 +113,6 @@ Twenty-two things a fresh session gets wrong without this file.
 0. **The first pull request after I-1: fix F-186, F-187, F-189, and F-193** (D-1009, D-1010, D-1012, D-1013, D-1017). The server stores a new session at the end of its first turn, so a reload before then reads "session not found". Add a 16px buffer at the top and bottom edges of the installed app. Add a back control to the chat. On a phone, open a deck with the chat collapsed.
 0. **The second pull request after I-1: fix F-188 and F-191** (D-1011, D-1012, D-1014). Remove the "Only cards I own" checkbox. Remove "You decide" from the commander pick row. Ask OQ-88 and OQ-89 first.
 0. **The third pull request after I-1: investigate F-190, and fix F-192** (D-1015, D-1016). The installed app on a phone fails too easily when the connection drops. The push misses a switch of apps. Ask OQ-90 first.
-5. **PR-97: read the first meta job on the image of #248, and read an empty current month again** (F-179, F-183, F-184, F-185, D-983, D-984). It merged as #249.
-6. **PR-98: read the current month on the image of #249** (F-179, F-185, D-984, D-985). The first read was full, and the owner closed F-185. It merged as #250.
-7. **PR-99: read the open MTGO rows on the manual run `mtg-meta-4wbpp`** (F-179, F-183, D-986, D-987). The owner closed F-179, and F-183 waited for a second run. It merged as #251.
-8. **PR-100: read the scheduled run `mtg-meta-b56rq` for F-183** (F-179, F-183, D-988, D-989). The owner closed F-183, and kept F-179 closed. It merged as #252.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
