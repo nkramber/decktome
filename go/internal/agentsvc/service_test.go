@@ -309,9 +309,19 @@ type events struct {
 
 func chat(t *testing.T, c mtgv1connect.AgentServiceClient, req *mtgv1.ChatRequest) events {
 	t.Helper()
-	stream, err := c.Chat(context.Background(), connect.NewRequest(req))
+	got, err := chatE(c, req)
 	if err != nil {
 		t.Fatalf("chat: %v", err)
+	}
+	return got
+}
+
+// chatE drains one Chat stream and returns its error, for a test that
+// runs the turn on another goroutine, where t.Fatalf must not run.
+func chatE(c mtgv1connect.AgentServiceClient, req *mtgv1.ChatRequest) (events, error) {
+	stream, err := c.Chat(context.Background(), connect.NewRequest(req))
+	if err != nil {
+		return events{}, err
 	}
 	defer func() { _ = stream.Close() }()
 	var got events
@@ -335,10 +345,7 @@ func chat(t *testing.T, c mtgv1connect.AgentServiceClient, req *mtgv1.ChatReques
 			got.texts, got.order = append(got.texts, e.TextDelta), append(got.order, "text")
 		}
 	}
-	if err := stream.Err(); err != nil {
-		t.Fatalf("stream: %v", err)
-	}
-	return got
+	return got, stream.Err()
 }
 
 func TestChatStartsASessionAndAsks(t *testing.T) {
@@ -642,12 +649,14 @@ func TestChatSecondTurnAdvancesTheVersion(t *testing.T) {
 		askJSON(t))
 	client, _ := testServer(t, store, steps...)
 	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
-	if store.versions[first.started] != 1 {
-		t.Fatalf("version after turn 1 = %d, want 1", store.versions[first.started])
+	// A first turn writes twice: the user line before the model call,
+	// and the turn after it (F-186).
+	if store.versions[first.started] != 2 {
+		t.Fatalf("version after turn 1 = %d, want 2", store.versions[first.started])
 	}
 	chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "bracket 3"})
-	if store.versions[first.started] != 2 {
-		t.Errorf("version after turn 2 = %d, want 2", store.versions[first.started])
+	if store.versions[first.started] != 3 {
+		t.Errorf("version after turn 2 = %d, want 3", store.versions[first.started])
 	}
 }
 
@@ -724,8 +733,8 @@ func TestBuildStoresThePostTurnState(t *testing.T) {
 	if got := store.sessions[first.started].GetStatus(); got != mtgv1.SessionStatus_SESSION_STATUS_BUILT {
 		t.Errorf("status = %v, want BUILT", got)
 	}
-	if store.versions[first.started] != 3 {
-		t.Errorf("version = %d, want 3: the turn and the deck id", store.versions[first.started])
+	if store.versions[first.started] != 4 {
+		t.Errorf("version = %d, want 4: the user line, the turn, and the deck id", store.versions[first.started])
 	}
 }
 

@@ -44,8 +44,13 @@ export function Layout() {
     // browser bar collapsed, so a shell of that height puts its own foot
     // below the fold, and an overflow-hidden shell can not scroll to it.
     // The reader then reaches no bottom bar and no end of a page (D-625).
-    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground print:h-auto print:overflow-visible">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 py-3 md:px-6 print:hidden">
+    //
+    // iOS 26 and later draw a blur over the top of an installed app,
+    // unless a fixed or sticky opaque box covers the top edge. The header
+    // is that box, and it holds the top buffer inside it, so its color
+    // covers the edge (F-187, D-1010).
+    <div className="flex h-dvh flex-col overflow-hidden bg-background pb-(--edge-bottom) text-foreground print:h-auto print:overflow-visible">
+      <header className="sticky top-0 z-10 flex shrink-0 items-center justify-between gap-4 border-b border-border bg-muted px-4 pt-[calc(0.75rem+var(--edge-top))] pb-3 md:px-6 print:hidden">
         <Link to="/" className="flex items-center gap-3 transition-opacity hover:opacity-80">
           <span aria-hidden="true" className="grid size-8 shrink-0 place-items-center rounded-card bg-accent text-accent-foreground">
             <TomeMark />

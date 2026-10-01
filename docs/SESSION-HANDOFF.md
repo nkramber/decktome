@@ -8,37 +8,32 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-30)
 
-**Branch `feat/ban-list-watch`: I-1, the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1022).** The pull request is #261.
+**Branch `fix/session-reload-and-phone-layout`: PR-106, four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** The pull request is #263.
 
 Author provider: Claude Code
 
-**The base.** `main` is `0ff7f28`, from #258. Cloud Build `deploy-api` and `deploy-web` built it with SUCCESS on 2026-09-30.
+**The base.** `main` is `c63e2c2`, from #261. Cloud Build `deploy-api` `03de9539` and `deploy-web` `fc767a99` built it with SUCCESS on 2026-10-01 at 02:14 and 02:15 UTC. The jobs `mtg-snapshot` and `mtg-meta` run `worker:c63e2c2`, which holds the stale pass of I-1. The pass did not run before 02:24 UTC.
 
-**The live push check of D-1007 failed** (D-1016, F-192). The owner switched apps during a build, and no push arrived. The fix waits for the third pull request after I-1.
+**The live rerun of I-1 waits** (D-1023). No deck is stale, and a session can not mark one. The rerun waits for a real stale deck after the ban announcement of 2026-10-12.
 
-**The owner answers.** OQ-18 (D-1008). One pull request (D-1018). The patch is a revision turn (D-1019). The rebuild reads the conversation (D-1020). A banned commander asks with the pick row (D-1021). The owner queued F-186 to F-193 for three pull requests after I-1 (D-1009 to D-1017).
+**The owner answers.** D-1023 for the rerun. The owner asked for research of the iOS 27 blur, then chose a sticky header with the 16px buffer inside it (D-1024).
 
 **The code, done and tested.**
 
-- `go/internal/stale` finds the stale cards, and it names the case of D-1008.
-- `go/internal/cards` reads the legalities alone, and the diff marker records the end of the pass.
-- `go/internal/decks` has `Scan` and `Mark`. The emulator test passes.
-- `go/cmd/worker/stalepass.go` runs the pass after the refresh.
-- `go/internal/agentsvc/rerun.go` is the rerun branch of `Chat`. `reviseDeck` is the second half of `sendRevision`.
-- The proto adds `Deck.rerun_case`, `Deck.stale_reason`, and `ChatRequest.rerun_deck_id`.
-- The web adds `web/apps/web/src/features/deck/stale-banner.tsx` and the rerun send.
-- The gate is `go/internal/rules/stale_gate_test.go`: 33 decks and 220 bans.
+- F-186: `Chat` stores a first turn with its user line under the lease, then sends `session_started` (D-1025). `go/internal/agentsvc/reload_test.go` failed with `not_found` before the fix.
+- F-187: the header is sticky and opaque. `--edge-top` and `--edge-bottom` read 16px in the installed app alone (D-1024).
+- F-189: "New chat" over the title of a chat opens `/session/new` (D-1026).
+- F-193: below `lg`, the chat of the deck screen starts collapsed (D-1026).
 
-**The audit fix** (D-1022). `pnpm audit` found the high advisory GHSA-m9gg-hp2v-232j on `@grpc/grpc-js` 1.9.16. `web/package.json` overrides it to `^1.13.6`, and the lockfile reads 1.14.5.
+**The checks.** `make verify` passes on the code of the four fixes: "every check passed", with 458 of 458 web tests. `go test -race ./internal/agentsvc` passes. A mutation of the lease token fails the build test.
 
-**The checks.** `make verify` passes on `c73a0e2`: "every check passed", with 449 of 449 web tests. It passes again on the fix of Codex round 1, with 452 of 452. The first runs failed on staticcheck S1011 and on the marks of D-924. `make store-check` passes for `go/internal/decks`. One test of `go/internal/collections` fails on old emulator data under its fixed user, with no change from this branch.
-
-**The review.** Gitar passed on `6859e28` with no code finding. Codex round 2 reads Ready for owner merge at effective head `6859e28`, with no open finding. P2-1 and P2-2 are fixed, and `docs/reviews/pr-261-response.md` answers them.
+**The review.** Gitar reviewed `8f4c97f` and approved it. Its two findings have answers, and both threads are resolved. The Codex review is Ready for owner merge at effective head `8f4c97f89db74f331ba1283527e338df58e57e52`, with no open finding. The local web test workers need Node 22.12 or later, and GitHub's web checks pass. The iPhone check remains after deploy (D-1010, D-1024).
 
 **The open work, in order.**
 
-1. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
-2. After the deploy, ask the owner for a paid live rerun on a stale deck.
+1. Ask the owner for the merge, then turn on the auto-merge (D-828).
+2. After the deploy, the owner reads the header and both edges on a real iPhone (D-1010, D-1024).
+3. Read the log line `stale pass ended` of the first `mtg-snapshot` run on `worker:c63e2c2`.
 
 ## How to resume
 
@@ -97,8 +92,8 @@ Twenty-two things a fresh session gets wrong without this file.
 - The harvest of 2026-09-29 read that newest verdict, a test of the owner (D-994). Its watermark is 2026-09-24 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-09-28 UTC: Cloud Build `0dfd1851` of `deploy-api` built `bdc5b60`, from #249, and ended SUCCESS at 14:20:59 UTC on 2026-09-28. The jobs `mtg-meta` and `mtg-snapshot` run `worker:bdc5b60`. The service serves revision `mtg-api-00096-ldb`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
-- The deployed web app, read 2026-09-26: build `1a3df566` of `deploy-web` built `b739386`, from #237, and ended SUCCESS at 22:42:31 UTC. `/version.json` names `b739386`.
+- The deployed API, read 2026-10-01 UTC: Cloud Build `03de9539` of `deploy-api` built `c63e2c2`, from #261, and ended SUCCESS at 02:14:45 UTC. The jobs `mtg-meta` and `mtg-snapshot` run `worker:c63e2c2`. The service serves revision `mtg-api-00100-957`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed web app, read 2026-10-01: build `fc767a99` of `deploy-web` built `c63e2c2`, from #261, and ended SUCCESS at 02:15:16 UTC. `/version.json` names `c63e2c2`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
@@ -110,7 +105,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-0. **The first pull request after I-1: fix F-186, F-187, F-189, and F-193** (D-1009, D-1010, D-1012, D-1013, D-1017). The server stores a new session at the end of its first turn, so a reload before then reads "session not found". Add a 16px buffer at the top and bottom edges of the installed app. Add a back control to the chat. On a phone, open a deck with the chat collapsed.
+0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **The second pull request after I-1: fix F-188 and F-191** (D-1011, D-1012, D-1014). Remove the "Only cards I own" checkbox. Remove "You decide" from the commander pick row. Ask OQ-88 and OQ-89 first.
 0. **The third pull request after I-1: investigate F-190, and fix F-192** (D-1015, D-1016). The installed app on a phone fails too easily when the connection drops. The push misses a switch of apps. Ask OQ-90 first.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
@@ -136,16 +131,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-29e: deck gate run 35, PR-104
-
-**The owner chose the whole deck gate run.** The session gave the pros and cons of OQ-67, F-91, the run, and the gates of D-913 and D-916 (D-995).
-
-**The run passed.** Run 35 cost $3.1278, and it reads PASS against run 19. The session compared the counts under the gate with runs 29 and 31.
-
-**The owner named PR-105.** The first request compared `gpt-5.6-luna` and `gpt-6-luna` at effort medium, but no app role ran Luna at medium. The session listed each role, and the owner named the moves. The owner then chose `gpt-6.1-sol` over `gpt-6-sol` (D-996).
-
-**The owner chose the audit fix here.** `make verify` failed on new advisories of `undici`. The owner chose the bump of `jsdom` in this pull request over a separate one (D-997).
-
 ### 2026-09-29f and 2026-09-30: the move of the model roles, PR-105
 
 **The first session measured each move.** The judge moved to Sonnet 5.5 with a fix of its empty reasons (D-1000). Deck gate run 38 on `gpt-6.1-sol` read PASS. Questions runs 54 and 55 on `gpt-6-luna` and revise run 10 read FAIL. An empty OpenAI balance voided three runs (D-1002). The session stopped at 300K tokens (D-946).
@@ -158,6 +143,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The console had no key page for the owner.** The session read the default VAPID key in the SDK, and the step left the plan. The owner chose the grant by the session and the toggle in the account menu (D-1005).
 
+### 2026-09-30b: four screen fixes, PR-106
+
+**The deploy of I-1 read SUCCESS.** No deck was stale, and the session can not write under `users/`. The owner chose to wait for a real stale deck (D-1023).
+
+**The owner asked for research before the F-187 fix.** The session read the WebKit code and five reports of the iOS 26 and iOS 27 blur. A 16px buffer alone leaves the header in the blur, so the owner chose a sticky header (D-1024).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-30, the records of 2026-08-31 to 2026-09-29d, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-30b, the records of 2026-08-31 to 2026-09-29e, and 104 more sections, word for word. Read it for the detail behind a decision.

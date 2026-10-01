@@ -2,12 +2,12 @@ import { Code, ConnectError } from "@connectrpc/connect";
 import { BuildPhase, type GetSessionResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
-import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
+import { type Answer, PoolRule, type Session, SessionStatus } from "@mtg/api-client/mtg/v1/session_pb";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
-import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
+import { AlertTriangleIcon, ArrowLeftIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
@@ -277,6 +277,11 @@ export function ChatPanel({
     stop();
   }, [state.phase, stop]);
   const serverBuild = watching && !state.busy && state.sessionId !== "";
+  // A first turn holds its session while the agent reads the message, so
+  // a reload then waits for a reply, not a deck (F-186). A turn of this
+  // panel names its own phase, and the stored status is older than it.
+  const serverReply =
+    state.phase !== BuildPhase.UNSPECIFIED ? state.phase === BuildPhase.READING : session?.status === SessionStatus.ASKING;
   const onServerBuildEnded = useCallback(
     (res: GetSessionResponse) => {
       setWatching(false);
@@ -318,6 +323,16 @@ export function ChatPanel({
     wasBusy.current = state.busy;
   }, [state.busy, showComposer]);
   const openCount = state.openQuestions.length;
+  // Below the lg width the deck screen opens with the chat collapsed, so
+  // the deck comes first (F-193, D-1017). A turn that works or asks opens
+  // it again, because its reader must see the turn.
+  const chatNeeded = state.busy || openCount > 0 || serverBuild;
+  const [chatOpen, setChatOpen] = useState(chatNeeded);
+  const [seenNeeded, setSeenNeeded] = useState(chatNeeded);
+  if (chatNeeded !== seenNeeded) {
+    setSeenNeeded(chatNeeded);
+    if (chatNeeded) setChatOpen(true);
+  }
   const prevOpenCount = useRef(initial.openQuestions.length);
   useEffect(() => {
     if (openCount > prevOpenCount.current) questionsForm.current?.focus();
@@ -549,7 +564,9 @@ export function ChatPanel({
       )}
       {serverBuild && (
         <p className="text-sm text-muted-foreground" data-testid="server-build">
-          The build continues on the server. The deck shows here when it is ready.
+          {serverReply
+            ? "The agent is still reading your message on the server. Its reply shows here when it is ready."
+            : "The build continues on the server. The deck shows here when it is ready."}
         </p>
       )}
     </div>
@@ -672,10 +689,22 @@ export function ChatPanel({
           aria-labelledby="chat-title"
           className="flex w-full shrink-0 flex-col gap-2 rounded-card border border-border bg-card p-3 lg:h-full lg:w-[26.62rem] print:hidden"
         >
-          <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
-            Chat
-          </h1>
-          <div className="flex min-h-0 grow flex-col gap-2">
+          <div className="flex items-center justify-between gap-2">
+            <h1 id="chat-title" className="font-display text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
+              Chat
+            </h1>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="lg:hidden"
+              aria-expanded={chatOpen}
+              aria-controls="chat-body"
+              onClick={() => setChatOpen((open) => !open)}
+            >
+              {chatOpen ? "Hide chat" : "Show chat"}
+            </Button>
+          </div>
+          <div id="chat-body" className={cn("min-h-0 grow flex-col gap-2 lg:flex", chatOpen ? "flex" : "hidden")}>
             <div ref={threadScroll} className="min-h-0 grow overflow-y-auto overscroll-contain">
               {thread}
               <div ref={end} />
@@ -729,6 +758,18 @@ export function ChatPanel({
             heading for a screen reader, out of sight. */}
         {!beforeFirstMessage || recent.decks.length > 0 ? (
           <div className="flex flex-col gap-1.5">
+            {/* A chat can start over from inside itself. The Build entry of
+                the top bar does the same, but it has no text, and here it
+                reads as the current page (F-189, D-1013). The old chat
+                stays in the unfinished list (D-433). */}
+            {!beforeFirstMessage && (
+              <Button asChild variant="ghost" size="sm" className="-ml-2 self-start text-muted-foreground">
+                <Link to="/session/new">
+                  <ArrowLeftIcon aria-hidden="true" />
+                  New chat
+                </Link>
+              </Button>
+            )}
             <h1 id="chat-title" className="font-display text-2xl font-semibold">
               {!beforeFirstMessage ? "Chat" : "Pick up where you left off"}
             </h1>

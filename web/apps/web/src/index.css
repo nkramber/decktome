@@ -29,6 +29,19 @@
     min-height: 100dvh;
     overflow: hidden;
   }
+  /* The installed app keeps a 16px buffer inside its top and bottom
+     edges (D-1010, F-187). A browser tab has its own bars, so it keeps
+     none. */
+  :root {
+    --edge-top: 0px;
+    --edge-bottom: 0px;
+  }
+  @media (display-mode: standalone) {
+    :root {
+      --edge-top: 16px;
+      --edge-bottom: 16px;
+    }
+  }
   /* A printed page is one long sheet, so it flows and it scrolls. */
   @media print {
     html,

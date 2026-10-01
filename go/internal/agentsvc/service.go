@@ -545,15 +545,36 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 			return err
 		}
 	}
+	if session.GetCreatedAt() == nil {
+		session.CreatedAt = timestamppb.New(s.now())
+	}
+	// A first turn stores its session with the user line before it sends
+	// the id, and it holds the lease of the session until the turn ends.
+	// A reload during the turn then reads the session and polls for the
+	// reply, where it read "session not found" (F-186).
+	var leaseToken string
 	if req.Msg.GetSessionId() == "" {
+		leaseToken = rand.Text()
+		release, err := s.holdLease(ctx, uid, session.GetId(), leaseToken)
+		if err != nil {
+			return err
+		}
+		defer release()
+		pending := proto.Clone(session).(*mtgv1.Session)
+		pending.UpdatedAt = timestamppb.New(s.now())
+		pending.Turns = append(pending.Turns, &mtgv1.Turn{UserMessage: req.Msg.GetMessage(), At: timestamppb.New(s.now())})
+		sctx, cancel := detached(ctx, storeLimit)
+		err = s.store.Put(sctx, uid, pending, snap, version)
+		cancel()
+		if err != nil {
+			return storeError(err)
+		}
+		version++
 		if err := stream.Send(&mtgv1.ChatResponse{
 			Event: &mtgv1.ChatResponse_SessionStarted{SessionStarted: session.GetId()},
 		}); err != nil {
 			return err
 		}
-	}
-	if session.GetCreatedAt() == nil {
-		session.CreatedAt = timestamppb.New(s.now())
 	}
 
 	st := questions.Restore(session.GetId(), session.GetSlots(), snap)
@@ -683,8 +704,14 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	// A build takes the lease of its session before the write that
 	// starts it, and gives it back when the turn ends. A turn that lost
 	// the lease to a build on another instance stores nothing (D-922).
+	// A first turn holds the lease already, and takes it again for the
+	// whole limit of the build (F-186).
 	if turnErr == nil && res.Ready {
-		release, err := s.takeLease(ctx, uid, session.GetId())
+		token := leaseToken
+		if token == "" {
+			token = rand.Text()
+		}
+		release, err := s.holdLease(ctx, uid, session.GetId(), token)
 		if err != nil {
 			return err
 		}
@@ -811,7 +838,13 @@ func (s *Server) leaseUnreadable(ctx context.Context, id string, err error) erro
 // store writes. The lease and its release run detached, so a client that
 // left neither loses the paid turn nor holds the session (D-922).
 func (s *Server) takeLease(ctx context.Context, uid, id string) (func(), error) {
-	token := rand.Text()
+	return s.holdLease(ctx, uid, id, rand.Text())
+}
+
+// holdLease takes the lease of a session for token. A lease that token
+// holds already starts its time limit again, so a first turn that
+// becomes a build keeps the whole limit of a build (F-186).
+func (s *Server) holdLease(ctx context.Context, uid, id, token string) (func(), error) {
 	now := s.now()
 	// The classify call is paid, so the lease runs detached from the
 	// client, as the Put after it does (D-303).
