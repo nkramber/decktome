@@ -15,6 +15,50 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-09-30b
+
+**Branch `feat/ban-list-watch`: I-1, the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1022).** The pull request is #261.
+
+Author provider: Claude Code
+
+**The base.** `main` is `0ff7f28`, from #258. Cloud Build `deploy-api` and `deploy-web` built it with SUCCESS on 2026-09-30.
+
+**The live push check of D-1007 failed** (D-1016, F-192). The owner switched apps during a build, and no push arrived. The fix waits for the third pull request after I-1.
+
+**The owner answers.** OQ-18 (D-1008). One pull request (D-1018). The patch is a revision turn (D-1019). The rebuild reads the conversation (D-1020). A banned commander asks with the pick row (D-1021). The owner queued F-186 to F-193 for three pull requests after I-1 (D-1009 to D-1017).
+
+**The code, done and tested.**
+
+- `go/internal/stale` finds the stale cards, and it names the case of D-1008.
+- `go/internal/cards` reads the legalities alone, and the diff marker records the end of the pass.
+- `go/internal/decks` has `Scan` and `Mark`. The emulator test passes.
+- `go/cmd/worker/stalepass.go` runs the pass after the refresh.
+- `go/internal/agentsvc/rerun.go` is the rerun branch of `Chat`. `reviseDeck` is the second half of `sendRevision`.
+- The proto adds `Deck.rerun_case`, `Deck.stale_reason`, and `ChatRequest.rerun_deck_id`.
+- The web adds `web/apps/web/src/features/deck/stale-banner.tsx` and the rerun send.
+- The gate is `go/internal/rules/stale_gate_test.go`: 33 decks and 220 bans.
+
+**The audit fix** (D-1022). `pnpm audit` found the high advisory GHSA-m9gg-hp2v-232j on `@grpc/grpc-js` 1.9.16. `web/package.json` overrides it to `^1.13.6`, and the lockfile reads 1.14.5.
+
+**The checks.** `make verify` passes on `c73a0e2`: "every check passed", with 449 of 449 web tests. It passes again on the fix of Codex round 1, with 452 of 452. The first runs failed on staticcheck S1011 and on the marks of D-924. `make store-check` passes for `go/internal/decks`. One test of `go/internal/collections` fails on old emulator data under its fixed user, with no change from this branch.
+
+**The review.** Gitar passed on `6859e28` with no code finding. Codex round 2 reads Ready for owner merge at effective head `6859e28`, with no open finding. P2-1 and P2-2 are fixed, and `docs/reviews/pr-261-response.md` answers them.
+
+**The open work, in order.**
+
+1. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
+2. After the deploy, ask the owner for a paid live rerun on a stale deck.
+
+### 2026-09-29e: deck gate run 35, PR-104
+
+**The owner chose the whole deck gate run.** The session gave the pros and cons of OQ-67, F-91, the run, and the gates of D-913 and D-916 (D-995).
+
+**The run passed.** Run 35 cost $3.1278, and it reads PASS against run 19. The session compared the counts under the gate with runs 29 and 31.
+
+**The owner named PR-105.** The first request compared `gpt-5.6-luna` and `gpt-6-luna` at effort medium, but no app role ran Luna at medium. The session listed each role, and the owner named the moves. The owner then chose `gpt-6.1-sol` over `gpt-6-sol` (D-996).
+
+**The owner chose the audit fix here.** `make verify` failed on new advisories of `undici`. The owner chose the bump of `jsdom` in this pull request over a separate one (D-997).
+
 ## The resume section of 2026-09-30
 
 **Pull request #257, PR-105, moves the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003).**
