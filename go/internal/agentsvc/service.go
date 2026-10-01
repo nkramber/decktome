@@ -591,7 +591,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		if !rerunNeedsCommander(d) {
 			return s.sendRerun(ctx, uid, session, st, version, owned, d, stream)
 		}
-		prepareRerun(st, d)
+		prepareRerun(st, d, s.rerunCards())
 		message, userText = rerunPickMessage, rerunText
 		if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: d.GetStaleReason()}}); err != nil {
 			return err

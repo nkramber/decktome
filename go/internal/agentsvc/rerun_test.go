@@ -78,6 +78,46 @@ func TestRerunPatchRevisesTheStaleDeck(t *testing.T) {
 	}
 }
 
+// TestRerunPatchNamesACompanionOutsideTheLists is D-1019 for an imported
+// Commander list: its companion is an id alone, outside each list, so the
+// card index names it in Remove.
+func TestRerunPatchNamesACompanionOutsideTheLists(t *testing.T) {
+	client, sid, _, ds, fd := staleBuild(t, mtgv1.RerunCase_RERUN_CASE_PATCH, "o-welcome")
+	d := ds.put[0]
+	d.CompanionOracleId = "o-welcome"
+	d.Cards = slices.DeleteFunc(d.Cards, func(dc *mtgv1.DeckCard) bool { return dc.GetOracleId() == "o-welcome" })
+	chat(t, client, &mtgv1.ChatRequest{SessionId: sid, RerunDeckId: "deck-1"})
+	if rev := fd.got.Revision; rev == nil || !slices.Equal(rev.Remove, []string{"Ajani's Welcome"}) {
+		t.Fatalf("revision = %+v, want the companion in Remove", rev)
+	}
+}
+
+// TestStaleCardNamesReadsTheIndexForAnIdAlone covers the commander of an
+// imported list, which has no entry in the command zone, and a deck with
+// no card index, which names the cards of its lists alone.
+func TestStaleCardNamesReadsTheIndexForAnIdAlone(t *testing.T) {
+	d := &mtgv1.Deck{
+		CommanderOracleIds: []string{"o-karlov"},
+		Cards:              []*mtgv1.DeckCard{{OracleId: "o-welcome", Name: "Ajani's Welcome", Count: 1}},
+		StaleOracleIds:     []string{"o-karlov", "o-welcome"},
+	}
+	idx := cardIndex{"o-karlov": {OracleId: "o-karlov", Name: "Karlov of the Ghost Council"}}
+	if got := staleCardNames(d, idx); !slices.Equal(got, []string{"Ajani's Welcome", "Karlov of the Ghost Council"}) {
+		t.Errorf("names = %v", got)
+	}
+	if got := staleCardNames(d, nil); !slices.Equal(got, []string{"Ajani's Welcome"}) {
+		t.Errorf("names with no index = %v", got)
+	}
+}
+
+// cardIndex is a card source of fixed cards.
+type cardIndex map[string]*mtgv1.Card
+
+func (c cardIndex) ByOracleID(id string) (*mtgv1.Card, bool) {
+	card, ok := c[id]
+	return card, ok
+}
+
 // TestRerunRebuildBuildsFromTheConversation is D-1020: a rebuild with a
 // legal commander builds again from the slots, with no revision and no
 // classify call.

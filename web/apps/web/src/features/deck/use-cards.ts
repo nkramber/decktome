@@ -16,6 +16,8 @@ export function deckOracleIds(deck: Deck): string[] {
   for (const dc of [...deck.cards, ...deck.sideboard, ...deck.upgrades]) {
     if (dc.oracleId) ids.add(dc.oracleId);
   }
+  // An imported Commander list keeps its companion as an id alone (I-1).
+  if (deck.companionOracleId) ids.add(deck.companionOracleId);
   return [...ids];
 }
 

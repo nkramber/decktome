@@ -89,25 +89,51 @@ func rerunNeedsCommander(d *mtgv1.Deck) bool {
 }
 
 // staleCardNames reads the names of the stale cards of the main list,
-// the sideboard, and the command zone. The revision and the locks match
-// cards by name.
-func staleCardNames(d *mtgv1.Deck) []string {
+// the sideboard, and the command zone. An imported list keeps its
+// commander and its companion as ids alone, so a stale id outside the
+// lists takes its name from the card index. The revision and the locks
+// match cards by name.
+func staleCardNames(d *mtgv1.Deck, cards revise.CardSource) []string {
 	var out []string
+	named := map[string]bool{}
 	for _, list := range [][]*mtgv1.DeckCard{d.GetCommanders(), d.GetCards(), d.GetSideboard()} {
 		for _, dc := range list {
 			if slices.Contains(d.GetStaleOracleIds(), dc.GetOracleId()) && !slices.Contains(out, dc.GetName()) {
+				named[dc.GetOracleId()] = true
 				out = append(out, dc.GetName())
 			}
+		}
+	}
+	if cards == nil {
+		return out
+	}
+	for _, id := range append(slices.Clone(d.GetCommanderOracleIds()), d.GetCompanionOracleId()) {
+		if id == "" || named[id] || !slices.Contains(d.GetStaleOracleIds(), id) {
+			continue
+		}
+		if c, ok := cards.ByOracleID(id); ok && !slices.Contains(out, c.GetName()) {
+			named[id] = true
+			out = append(out, c.GetName())
 		}
 	}
 	return out
 }
 
+// rerunCards is the card index of a rerun, or nil before the index loads.
+func (s *Server) rerunCards() revise.CardSource {
+	if s.index != nil {
+		if idx := s.index.Current(); idx != nil {
+			return idx
+		}
+	}
+	return nil
+}
+
 // prepareRerun unlocks each stale card, so no kept card holds a ban in
 // the next build. For a banned commander it clears the commander, and
 // the turn then asks with the pick row (D-1021).
-func prepareRerun(st *questions.State, d *mtgv1.Deck) {
-	for _, name := range staleCardNames(d) {
+func prepareRerun(st *questions.State, d *mtgv1.Deck, cards revise.CardSource) {
+	for _, name := range staleCardNames(d, cards) {
 		st.Unlock(name)
 	}
 	if rerunNeedsCommander(d) {
@@ -135,7 +161,8 @@ func (s *Server) sendRerun(ctx context.Context, uid string, session *mtgv1.Sessi
 	usageBefore := cloneUsage(session.GetUsage())
 	defer s.recordSpend(ctx, uid, session, usageBefore)
 
-	prepareRerun(st, d)
+	cards := s.rerunCards()
+	prepareRerun(st, d, cards)
 	now := timestamppb.New(s.now())
 	turn := &mtgv1.Turn{UserMessage: rerunText, At: now}
 	session.Slots = st.Slots
@@ -155,13 +182,7 @@ func (s *Server) sendRerun(ctx context.Context, uid string, session *mtgv1.Sessi
 	}
 	// version+1 is what the Put above stored (D-245).
 	if d.GetRerunCase() == mtgv1.RerunCase_RERUN_CASE_PATCH {
-		var cards revise.CardSource
-		if s.index != nil {
-			if idx := s.index.Current(); idx != nil {
-				cards = idx
-			}
-		}
-		brief := &revise.Brief{Changes: []string{patchChange}, Remove: staleCardNames(d)}
+		brief := &revise.Brief{Changes: []string{patchChange}, Remove: staleCardNames(d, cards)}
 		turn.RevisionBrief = brief.JSON()
 		err = s.reviseDeck(ctx, uid, session, st, version+1, owned, acc, usageBefore, d, brief, cards, turn, stream)
 	} else {

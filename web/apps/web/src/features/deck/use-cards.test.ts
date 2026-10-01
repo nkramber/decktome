@@ -27,6 +27,11 @@ describe("use-cards", () => {
     expect(deckOracleIds(deck)).toEqual(["o-cmd", "o-a", "o-b", "o-c"]);
   });
 
+  it("deckOracleIds adds a companion that sits in no list, last (I-1)", () => {
+    const deck = { commanderOracleIds: ["o-cmd"], cards: [{ oracleId: "o-a" }], sideboard: [], upgrades: [], companionOracleId: "o-comp" } as unknown as Deck;
+    expect(deckOracleIds(deck)).toEqual(["o-cmd", "o-a", "o-comp"]);
+  });
+
   it("fetchCards sends the ids in chunks of 120 and merges the answers", async () => {
     const ids = Array.from({ length: 250 }, (_, i) => `o-${i}`);
     getCards.mockImplementation((req: { oracleIds: string[] }) => {

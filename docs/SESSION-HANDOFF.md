@@ -31,13 +31,13 @@ Author provider: Claude Code
 
 **The audit fix** (D-1022). `pnpm audit` found the high advisory GHSA-m9gg-hp2v-232j on `@grpc/grpc-js` 1.9.16. `web/package.json` overrides it to `^1.13.6`, and the lockfile reads 1.14.5.
 
-**The checks.** `make verify` passes on `c73a0e2`: "every check passed", with 449 of 449 web tests. The first runs failed on staticcheck S1011 and on the marks of D-924. `make store-check` passes for `go/internal/decks`. One test of `go/internal/collections` fails on old emulator data under its fixed user, with no change from this branch.
+**The checks.** `make verify` passes on `c73a0e2`: "every check passed", with 449 of 449 web tests. It passes again on the fix of Codex round 1, with 452 of 452. The first runs failed on staticcheck S1011 and on the marks of D-924. `make store-check` passes for `go/internal/decks`. One test of `go/internal/collections` fails on old emulator data under its fixed user, with no change from this branch.
 
-**The review.** Gitar passed on `f3ff561`. Codex reads Changes required at this head. Findings P2-1 and P2-2 stay open in `docs/reviews/pr-261.md`.
+**The review.** Gitar passed on `f3ff561` with no finding. Codex round 1 read Changes required at `f3ff561`, with P2-1 and P2-2. A companion or an imported commander outside the card lists had no name in the banner or the patch brief. Both are fixed, and `docs/reviews/pr-261-response.md` answers them.
 
 **The open work, in order.**
 
-1. Fix P2-1 and P2-2 from `docs/reviews/pr-261.md`, then run the focused checks.
+1. Do the Gitar pass on the fix, then run `make codex-review PR=261` for round 2.
 2. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
 3. After the deploy, ask the owner for a paid live rerun on a stale deck.
 
