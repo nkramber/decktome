@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes: "every check passed", with 463 of 463 web tests. A Firestore emulator of the owner holds port 8281, so `make smoke` can not start. The owner chose the workflow `.github/workflows/smoke.yml`, and run 36894498992 passed on `6d0b889`.
 
-**The review.** Gitar round 1 on `6d0b889` approved with one finding: the gap cache key left out the set limit and the colorless flag. `509e7c6` adds both, with two tests that fail on the old key. The thread has its answer and is resolved. The current Gitar review of `509e7c6` reads Approved, 1 closed of 1. Every check on `509e7c6` passes, except `review-gate`, which waits for the Codex record. No Codex review ran yet.
+**The review.** Gitar approved the current head, and its one finding is fixed and resolved. Codex reviewed effective head `509e7c6` with no finding. The verdict is Ready for owner merge. Smoke run `36939627381` passed on branch tip `601c892` after the cache fix.
 
 **The context checkpoint.** The session ended at 300K tokens of context (D-946). A new clean session continues PR #264.
 
