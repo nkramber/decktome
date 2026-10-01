@@ -114,6 +114,10 @@ message ChatRequest {
   // collection and said whether the deck may reach past it. UNSPECIFIED
   // leaves the question to the agent.
   PoolRule pool_rule = 7;
+  // rerun_deck_id asks for the rerun of one stale deck of the session
+  // (D-1008). The turn carries no message and no answer. The deck says
+  // which rerun it takes: a patch, or a rebuild (D-1019, D-1020).
+  string rerun_deck_id = 8;
 }
 
 // AgentError is a failure the UI can act on.

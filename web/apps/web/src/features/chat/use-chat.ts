@@ -165,7 +165,13 @@ export function stillAsked(session: Session, q: Question): boolean {
 
 export const emptyState: ChatState = { sessionId: "", thread: [], openQuestions: [], busy: false, phase: BuildPhase.UNSPECIFIED, repaired: false };
 
-export type SendInput = { message: string; answers: Answer[] };
+// rerunDeckId asks for the rerun of one stale deck (D-1008). Such a turn
+// carries no message and no answer.
+export type SendInput = { message: string; answers: Answer[]; rerunDeckId?: string };
+
+// rerunText is the user line of a rerun turn. The server stores the same
+// words, so a reload reads the thread this screen showed.
+export const rerunText = "Rerun this deck after the rule change.";
 
 // The stream error codes a user can retry at once. Aborted means a build
 // is in progress (D-303): the user waits for it, then tries again.
@@ -234,7 +240,7 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
   const stop = useCallback(() => abort.current?.abort(), []);
 
   const send = useCallback(
-    async ({ message, answers }: SendInput): Promise<SendResult> => {
+    async ({ message, answers, rerunDeckId = "" }: SendInput): Promise<SendResult> => {
       const controller = new AbortController();
       abort.current?.abort();
       abort.current = controller;
@@ -242,6 +248,7 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
       let ok = true;
       const ctx: StreamContext = { asked: [], newAgentLine: true };
       const answeredQuestions = latest.current.openQuestions.filter((q) => answeredIds.has(q.id));
+      const shown = rerunDeckId ? rerunText : message;
       update((s) => {
         // Each answer joins the question it answers, so the live thread
         // reads the same as the rebuilt one (F-62).
@@ -257,8 +264,8 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
           phase: BuildPhase.UNSPECIFIED,
           repaired: false,
           loadingCards: false,
-          lastInput: { message, answers },
-          thread: message ? [...marked, item({ kind: "user", text: message })] : marked,
+          lastInput: { message, answers, rerunDeckId },
+          thread: shown ? [...marked, item({ kind: "user", text: shown })] : marked,
           openQuestions: s.openQuestions.filter((q) => !answeredIds.has(q.id)),
         };
       });
@@ -272,6 +279,7 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
             poolRule: sessionId.current === "" ? poolRule : PoolRule.UNSPECIFIED,
             message,
             answers,
+            rerunDeckId,
           },
           { signal: controller.signal },
         );

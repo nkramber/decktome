@@ -71,6 +71,12 @@ type LegalityDiffRecord struct {
 	SnapshotAsOf string  `json:"snapshot_as_of"`
 	LagHours     float64 `json:"lag_hours"`
 	ChangedCards int     `json:"changed_cards"`
+	// StalePass is the time the stale pass of I-1 ended for this diff,
+	// RFC 3339, or "" when no pass ended yet. The next run of the job
+	// runs a pass that failed or stopped, because the marker says so.
+	StalePass string `json:"stale_pass,omitempty"`
+	// StaleDecks counts the decks that the pass found stale.
+	StaleDecks int `json:"stale_decks,omitempty"`
 }
 
 // writeDiffTo encodes the marker through Create, so both backends share
@@ -110,25 +116,35 @@ func readDiffFrom(r io.ReadCloser, err error, notExist func(error) bool) (Legali
 // carries an M-2 marker, or the zero time when none does. The worker
 // reads it at start, so no state lives in process memory (C-11).
 func LastLegalityDiff(ctx context.Context, s Store) (time.Time, error) {
+	version, rec, ok, err := LatestLegalityDiff(ctx, s)
+	if err != nil || !ok {
+		return time.Time{}, err
+	}
+	t, err := time.Parse(time.RFC3339, rec.SnapshotAsOf)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("%s/%s: %w", version, legalityDiffFile, err)
+	}
+	return t, nil
+}
+
+// LatestLegalityDiff returns the newest version that carries an M-2
+// marker, and its marker, or false when no version carries one. The stale
+// pass of I-1 reads it to find a diff that no pass has ended yet.
+func LatestLegalityDiff(ctx context.Context, s Store) (string, LegalityDiffRecord, bool, error) {
 	versions, err := s.ListVersions(ctx)
 	if err != nil {
-		return time.Time{}, err
+		return "", LegalityDiffRecord{}, false, err
 	}
 	for i := len(versions) - 1; i >= 0; i-- {
 		rec, ok, err := s.ReadLegalityDiff(ctx, versions[i])
 		if err != nil {
-			return time.Time{}, err
+			return "", LegalityDiffRecord{}, false, err
 		}
-		if !ok {
-			continue
+		if ok {
+			return versions[i], rec, true, nil
 		}
-		t, err := time.Parse(time.RFC3339, rec.SnapshotAsOf)
-		if err != nil {
-			return time.Time{}, fmt.Errorf("%s/%s: %w", versions[i], legalityDiffFile, err)
-		}
-		return t, nil
 	}
-	return time.Time{}, nil
+	return "", LegalityDiffRecord{}, false, nil
 }
 
 // VersionTime parses a version string back into its time.

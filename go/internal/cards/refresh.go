@@ -284,6 +284,14 @@ func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion strin
 	return changed, nil
 }
 
+// LoadLegalities reads the legality of each card of one stored version:
+// oracle id, then Scryfall format key, then status. It reads only
+// oracle_id and legalities, so the stale pass of I-1 needs no whole
+// index and fits the memory of the snapshot job.
+func LoadLegalities(ctx context.Context, store Store, version string) (map[string]map[string]string, error) {
+	return loadLegalities(ctx, store, version)
+}
+
 func sameLegalities(a, b map[string]string) bool {
 	for _, k := range DiffFormats {
 		if a[k] != b[k] {

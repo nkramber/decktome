@@ -311,6 +311,7 @@ Read the configuration again with a GET of the same URL, and expect no trigger. 
 ## 9. What a rollback does not repair
 
 - A Firestore document that the new version wrote stays as it is.
+- The stale state that the stale pass wrote stays on each deck (I-1). An older web app shows the stale line of the deck, and no banner.
 - An index that a deploy added stays until you remove it by hand.
 - A secret version stays active until you disable it.
 - A Pushover notice that the API sent stays on the device and with Pushover.

@@ -1,4 +1,5 @@
 import { Code, ConnectError } from "@connectrpc/connect";
+import { RerunCase } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FormatId, SixtyStep } from "@mtg/api-client/mtg/v1/format_pb";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -112,6 +113,27 @@ describe("DeckScreen", () => {
       await waitFor(() => expect(screen.queryByTestId("server-build")).not.toBeInTheDocument());
       expect(router.state.location.pathname).toBe("/decks/d1");
     });
+  });
+
+  // I-1: the banner of a stale deck runs its rerun in the chat of the deck.
+  it("the rerun button of a stale deck sends its rerun (D-1008)", async () => {
+    getDeck.mockResolvedValue({
+      deck: {
+        ...deck,
+        stale: true,
+        staleOracleIds: ["o-elf"],
+        cards: [{ oracleId: "o-elf", name: "Llanowar Elves", count: 1 }],
+        commanders: [],
+        rerunCase: RerunCase.PATCH,
+        staleReason: "The rerun replaces Llanowar Elves alone, and keeps the rest of the deck.",
+      },
+    });
+    await renderAt("/decks/d1");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Replace the banned cards" }));
+    await waitFor(() => expect(chat).toHaveBeenCalled());
+    expect(chat.mock.calls[0][0]).toMatchObject({ sessionId: "s1", rerunDeckId: "d1", message: "", answers: [] });
+    expect(await screen.findByText("Rerun this deck after the rule change.")).toBeInTheDocument();
   });
 
   it("reads the deck of the path and shows it", async () => {

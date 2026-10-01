@@ -12,6 +12,10 @@
 // refreshes, then exits 0, or exits 1 on a failure. The announcement
 // calendar and the store decide, not process memory.
 //
+// After the refresh, and in a skipped hour too, the run marks each stored
+// deck that a legality change made illegal (I-1, stalepass.go). The pass
+// runs once for each legality diff, and its marker says when it ended.
+//
 // The loop mode (no -once) exists for make dev only. It polls on the
 // calendar cadence in-process, because no Scheduler exists locally.
 package main
@@ -155,6 +159,7 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 		defer func() { _ = storageClient.Close() }()
 	}
 	client := scryfall.New(nil, os.Getenv("SCRYFALL_BASE_URL"), logger)
+	decksOf := firestoreDecks(project)
 	calendar, err := cards.Announcements()
 	if err != nil {
 		return fmt.Errorf("announcement calendar: %w", err)
@@ -231,13 +236,25 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 				alert(n)
 			}
 		}
-		return err
+		if err != nil {
+			return err
+		}
+		// The stale pass runs after the refresh, and in a skipped hour
+		// too, so a pass that failed or stopped runs again (I-1).
+		return stalePass(ctx, store, decksOf, logger, time.Now)
 	}
 
 	logger.Info("worker started in loop mode", "version", version)
-	if err := refresh(); err != nil {
-		logger.Error("refresh failed", "err", err)
+	cycle := func() {
+		if err := refresh(); err != nil {
+			logger.Error("refresh failed", "err", err)
+			return
+		}
+		if err := stalePass(ctx, store, decksOf, logger, time.Now); err != nil {
+			logger.Error("stale pass failed", "err", err)
+		}
 	}
+	cycle()
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 	for {
@@ -249,9 +266,7 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 			logger.Info("worker stopped")
 			return nil
 		case <-timer.C:
-			if err := refresh(); err != nil {
-				logger.Error("refresh failed", "err", err)
-			}
+			cycle()
 		}
 	}
 }
