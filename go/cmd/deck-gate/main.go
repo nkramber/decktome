@@ -518,7 +518,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 	}
 	if starved {
 		out.err = fmt.Errorf("without the excluded precons the library holds %d cards for the theme, and %d with them, and a deck needs about %d",
-			list.Stats.OnThemeOwned, whole, candidates.ThinThemeFloor)
+			list.Stats.OnThemeOwned, whole, candidates.ThemeFloor(req.Format))
 		return out
 	}
 	out.inSet, out.outside = list.Stats.InSet, list.Stats.Outside

@@ -15,7 +15,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { agentClient, deckClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
-import { type PoolMode, useAppStore } from "../../lib/store";
+import { useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
 import { StaleBanner } from "../deck/stale-banner";
 import { ReportProblem } from "../feedback/report-problem";
@@ -237,17 +237,15 @@ export function ChatPanel({
     navigateRef.current = navigate;
   }, [navigate]);
   const collectionId = useAppStore((s) => s.collectionId);
-  const poolMode = useAppStore((s) => s.poolMode);
   const setSessionId = useAppStore((s) => s.setSessionId);
 
-  // The collection goes with the first message only. A stored session
-  // holds its own collection id, and the server reads that one.
   // The collection goes with the first message whenever the reader named
-  // one. Unchecking "Only cards I own" no longer drops it: it says the
-  // collection leads and the database fills a gap (D-359). A stored
-  // session holds its own collection, and the server reads that one.
+  // one, and the rule is owned cards alone. When the collection cannot
+  // meet the request, the server asks about the gap, and the answer can
+  // let the database fill it (D-1011). A stored session holds its own
+  // collection and rule, and the server reads them.
   const sendCollection = initial.sessionId === "" ? collectionId : (session?.collectionId ?? "");
-  const sendPoolRule = initial.sessionId === "" ? poolRuleOf(poolMode, collectionId) : PoolRule.UNSPECIFIED;
+  const sendPoolRule = initial.sessionId === "" ? poolRuleOf(collectionId) : PoolRule.UNSPECIFIED;
 
   // ownPath is the route of this panel's session. The move from
   // /session/new to it is never blocked.
@@ -811,12 +809,12 @@ export function ChatPanel({
   );
 }
 
-// poolRuleOf maps the reader's choice onto the contract (D-359). With no
-// collection there is nothing to prefer, so the rule stays unset and the
+// poolRuleOf maps the reader's choice onto the contract. A chosen
+// collection means owned cards alone, and a gap question can change the
+// rule later (D-1011). With no collection the rule stays unset, and the
 // agent asks nothing about a pool the user does not have.
-export function poolRuleOf(mode: PoolMode, collectionId: string): PoolRule {
-  if (collectionId === "") return PoolRule.UNSPECIFIED;
-  return mode === "owned_only" ? PoolRule.OWNED_ONLY : PoolRule.OWNED_FIRST;
+export function poolRuleOf(collectionId: string): PoolRule {
+  return collectionId === "" ? PoolRule.UNSPECIFIED : PoolRule.OWNED_ONLY;
 }
 
 // sentence gives a status line a capital and a full stop of its own. The

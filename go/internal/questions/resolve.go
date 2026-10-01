@@ -7,6 +7,7 @@ import (
 	"unicode"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/candidates"
 )
 
 // Hints supply the values the catalog rows name in {braces}. PR-6 answers
@@ -378,6 +379,15 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	}
 	if s := strings.TrimSpace(st.NearestFormat); s != "" {
 		rep["{near_format}"] = s
+	}
+	// The gap question says why the collection can not meet the request
+	// (D-1027).
+	if s := strings.TrimSpace(st.Ctx.PoolGapReason); s != "" {
+		rep["{gap}"] = s
+	}
+	// The thin-theme row names the floor of the format (D-1032).
+	if f := st.Slots.GetFormat().GetId(); f != mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		rep["{theme_floor}"] = strconv.Itoa(candidates.ThemeFloor(f))
 	}
 	// Ask the hint source only for a value the row names. An eager call
 	// runs a whole PR-6 build for a row that holds no placeholder, and it

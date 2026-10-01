@@ -113,6 +113,12 @@ test("the deck screen of a phone reads up and down alone", async ({ page }) => {
     "Build a lifegain Commander deck led by Karlov of the Ghost Council at bracket 3, with no spending limit.",
   );
   await page.getByRole("button", { name: "Send" }).click();
+  // The export holds no Karlov, so the turn asks the gap question first
+  // (D-1027). "Fill the gaps" builds the owned-first deck (D-1028).
+  const gap = page.getByTestId("open-questions").getByRole("group", { name: /^Question: Your collection holds no copy of Karlov/ });
+  await expect(gap).toBeVisible({ timeout: 120_000 });
+  await gap.getByRole("button", { name: "Fill the gaps from any card (buy list)" }).click();
+  await page.getByRole("button", { name: "Submit answers" }).click();
   await expect(page.getByTestId("legality-line")).toBeVisible({ timeout: 120_000 });
   await readsUpAndDownAlone(page, "the deck screen");
   await theShellFitsTheScreen(page, "the deck screen");

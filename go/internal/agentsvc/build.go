@@ -63,7 +63,7 @@ type ErrThinTheme struct {
 	Theme   string
 	Precons []string
 	// Have is the owned theme count after the exclusion, Whole the count
-	// before it, and Want the floor (candidates.ThinThemeFloor).
+	// before it, and Want the floor (candidates.ThemeFloor).
 	Have, Whole, Want int
 }
 
@@ -279,7 +279,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 			return nil, fmt.Errorf("build: candidates without the exclusion: %w", err)
 		}
 		if starved {
-			return nil, &ErrThinTheme{Theme: req.Theme, Precons: excludedNames, Have: list.Stats.OnThemeOwned, Whole: wholeCount, Want: candidates.ThinThemeFloor}
+			return nil, &ErrThinTheme{Theme: req.Theme, Precons: excludedNames, Have: list.Stats.OnThemeOwned, Whole: wholeCount, Want: candidates.ThemeFloor(req.Format)}
 		}
 	}
 	if len(setCodes) > 0 {

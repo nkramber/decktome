@@ -4,11 +4,10 @@ import { createJSONStorage, persist } from "zustand/middleware";
 // Client state (wallabee tier 2). Server state lives in TanStack Query and
 // the auth user in React context. localStorage keeps the session id, so a
 // reload returns to the chat.
-// The card pool of the next chat (D-359).
-// owned_only: only cards in the collection.
-// owned_first: the collection leads, and the database fills a gap.
+// The card pool of the next chat (D-1011).
+// owned_only: only cards in the collection. The agent asks about a gap.
 // any: the whole database, with no collection.
-export type PoolMode = "owned_only" | "owned_first" | "any";
+export type PoolMode = "owned_only" | "any";
 
 export type AppState = {
   // The active collection, or empty in any-card mode (D-37). It lives
@@ -29,7 +28,6 @@ export type AppState = {
   setCollection: (collectionId: string) => void;
   clearCollection: () => void;
   setSessionId: (sessionId: string) => void;
-  setPoolMode: (poolMode: PoolMode) => void;
   setHadDecks: (hadDecks: boolean) => void;
   dismissInstallHint: () => void;
   // reset forgets every id. Sign-out calls it.
@@ -44,12 +42,11 @@ export const useAppStore = create<AppState>()(
       poolMode: "any",
       hadDecks: false,
       installHintDismissed: false,
-      // A named collection leads by default, and the database fills a
-      // gap. A reader who wants no fill checks "Only cards I own".
-      setCollection: (collectionId) => set({ collectionId, poolMode: "owned_first" }),
+      // A named collection means owned cards alone. When the collection
+      // cannot meet the request, the agent asks about the gap (D-1011).
+      setCollection: (collectionId) => set({ collectionId, poolMode: "owned_only" }),
       clearCollection: () => set({ collectionId: "", poolMode: "any" }),
       setSessionId: (sessionId) => set({ sessionId }),
-      setPoolMode: (poolMode) => set({ poolMode }),
       setHadDecks: (hadDecks) => set({ hadDecks }),
       dismissInstallHint: () => set({ installHintDismissed: true }),
       // Sign-out forgets the deck count with the ids: the next reader is

@@ -469,7 +469,7 @@
       "id": "pool_thin",
       "slot": "pool_rule",
       "order": 61,
-      "text": "Your library holds {n} {theme} cards. I want 30 or more. Build owned-first with a buy list, or use the whole pool?",
+      "text": "Your library holds {n} {theme} cards. I want {theme_floor} or more. Build owned-first with a buy list, or use the whole pool?",
       "options": [
         "Owned-first with a buy list",
         "Use the whole pool"
@@ -491,6 +491,37 @@
       "option_values": [
         "owned_first",
         "any_card"
+      ]
+    },
+    {
+      "id": "pool_gap",
+      "slot": "pool_rule",
+      "key": "pool_gap",
+      "order": 62,
+      "fixed": true,
+      "text": "{gap} Should I fill the gaps from any card, with a buy list, or use only your cards?",
+      "options": [
+        "Fill the gaps from any card (buy list)",
+        "Only my cards"
+      ],
+      "when": {
+        "has_collection": true,
+        "pool_gap": true,
+        "not_beside": [
+          "theme"
+        ],
+        "requires": [
+          "format",
+          "colors",
+          "theme"
+        ]
+      },
+      "fallback": "Your collection can not fully cover this request. Should I fill the gaps from any card, with a buy list, or use only your cards?",
+      "closed": true,
+      "no_decline": true,
+      "option_values": [
+        "owned_first",
+        "owned_only"
       ]
     },
     {

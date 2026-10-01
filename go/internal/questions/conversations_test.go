@@ -59,6 +59,20 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c2)
 
+	// The reader chose the collection, so the pool key is filled, and the
+	// gap question asks on its own key (D-1011, D-1027).
+	gap := conversation{name: "elves from a chosen collection with a gap"}
+	gap.ctx = newCtx("build me an elves deck")
+	gap.ctx.HasCollection, gap.ctx.PoolFromReader, gap.ctx.PoolGap, gap.ctx.Theme = true, true, true, "elves"
+	gap.ctx.Filled["pool_rule"] = true
+	gap.steps = []step{
+		{want: []string{"format", "theme", "colors"}, fill: []string{"format", "theme", "colors"}, set: commander},
+		{want: []string{"power_commander", "pool_gap", "commander"}, fill: []string{"power", "pool_gap", "commander"},
+			set: func(c *Context) { c.BuyList, c.CommanderSet = true, true }},
+		{want: []string{"budget"}, fill: []string{"budget"}},
+	}
+	cs = append(cs, gap)
+
 	// The named card becomes the commander, so no card is locked (D-70).
 	// The plain theme row asks: the card-named theme row is retired
 	// (D-260).

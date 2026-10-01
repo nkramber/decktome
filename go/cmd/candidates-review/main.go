@@ -135,7 +135,7 @@ func run(collectionPath string, top int, w io.Writer) error {
 		s := list.Stats
 		_, _ = fmt.Fprintf(w, "Funnel: %d legal in colors, %d on theme, %d owned, %d on theme and owned, %d returned, %d upgrades.\n\n", s.Pool, s.OnTheme, s.Owned, s.OnThemeOwned, s.Returned, s.UpgradeSize)
 		if s.ThinTheme {
-			_, _ = fmt.Fprintf(w, "Thin theme: the collection holds under %d on-theme cards. PR-7 asks the pool-mode question again here (D-63).\n\n", candidates.ThinThemeFloor)
+			_, _ = fmt.Fprintf(w, "Thin theme: the collection holds under %d on-theme cards. PR-7 asks the pool-mode question again here (D-63).\n\n", candidates.ThemeFloor(req.Format))
 		}
 		if mode == "owned-first" {
 			_, _ = fmt.Fprintf(w, "The table merges owned cards and upgrades by score (D-62). Owned 0 marks an upgrade.\n\n")

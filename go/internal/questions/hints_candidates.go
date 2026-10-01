@@ -70,6 +70,9 @@ type CandidateHints struct {
 	// The mana count of D-382 walks the index, so it runs once per key
 	// and the answer is kept. The key carries the sets, the format, and
 	// the colors.
+	// The gap checks of D-1027 run a whole PR-6 build, so they run once
+	// per key and the answer is kept.
+	gaps     map[string]Gap
 	manaDone map[string]bool
 	manaThin map[string]bool
 	manaHave map[string]int

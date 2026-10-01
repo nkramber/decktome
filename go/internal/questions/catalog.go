@@ -113,6 +113,7 @@ type When struct {
 	CommanderSet     *bool  `json:"commander_set"`
 	HasCollection    *bool  `json:"has_collection"`
 	ThinTheme        *bool  `json:"thin_theme"`
+	PoolGap          *bool  `json:"pool_gap"`
 	BuyList          *bool  `json:"buy_list"`
 	BudgetAmbiguous  *bool  `json:"budget_ambiguous"`
 	HouseFormat      *bool  `json:"house_format"`

@@ -412,9 +412,13 @@ func RefreshFacts(s *State, src FactSource) {
 	if src == nil || !s.Ctx.HasCollection {
 		return
 	}
+	// The reader's choice fills the pool key, so the gap checks read
+	// before the guard below (D-1027).
+	refreshGap(s, src)
 	// The not-owned row is retired (D-226). The rules engine reports
 	// ownership per card after the build, which names the exact card
-	// and count and costs no turn.
+	// and count and costs no turn. A collection the reader chose asks
+	// the gap question instead (D-1027).
 	// The weak-pool row is retired (D-232). It sat on the commander key,
 	// and a delegated commander fills that key, so the row could not
 	// reach the user who needed it. PR-8 reports the thin pool instead.

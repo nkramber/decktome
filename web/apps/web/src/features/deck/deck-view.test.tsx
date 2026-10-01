@@ -286,6 +286,20 @@ describe("DeckView", () => {
     expect(within(commander).getByTestId("owned-mark")).toBeInTheDocument();
   });
 
+  it("puts a commander the reader does not own on the buy table (D-1031)", async () => {
+    getCards.mockResolvedValue({ cards, missingOracleIds: [] });
+    renderDeck({
+      ...deck,
+      format: { id: FormatId.COMMANDER, houseRules: "" },
+      commanderOracleIds: ["o-elf"],
+      commanders: [{ oracleId: "o-elf", name: "Llanowar Elves", count: 1, role: CardRole.THREAT, owned: false, ownedCount: 0, priceUsd: 0.5 }],
+      cards: deck.cards.slice(0, 1),
+    } as unknown as Deck);
+    await screen.findByRole("region", { name: "Commander (1)" });
+    const table = await screen.findByRole("table", { name: "Cards to buy, the dearest first" });
+    expect(within(table).getByText("Llanowar Elves")).toBeInTheDocument();
+  });
+
   it("counts the main deck without a commander that sits in cards (D-289)", async () => {
     getCards.mockResolvedValue({ cards, missingOracleIds: [] });
     renderDeck({

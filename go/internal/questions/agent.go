@@ -1491,10 +1491,22 @@ func (a *Agent) apply(ctx context.Context, st *State, out classifyOut, open []st
 		// choice. The flip also turned the buy list on, so the deck
 		// named cards the reader does not own. It is the D-371 collision
 		// from the other side.
-		if st.Ctx.PoolFromReader {
+		switch {
+		case gapOpen(st):
+			// The gap question is open, so a typed pool answer answers it.
+			// The collection still leads under each answer, so any card
+			// reads as a fill of the gaps (D-1027, D-1028).
+			if rule == mtgv1.PoolRule_POOL_RULE_ANY_CARD {
+				rule = mtgv1.PoolRule_POOL_RULE_OWNED_FIRST
+			}
+			a.log.Info("the reader answered the gap question in words",
+				"session", st.SessionID, "rule", rule)
+			st.Slots.PoolRule = rule
+			st.Close("pool_gap")
+		case st.Ctx.PoolFromReader:
 			a.log.Info("the reader chose the card pool, so the classifier does not write over it",
 				"session", st.SessionID, "reader", st.Slots.GetPoolRule(), "classifier", rule)
-		} else {
+		default:
 			// An owned rule needs a collection. A reader with none who
 			// says "build only from the Hobbit set" names a set, not
 			// their library, and the classifier reads the word "only" as
@@ -2332,6 +2344,16 @@ var typedSlots = map[string]bool{
 	// commander, and "In the 99" locks the card. A name closes it with
 	// neither (D-118).
 	"named_card_role": true,
+	// The gap question closes on a pool rule. An option match would close
+	// it with no rule, so "Fill the gaps" would keep owned cards alone
+	// (D-1027).
+	"pool_gap": true,
+}
+
+// gapOpen reports whether the gap question went out and has no answer yet
+// (D-1027).
+func gapOpen(st *State) bool {
+	return st.Slots.GetSlotStates()["pool_gap"] == mtgv1.SlotState_SLOT_STATE_ASKED
 }
 
 // deckKeys are the slots a deck request fills. A user who fills one has

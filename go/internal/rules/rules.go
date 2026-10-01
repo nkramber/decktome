@@ -137,7 +137,12 @@ type Input struct {
 	// ExcludedOracleIDs are the cards of a precon the reader excluded
 	// with no copy to spare (D-408). A deck that holds one is blocked.
 	ExcludedOracleIDs map[string]bool
-	Cards             CardSource
+	// NamedOracleIDs are the cards the user named: the commanders and the
+	// cards to keep. Under the owned-only rule a named card the
+	// collection lacks is a warning and not a block, and the buy list
+	// names it (D-1031).
+	NamedOracleIDs map[string]bool
+	Cards          CardSource
 }
 
 // finding codes. The UI and the eval harness key on these.
