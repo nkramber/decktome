@@ -216,8 +216,8 @@ type Stats struct {
 	// OnThemeOwned counts owned cards with a theme signal (owned modes).
 	OnThemeOwned int
 	// ThinTheme marks an owned mode where the collection holds fewer than
-	// ThinThemeFloor on-theme cards. PR-7 asks the pool-mode question
-	// again on this flag (D-63).
+	// ThemeFloor on-theme cards. PR-7 asks the pool-mode question again
+	// on this flag (D-63).
 	ThinTheme bool
 	// InSet counts the pool cards the request's sets hold. It is zero when
 	// no set limit applies, because no card is then inside a set the
@@ -229,10 +229,16 @@ type Stats struct {
 	Outside int
 }
 
-// ThinThemeFloor is the on-theme owned count under which a collection is
-// too thin for owned-only play. The corpus guide asks for 20 to 35 theme
-// pieces in a Commander deck.
-const ThinThemeFloor = 30
+// ThemeFloor is the on-theme owned count under which a collection is too
+// thin for owned-only play. The corpus guide asks for 20 to 35 theme
+// pieces in a Commander deck. A 60-card deck runs four copies of a name,
+// so half the count serves it, as SetFloor halves its own (D-1032).
+func ThemeFloor(format mtgv1.FormatId) int {
+	if format == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		return 30
+	}
+	return 15
+}
 
 // Builder holds the loaded theme table.
 type Builder struct {
@@ -479,7 +485,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	}
 	stats.Returned = len(main)
 	stats.UpgradeSize = len(upgrades)
-	stats.ThinTheme = mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && stats.OnThemeOwned < ThinThemeFloor
+	stats.ThinTheme = mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && stats.OnThemeOwned < ThemeFloor(req.Format)
 	return &List{Candidates: main, Upgrades: upgrades, Reserve: topReserve(reserve, pw.of), Theme: theme, Stats: stats}, nil
 }
 
@@ -1441,6 +1447,40 @@ func SetFloor(format mtgv1.FormatId) int {
 		return 70
 	}
 	return 35
+}
+
+// CountOwned counts the distinct nonbasic cards the collection holds that
+// the format allows in the deck colors. Check (3) of the gap question
+// compares it with SetFloor: a collection under that floor can not fill
+// a deck beside its basic lands (D-1027, D-1032). A set limit applies
+// when the request names sets. Basic lands are out, as in CountInSets.
+func CountOwned(idx *cards.Index, req Request) int {
+	if idx == nil || len(req.Owned) == 0 {
+		return 0
+	}
+	var setCodes map[string]bool
+	if len(req.SetCodes) > 0 {
+		setCodes = cards.CodeSet(req.SetCodes)
+	}
+	colorSet := req.colorSet()
+	legalKey := legalKeys[req.Format]
+	n := 0
+	for _, c := range idx.All() {
+		if req.Owned[c.GetOracleId()] <= 0 || IsBasicLand(c) || !hasPaperPrinting(c) {
+			continue
+		}
+		if legalKey != "" && !legalIn(c, legalKey) {
+			continue
+		}
+		if colorSet != nil && !IdentityFits(c.GetColorIdentity(), colorSet) {
+			continue
+		}
+		if setCodes != nil && !cards.InSets(c, setCodes) {
+			continue
+		}
+		n++
+	}
+	return n
 }
 
 // CountManaInSets counts the ramp cards and the nonbasic lands a set

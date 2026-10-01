@@ -69,15 +69,20 @@ type Context struct {
 	// key is asked twice at most: the second stall skips it, and the
 	// build takes the default. A stored snapshot without this reads
 	// empty, so a session in flight gets its one extra ask.
-	Reasked          map[string]bool `json:"reasked"`
-	ThinTheme        bool            `json:"thin_theme"`
-	CommanderSet     bool            `json:"commander_set"`
-	NamedCard        bool            `json:"named_card"`
-	Suggested        bool            `json:"suggested"`
-	PowerCompetitive bool            `json:"power_competitive"`
-	BuyList          bool            `json:"buy_list"`
-	BudgetAmbiguous  bool            `json:"budget_ambiguous"`
-	HouseFormat      bool            `json:"house_format"`
+	Reasked   map[string]bool `json:"reasked"`
+	ThinTheme bool            `json:"thin_theme"`
+	// PoolGap says one check of the gap question holds for the
+	// collection the user chose, and PoolGapReason is the sentence that
+	// names it (D-1011, D-1027).
+	PoolGap          bool   `json:"pool_gap"`
+	PoolGapReason    string `json:"pool_gap_reason"`
+	CommanderSet     bool   `json:"commander_set"`
+	NamedCard        bool   `json:"named_card"`
+	Suggested        bool   `json:"suggested"`
+	PowerCompetitive bool   `json:"power_competitive"`
+	BuyList          bool   `json:"buy_list"`
+	BudgetAmbiguous  bool   `json:"budget_ambiguous"`
+	HouseFormat      bool   `json:"house_format"`
 	// AfterBuild says the session holds a built deck. agentsvc and
 	// cmd/questions-gate set it. No row reads it since PR-9 left the MVP
 	// (D-256), and it stays for the callers that set it.
@@ -323,6 +328,7 @@ func (w When) matches(ctx Context) bool {
 		{w.CommanderSet, ctx.CommanderSet},
 		{w.HasCollection, ctx.HasCollection},
 		{w.ThinTheme, ctx.ThinTheme},
+		{w.PoolGap, ctx.PoolGap},
 		{w.BuyList, ctx.BuyList},
 		{w.BudgetAmbiguous, ctx.BudgetAmbiguous},
 		{w.HouseFormat, ctx.HouseFormat},

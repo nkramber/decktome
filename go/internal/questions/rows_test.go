@@ -597,21 +597,22 @@ func TestClosedRowsHaveOptions(t *testing.T) {
 	}
 }
 
-// TestNoDeclineRows is D-690. The commander row offers "Suggest one", so
-// the UI shows no "You decide" control beside it. The pick row keeps the
-// control, and a row with no option of its own must keep it too.
+// TestNoDeclineRows is D-690 and D-1014. The commander row offers
+// "Suggest one", and the pick row offers three named commanders, so the
+// UI shows no "You decide" control beside either. Any other row with no
+// option of its own must keep the control.
 func TestNoDeclineRows(t *testing.T) {
 	c := load(t)
 	for _, r := range c.Rows {
-		if r.NoDecline && len(r.Options) == 0 {
+		if r.NoDecline && len(r.Options) == 0 && len(commanderKeysIn(r.Text)) == 0 {
 			t.Errorf("row %q hides the decline control and offers no option", r.ID)
 		}
 	}
 	if row, ok := c.Row("commander"); !ok || !row.NoDecline {
 		t.Error("the commander row shows the decline control beside its own option")
 	}
-	if row, ok := c.Row("commander_pick"); !ok || row.NoDecline {
-		t.Error("the commander pick row hides the decline control")
+	if row, ok := c.Row("commander_pick"); !ok || !row.NoDecline {
+		t.Error("the commander pick row shows the decline control beside its three names")
 	}
 }
 

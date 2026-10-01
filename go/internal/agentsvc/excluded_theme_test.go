@@ -99,8 +99,8 @@ func TestExcludedThemeEndsTheTurnWithAReason(t *testing.T) {
 	if fd.runs != 0 {
 		t.Errorf("the generator ran %d times, want 0: a starved theme spends no model call", fd.runs)
 	}
-	if thin.Have != 15 || thin.Whole != 40 || thin.Want != candidates.ThinThemeFloor {
-		t.Errorf("counts = %d of %d, floor %d, want 15 of 40, floor %d", thin.Have, thin.Whole, thin.Want, candidates.ThinThemeFloor)
+	if thin.Have != 15 || thin.Whole != 40 || thin.Want != candidates.ThemeFloor(mtgv1.FormatId_FORMAT_ID_COMMANDER) {
+		t.Errorf("counts = %d of %d, floor %d, want 15 of 40, floor %d", thin.Have, thin.Whole, thin.Want, candidates.ThemeFloor(mtgv1.FormatId_FORMAT_ID_COMMANDER))
 	}
 	msg := thin.Error()
 	for _, want := range []string{"Hero Precon", `"hobbits"`, "15", "40", "name another theme", "start a new chat"} {

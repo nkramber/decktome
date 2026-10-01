@@ -219,22 +219,16 @@ describe("SessionPage", () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
     await renderAt("/session/new");
     const user = userEvent.setup();
-    const box = await screen.findByLabelText("Only cards I own");
-    expect(box).toBeChecked();
     // The picker names the collection, never its id (D-337).
     expect((await screen.findByLabelText("Build from")) as HTMLSelectElement).toHaveValue("c1");
     expect(screen.getByRole("option", { name: /binder-july\.csv/ })).toBeInTheDocument();
-    // Unchecking no longer drops the collection: it says the collection
-    // leads and the database fills a gap (D-359).
-    await user.click(box);
-    expect(useAppStore.getState().poolMode).toBe("owned_first");
-    expect(useAppStore.getState().collectionId).toBe("c1");
-    await user.click(box);
+    // A chosen collection shows no pool checkbox (D-1011).
+    expect(screen.queryByLabelText("Only cards I own")).not.toBeInTheDocument();
     await user.type(screen.getByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
     await screen.findByText("Session id: s1");
     expect((chat.mock.calls[0][0] as { collectionId: string }).collectionId).toBe("c1");
-    expect(screen.queryByLabelText("Only cards I own")).not.toBeInTheDocument();
+    expect((chat.mock.calls[0][0] as { poolRule: PoolRule }).poolRule).toBe(PoolRule.OWNED_ONLY);
     await waitFor(() => expect(screen.getByLabelText("Your message")).toBeEnabled());
     await user.type(screen.getByLabelText("Your message"), "more{enter}");
     await waitFor(() => expect(chat).toHaveBeenCalledTimes(2));
@@ -951,10 +945,11 @@ describe("the pool picker", () => {
     const select = await screen.findByLabelText("Build from");
     await userEvent.setup().selectOptions(select, "c1");
     expect(useAppStore.getState().collectionId).toBe("c1");
-    expect(useAppStore.getState().poolMode).toBe("owned_first");
-    // The collection leads by default, and the box is the way to refuse
-    // the fill (D-359).
-    expect(await screen.findByLabelText("Only cards I own")).not.toBeChecked();
+    // A chosen collection means owned cards alone, and the picker shows
+    // no checkbox. A gap question covers a shortfall (D-1011).
+    expect(useAppStore.getState().poolMode).toBe("owned_only");
+    expect(screen.queryByLabelText("Only cards I own")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
   it("any card clears the collection", async () => {
@@ -1158,22 +1153,25 @@ describe("declining a question", () => {
   });
 });
 
-// The collection leads, and the database fills a gap (D-359).
+// A chosen collection means owned cards alone. The server asks a gap
+// question when the collection cannot meet the request (D-1011).
 describe("the card pool of the first message", () => {
-  it("sends owned-first when the reader keeps the fill", async () => {
-    useAppStore.setState({ collectionId: "c1", poolMode: "owned_first" });
+  it("sends owned-only when the reader picks a collection, with no checkbox", async () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
     await renderAt("/session/new");
     const user = userEvent.setup();
-    await user.type(await screen.findByLabelText("Your message"), "elves");
+    await user.selectOptions(await screen.findByLabelText("Build from"), "c1");
+    expect(screen.queryByLabelText("Only cards I own")).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Your message"), "elves");
     await user.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => expect(chat).toHaveBeenCalled());
     const req = chat.mock.calls[0][0] as { collectionId: string; poolRule: PoolRule };
     expect(req.collectionId).toBe("c1");
-    expect(req.poolRule).toBe(PoolRule.OWNED_FIRST);
+    expect(req.poolRule).toBe(PoolRule.OWNED_ONLY);
   });
 
-  it("sends owned-only when the reader refuses the fill", async () => {
+  it("sends owned-only for a collection already in the store", async () => {
     useAppStore.setState({ collectionId: "c1", poolMode: "owned_only" });
     chat.mockReturnValue(events([ev("sessionStarted", "s1")]));
     await renderAt("/session/new");
@@ -1199,11 +1197,10 @@ describe("the card pool of the first message", () => {
 
 describe("poolRuleOf", () => {
   it("maps the reader's choice onto the contract", () => {
-    expect(poolRuleOf("owned_only", "c1")).toBe(PoolRule.OWNED_ONLY);
-    expect(poolRuleOf("owned_first", "c1")).toBe(PoolRule.OWNED_FIRST);
-    expect(poolRuleOf("any", "")).toBe(PoolRule.UNSPECIFIED);
-    // No collection means nothing to prefer, whatever the mode says.
-    expect(poolRuleOf("owned_first", "")).toBe(PoolRule.UNSPECIFIED);
+    // A chosen collection means owned cards alone (D-1011).
+    expect(poolRuleOf("c1")).toBe(PoolRule.OWNED_ONLY);
+    // No collection means nothing to prefer.
+    expect(poolRuleOf("")).toBe(PoolRule.UNSPECIFIED);
   });
 });
 

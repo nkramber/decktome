@@ -18,5 +18,5 @@ func (b *Builder) StarvedTheme(idx *cards.Index, req Request, list *List, whole 
 		return 0, false, err
 	}
 	n := full.Stats.OnThemeOwned
-	return n, n >= ThinThemeFloor, nil
+	return n, n >= ThemeFloor(req.Format), nil
 }

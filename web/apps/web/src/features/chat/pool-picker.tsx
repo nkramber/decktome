@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDownIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 
-import { Checkbox } from "../../components/ui/checkbox";
 import { Label } from "../../components/ui/label";
 import { collectionClient } from "../../lib/api";
 import { useAppStore } from "../../lib/store";
@@ -23,14 +22,14 @@ export function useCollections(enabled = true) {
 
 // The pool picker sits in the foot of the message box of a new chat
 // (D-350). It names the cards the agent may use, beside the box that
-// says what to build (D-37).
+// says what to build (D-37). A chosen collection means owned cards
+// alone. When the collection cannot meet the request, the agent asks a
+// question about the gap (D-1011).
 export function PoolPicker() {
   const navigate = useNavigate();
   const collectionId = useAppStore((s) => s.collectionId);
-  const poolMode = useAppStore((s) => s.poolMode);
   const setCollection = useAppStore((s) => s.setCollection);
   const clearCollection = useAppStore((s) => s.clearCollection);
-  const setPoolMode = useAppStore((s) => s.setPoolMode);
 
   const list = useCollections();
   const collections = list.data?.collections ?? [];
@@ -74,13 +73,6 @@ export function PoolPicker() {
         </select>
         <ChevronDownIcon aria-hidden="true" className="pointer-events-none absolute top-1/2 right-2 size-3 -translate-y-1/2 text-muted-foreground" />
       </div>
-
-      {collectionId ? (
-        <Label className="flex items-center gap-2 text-xs font-normal">
-          <Checkbox checked={poolMode === "owned_only"} onCheckedChange={(v) => setPoolMode(v === true ? "owned_only" : "owned_first")} />
-          Only cards I own
-        </Label>
-      ) : null}
     </div>
   );
 }

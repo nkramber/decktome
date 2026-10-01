@@ -393,6 +393,10 @@ func checkOwnership(res *mtgv1.ValidationResult, in Input) {
 			continue
 		}
 		if owned := in.OracleCounts[oid]; owned < need[oid] {
+			sev := sev
+			if in.NamedOracleIDs[oid] {
+				sev = mtgv1.Severity_SEVERITY_WARN
+			}
 			add(res, CodeNotOwned, sev,
 				fmt.Sprintf("%s: the deck needs %d, the collection has %d", card.Name, need[oid], owned), oid)
 		}

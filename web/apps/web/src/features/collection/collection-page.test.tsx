@@ -159,7 +159,8 @@ describe("CollectionPage", () => {
     expect(screen.getByText(/^12 cards/)).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "binder-july.csv" }));
     expect(useAppStore.getState().collectionId).toBe("c-old");
-    expect(useAppStore.getState().poolMode).toBe("owned_first");
+    // A chosen collection means owned cards alone (D-1011).
+    expect(useAppStore.getState().poolMode).toBe("owned_only");
     expect(screen.getByTestId("active-collection")).toHaveTextContent("Active collection: binder-july.csv (4317 cards)");
     expect(screen.getByRole("button", { name: "binder-july.csv" })).toHaveAttribute("aria-pressed", "true");
   });
@@ -588,7 +589,11 @@ describe("the binder scroll", () => {
   });
 
   it("jumps for a reader who asks for less motion", async () => {
-    Object.defineProperty(window, "matchMedia", { configurable: true, value: (q: string) => ({ matches: q === "(prefers-reduced-motion: reduce)" }) });
+    // The toaster listens to its phone query, so the stub takes a listener (D-1030).
+    Object.defineProperty(window, "matchMedia", {
+      configurable: true,
+      value: (q: string) => ({ matches: q === "(prefers-reduced-motion: reduce)", addEventListener: () => {}, removeEventListener: () => {} }),
+    });
     const { main, scrollTo } = await scrolledPage();
     fireEvent.scroll(main);
     await userEvent.setup().click(await screen.findByRole("button", { name: "Back to the binder top" }));

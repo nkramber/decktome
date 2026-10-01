@@ -73,8 +73,8 @@ func TestACommanderFindingBuysNoRepairTurn(t *testing.T) {
 }
 
 // TestAnUnownedCommanderRunsNoRepairTurn builds the case end to end. The
-// deck goes out with its block (D-226, D-300), and the build spends one
-// model call and no repair call.
+// reader named the commander, so the deck keeps it and the finding warns
+// (D-1031). The build spends one model call and no repair call.
 func TestAnUnownedCommanderRunsNoRepairTurn(t *testing.T) {
 	lead := commanderCard("o-lead", "Test Commander", true)
 	cards := []*mtgv1.Card{lead}
@@ -112,18 +112,18 @@ func TestAnUnownedCommanderRunsNoRepairTurn(t *testing.T) {
 	if got.Repaired {
 		t.Error("no repair turn runs for a finding the model can not fix")
 	}
-	var block *mtgv1.Finding
+	var finding *mtgv1.Finding
 	for _, f := range got.Deck.GetValidation().GetFindings() {
 		if f.GetCode() == rules.CodeNotOwned {
-			block = f
+			finding = f
 		}
 	}
-	if block == nil || block.GetOracleId() != lead.GetOracleId() {
-		t.Fatalf("the deck must carry the ownership block on its commander: %v",
+	if finding == nil || finding.GetOracleId() != lead.GetOracleId() {
+		t.Fatalf("the deck must carry the ownership finding on its commander: %v",
 			got.Deck.GetValidation().GetFindings())
 	}
-	if block.GetSeverity() != mtgv1.Severity_SEVERITY_BLOCK {
-		t.Errorf("the ownership finding reads %s, want a block in owned-only", block.GetSeverity())
+	if finding.GetSeverity() != mtgv1.Severity_SEVERITY_WARN {
+		t.Errorf("the ownership finding reads %s, want a warning: the reader named the commander (D-1031)", finding.GetSeverity())
 	}
 	if len(got.Deck.GetCommanderOracleIds()) != 1 {
 		t.Errorf("the deck carries %d commanders, want the one the reader named", len(got.Deck.GetCommanderOracleIds()))

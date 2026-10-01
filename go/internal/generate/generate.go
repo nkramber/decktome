@@ -614,6 +614,7 @@ func (b *Builder) check(ctx context.Context, req Request, deck *mtgv1.Deck, excl
 		PoolRule:          req.PoolRule,
 		OracleCounts:      req.OracleCounts,
 		ExcludedOracleIDs: excluded,
+		NamedOracleIDs:    namedIDs(req),
 		Cards:             b.cards,
 	})
 	if swapped > 0 {
@@ -832,4 +833,21 @@ func spendBetween(before, after llm.Report) *mtgv1.Usage {
 		u.Priced = false
 	}
 	return u
+}
+
+// namedIDs are the cards the user named, the commanders and the cards to
+// keep. The ownership check warns on one the collection lacks and blocks
+// no deck for it (D-1031).
+func namedIDs(req Request) map[string]bool {
+	if len(req.Commanders)+len(req.Locked) == 0 {
+		return nil
+	}
+	ids := make(map[string]bool, len(req.Commanders)+len(req.Locked))
+	for _, id := range req.Commanders {
+		ids[id] = true
+	}
+	for _, id := range req.Locked {
+		ids[id] = true
+	}
+	return ids
 }

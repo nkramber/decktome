@@ -548,6 +548,24 @@ func TestGoldenDecks(t *testing.T) {
 			t.Errorf("want one not_owned block, got %v", codes(res, mtgv1.Severity_SEVERITY_BLOCK))
 		}
 	})
+	// D-1031: a card the user named stays under "Only my cards", and the
+	// buy list names it. Its missing copy warns, and an unnamed card
+	// still blocks.
+	goldenRun(t, "good/owned-only keeps a named card it lacks", func(t *testing.T) {
+		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
+			cards: map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}
+		in := Input{Deck: ds.build(t), Cards: testIndex,
+			PoolRule: mtgv1.PoolRule_POOL_RULE_OWNED_ONLY, OracleCounts: map[string]int32{},
+			NamedOracleIDs: map[string]bool{oid(t, "Soul Warden"): true}}
+		res := testCfg.Validate(in)
+		if codes(res, mtgv1.Severity_SEVERITY_BLOCK)[CodeNotOwned] != 0 || codes(res, mtgv1.Severity_SEVERITY_WARN)[CodeNotOwned] != 1 {
+			t.Errorf("want one not_owned warning and no block, got %v", res.Findings)
+		}
+		in.NamedOracleIDs = nil
+		if res := testCfg.Validate(in); codes(res, mtgv1.Severity_SEVERITY_BLOCK)[CodeNotOwned] != 1 {
+			t.Errorf("an unnamed card the collection lacks must block, got %v", res.Findings)
+		}
+	})
 	goldenRun(t, "bad/owned-only without cards", func(t *testing.T) {
 		ds := deckSpec{format: mtgv1.FormatId_FORMAT_ID_MODERN,
 			cards: map[string]int32{"Soul Warden": 4}, fill: "Plains", fillTo: 60}

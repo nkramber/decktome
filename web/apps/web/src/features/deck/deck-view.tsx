@@ -94,9 +94,14 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const typeRows = mainTypes.filter((t) => (types.get(t) ?? 0) > 0);
   const typesMax = Math.max(1, ...typeRows.map((t) => types.get(t) ?? 0));
   const avgManaValue = averageManaValue(deck.cards, byId);
-  // The cards to buy, the dearest first, for the buy-cost table.
-  const toBuy = [...deck.cards, ...deck.sideboard]
-    .filter((c) => !c.owned && !commanders.has(c.oracleId))
+  // The cards to buy, the dearest first, for the buy-cost table. A
+  // commander the user named and does not own is on it too, as the buy
+  // cost counts it (D-1031). Its mark counts only when the deck carries
+  // the fact (F-76).
+  const toBuy = [
+    ...(commanderOwnership ? commanderEntries.filter((c) => !c.owned) : []),
+    ...[...deck.cards, ...deck.sideboard].filter((c) => !c.owned && !commanders.has(c.oracleId)),
+  ]
     .sort((a, b) => b.priceUsd * b.count - a.priceUsd * a.count || a.name.localeCompare(b.name));
   // The table shows the colors the deck pays for, and colorless for a
   // colorless deck. A mono-green deck full of rocks that make any color
