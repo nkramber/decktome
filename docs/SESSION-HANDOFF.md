@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-30)
 
-**Branch `fix/session-reload-and-phone-layout`: PR-106, four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** The pull request is #PRNUM.
+**Branch `fix/session-reload-and-phone-layout`: PR-106, four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** The pull request is #263.
 
 Author provider: Claude Code
 

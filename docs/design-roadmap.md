@@ -2893,7 +2893,7 @@ Gate:
 
 > *In plain English:* the app moves to the newer OpenAI and Anthropic models. Two new models misread a few answers, so the prompts now name those cases, and the tests pass.
 
-**PR-106: Four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** 🔧 open. D-1012 permits these four concerns in one pull request.
+**PR-106: Four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** ✅ merged as #263. The mark comes before any review (D-822). D-1012 permits these four concerns in one pull request.
 
 - **The reload of a first turn (F-186, D-1025).** `Chat` sent `session_started` before any store write, and it stored the session at the end of the turn. A first turn now takes the lease of the new session, and it stores the session with the user line. Then it sends the id. `GetSession` reads the session, and `building` reads true. The page shows "The agent is still reading your message on the server" until the reply arrives. When the same turn builds, `holdLease` takes the lease again with the same token for the whole time limit of a build.
 - **The edges of the installed app (F-187, D-1024).** The header is sticky with the opaque `bg-muted`, so WebKit takes its color and draws no blur over it. The header holds `--edge-top` inside its top padding. The shell and the toast hold `--edge-bottom`. Both read 16px under `display-mode: standalone`, and 0 in a browser tab.
