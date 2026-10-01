@@ -254,9 +254,9 @@ func TestNoneRepeatsThePickRowWithNewNames(t *testing.T) {
 	}
 }
 
-// TestCommanderRowShowsNoDecline is D-690. The commander row offers
-// "Suggest one", so its question tells the UI to show no "You decide"
-// control. The pick row keeps the control.
+// TestCommanderRowShowsNoDecline is D-690 and D-1014. The commander row
+// offers "Suggest one", and the pick row offers three names, so neither
+// question tells the UI to show a "You decide" control.
 func TestCommanderRowShowsNoDecline(t *testing.T) {
 	wants := commanderClassify()
 	wants.Facts.WantsSuggestion = true
@@ -285,8 +285,8 @@ func TestCommanderRowShowsNoDecline(t *testing.T) {
 	if pick == nil || !strings.HasSuffix(pick.GetId(), "-commander_pick") {
 		t.Fatalf("turn 2 asked no pick row: %v", res.Questions)
 	}
-	if pick.GetNoDecline() {
-		t.Error("the pick row question hides the decline control")
+	if !pick.GetNoDecline() || len(pick.GetOptions()) < 3 {
+		t.Errorf("the pick row question shows the decline control, or names no three commanders: %v", pick.GetOptions())
 	}
 }
 

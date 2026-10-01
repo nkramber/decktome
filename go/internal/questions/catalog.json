@@ -345,6 +345,7 @@
         ]
       },
       "key": "commander_pick",
+      "no_decline": true,
       "repeat": true,
       "repeat_on_change": true,
       "fallback": "Which commander do you want, or should I suggest three more?"
