@@ -359,6 +359,33 @@ describe("SessionPage", () => {
       expect(screen.queryByTestId("server-build")).not.toBeInTheDocument();
     });
 
+    it("a Stop during a build of a stored chat names the build, not the reply", async () => {
+      getSession.mockResolvedValueOnce({
+        session: {
+          id: "s1",
+          collectionId: "",
+          deckIds: [],
+          status: SessionStatus.ASKING,
+          turns: [{ userMessage: "elves", agentMessage: "", questions: [formatQuestion], answers: [] }],
+        },
+        building: false,
+      });
+      // The status the page read at mount, still ASKING (F-186 review).
+      getSession.mockResolvedValue({ session: { id: "s1", collectionId: "", deckIds: [], status: SessionStatus.ASKING, turns: [] }, building: true });
+      chat.mockImplementationOnce(async function* (_req: unknown, opts: { signal: AbortSignal }) {
+        yield ev("phase", BuildPhase.SHORTLIST);
+        await new Promise((_, reject) => opts.signal.addEventListener("abort", () => reject(new ConnectError("canceled", Code.Canceled))));
+      });
+      await renderAt("/session/s1");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      const card = await screen.findByRole("group", { name: "Question: Which format?" });
+      await user.click(within(card).getByRole("button", { name: "Commander" }));
+      await user.click(screen.getByRole("button", { name: "Submit answers" }));
+      await user.click(await screen.findByRole("button", { name: "Stop" }));
+
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+    });
+
     it("a gone session stops the reads", async () => {
       getSession.mockResolvedValueOnce({ session: { id: "s1", collectionId: "", deckIds: [], turns: [] }, building: true });
       getSession.mockRejectedValue(new ConnectError("no session", Code.NotFound));

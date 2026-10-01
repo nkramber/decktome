@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on the code of the four fixes: "every check passed", with 458 of 458 web tests. `go test -race ./internal/agentsvc` passes. A mutation of the lease token fails the build test.
 
-**The review.** Pending the Gitar pass and the Codex review.
+**The review.** Gitar round 1 on `8f70bc2` found two items. The watch line now prefers the live phase over the stored status, and a test proves the fix. A first line that stays in the store after a lost client is by design, and a test proves that it resumes (D-1025). The Codex review is pending.
 
 **The open work, in order.**
 

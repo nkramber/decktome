@@ -191,3 +191,27 @@ func TestAFirstTurnBuildKeepsItsLease(t *testing.T) {
 		t.Error("the lease outlived the turn")
 	}
 }
+
+// TestAStoredFirstLineResumes: a first turn whose client left before
+// session_started keeps its user line in the store (F-186). The next
+// message on that session runs a whole turn on it.
+func TestAStoredFirstLineResumes(t *testing.T) {
+	store := newFakeStore()
+	store.sessions["sess-1"] = &mtgv1.Session{
+		Id:     "sess-1",
+		Status: mtgv1.SessionStatus_SESSION_STATUS_ASKING,
+		Turns:  []*mtgv1.Turn{{UserMessage: "build me a lifegain commander deck for 50 dollars"}},
+	}
+	store.versions["sess-1"] = 1
+	client, _ := testServer(t, store, firstTurn(t)...)
+	got := chat(t, client, &mtgv1.ChatRequest{SessionId: "sess-1", Message: "build me a lifegain commander deck for 50 dollars"})
+	if len(got.questions) == 0 {
+		t.Fatalf("the turn on the stored line asked nothing: %v, failure %v", got.order, got.failure)
+	}
+	if v := store.versionOf("sess-1"); v != 2 {
+		t.Errorf("version = %d, want 2", v)
+	}
+	if turns := store.sessions["sess-1"].GetTurns(); len(turns) != 2 || len(turns[1].GetQuestions()) == 0 {
+		t.Errorf("stored turns = %+v, want the first line and the turn with its questions", turns)
+	}
+}

@@ -278,8 +278,10 @@ export function ChatPanel({
   }, [state.phase, stop]);
   const serverBuild = watching && !state.busy && state.sessionId !== "";
   // A first turn holds its session while the agent reads the message, so
-  // a reload then waits for a reply, not a deck (F-186).
-  const serverReply = session ? session.status === SessionStatus.ASKING : state.phase === BuildPhase.READING;
+  // a reload then waits for a reply, not a deck (F-186). A turn of this
+  // panel names its own phase, and the stored status is older than it.
+  const serverReply =
+    state.phase !== BuildPhase.UNSPECIFIED ? state.phase === BuildPhase.READING : session?.status === SessionStatus.ASKING;
   const onServerBuildEnded = useCallback(
     (res: GetSessionResponse) => {
       setWatching(false);
