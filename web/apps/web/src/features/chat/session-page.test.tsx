@@ -2,7 +2,7 @@ import { Code, ConnectError } from "@connectrpc/connect";
 import { BuildPhase } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { CardRole } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FeedbackKind, FeedbackVerdict } from "@mtg/api-client/mtg/v1/feedback_service_pb";
-import { PoolRule } from "@mtg/api-client/mtg/v1/session_pb";
+import { PoolRule, SessionStatus } from "@mtg/api-client/mtg/v1/session_pb";
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
@@ -338,6 +338,25 @@ describe("SessionPage", () => {
       expect(await screen.findAllByText("The deck build failed, please ask again.")).not.toHaveLength(0);
       expect(screen.queryByTestId("server-build")).not.toBeInTheDocument();
       expect(screen.getByLabelText("Your message")).toBeInTheDocument();
+    });
+
+    it("a reload during a first turn waits for the reply, and shows its questions (F-186)", async () => {
+      const turn = { userMessage: "elves", agentMessage: "", questions: [], answers: [] };
+      getSession.mockResolvedValueOnce({
+        session: { id: "s1", collectionId: "", deckIds: [], status: SessionStatus.ASKING, turns: [turn] },
+        building: true,
+      });
+      getSession.mockResolvedValue({
+        session: { id: "s1", collectionId: "", deckIds: [], status: SessionStatus.ASKING, turns: [{ ...turn, questions: [formatQuestion] }] },
+        building: false,
+      });
+      await renderAt("/session/s1");
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("The agent is still reading your message on the server.");
+      expect(screen.getByText("elves")).toBeInTheDocument();
+
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      expect(await screen.findByText(formatQuestion.text)).toBeInTheDocument();
+      expect(screen.queryByTestId("server-build")).not.toBeInTheDocument();
     });
 
     it("a gone session stops the reads", async () => {

@@ -2,7 +2,7 @@ import { Code, ConnectError } from "@connectrpc/connect";
 import { BuildPhase, type GetSessionResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import type { Deck } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
-import { type Answer, PoolRule, type Session } from "@mtg/api-client/mtg/v1/session_pb";
+import { type Answer, PoolRule, type Session, SessionStatus } from "@mtg/api-client/mtg/v1/session_pb";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
@@ -277,6 +277,9 @@ export function ChatPanel({
     stop();
   }, [state.phase, stop]);
   const serverBuild = watching && !state.busy && state.sessionId !== "";
+  // A first turn holds its session while the agent reads the message, so
+  // a reload then waits for a reply, not a deck (F-186).
+  const serverReply = session ? session.status === SessionStatus.ASKING : state.phase === BuildPhase.READING;
   const onServerBuildEnded = useCallback(
     (res: GetSessionResponse) => {
       setWatching(false);
@@ -549,7 +552,9 @@ export function ChatPanel({
       )}
       {serverBuild && (
         <p className="text-sm text-muted-foreground" data-testid="server-build">
-          The build continues on the server. The deck shows here when it is ready.
+          {serverReply
+            ? "The agent is still reading your message on the server. Its reply shows here when it is ready."
+            : "The build continues on the server. The deck shows here when it is ready."}
         </p>
       )}
     </div>

@@ -945,8 +945,8 @@ func TestDeckIDWriteRetriesAfterAConflict(t *testing.T) {
 	if store.status(first.started) != mtgv1.SessionStatus_SESSION_STATUS_BUILT {
 		t.Error("the retry lost the built status")
 	}
-	if got := store.versionOf(first.started); got != 4 {
-		t.Errorf("version = %d, want 4: turn, bump, and the retried deck id", got)
+	if got := store.versionOf(first.started); got != 5 {
+		t.Errorf("version = %d, want 5: the user line, turn, bump, and the retried deck id", got)
 	}
 }
 
