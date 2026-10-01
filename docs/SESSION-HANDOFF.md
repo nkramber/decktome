@@ -33,13 +33,12 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on `c73a0e2`: "every check passed", with 449 of 449 web tests. It passes again on the fix of Codex round 1, with 452 of 452. The first runs failed on staticcheck S1011 and on the marks of D-924. `make store-check` passes for `go/internal/decks`. One test of `go/internal/collections` fails on old emulator data under its fixed user, with no change from this branch.
 
-**The review.** Gitar passed on `f3ff561` with no finding. Codex round 1 read Changes required at `f3ff561`, with P2-1 and P2-2. A companion or an imported commander outside the card lists had no name in the banner or the patch brief. Both are fixed, and `docs/reviews/pr-261-response.md` answers them.
+**The review.** Gitar passed on `6859e28` with no code finding. Codex round 2 reads Ready for owner merge at effective head `6859e28`, with no open finding. P2-1 and P2-2 are fixed, and `docs/reviews/pr-261-response.md` answers them.
 
 **The open work, in order.**
 
-1. Do the Gitar pass on the fix, then run `make codex-review PR=261` for round 2.
-2. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
-3. After the deploy, ask the owner for a paid live rerun on a stale deck.
+1. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
+2. After the deploy, ask the owner for a paid live rerun on a stale deck.
 
 ## How to resume
 
