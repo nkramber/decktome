@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-01)
 
-**Branch `fix/owned-pool-and-commander-pick`: PR-107, the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** The pull request is not open yet.
+**Branch `fix/owned-pool-and-commander-pick`: PR-107, the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** The pull request is #264.
 
 Author provider: Claude Code
 
@@ -31,10 +31,9 @@ Author provider: Claude Code
 
 **The open work, in order.**
 
-1. Run `make verify`, push, open the pull request, and mark PR-107 merged (D-822).
-2. Run `smoke.yml` on the branch.
-3. The Gitar pass, then `make codex-review`.
-4. Ask the owner for the merge, then turn on the auto-merge (D-828).
+1. Run `smoke.yml` on the branch.
+2. The Gitar pass, then `make codex-review`.
+3. Ask the owner for the merge, then turn on the auto-merge (D-828).
 
 ## How to resume
 

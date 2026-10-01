@@ -2912,7 +2912,7 @@ Gate:
 
 > *In plain English:* a reload in the middle of the first answer no longer loses the chat. The installed app keeps its header clear of the iPhone blur. A chat has a clear way to start over, and a phone shows the deck before the chat.
 
-**PR-107: The owned pool, its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** 🔧 open. D-1012 and D-1030 permit these three concerns in one pull request.
+**PR-107: The owned pool, its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** ✅ merged as #264. The mark comes before any review (D-822). D-1012 and D-1030 permit these three concerns in one pull request.
 
 - **The owned pool (F-188, D-1011).** The web app has no "Only cards I own" checkbox. A chosen collection sends `POOL_RULE_OWNED_ONLY`.
 - **The gap question (D-1027, D-1028, D-1032).** The row `pool_gap` asks on its own key, because the reader's choice fills the pool key. One of three checks starts it: a named card the collection lacks, a theme under its floor, or few owned cards in the colors. The theme floor is 30 for Commander and 15 for a 60-card format. The colors floor is the floor of D-380. The answers are "Fill the gaps from any card (buy list)" and "Only my cards".
