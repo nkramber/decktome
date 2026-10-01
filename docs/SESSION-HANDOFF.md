@@ -27,11 +27,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on the code of the four fixes: "every check passed", with 458 of 458 web tests. `go test -race ./internal/agentsvc` passes. A mutation of the lease token fails the build test.
 
-**The review.** Gitar round 1 on `8f70bc2` found two items. The watch line now prefers the live phase over the stored status, and a test proves the fix. A first line that stays in the store after a lost client is by design, and a test proves that it resumes (D-1025). The Codex review is pending.
+**The review.** Gitar reviewed `8f4c97f` and approved it. Its two findings have answers, and both threads are resolved. The Codex review is Ready for owner merge at effective head `8f4c97f89db74f331ba1283527e338df58e57e52`, with no open finding. The local web test workers need Node 22.12 or later, and GitHub's web checks pass. The iPhone check remains after deploy (D-1010, D-1024).
 
 **The open work, in order.**
 
-1. Do the Gitar pass, then the Codex review. Ask the owner for the merge, then turn on the auto-merge (D-828).
+1. Ask the owner for the merge, then turn on the auto-merge (D-828).
 2. After the deploy, the owner reads the header and both edges on a real iPhone (D-1010, D-1024).
 3. Read the log line `stale pass ended` of the first `mtg-snapshot` run on `worker:c63e2c2`.
 
