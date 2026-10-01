@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { axe } from "jest-axe";
@@ -67,6 +70,25 @@ const routes: [string, string][] = [
   ["/decks", "decks"],
   ["/session/new", "chat"],
 ];
+
+// iOS 26 and later blur the top of an installed app unless a fixed or
+// sticky opaque box covers the top edge, and the buffer sits inside that
+// box (F-187, D-1010). jsdom reads no media query, so the second test
+// reads the stylesheet.
+describe("the edges of the installed app", () => {
+  it("has a sticky, opaque header that holds the top buffer", async () => {
+    await renderAt("/decks");
+    const header = (await screen.findByRole("navigation", { name: "Main" })).closest("header");
+    expect(header).toHaveClass("sticky", "top-0", "bg-muted", "pt-[calc(0.75rem+var(--edge-top))]");
+    expect(header?.parentElement).toHaveClass("pb-(--edge-bottom)");
+  });
+
+  it("sets a 16px buffer in the installed app alone", () => {
+    const css = readFileSync(path.join(import.meta.dirname, "..", "index.css"), "utf8");
+    expect(css).toMatch(/:root \{\s*--edge-top: 0px;\s*--edge-bottom: 0px;\s*\}/);
+    expect(css).toMatch(/@media \(display-mode: standalone\) \{\s*:root \{\s*--edge-top: 16px;\s*--edge-bottom: 16px;\s*\}/);
+  });
+});
 
 describe("axe", () => {
   it.each(routes)("passes on %s", async (path) => {
