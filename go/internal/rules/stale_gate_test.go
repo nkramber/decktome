@@ -57,10 +57,7 @@ func checkSyntheticBans(t *testing.T, d *mtgv1.Deck) {
 		return
 	}
 	legal := stale.Legalities{}
-	var ids []string
-	for _, id := range append(slices.Clone(d.GetCommanderOracleIds()), d.GetCompanionOracleId()) {
-		ids = append(ids, id)
-	}
+	ids := append(slices.Clone(d.GetCommanderOracleIds()), d.GetCompanionOracleId())
 	lands := map[string]bool{}
 	for _, list := range [][]*mtgv1.DeckCard{d.GetCards(), d.GetSideboard()} {
 		for _, dc := range list {
