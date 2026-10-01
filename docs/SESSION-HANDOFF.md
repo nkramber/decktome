@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-09-30)
 
-**Branch `feat/ban-list-watch`: I-1, the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1021).** No pull request is open yet.
+**Branch `feat/ban-list-watch`: I-1, the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1022).** The pull request is #261.
 
 Author provider: Claude Code
 
@@ -35,10 +35,9 @@ Author provider: Claude Code
 
 **The open work, in order.**
 
-1. Open the pull request, and mark I-1 `✅ merged as #N` (D-822).
-2. Do the Gitar pass, then `make codex-review`.
-3. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
-4. After the deploy, ask the owner for a paid live rerun on a stale deck.
+1. Do the Gitar pass, then `make codex-review`.
+2. Ask the owner for the merge, then turn on the auto-merge (D-828). The pull request is pending the auto-merge.
+3. After the deploy, ask the owner for a paid live rerun on a stale deck.
 
 ## How to resume
 

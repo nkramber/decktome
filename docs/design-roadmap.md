@@ -3136,7 +3136,7 @@ A build that loses its deadline returns the last legal deck. No feature with a b
 Deck gate run 18 is the paid measure, and it reads PASS (D-617). Repair turns fell from 12 of 25 to 3 of 25. A block bought each of the three, and never a band. The wall clock fell 27 percent and the cost 28 percent. On the decks the mana pass runs on, the off-band findings fell from 4 to 2. The two precon upgrades hold 8 of the 10 that are left, and the pass skips an upgrade by design (D-249).
 > *In plain English:* the app builds a deck and reads it as a little off the power level you asked for. It then pays a minute to ask the model to fix it. Twice it ran out of time and gave you nothing. The app can fix the mana itself, in less than a second.
 
-**I-1: Ban-list watch, stale-deck banner, and scoped rerun (D-29, D-1008, D-1018).**
+**I-1: Ban-list watch, stale-deck banner, and scoped rerun (D-29, D-1008, D-1018).** ✅ merged as #261: the stale pass, the banner, and the patch or rebuild rerun. The mark comes before any review (D-822).
 The snapshot job finds a ban as a legality diff between two snapshots, and the announcement calendar sets how often it looks (C-2). The job needs no feed of Wizards. After a new diff, the job runs the stale pass, in the same run or the next one. The pass reads the legalities of the newest snapshot, and it checks each stored deck against its format (`go/internal/stale`). The account of the job already holds `roles/datastore.user` (D-1018).
 
 A deck with a card that is no longer legal gets the `stale` flag, the list of those cards, a rerun case, and a reason. An unban clears them. The marker of the diff records the end of the pass, so a pass that stops runs again in the next hour.
