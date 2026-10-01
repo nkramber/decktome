@@ -27,11 +27,13 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes: "every check passed", with 463 of 463 web tests. A Firestore emulator of the owner holds port 8281, so `make smoke` can not start. The owner chose the workflow `.github/workflows/smoke.yml`, and run 36894498992 passed on `6d0b889`.
 
-**The review.** Gitar round 1 on `6d0b889` approved with one finding: the gap cache key left out the set limit and the colorless flag. The fix adds both, with two tests that fail on the old key.
+**The review.** Gitar round 1 on `6d0b889` approved with one finding: the gap cache key left out the set limit and the colorless flag. `509e7c6` adds both, with two tests that fail on the old key. The thread has its answer and is resolved. The current Gitar review of `509e7c6` reads Approved, 1 closed of 1. Every check on `509e7c6` passes, except `review-gate`, which waits for the Codex record. No Codex review ran yet.
+
+**The context checkpoint.** The session ended at 300K tokens of context (D-946). A new clean session continues PR #264.
 
 **The open work, in order.**
 
-1. The Gitar pass of the fix, then `make codex-review`.
+1. Run `make codex-review PR=264` in the background, and answer each finding.
 2. Ask the owner for the merge, then turn on the auto-merge (D-828).
 
 ## How to resume
