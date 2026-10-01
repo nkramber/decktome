@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, type KeyboardEvent, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
 import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router";
 
-import { AlertTriangleIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
+import { AlertTriangleIcon, ArrowLeftIcon, ArrowUpIcon, CheckIcon, LayersIcon } from "lucide-react";
 
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
@@ -734,6 +734,18 @@ export function ChatPanel({
             heading for a screen reader, out of sight. */}
         {!beforeFirstMessage || recent.decks.length > 0 ? (
           <div className="flex flex-col gap-1.5">
+            {/* A chat can start over from inside itself. The Build entry of
+                the top bar does the same, but it has no text, and here it
+                reads as the current page (F-189, D-1013). The old chat
+                stays in the unfinished list (D-433). */}
+            {!beforeFirstMessage && (
+              <Button asChild variant="ghost" size="sm" className="-ml-2 self-start text-muted-foreground">
+                <Link to="/session/new">
+                  <ArrowLeftIcon aria-hidden="true" />
+                  New chat
+                </Link>
+              </Button>
+            )}
             <h1 id="chat-title" className="font-display text-2xl font-semibold">
               {!beforeFirstMessage ? "Chat" : "Pick up where you left off"}
             </h1>

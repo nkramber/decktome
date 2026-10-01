@@ -1063,6 +1063,29 @@ describe("the head of a new chat", () => {
   });
 });
 
+// A chat starts over from inside itself (F-189, D-1013).
+describe("the New chat control", () => {
+  it("opens a new chat from a stored one", async () => {
+    getSession.mockResolvedValue({
+      session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "", questions: [formatQuestion], answers: [] }] },
+      building: false,
+    });
+    const { router } = await renderAt("/session/s1");
+    const link = await screen.findByRole("link", { name: "New chat" });
+    expect(link).toHaveAttribute("href", "/session/new");
+    await userEvent.setup().click(link);
+    await waitFor(() => expect(router.state.location.pathname).toBe("/session/new"));
+    expect(await screen.findByLabelText("Your message")).toHaveValue("");
+    expect(screen.queryByText("elves")).not.toBeInTheDocument();
+  });
+
+  it("is not on a new chat", async () => {
+    await renderAt("/session/new");
+    await screen.findByLabelText("Your message");
+    expect(screen.queryByRole("link", { name: "New chat" })).not.toBeInTheDocument();
+  });
+});
+
 // A decline hands the choice back with no value (D-353).
 describe("declining a question", () => {
   it("sends declined, not words", async () => {
