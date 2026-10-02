@@ -18,11 +18,13 @@ Author provider: Claude Code
 
 **The code, done and tested.** A theme with no signal is no theme (D-1038). "Commander" before a format noun names the format (D-1039). The push is the title alone (D-1040). A copy counts only from a named set (D-1041). The owner confirmed that this rule applies under each pool rule (D-1044). The lease records the step of a build, and a reloaded page shows it (D-1042).
 
-**The checks.** The Go tests and the 474 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on `f2c916c`: "every check passed".
+**The checks.** The Go tests and the 475 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on `f2c916c`: "every check passed".
 
 **The review.** The automatic Gitar review of `1bdda93` found three items. The next commit fixes two: the gap guard reads the whole collection, and a lease of the same token keeps its step. The author refuted the third, the art of a basic land from another set, under D-1041. The Gitar CI note named the missing review record, which the Codex review now supplies.
 
-**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. Gitar approves `3ccc917`, and all findings are closed.
+**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. The Gitar review of `f2c916c` and of `3ccc917`, the commit of D-1044, approves, with 3 of 3 findings closed.
+
+**The Codex review.** The record of `3ccc917` reads `Changes required`, with one finding. P2-1: a Stop during `READING` promised a deck. The next commit restores the reply line of a reading turn, with a regression test. `docs/reviews/pr-267-response.md` holds the answer. That commit gets a Gitar pass, then a repeat run of `make codex-review PR=267`.
 
 **The Codex review.** The review of effective head `3ccc917` found P2-1: a Stop during `READING` says that a deck will appear. The verdict is Changes required. The record gives the correction and the regression check.
 

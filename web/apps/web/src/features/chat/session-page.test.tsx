@@ -334,6 +334,25 @@ describe("SessionPage", () => {
       await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d1"));
     });
 
+    it("a Stop while the agent reads the first message promises a reply, not a deck (D-375)", async () => {
+      chat.mockImplementationOnce(async function* (_req: unknown, opts: { signal: AbortSignal }) {
+        yield ev("sessionStarted", "s1");
+        yield ev("phase", BuildPhase.READING);
+        await new Promise((_, reject) => opts.signal.addEventListener("abort", () => reject(new ConnectError("canceled", Code.Canceled))));
+      });
+      const stored = { id: "s1", collectionId: "", deckIds: [] as string[], turns: [{ userMessage: "elves", agentMessage: "", questions: [], answers: [] }] };
+      getSession.mockResolvedValue({ session: stored, building: true, phase: BuildPhase.READING });
+      await renderAt("/session/new");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      await user.click(await screen.findByRole("button", { name: "Stop" }));
+
+      const line = await screen.findByTestId("server-build-stopped");
+      expect(line).toHaveTextContent("The agent is still reading your message on the server.");
+      expect(line).not.toHaveTextContent("deck");
+    });
+
     it("a reload during a build says so, reads the session, and shows the turn the build stored", async () => {
       const turn = { userMessage: "elves", agentMessage: "", questions: [], answers: [] };
       getSession.mockResolvedValueOnce({ session: { id: "s1", collectionId: "", deckIds: [], turns: [turn] }, building: true });

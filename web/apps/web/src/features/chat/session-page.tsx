@@ -629,7 +629,9 @@ export function ChatPanel({
       )}
       {serverBuild && stopped && (
         <p className="text-sm text-muted-foreground" data-testid="server-build-stopped">
-          The build continues on the server. The deck shows here when it is ready.
+          {serverReply
+            ? "The agent is still reading your message on the server. Its reply shows here when it is ready."
+            : "The build continues on the server. The deck shows here when it is ready."}
         </p>
       )}
     </div>
