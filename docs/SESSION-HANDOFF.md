@@ -24,7 +24,7 @@ Author provider: Claude Code
 - A lost stream of a stored session reads the session again, with no failure line. A return to view reads it at once.
 - `web/apps/web/src/features/chat/running-build.ts` keeps the id of a running build, and `main.tsx` opens it at a launch at `/`.
 
-**The checks.** CHECKS
+**The checks.** `make verify` passes on `77b7999`: "every check passed", with 472 of 472 web tests. `TestEmulatorPagePresence` passes on the local emulator. `TestEmulatorListRenameDelete` fails on the base commit too, because older data in the local emulator holds its fixed id.
 
 **The open work.** The live check on the iPhone of the owner waits for the deploy of the merge. It reads a switch of apps during a build, a push, and the deck on the return. The review waits for the push of the branch.
 
