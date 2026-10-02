@@ -15,6 +15,37 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-01b, PR-108
+
+**Branch `fix/phone-connection-and-push`: PR-108, the installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** The pull request is #265.
+
+Author provider: Claude Code
+
+**The base.** `main` is `5353fbe`, from #264. Cloud Build `deploy-api` `4822f058` and `deploy-web` `b0e45ccd` built it with SUCCESS on 2026-10-01 at 23:32:49 and 23:33:31 UTC.
+
+**The owner answers.** OQ-90 (D-1033): the page tells the API when it goes to the background. A launch at `/` opens the session of a running build (D-1034). The owner does not remember the screen of 17:58 on 2026-09-30, so the logs alone give the cause.
+
+**The cause of F-190, from the logs.** The phone suspended the page, and the stream broke on the phone alone. Cloud Run kept the request open for 109 seconds, so the context did not end and no push went out (F-192). The page wrote a failure line, gave the answer back, and started no build watch. The send at 17:58:04 met the build in progress in 3 ms. The launch at 17:58:11 opened `/` and read no session.
+
+**The code, done and tested.**
+
+- `SetPageHidden` writes `private/presence` of the session. A build sends the push when the stream ended, or when the page reported a leave after the start of the turn.
+- A build that lost its stream reads the session again, with no failure line. A return to view reads it at once.
+- `web/apps/web/src/features/chat/running-build.ts` keeps the id of a running build, and `main.tsx` opens it at a launch at `/`.
+- `go.opentelemetry.io/otel/sdk` moves to v1.45.0 for GO-2026-6505, because the advisory failed `govulncheck` on each pull request (D-1035).
+
+**The checks.** `make verify` passes on `77b7999`: "every check passed", with 472 of 472 web tests. `TestEmulatorPagePresence` passes on the local emulator. `TestEmulatorListRenameDelete` fails on the base commit too, because older data in the local emulator holds its fixed id.
+
+**The review.** Gitar approved `73d659b`. Codex closed P2-1 at `e9e2844`, and approved `73d659b` after the gate followed D-1007. `docs/reviews/pr-265-response.md` answers both rounds.
+
+**The open work.** The owner confirms the merge, then the author turns on auto-merge (D-828, D-834). After deploy, the owner runs the live check on an iPhone. It reads a switch of apps during a build, a push, and the deck on the return.
+
+### 2026-09-30b: four screen fixes, PR-106
+
+**The deploy of I-1 read SUCCESS.** No deck was stale, and the session can not write under `users/`. The owner chose to wait for a real stale deck (D-1023).
+
+**The owner asked for research before the F-187 fix.** The session read the WebKit code and five reports of the iOS 26 and iOS 27 blur. A 16px buffer alone leaves the header in the blur, so the owner chose a sticky header (D-1024).
+
 ## The resume section of 2026-10-01, PR-107
 
 **Branch `fix/owned-pool-and-commander-pick`: PR-107, the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** The pull request is #264.
