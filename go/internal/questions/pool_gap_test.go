@@ -116,6 +116,25 @@ func TestPoolGapChecks(t *testing.T) {
 		}
 	})
 
+	// A reader who owns no copy of the named sets has the largest gap. The
+	// whole map says a collection exists, and the narrowed map counts
+	// (D-1041, the review of #267).
+	t.Run("no owned copy of the named sets is the largest gap", func(t *testing.T) {
+		h := gapHints(t, 80, 80, true)
+		h.PrintingCounts = func() map[string]int32 { return map[string]int32{} }
+		h.UseSets([]string{"ltr"})
+		if g := h.PoolGap("", nil, []string{"Heliod, Sun-Crowned"}); g.Kind != GapUnowned || !slices.Equal(g.Names, []string{"Heliod, Sun-Crowned"}) {
+			t.Errorf("gap = %+v, want Heliod: no copy of it is from the named sets", g)
+		}
+		h.Colors = []mtgv1.Color{mtgv1.Color_COLOR_W}
+		if g := h.PoolGap("", nil, nil); g.Kind != GapColors || g.Have != 0 {
+			t.Errorf("gap = %+v, want 0 owned cards of the named sets", g)
+		}
+		if thin, n := h.ThinTheme("soldiers"); !thin || n != 0 {
+			t.Errorf("thin theme = %v with %d cards, want thin with 0", thin, n)
+		}
+	})
+
 	t.Run("a colorless request counts colorless cards alone", func(t *testing.T) {
 		h := gapHints(t, 80, 80, true)
 		h.UseColorless(true)

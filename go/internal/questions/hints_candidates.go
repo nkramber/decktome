@@ -418,7 +418,7 @@ func (h *CandidateHints) ThinTheme(theme string) (bool, int) {
 	if h.thinDone[key] {
 		return h.thin[key], h.thinCount[key]
 	}
-	if h.Index == nil || h.Builder == nil || len(h.owned()) == 0 {
+	if h.Index == nil || h.Builder == nil || len(h.Owned) == 0 {
 		return false, 0
 	}
 	pool := h.Pool

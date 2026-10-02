@@ -93,7 +93,7 @@ type storedLease struct {
 	Token string    `firestore:"token"`
 	Until time.Time `firestore:"until"`
 	// Phase is the step of the build, and Repaired says a repair ran
-	// (D-1042). A new lease starts both again.
+	// (D-1042). The lease of a new token starts them again.
 	Phase    int32  `firestore:"phase,omitempty"`
 	Repaired bool   `firestore:"repaired,omitempty"`
 	Status   string `firestore:"status,omitempty"`
@@ -139,7 +139,13 @@ func (r *Repo) Lease(ctx context.Context, uid, id, token string, now, until time
 		if l.Token != token && now.Before(l.Until) {
 			return fmt.Errorf("%w: %s", ErrLeased, id)
 		}
-		return tx.Set(ref, storedLease{Token: token, Until: until})
+		// A token that takes its own lease again keeps the step of its
+		// turn: a first turn that becomes a build reads on (D-1042).
+		next := storedLease{Token: token, Until: until}
+		if l.Token == token {
+			next.Phase, next.Repaired, next.Status = l.Phase, l.Repaired, l.Status
+		}
+		return tx.Set(ref, next)
 	})
 }
 

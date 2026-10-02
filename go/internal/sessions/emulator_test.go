@@ -387,12 +387,10 @@ func TestEmulatorListRenameDelete(t *testing.T) {
 	}
 }
 
-// TestEmulatorBuildLease is D-922. A second build waits while the lease
-// of the first holds, takes it after the lease ends, and keeps it when
-// the first build releases late. A delete removes the lease.
 // TestEmulatorBuildPhase is D-1042 (F-200). The lease records the step
-// of its build, a repair, and the working line, a new lease starts both again, and a
-// session with no lease records nothing.
+// of its build, a repair, and the working line. The same token keeps
+// them, a new token starts them again, and a session with no lease
+// records nothing.
 func TestEmulatorBuildPhase(t *testing.T) {
 	repo, done := emulatorRepo(t)
 	defer done()
@@ -426,14 +424,27 @@ func TestEmulatorBuildPhase(t *testing.T) {
 	if st, _ := repo.LeaseState(ctx, uid, "s1", now.Add(2*time.Minute)); st != (LeaseState{}) {
 		t.Errorf("after the lease ended = %+v, want nothing", st)
 	}
+	// The same token takes its lease again, as a first turn that becomes
+	// a build does, and the step stays.
 	if err := repo.Lease(ctx, uid, "s1", "a", now, now.Add(time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if st, _ := repo.LeaseState(ctx, uid, "s1", now); st != (LeaseState{Leased: true}) {
+	if st, _ := repo.LeaseState(ctx, uid, "s1", now); st != want {
+		t.Errorf("the lease of the same token = %+v, want %+v", st, want)
+	}
+	// A new token starts the step again.
+	later := now.Add(2 * time.Minute)
+	if err := repo.Lease(ctx, uid, "s1", "b", later, later.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := repo.LeaseState(ctx, uid, "s1", later); st != (LeaseState{Leased: true}) {
 		t.Errorf("a new lease = %+v, want no step and no repair", st)
 	}
 }
 
+// TestEmulatorBuildLease is D-922. A second build waits while the lease
+// of the first holds, takes it after the lease ends, and keeps it when
+// the first build releases late. A delete removes the lease.
 func TestEmulatorBuildLease(t *testing.T) {
 	repo, done := emulatorRepo(t)
 	defer done()

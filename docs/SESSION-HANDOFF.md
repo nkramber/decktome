@@ -20,7 +20,9 @@ Author provider: Claude Code
 
 **The checks.** The Go tests and the 474 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on `54a9f06`: "every check passed".
 
-**The review.** The Gitar pass and the Codex review follow the first push.
+**The review.** The automatic Gitar review of `1bdda93` found three items. The next commit fixes two: the gap guard reads the whole collection, and a lease of the same token keeps its step. The author refuted the third, the art of a basic land from another set, under D-1041. The Gitar CI note named the missing review record, which `make codex-review` writes.
+
+**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. The next clean session does the push wait and the Gitar pass on the new head. It then runs `make verify`, answers the top-level Gitar comments, and runs `make codex-review PR=267`.
 
 **The open work.** The pull request waits for its review loop, the confirmation of the owner, and the auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
 

@@ -83,7 +83,9 @@ func refreshGap(s *State, src FactSource) {
 // the colorless flag included, because the classifier can set either
 // inside the turn.
 func (h *CandidateHints) PoolGap(theme string, named, commanders []string) Gap {
-	if h == nil || h.Index == nil || len(h.owned()) == 0 {
+	// The whole map says whether a collection exists. A reader who owns
+	// no copy of the named sets has the largest gap, and asks (D-1041).
+	if h == nil || h.Index == nil || len(h.Owned) == 0 {
 		return Gap{}
 	}
 	key := h.key(theme) + "|" + strings.Join(h.SetCodes, ",") + "|" + strconv.FormatBool(h.Colorless) +

@@ -84,7 +84,11 @@ func (f *fakeStore) Lease(ctx context.Context, _, id, token string, now, until t
 	if f.leases == nil {
 		f.leases = map[string]fakeLease{}
 	}
-	f.leases[id] = fakeLease{token: token, until: until}
+	next := fakeLease{token: token, until: until}
+	if l, ok := f.leases[id]; ok && l.token == token {
+		next.phase, next.repaired, next.status = l.phase, l.repaired, l.status
+	}
+	f.leases[id] = next
 	return nil
 }
 
