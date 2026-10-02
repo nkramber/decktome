@@ -15,6 +15,32 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-02, PR-109
+
+**Branch `fix/phone-live-check`: PR-109, the header of a phone after the open questions (F-195, D-1036, D-1037).** The pull request is #266.
+
+Author provider: Claude Code
+
+**The base.** `main` is `8c2b725`, from #265. Cloud Build `deploy-api` `a0e0a1fd` and `deploy-web` `2cb963ad` built it with SUCCESS on 2026-10-02 at 01:47:16 and 01:47:56 UTC.
+
+**The live check of PR-108 found F-195.** The owner sent a screenshot of the installed app at the open questions. The header left the top, and a blank band sat under the chat. No scroll and no relaunch cleared it. The owner chose one run of the whole check after the deploy of this fix (D-1037).
+
+**The cause, from a local probe.** The free stack of `make smoke` ran a probe in WebKit and in Chromium at 393 by 659. The sr-only line `reply-announcement` ran past the foot of the main region, so the document grew to 705px. The focus on the open questions scrolled the document by 46px. A probe of `07203ba` read the same fault, so the fault dates from #228.
+
+**The code, done and tested.** The main region of `web/apps/web/src/app/layout.tsx` is `relative` (D-1036). `e2e/phone.spec.ts` reads the document scroll at the open questions. That test fails on the base and passes on the fix.
+
+**The checks.** `make smoke` runs the phone spec, and 3 of 3 tests pass. `make verify` passes: "every check passed", with 473 of 473 web tests. The web tests need Node 22, because Node 20 fails each worker with `ERR_REQUIRE_ESM`.
+
+**The review.** Gitar approved `4284865`, and the author answered both Gitar CI notes. The review record approves effective head `4284865` with no finding. The live iPhone check waits for the deploy under D-1037.
+
+**The open work.** The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828, D-834). After the deploy of this fix, the owner runs the iPhone check one time. It reads a switch of apps during a build, the push, and the deck on the return. It also reads a relaunch at `/` and the header at the open questions. The Cloud Run log then shows a `SetPageHidden` call and a `push: deck ready sent` line.
+
+### 2026-10-01: the owned pool and its gap question, PR-107
+
+**The owner answered OQ-88 and OQ-89 first.** Three fixed checks find a gap, and two answers come in the plan (D-1027, D-1028). Two more points came up in the code: a named card under "Only my cards", and the theme floor of a 60-card deck (D-1031, D-1032).
+
+**The owner sent a screenshot of a toast over a button.** The owner chose a toast under the header on a phone, in this pull request (D-1030, F-194).
+
 ## The resume section of 2026-10-01b, PR-108
 
 **Branch `fix/phone-connection-and-push`: PR-108, the installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** The pull request is #265.

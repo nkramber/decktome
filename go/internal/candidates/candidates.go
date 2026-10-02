@@ -485,7 +485,8 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	}
 	stats.Returned = len(main)
 	stats.UpgradeSize = len(upgrades)
-	stats.ThinTheme = mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && stats.OnThemeOwned < ThemeFloor(req.Format)
+	// A theme with no signal is no theme, so it is never thin (F-196).
+	stats.ThinTheme = mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && !theme.Empty() && stats.OnThemeOwned < ThemeFloor(req.Format)
 	return &List{Candidates: main, Upgrades: upgrades, Reserve: topReserve(reserve, pw.of), Theme: theme, Stats: stats}, nil
 }
 

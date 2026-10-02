@@ -1010,7 +1010,16 @@ type GetSessionResponse struct {
 	// building is true while a build of the session runs, on this instance
 	// or on another one that holds its lease (D-922). A page that reloads
 	// during a build reads it and polls until it ends (REV-046).
-	Building      bool `protobuf:"varint,2,opt,name=building,proto3" json:"building,omitempty"`
+	Building bool `protobuf:"varint,2,opt,name=building,proto3" json:"building,omitempty"`
+	// phase is the step the running build stands at, and repaired says a
+	// repair turn ran in it. A page that reloads during a build shows the
+	// same stepper as the page that started it (F-200, D-1042). Both are
+	// empty when no build runs.
+	Phase    BuildPhase `protobuf:"varint,3,opt,name=phase,proto3,enum=mtg.v1.BuildPhase" json:"phase,omitempty"`
+	Repaired bool       `protobuf:"varint,4,opt,name=repaired,proto3" json:"repaired,omitempty"`
+	// status is the working line the build streamed last, such as
+	// "revising the deck". It is empty when no build runs.
+	Status        string `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1057,6 +1066,27 @@ func (x *GetSessionResponse) GetBuilding() bool {
 		return x.Building
 	}
 	return false
+}
+
+func (x *GetSessionResponse) GetPhase() BuildPhase {
+	if x != nil {
+		return x.Phase
+	}
+	return BuildPhase_BUILD_PHASE_UNSPECIFIED
+}
+
+func (x *GetSessionResponse) GetRepaired() bool {
+	if x != nil {
+		return x.Repaired
+	}
+	return false
+}
+
+func (x *GetSessionResponse) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
 }
 
 // ImportDeckRequest carries one deck list: an Archidekt text export or an
@@ -1385,10 +1415,13 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\x05event\"2\n" +
 	"\x11GetSessionRequest\x12\x1d\n" +
 	"\n" +
-	"session_id\x18\x01 \x01(\tR\tsessionId\"[\n" +
+	"session_id\x18\x01 \x01(\tR\tsessionId\"\xb9\x01\n" +
 	"\x12GetSessionResponse\x12)\n" +
 	"\asession\x18\x01 \x01(\v2\x0f.mtg.v1.SessionR\asession\x12\x1a\n" +
-	"\bbuilding\x18\x02 \x01(\bR\bbuilding\"\xbc\x01\n" +
+	"\bbuilding\x18\x02 \x01(\bR\bbuilding\x12(\n" +
+	"\x05phase\x18\x03 \x01(\x0e2\x12.mtg.v1.BuildPhaseR\x05phase\x12\x1a\n" +
+	"\brepaired\x18\x04 \x01(\bR\brepaired\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\"\xbc\x01\n" +
 	"\x11ImportDeckRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
@@ -1492,32 +1525,33 @@ var file_mtg_v1_agent_service_proto_depIdxs = []int32{
 	20, // 12: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
 	0,  // 13: mtg.v1.ChatResponse.phase:type_name -> mtg.v1.BuildPhase
 	27, // 14: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
-	28, // 15: mtg.v1.ImportDeckRequest.format:type_name -> mtg.v1.FormatId
-	26, // 16: mtg.v1.ImportDeckResponse.deck:type_name -> mtg.v1.Deck
-	29, // 17: mtg.v1.ImportDeckResponse.commander_options:type_name -> mtg.v1.DeckCard
-	30, // 18: mtg.v1.ImportDeckResponse.unresolved:type_name -> mtg.v1.UnresolvedRow
-	26, // 19: mtg.v1.ReadImportBracketResponse.deck:type_name -> mtg.v1.Deck
-	10, // 20: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
-	13, // 21: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
-	1,  // 22: mtg.v1.AgentService.ListSessions:input_type -> mtg.v1.ListSessionsRequest
-	4,  // 23: mtg.v1.AgentService.UpdateSession:input_type -> mtg.v1.UpdateSessionRequest
-	6,  // 24: mtg.v1.AgentService.DeleteSession:input_type -> mtg.v1.DeleteSessionRequest
-	15, // 25: mtg.v1.AgentService.ImportDeck:input_type -> mtg.v1.ImportDeckRequest
-	17, // 26: mtg.v1.AgentService.ReadImportBracket:input_type -> mtg.v1.ReadImportBracketRequest
-	8,  // 27: mtg.v1.AgentService.SetPageHidden:input_type -> mtg.v1.SetPageHiddenRequest
-	12, // 28: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
-	14, // 29: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
-	2,  // 30: mtg.v1.AgentService.ListSessions:output_type -> mtg.v1.ListSessionsResponse
-	5,  // 31: mtg.v1.AgentService.UpdateSession:output_type -> mtg.v1.UpdateSessionResponse
-	7,  // 32: mtg.v1.AgentService.DeleteSession:output_type -> mtg.v1.DeleteSessionResponse
-	16, // 33: mtg.v1.AgentService.ImportDeck:output_type -> mtg.v1.ImportDeckResponse
-	18, // 34: mtg.v1.AgentService.ReadImportBracket:output_type -> mtg.v1.ReadImportBracketResponse
-	9,  // 35: mtg.v1.AgentService.SetPageHidden:output_type -> mtg.v1.SetPageHiddenResponse
-	28, // [28:36] is the sub-list for method output_type
-	20, // [20:28] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	0,  // 15: mtg.v1.GetSessionResponse.phase:type_name -> mtg.v1.BuildPhase
+	28, // 16: mtg.v1.ImportDeckRequest.format:type_name -> mtg.v1.FormatId
+	26, // 17: mtg.v1.ImportDeckResponse.deck:type_name -> mtg.v1.Deck
+	29, // 18: mtg.v1.ImportDeckResponse.commander_options:type_name -> mtg.v1.DeckCard
+	30, // 19: mtg.v1.ImportDeckResponse.unresolved:type_name -> mtg.v1.UnresolvedRow
+	26, // 20: mtg.v1.ReadImportBracketResponse.deck:type_name -> mtg.v1.Deck
+	10, // 21: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
+	13, // 22: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
+	1,  // 23: mtg.v1.AgentService.ListSessions:input_type -> mtg.v1.ListSessionsRequest
+	4,  // 24: mtg.v1.AgentService.UpdateSession:input_type -> mtg.v1.UpdateSessionRequest
+	6,  // 25: mtg.v1.AgentService.DeleteSession:input_type -> mtg.v1.DeleteSessionRequest
+	15, // 26: mtg.v1.AgentService.ImportDeck:input_type -> mtg.v1.ImportDeckRequest
+	17, // 27: mtg.v1.AgentService.ReadImportBracket:input_type -> mtg.v1.ReadImportBracketRequest
+	8,  // 28: mtg.v1.AgentService.SetPageHidden:input_type -> mtg.v1.SetPageHiddenRequest
+	12, // 29: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
+	14, // 30: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
+	2,  // 31: mtg.v1.AgentService.ListSessions:output_type -> mtg.v1.ListSessionsResponse
+	5,  // 32: mtg.v1.AgentService.UpdateSession:output_type -> mtg.v1.UpdateSessionResponse
+	7,  // 33: mtg.v1.AgentService.DeleteSession:output_type -> mtg.v1.DeleteSessionResponse
+	16, // 34: mtg.v1.AgentService.ImportDeck:output_type -> mtg.v1.ImportDeckResponse
+	18, // 35: mtg.v1.AgentService.ReadImportBracket:output_type -> mtg.v1.ReadImportBracketResponse
+	9,  // 36: mtg.v1.AgentService.SetPageHidden:output_type -> mtg.v1.SetPageHiddenResponse
+	29, // [29:37] is the sub-list for method output_type
+	21, // [21:29] is the sub-list for method input_type
+	21, // [21:21] is the sub-list for extension type_name
+	21, // [21:21] is the sub-list for extension extendee
+	0,  // [0:21] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_agent_service_proto_init() }

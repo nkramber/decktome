@@ -70,6 +70,13 @@ type Store interface {
 	Leased(ctx context.Context, uid, id string, now time.Time) (bool, error)
 	// Release ends the lease that token holds.
 	Release(ctx context.Context, uid, id, token string) error
+	// LeaseState reads the lease of a session at now, with the step of
+	// its build (D-1042).
+	LeaseState(ctx context.Context, uid, id string, now time.Time) (sessions.LeaseState, error)
+	// SetStep records the phase or the working line of the build that
+	// holds the lease of a session. An empty value keeps the recorded
+	// one, and a session with no lease records nothing (D-1042).
+	SetStep(ctx context.Context, uid, id string, phase mtgv1.BuildPhase, status string) error
 	// SetHidden records that the page of a session went to the
 	// background, or came back, at the given time. It returns
 	// sessions.ErrNotFound for a session that is not stored (D-1033).
@@ -461,22 +468,26 @@ func (s *Server) GetSession(ctx context.Context, req *connect.Request[mtgv1.GetS
 	if err != nil {
 		return nil, storeError(err)
 	}
-	return connect.NewResponse(&mtgv1.GetSessionResponse{Session: session, Building: s.buildRuns(ctx, uid, id)}), nil
+	b := s.buildRuns(ctx, uid, id)
+	return connect.NewResponse(&mtgv1.GetSessionResponse{
+		Session: session, Building: b.Leased, Phase: b.Phase, Repaired: b.Repaired, Status: b.Status,
+	}), nil
 }
 
 // buildRuns reports whether a build of the session runs, here or on
-// another instance (D-922). A lease that can not be read reports none,
-// so the page shows the stored session and does not poll.
-func (s *Server) buildRuns(ctx context.Context, uid, id string) bool {
-	if _, busy := s.building.Load(buildKey(uid, id)); busy {
-		return true
-	}
-	leased, err := s.store.Leased(ctx, uid, id, s.now())
+// another instance (D-922), and the step it stands at (D-1042). A lease
+// that can not be read reports none, so the page shows the stored
+// session and does not poll. A build of this instance runs whatever the
+// read says.
+func (s *Server) buildRuns(ctx context.Context, uid, id string) sessions.LeaseState {
+	_, busy := s.building.Load(buildKey(uid, id))
+	st, err := s.store.LeaseState(ctx, uid, id, s.now())
 	if err != nil {
 		s.log.WarnContext(ctx, "the build lease could not be read, so the session reads as idle", "session", id, "err", err)
-		return false
+		st = sessions.LeaseState{}
 	}
-	return leased
+	st.Leased = st.Leased || busy
+	return st
 }
 
 // Chat runs one turn and streams what it produced.
@@ -615,8 +626,8 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	}
 	// The turn starts with the reading of the request (D-435), and it
 	// ends with the done phase whatever it produced.
-	s.sendPhase(ctx, stream, session, mtgv1.BuildPhase_BUILD_PHASE_READING)
-	defer s.sendPhase(ctx, stream, session, mtgv1.BuildPhase_BUILD_PHASE_DONE)
+	s.sendPhase(ctx, stream, uid, session, mtgv1.BuildPhase_BUILD_PHASE_READING)
+	defer s.sendPhase(ctx, stream, uid, session, mtgv1.BuildPhase_BUILD_PHASE_DONE)
 	message := withAnswers(req.Msg.GetMessage(), req.Msg.GetAnswers(), session)
 	if len(message) > maxFoldedBytes {
 		return connect.NewError(connect.CodeInvalidArgument, errTooLong)

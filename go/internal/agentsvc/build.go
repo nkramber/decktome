@@ -118,6 +118,10 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	slots := session.GetSlots()
 	format := slots.GetFormat().GetId()
 	setCodes := slots.GetSetCodes()
+	owned, err := s.ownedInSets(ctx, uid, session, idx, owned)
+	if err != nil {
+		return nil, err
+	}
 
 	// The precon exclusion (D-408, D-497): the products' copies leave the
 	// owned counts, so a surplus copy stays usable, and a card with no
@@ -378,7 +382,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		PreconOracleIDs:   preconIDs,
 		PreconLands:       preconLands,
 		DeckID:            deckID,
-		Name:              deckName(slots),
+		Name:              deckName(slots, list.Theme.Empty()),
 		Now:               s.now,
 		BudgetUSD:         slots.GetBudgetUsd(),
 		BudgetWholeDeck:   slots.GetBudgetScope() == mtgv1.BudgetScope_BUDGET_SCOPE_WHOLE_DECK,
@@ -414,6 +418,24 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 	return res, nil
 }
 
+// ownedInSets narrows the owned counts of a deck limited to sets to the
+// copies of those sets (D-1041). The reader chose the sets, so a copy
+// from another set is no copy of this deck. A failed read fails the
+// build: the whole count would put a card of another set in the deck.
+func (s *Server) ownedInSets(ctx context.Context, uid string, session *mtgv1.Session,
+	idx *cards.Index, owned map[string]int32,
+) (map[string]int32, error) {
+	codes := session.GetSlots().GetSetCodes()
+	if len(codes) == 0 || s.collections == nil || session.GetCollectionId() == "" || len(owned) == 0 {
+		return owned, nil
+	}
+	printings, err := s.collections.PrintingCounts(ctx, uid, session.GetCollectionId())
+	if err != nil {
+		return nil, fmt.Errorf("build: the copies of the named sets: %w", err)
+	}
+	return candidates.OwnedInSets(idx, owned, printings, codes), nil
+}
+
 // markOwnedPrintings sets DeckCard.owned_printing to the priciest printing
 // the collection holds of each owned card (D-299). A missing collection
 // or a printing the snapshot dropped leaves the field empty.
@@ -422,8 +444,8 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 // first (D-614). They asked for a Hobbit and Lord of the Rings deck, so
 // their Sol Ring shows the Lord of the Rings art and not the Secret Lair
 // one, even when the Secret Lair copy is worth more. The priciest
-// printing of the named sets wins, and the priciest of the collection
-// answers when the reader owns no copy from them.
+// printing of the named sets wins. A copy from another set is no copy of
+// such a deck (D-1041), so it never shows (F-199).
 func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mtgv1.Session,
 	idx *cards.Index, deck *mtgv1.Deck, setCodes []string,
 ) {
@@ -455,7 +477,7 @@ func (s *Server) markOwnedPrintings(ctx context.Context, uid string, session *mt
 					bestInSet = p
 				}
 			}
-			if bestInSet != nil {
+			if len(inSet) > 0 {
 				best = bestInSet
 			}
 			dc.OwnedPrinting = best
@@ -538,10 +560,11 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	}); err != nil {
 		return err
 	}
+	s.recordStep(ctx, uid, session, mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED, "building the deck")
 	// The shortlist comes first, and the generator reports the steps
 	// after it through its callback (D-435).
-	s.sendPhase(ctx, stream, session, mtgv1.BuildPhase_BUILD_PHASE_SHORTLIST)
-	phase := func(p mtgv1.BuildPhase) { s.sendPhase(ctx, stream, session, p) }
+	s.sendPhase(ctx, stream, uid, session, mtgv1.BuildPhase_BUILD_PHASE_SHORTLIST)
+	phase := func(p mtgv1.BuildPhase) { s.sendPhase(ctx, stream, uid, session, p) }
 	// The build is bounded, so a slow provider ends the turn with an
 	// error instead of a stream that does not end (D-235). It runs
 	// detached from the client, so a disconnect after the paid call
@@ -599,9 +622,11 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 // format under the name, so a name that repeats it reads twice (D-410).
 // A deck with no theme takes the format, because a name must say
 // something.
-func deckName(slots *mtgv1.Slots) string {
+func deckName(slots *mtgv1.Slots, noTheme bool) string {
 	theme := strings.TrimSpace(slots.GetTheme())
-	if theme == "" {
+	// A theme with no signal names no plan, so the format word names the
+	// deck: "the best possible deck" is no name (F-196, D-1038).
+	if theme == "" || noTheme {
 		return generate.FormatWord(slots.GetFormat().GetId()) + " deck"
 	}
 	return theme
@@ -910,7 +935,7 @@ func (s *Server) reviseDeck(ctx context.Context, uid string, session *mtgv1.Sess
 		st.Unlock(name)
 	}
 	snap := st.Snapshot()
-	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: "revising the deck"}})
+	s.sendStep(ctx, stream, uid, session, "revising the deck")
 	bctx, cancel := detached(ctx, s.buildDeadline())
 	defer cancel()
 	// A card the reader asked to add must be one this app can put in the
@@ -918,6 +943,14 @@ func (s *Server) reviseDeck(ctx context.Context, uid string, session *mtgv1.Sess
 	// under an owned-only pool, are both refused here with a word: the
 	// engine blocks a deck that lacks a kept card, and no repair turn
 	// closes a block the pool can not answer (F-80).
+	if s.index != nil {
+		if idx := s.index.Current(); idx != nil {
+			var err error
+			if owned, err = s.ownedInSets(ctx, uid, session, idx, owned); err != nil {
+				return err
+			}
+		}
+	}
 	keep, refused := s.keepable(base, brief.Keep, owned, slots.GetPoolRule())
 	rev := &generate.Revision{
 		BaseDeckID:   base.GetId(),
@@ -929,7 +962,7 @@ func (s *Server) reviseDeck(ctx context.Context, uid string, session *mtgv1.Sess
 		SwapBasics:   brief.SwapBasics,
 		LandKinds:    brief.LandKinds,
 	}
-	res, err := s.buildDeckFrom(bctx, uid, session, st, owned, acc, rev, func(p mtgv1.BuildPhase) { s.sendPhase(ctx, stream, session, p) })
+	res, err := s.buildDeckFrom(bctx, uid, session, st, owned, acc, rev, func(p mtgv1.BuildPhase) { s.sendPhase(ctx, stream, uid, session, p) })
 	// The revision is a paid call, and the total holds it (D-447).
 	session.Usage = addUsage(cloneUsage(usageBefore), acc.Report())
 	if err != nil || res == nil {

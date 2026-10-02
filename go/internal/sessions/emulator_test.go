@@ -390,6 +390,50 @@ func TestEmulatorListRenameDelete(t *testing.T) {
 // TestEmulatorBuildLease is D-922. A second build waits while the lease
 // of the first holds, takes it after the lease ends, and keeps it when
 // the first build releases late. A delete removes the lease.
+// TestEmulatorBuildPhase is D-1042 (F-200). The lease records the step
+// of its build, a repair, and the working line, a new lease starts both again, and a
+// session with no lease records nothing.
+func TestEmulatorBuildPhase(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	ctx := t.Context()
+	uid := "phase-" + time.Now().UTC().Format("150405.000000000")
+	if err := repo.Put(ctx, uid, &mtgv1.Session{Id: "s1"}, sampleState(), 0); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Unix(1000, 0).UTC()
+	if err := repo.SetStep(ctx, uid, "s1", mtgv1.BuildPhase_BUILD_PHASE_READING, ""); err != nil {
+		t.Fatal(err)
+	}
+	if st, err := repo.LeaseState(ctx, uid, "s1", now); err != nil || st != (LeaseState{}) {
+		t.Fatalf("a session with no lease reads %+v (%v), want nothing", st, err)
+	}
+	if err := repo.Lease(ctx, uid, "s1", "a", now, now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range []mtgv1.BuildPhase{mtgv1.BuildPhase_BUILD_PHASE_REPAIRING, mtgv1.BuildPhase_BUILD_PHASE_CHECKING} {
+		if err := repo.SetStep(ctx, uid, "s1", p, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := repo.SetStep(ctx, uid, "s1", mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED, "revising the deck"); err != nil {
+		t.Fatal(err)
+	}
+	want := LeaseState{Leased: true, Phase: mtgv1.BuildPhase_BUILD_PHASE_CHECKING, Repaired: true, Status: "revising the deck"}
+	if st, err := repo.LeaseState(ctx, uid, "s1", now); err != nil || st != want {
+		t.Errorf("during the build = %+v (%v), want %+v", st, err, want)
+	}
+	if st, _ := repo.LeaseState(ctx, uid, "s1", now.Add(2*time.Minute)); st != (LeaseState{}) {
+		t.Errorf("after the lease ended = %+v, want nothing", st)
+	}
+	if err := repo.Lease(ctx, uid, "s1", "a", now, now.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := repo.LeaseState(ctx, uid, "s1", now); st != (LeaseState{Leased: true}) {
+		t.Errorf("a new lease = %+v, want no step and no repair", st)
+	}
+}
+
 func TestEmulatorBuildLease(t *testing.T) {
 	repo, done := emulatorRepo(t)
 	defer done()

@@ -92,6 +92,20 @@ func (r *Repo) leaseDoc(uid, id string) *firestore.DocumentRef {
 type storedLease struct {
 	Token string    `firestore:"token"`
 	Until time.Time `firestore:"until"`
+	// Phase is the step of the build, and Repaired says a repair ran
+	// (D-1042). A new lease starts both again.
+	Phase    int32  `firestore:"phase,omitempty"`
+	Repaired bool   `firestore:"repaired,omitempty"`
+	Status   string `firestore:"status,omitempty"`
+}
+
+// LeaseState is what a reloaded page reads of a build (D-1042).
+type LeaseState struct {
+	Leased   bool
+	Phase    mtgv1.BuildPhase
+	Repaired bool
+	// Status is the working line the build streamed last.
+	Status string
 }
 
 // readLease reads the lease inside a transaction. A missing lease reads
@@ -143,6 +157,50 @@ func (r *Repo) Leased(ctx context.Context, uid, id string, now time.Time) (bool,
 		return false, err
 	}
 	return now.Before(l.Until), nil
+}
+
+// LeaseState reads the lease of a session at now, with the step of its
+// build. A lease that ended reads as no build.
+func (r *Repo) LeaseState(ctx context.Context, uid, id string, now time.Time) (LeaseState, error) {
+	snap, err := r.leaseDoc(uid, id).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return LeaseState{}, nil
+	}
+	if err != nil {
+		return LeaseState{}, err
+	}
+	var l storedLease
+	if err := snap.DataTo(&l); err != nil {
+		return LeaseState{}, err
+	}
+	if !now.Before(l.Until) {
+		return LeaseState{}, nil
+	}
+	return LeaseState{Leased: true, Phase: mtgv1.BuildPhase(l.Phase), Repaired: l.Repaired, Status: l.Status}, nil
+}
+
+// SetStep records the step of the build that holds the lease of a
+// session: its phase, or its working line (D-1042). An empty phase or an
+// empty line keeps the one recorded. A session with no lease records
+// nothing, because no page polls for it.
+func (r *Repo) SetStep(ctx context.Context, uid, id string, phase mtgv1.BuildPhase, status string) error {
+	ref := r.leaseDoc(uid, id)
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		l, err := readLease(tx, ref)
+		if err != nil || l.Token == "" {
+			return err
+		}
+		if phase != mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED {
+			l.Phase = int32(phase)
+		}
+		if phase == mtgv1.BuildPhase_BUILD_PHASE_REPAIRING {
+			l.Repaired = true
+		}
+		if status != "" {
+			l.Status = status
+		}
+		return tx.Set(ref, l)
+	})
 }
 
 // Release ends the lease that token holds. The lease of another token

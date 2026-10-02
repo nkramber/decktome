@@ -6,25 +6,23 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-02)
+## RESUME HERE (2026-10-02b)
 
-**Branch `fix/phone-live-check`: PR-109, the header of a phone after the open questions (F-195, D-1036, D-1037).** The pull request is #266.
+**Branch `fix/phone-live-check-2`: PR-110, five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** The pull request is #PR_NUMBER.
 
 Author provider: Claude Code
 
-**The base.** `main` is `8c2b725`, from #265. Cloud Build `deploy-api` `a0e0a1fd` and `deploy-web` `2cb963ad` built it with SUCCESS on 2026-10-02 at 01:47:16 and 01:47:56 UTC.
+**The base.** `main` is `e872724`, from #266. Cloud Build `deploy-web` `bf58ef3a` built it with SUCCESS on 2026-10-02 at 03:26:48 UTC. `deploy-api` did not run, because its trigger reads `go/**` and `docker/**` alone, and #266 changed neither. The API of `8c2b725` holds the same Go code.
 
-**The live check of PR-108 found F-195.** The owner sent a screenshot of the installed app at the open questions. The header left the top, and a blank band sat under the chat. No scroll and no relaunch cleared it. The owner chose one run of the whole check after the deploy of this fix (D-1037).
+**The live check of PR-108 and PR-109 (D-1037).** The owner ran it on the iPhone at about 16:00 UTC, in session `Ubmw8vvPDr6ADDGgReew`. The header stayed at the top at the open questions. The log holds nine `SetPageHidden` calls and `push: deck ready sent` at 16:03:28 UTC for deck `pvlzIYsyybjb79SRBGWN`. The owner found five faults, F-196 to F-200, and chose one pull request for them (D-1043).
 
-**The cause, from a local probe.** The free stack of `make smoke` ran a probe in WebKit and in Chromium at 393 by 659. The sr-only line `reply-announcement` ran past the foot of the main region, so the document grew to 705px. The focus on the open questions scrolled the document by 46px. A probe of `07203ba` read the same fault, so the fault dates from #228.
+**The code, done and tested.** A theme with no signal is no theme (D-1038). "Commander" before a format noun names the format (D-1039). The push is the title alone (D-1040). A copy counts only from a named set (D-1041). The lease records the step of a build, and a reloaded page shows it (D-1042).
 
-**The code, done and tested.** The main region of `web/apps/web/src/app/layout.tsx` is `relative` (D-1036). `e2e/phone.spec.ts` reads the document scroll at the open questions. That test fails on the base and passes on the fix.
+**The checks.** The Go tests and the 474 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. CHECKS_PENDING
 
-**The checks.** `make smoke` runs the phone spec, and 3 of 3 tests pass. `make verify` passes: "every check passed", with 473 of 473 web tests. The web tests need Node 22, because Node 20 fails each worker with `ERR_REQUIRE_ESM`.
+**The review.** REVIEW_PENDING
 
-**The review.** Gitar approved `4284865`, and the author answered both Gitar CI notes. The review record approves effective head `4284865` with no finding. The live iPhone check waits for the deploy under D-1037.
-
-**The open work.** The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828, D-834). After the deploy of this fix, the owner runs the iPhone check one time. It reads a switch of apps during a build, the push, and the deck on the return. It also reads a relaunch at `/` and the header at the open questions. The Cloud Run log then shows a `SetPageHidden` call and a `push: deck ready sent` line.
+**The open work.** The pull request waits for its review loop, the confirmation of the owner, and the auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
 
 ## How to resume
 
@@ -97,7 +95,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The live check of PR-108 and PR-109 on the iPhone of the owner** (D-1033, D-1034, D-1037). After the deploy of PR-109, switch apps during a build. Then read the push, the deck, a relaunch, and the header.
+0. **The live check of PR-110 on the iPhone of the owner** (D-1038 to D-1042). After the deploy, send the prompt of F-196 again. Read the questions, the art, the push, and a relaunch.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -121,12 +119,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-01: the owned pool and its gap question, PR-107
-
-**The owner answered OQ-88 and OQ-89 first.** Three fixed checks find a gap, and two answers come in the plan (D-1027, D-1028). Two more points came up in the code: a named card under "Only my cards", and the theme floor of a 60-card deck (D-1031, D-1032).
-
-**The owner sent a screenshot of a toast over a button.** The owner chose a toast under the header on a phone, in this pull request (D-1030, F-194).
-
 ### 2026-10-01b: the phone connection and the push, PR-108
 
 **The owner answered OQ-90 first.** The page tells the API when it goes to the background (D-1033). The session read the logs of 2026-09-30 before any code, and found the order of F-190.
@@ -138,6 +130,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The deploy of #265 read SUCCESS.** The owner started the iPhone check, and sent a screenshot of a blank band at the open questions (F-195).
 
 **The owner said that the band was new.** A probe of `07203ba` read the same fault, so it dates from #228. The owner chose one run of the whole check after this deploy (D-1037).
+
+### 2026-10-02b: five faults of the live check, PR-110
+
+**The deploy check read `deploy-web` SUCCESS for `e872724`.** `deploy-api` did not run for a merge of web files alone. The owner ran the iPhone check, and the header and the push passed.
+
+**The owner sent five faults with screenshots.** The owner chose one pull request, and rejected both art options for a rule of owned copies. The owner also asked for a check of each claim before a question.
 
 ## The archive
 

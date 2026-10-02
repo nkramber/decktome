@@ -134,6 +134,9 @@ export function DeckScreen() {
       initial={initial}
       session={session}
       building={sessionQuery.data?.building}
+      buildPhase={sessionQuery.data?.phase}
+      buildRepaired={sessionQuery.data?.repaired}
+      buildStatus={sessionQuery.data?.status}
       onBuildEnded={onBuildEnded}
       deckOverride={deck}
       baseOverride={base}

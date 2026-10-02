@@ -197,6 +197,22 @@ type ThemeMatch struct {
 	generic []string
 }
 
+// Empty reports whether the theme holds no signal, so no card can be on
+// it. "The best possible deck" is all stop words: the owned count of its
+// theme is 0 for each collection, and a thin-theme claim on it is false
+// (F-196, D-1038).
+func (m ThemeMatch) Empty() bool {
+	for _, s := range [][]string{
+		m.PayoffSlugs, m.Slugs, m.PayoffText, m.Keywords, m.Subtypes, m.Types,
+		m.Text, m.LandSlugs, m.LandText, m.CardSlugs, m.NoncreatureSlugs, m.TypeText,
+	} {
+		if len(s) > 0 {
+			return false
+		}
+	}
+	return true
+}
+
 // noisyShare is the share of the card database above which a generic
 // text needle discriminates nothing (D-411). A needle that sits in the
 // text of one card in ten ranks the pool on chance, and "you" sat in

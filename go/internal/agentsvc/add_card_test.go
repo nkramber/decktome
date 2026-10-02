@@ -137,12 +137,47 @@ func TestOwnedPrintingPrefersTheNamedSets(t *testing.T) {
 		t.Errorf("the printing is from %q, want the dearest of the collection", got)
 	}
 
-	// A reader who owns no copy from the named sets keeps the dearest of
-	// the collection: an empty art is worse than an art of another set.
+	// A copy from another set is no copy of a set-limited deck, so its
+	// art never shows (F-199, D-1041).
 	other := deck()
 	s.markOwnedPrintings(t.Context(), "u-1", session, idx, other, []string{"blb"})
-	if got := other.GetCards()[0].GetOwnedPrinting().GetSetCode(); got != "SLD" {
-		t.Errorf("the printing is from %q, want the dearest of the collection", got)
+	if got := other.GetCards()[0].GetOwnedPrinting(); got != nil {
+		t.Errorf("the deck shows the art of %q, a set the reader did not name", got.GetSetCode())
+	}
+}
+
+// TestOwnedInSetsCountsTheCopiesOfTheNamedSets is D-1041 (F-199). The
+// reader owns Ghost Quarter in a Secret Lair printing alone, and limits
+// the deck to the Lord of the Rings sets. Ghost Quarter is not owned for
+// that deck, and a Lord of the Rings Sol Ring is.
+func TestOwnedInSetsCountsTheCopiesOfTheNamedSets(t *testing.T) {
+	idx := cards.NewIndex(
+		[]*mtgv1.Card{
+			{OracleId: "o-sol", Name: "Sol Ring", TypeLine: "Artifact"},
+			{OracleId: "o-gq", Name: "Ghost Quarter", TypeLine: "Land"},
+		},
+		[]cards.Printing{
+			{ScryfallID: "p-sol-sld", OracleID: "o-sol", Name: "Sol Ring", SetCode: "SLD", CollectorNumber: "1"},
+			{ScryfallID: "p-sol-ltc", OracleID: "o-sol", Name: "Sol Ring", SetCode: "LTC", CollectorNumber: "2"},
+			{ScryfallID: "p-gq-sld", OracleID: "o-gq", Name: "Ghost Quarter", SetCode: "SLD", CollectorNumber: "3"},
+		},
+		nil, time.Unix(1000, 0).UTC())
+	coll := fakeCollections{printingCounts: map[string]int32{"p-sol-sld": 2, "p-sol-ltc": 1, "p-gq-sld": 4}}
+	s := &Server{index: fixedIndex{idx}, collections: coll, log: slog.New(slog.NewTextHandler(io.Discard, nil))}
+	whole := map[string]int32{"o-sol": 3, "o-gq": 4}
+
+	limited := &mtgv1.Session{Id: "s-1", CollectionId: "c-1", Slots: &mtgv1.Slots{SetCodes: []string{"ltr", "ltc"}}}
+	got, err := s.ownedInSets(t.Context(), "u-1", limited, idx, whole)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got["o-gq"] != 0 || got["o-sol"] != 1 {
+		t.Errorf("owned for the Lord of the Rings sets = %v, want Sol Ring 1 and no Ghost Quarter", got)
+	}
+
+	open := &mtgv1.Session{Id: "s-2", CollectionId: "c-1"}
+	if got, _ := s.ownedInSets(t.Context(), "u-1", open, idx, whole); got["o-gq"] != 4 || got["o-sol"] != 3 {
+		t.Errorf("owned with no set limit = %v, want the whole counts", got)
 	}
 }
 

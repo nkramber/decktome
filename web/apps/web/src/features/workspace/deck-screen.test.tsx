@@ -1,4 +1,5 @@
 import { Code, ConnectError } from "@connectrpc/connect";
+import { BuildPhase } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { RerunCase } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FormatId, SixtyStep } from "@mtg/api-client/mtg/v1/format_pb";
 import { act, screen, waitFor, within } from "@testing-library/react";
@@ -96,10 +97,18 @@ describe("DeckScreen", () => {
     });
 
     it("says so, and moves to the new deck when it ends", async () => {
-      getSession.mockResolvedValueOnce({ session: { id: "s1", turns: [], deckIds: ["d1"] }, building: true });
+      getSession.mockResolvedValueOnce({
+        session: { id: "s1", turns: [], deckIds: ["d1"] },
+        building: true,
+        phase: BuildPhase.CHECKING,
+        status: "revising the deck",
+      });
       getSession.mockResolvedValue({ session: { id: "s1", turns: [], deckIds: ["d1", "d2"] }, building: false });
       const { router } = await renderAt("/decks/d1");
-      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+      // The line and the step the server stored, as the page that sent
+      // the revision shows them (F-200, D-1042).
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("Revising the deck...");
+      expect(within(screen.getByTestId("build-stepper")).getByText("Check").closest("li")).toHaveAttribute("aria-current", "step");
       await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
       await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d2"));
     });

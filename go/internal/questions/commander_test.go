@@ -750,6 +750,13 @@ func TestSuperlativeDelegatesTheCommander(t *testing.T) {
 	if delegatesCommander("buy the best lands you can find") {
 		t.Error("a message that names no commander handed the commander choice over")
 	}
+	// The format word is not the card (F-197, D-1039).
+	if delegatesCommander("Build me the best possible commander deck using ONLY the Lord of the Rings set") {
+		t.Error("the format word handed the commander choice over")
+	}
+	if !delegatesCommander("Build the best commander deck, and pick the best commander for it") {
+		t.Error("a delegation beside the format word was missed")
+	}
 	first := classifyOut{Format: "commander", Theme: "lifegain", PoolRule: "unknown", BudgetUSD: 60}
 	first.Colors = []string{"W", "B"}
 	second := classifyOut{Format: "unknown", PoolRule: "owned_first"}
