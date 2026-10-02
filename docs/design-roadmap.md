@@ -3020,7 +3020,7 @@ The live check after the deploy runs on the iPhone of the owner.
 
 > *In plain English:* after a deploy, the app no longer shows the home page and then reloads it. Cards with two halves on one front show one picture. A phone gets a large card view, a button back to the top, and tidier deck buttons.
 
-**PR-112: Four results of the live check of PR-111 (F-201, F-203, F-204, D-1055 to D-1059).** The live check of PR-111 ran on `d38bca5` (D-1055). The owner chose one pull request for its four results.
+**PR-112: Four results of the live check of PR-111 (F-201, F-203, F-204, D-1055 to D-1059).** ✅ merged as #269. The mark comes before any review (D-822). The live check of PR-111 ran on `d38bca5` (D-1055). The owner chose one pull request for its four results.
 
 - **The chat foot (D-1056).** `useStickToBottom` keeps the chat at its foot after a send and while the reader stays there. It replaces the anchor of D-360.
 - **The card price (D-1057).** The card index gives each card the price of its cheapest paper printing. `NotForPlay` keeps memorabilia, gold borders, and oversized cards out.
