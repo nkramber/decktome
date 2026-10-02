@@ -6,30 +6,25 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-01b)
+## RESUME HERE (2026-10-02)
 
-**Branch `fix/phone-connection-and-push`: PR-108, the installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** The pull request is #265.
+**Branch `fix/phone-live-check`: PR-109, the header of a phone after the open questions (F-195, D-1036, D-1037).** The pull request is #266.
 
 Author provider: Claude Code
 
-**The base.** `main` is `5353fbe`, from #264. Cloud Build `deploy-api` `4822f058` and `deploy-web` `b0e45ccd` built it with SUCCESS on 2026-10-01 at 23:32:49 and 23:33:31 UTC.
+**The base.** `main` is `8c2b725`, from #265. Cloud Build `deploy-api` `a0e0a1fd` and `deploy-web` `2cb963ad` built it with SUCCESS on 2026-10-02 at 01:47:16 and 01:47:56 UTC.
 
-**The owner answers.** OQ-90 (D-1033): the page tells the API when it goes to the background. A launch at `/` opens the session of a running build (D-1034). The owner does not remember the screen of 17:58 on 2026-09-30, so the logs alone give the cause.
+**The live check of PR-108 found F-195.** The owner sent a screenshot of the installed app at the open questions. The header left the top, and a blank band sat under the chat. No scroll and no relaunch cleared it. The owner chose one run of the whole check after the deploy of this fix (D-1037).
 
-**The cause of F-190, from the logs.** The phone suspended the page, and the stream broke on the phone alone. Cloud Run kept the request open for 109 seconds, so the context did not end and no push went out (F-192). The page wrote a failure line, gave the answer back, and started no build watch. The send at 17:58:04 met the build in progress in 3 ms. The launch at 17:58:11 opened `/` and read no session.
+**The cause, from a local probe.** The free stack of `make smoke` ran a probe in WebKit and in Chromium at 393 by 659. The sr-only line `reply-announcement` ran past the foot of the main region, so the document grew to 705px. The focus on the open questions scrolled the document by 46px. A probe of `07203ba` read the same fault, so the fault dates from #228.
 
-**The code, done and tested.**
+**The code, done and tested.** The main region of `web/apps/web/src/app/layout.tsx` is `relative` (D-1036). `e2e/phone.spec.ts` reads the document scroll at the open questions. That test fails on the base and passes on the fix.
 
-- `SetPageHidden` writes `private/presence` of the session. A build sends the push when the stream ended, or when the page reported a leave after the start of the turn.
-- A build that lost its stream reads the session again, with no failure line. A return to view reads it at once.
-- `web/apps/web/src/features/chat/running-build.ts` keeps the id of a running build, and `main.tsx` opens it at a launch at `/`.
-- `go.opentelemetry.io/otel/sdk` moves to v1.45.0 for GO-2026-6505, because the advisory failed `govulncheck` on each pull request (D-1035).
+**The checks.** `make smoke` runs the phone spec, and 3 of 3 tests pass. `make verify` passes: "every check passed", with 473 of 473 web tests. The web tests need Node 22, because Node 20 fails each worker with `ERR_REQUIRE_ESM`.
 
-**The checks.** `make verify` passes on `77b7999`: "every check passed", with 472 of 472 web tests. `TestEmulatorPagePresence` passes on the local emulator. `TestEmulatorListRenameDelete` fails on the base commit too, because older data in the local emulator holds its fixed id.
+**The review.** The Gitar pass and the Codex review follow the first push.
 
-**The review.** Gitar approved `73d659b`. Codex closed P2-1 at `e9e2844`, and approved `73d659b` after the gate followed D-1007. `docs/reviews/pr-265-response.md` answers both rounds.
-
-**The open work.** The owner confirms the merge, then the author turns on auto-merge (D-828, D-834). After deploy, the owner runs the live check on an iPhone. It reads a switch of apps during a build, a push, and the deck on the return.
+**The open work.** After the deploy of this fix, the owner runs the iPhone check one time. It reads a switch of apps during a build, the push, and the deck on the return. It also reads a relaunch at `/` and the header at the open questions. The Cloud Run log then shows a `SetPageHidden` call and a `push: deck ready sent` line.
 
 ## How to resume
 
@@ -102,7 +97,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The live check of PR-108 on the iPhone of the owner** (D-1033, D-1034). After the deploy, switch apps during a build. Then read the push, the deck on the return, and a relaunch.
+0. **The live check of PR-108 and PR-109 on the iPhone of the owner** (D-1033, D-1034, D-1037). After the deploy of PR-109, switch apps during a build. Then read the push, the deck, a relaunch, and the header.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -126,12 +121,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-30b: four screen fixes, PR-106
-
-**The deploy of I-1 read SUCCESS.** No deck was stale, and the session can not write under `users/`. The owner chose to wait for a real stale deck (D-1023).
-
-**The owner asked for research before the F-187 fix.** The session read the WebKit code and five reports of the iOS 26 and iOS 27 blur. A 16px buffer alone leaves the header in the blur, so the owner chose a sticky header (D-1024).
-
 ### 2026-10-01: the owned pool and its gap question, PR-107
 
 **The owner answered OQ-88 and OQ-89 first.** Three fixed checks find a gap, and two answers come in the plan (D-1027, D-1028). Two more points came up in the code: a named card under "Only my cards", and the theme floor of a 60-card deck (D-1031, D-1032).
@@ -144,6 +133,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The relaunch at `/` lost the build screen.** The owner chose a launch that opens the session of a running build (D-1034).
 
+### 2026-10-02: the live check of PR-108, PR-109
+
+**The deploy of #265 read SUCCESS.** The owner started the iPhone check, and sent a screenshot of a blank band at the open questions (F-195).
+
+**The owner said that the band was new.** A probe of `07203ba` read the same fault, so it dates from #228. The owner chose one run of the whole check after this deploy (D-1037).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-01, the records of 2026-08-31 to 2026-09-30, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-01b, the records of 2026-08-31 to 2026-09-30, and 104 more sections, word for word. Read it for the detail behind a decision.

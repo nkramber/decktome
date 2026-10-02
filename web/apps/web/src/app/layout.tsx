@@ -98,7 +98,12 @@ export function Layout() {
           not apply to it, because overflow-y auto makes it a scroll
           container, so no min-h-0 is needed here. e2e/phone.spec.ts
           reads that rule at 390 pixels. */}
-      <main className="grow overflow-y-auto print:overflow-visible">
+      {/* The main region is the containing block of each absolute box in
+          it, so it clips them. An sr-only line past its foot otherwise
+          made the document taller than the screen. A focus then scrolled
+          the document, which no finger scrolls back, and the header left
+          the top of a phone (F-195, D-1036). */}
+      <main className="relative grow overflow-y-auto print:overflow-visible">
         <Outlet />
       </main>
 

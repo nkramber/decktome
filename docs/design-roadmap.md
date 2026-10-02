@@ -591,6 +591,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-192 | **The push of a finished build misses a user who switches apps.** PR-26 sends the push only when the request context of the build has ended (D-1005). On 2026-09-30 the owner switched apps during the build of session `kTDSJKUNgv44i7wk6hTY`. The request ran its full 109 seconds, the build stored deck `0WOrc61TuCcIy3gCKiEI` at about 17:59:11 UTC, and the log holds no `push:` line. No notification arrived. So the context did not end, and the server did not see the page leave. | ✅ PR-108: the page tells the API when it goes to the background, and a build that stores its deck while the page is hidden sends the push (D-1033). |
 | F-193 | **On a phone, the deck screen shows the chat before the deck.** Below the `lg` width of 1024px, `ChatPanel` of `web/apps/web/src/features/chat/session-page.tsx` puts the chat box above the deck in one column. So a user who opens a deck reads the chat first, and the deck summary sits under it. | ✅ PR-106 collapses the chat of the deck screen below the `lg` width, and one tap opens it. A turn that works or asks opens it again (D-1017, D-1026). |
 | F-194 | **On a phone, a toast covers the last button of a page.** The owner reported it on 2026-10-01 with a screenshot of the installed app. The toast "Chat deleted" sat over the Build button of the box "Build a new deck". Sonner put each toast 16px over the bottom buffer, and that button is the last control of the page. | ✅ PR-107: on a phone, `Toaster` of `web/apps/web/src/components/ui/toaster.tsx` shows each toast under the header, and the desktop keeps the bottom right (D-1030). |
+| F-195 | **On a phone, the header leaves the top when the questions open.** The owner reported it on 2026-10-02 with a screenshot of the installed app, in session `R29hLFZ88fmjqgTHLI8Q`. A blank band sat under the chat, and no scroll and no relaunch cleared it. The line `reply-announcement` of `ChatPanel` is an absolute box with no positioned ancestor, so it ran past the foot of the main region. The document grew 46px taller than the screen, and the focus on the open questions scrolled it. The fault dates from #228 (2026-09-25), and a probe of `07203ba` read it too. | ✅ PR-109: the main region of `web/apps/web/src/app/layout.tsx` is `relative`, so it clips each absolute box in it (D-1036). |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2952,6 +2953,24 @@ The live check after the deploy runs on the iPhone of the owner. A switch of app
 
 > *In plain English:* when your phone puts the app to sleep during a build, the app no longer shows a dead error. It picks the build up again, and it reopens the build after a restart. When you leave the app during a build, you get a notification when the deck is ready.
 
+**PR-109: The header of a phone after the open questions (F-195, D-1036, D-1037).** ✅ merged as #266. The mark comes before any review (D-822). The live check of PR-108 found the fault before its push part (D-1037).
+
+- **The cause (F-195).** The line `reply-announcement` of `ChatPanel` is an absolute box, and it has no positioned ancestor. So the main region did not clip it, and the document grew past the screen. The focus on the open questions then scrolled the document, and the header left the top.
+- **The age.** A probe of `07203ba`, the base before #264 and #265, read the same fault. The box came in with #228 on 2026-09-25. A longer question form gives a larger band.
+- **The fix (D-1036).** The main region of `web/apps/web/src/app/layout.tsx` is `relative`, so it clips each absolute box in it.
+
+Gate:
+- `e2e/phone.spec.ts` sends "Life gain/link" at 393 by 659, and it reads a document scroll of 0 at the open questions.
+- That test fails on the base, with a document of 705px on a screen of 659px.
+- `make smoke` passes.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy runs on the iPhone of the owner (D-1037). It reads the push and the relaunch of PR-108, and the header at the open questions. Production deploys from `main` alone (D-579).
+
+> *In plain English:* when the agent asked its questions on a phone, the page moved up. The header left the screen, and a blank band showed under the chat. The page now stays in place.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3352,6 +3371,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 101. **PR-106** four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).
 102. **PR-107** the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1027 to D-1032).
 103. **PR-108** the installed app after a dropped connection, and the push of a finished build (F-190, F-192, D-1033, D-1034).
+104. **PR-109** the header of a phone after the open questions (F-195, D-1036, D-1037).
 
 ## 9. Open questions
 

@@ -42,16 +42,20 @@ async function readsUpAndDownAlone(page: import("@playwright/test").Page, where:
 // theShellFitsTheScreen reads the document against the viewport. The
 // app shell is the whole window and the main region is the one thing
 // that scrolls, so a document taller than the screen is a page that
-// bounces and shows empty ground under the app (D-625, D-626).
+// bounces and shows empty ground under the app (D-625, D-626). A
+// document scrolled by a focus hides the header, and no finger scrolls it
+// back (F-195, D-1036).
 async function theShellFitsTheScreen(page: import("@playwright/test").Page, where: string) {
   const got = await page.evaluate(() => ({
     docHeight: document.documentElement.scrollHeight,
     bodyHeight: document.body.scrollHeight,
     viewport: window.innerHeight,
+    scrollY: window.scrollY,
     bodyOverflow: getComputedStyle(document.body).overflowY,
   }));
   expect(got.docHeight, `${where}: the document is taller than the screen, so it scrolls under the app`).toBeLessThanOrEqual(got.viewport + 1);
   expect(got.bodyOverflow, `${where}: the body scrolls, and the main region should be the one that does`).toBe("hidden");
+  expect(got.scrollY, `${where}: the document scrolled, so the header left the top of the screen`).toBe(0);
 }
 
 test("every screen of a phone reads up and down alone", async ({ page }) => {
@@ -92,6 +96,35 @@ test("every screen of a phone reads up and down alone", async ({ page }) => {
 // The deck screen holds the widest content of the app: the card grid,
 // the profile table, the buy list, and the card sheet. It is the screen
 // the owner read when the app scrolled sideways.
+// The open questions take the focus, and the focus scrolls the main
+// region alone. An absolute box past the foot of the main region made the
+// document taller than the screen, so the focus scrolled the document and
+// the header left the top (F-195, D-1036). 659 pixels is the iPhone 15
+// with the bars of Safari, so the three questions run past the screen.
+test("the open questions of a phone keep the header at the top", async ({ page }) => {
+  await page.setViewportSize({ width: 393, height: 659 });
+  const email = `phone-questions-${Date.now()}@example.com`;
+  await page.goto("/sign-in");
+  await page.getByRole("button", { name: "New here? Create account" }).click();
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill("phone-pass");
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  await expect(page).toHaveURL(/\/session\/new$/);
+
+  await page.goto("/collection");
+  await page.getByRole("button", { name: "Upload a collection" }).click();
+  await page.locator('input[type="file"]').setInputFiles(collectionCsv);
+  await page.getByRole("button", { name: "Upload", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Import result" })).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("button", { name: "Continue to chat" }).click();
+
+  await page.getByLabel("Your message").fill("Life gain/link");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByTestId("open-questions")).toBeFocused({ timeout: 120_000 });
+  await theShellFitsTheScreen(page, "the open questions");
+});
+
 test("the deck screen of a phone reads up and down alone", async ({ page }) => {
   const email = `phone-deck-${Date.now()}@example.com`;
   await page.goto("/sign-in");
