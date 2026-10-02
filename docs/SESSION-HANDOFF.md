@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on `77b7999`: "every check passed", with 472 of 472 web tests. `TestEmulatorPagePresence` passes on the local emulator. `TestEmulatorListRenameDelete` fails on the base commit too, because older data in the local emulator holds its fixed id.
 
-**The open work.** The live check on the iPhone of the owner waits for the deploy of the merge. It reads a switch of apps during a build, a push, and the deck on the return. The review waits for the push of the branch.
+**The review.** Codex reviewed effective head `673c86f`. Verdict: Changes required. Finding P2-1: an active page that mounts hidden sends no initial presence report. The live iPhone check waits for the deploy.
 
 ## How to resume
 
