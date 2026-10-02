@@ -5,6 +5,7 @@ import { Link, Outlet } from "react-router";
 import { useAuth } from "../features/auth/auth-context";
 import { useInviteState } from "../features/auth/invite-state";
 import { signOutAndClear } from "../features/auth/sign-out";
+import { BackToTop } from "../features/shell/back-to-top";
 import { InstallHint } from "../features/shell/install-hint";
 import { errorMessage } from "../lib/errors";
 import { useAppStore } from "../lib/store";
@@ -34,6 +35,7 @@ export function Layout() {
   // height of the header from --header-height (F-194, D-1030). The
   // header wraps on a narrow screen, so its height can change.
   const header = useRef<HTMLElement>(null);
+  const main = useRef<HTMLElement>(null);
   useEffect(() => {
     const el = header.current;
     if (!el) return;
@@ -103,9 +105,10 @@ export function Layout() {
           made the document taller than the screen. A focus then scrolled
           the document, which no finger scrolls back, and the header left
           the top of a phone (F-195, D-1036). */}
-      <main className="relative grow overflow-y-auto print:overflow-visible">
+      <main ref={main} className="relative grow overflow-y-auto print:overflow-visible">
         <Outlet />
       </main>
+      <BackToTop scroller={main} />
 
       <InstallHint />
       <Toaster />

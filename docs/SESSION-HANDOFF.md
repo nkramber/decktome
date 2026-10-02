@@ -6,27 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-02b)
+## RESUME HERE (2026-10-02c)
 
-**Branch `fix/phone-live-check-2`: PR-110, five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** The pull request is #267.
+**Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** No pull request is open yet.
 
 Author provider: Claude Code
 
-**The base.** `main` is `e872724`, from #266. Cloud Build `deploy-web` `bf58ef3a` built it with SUCCESS on 2026-10-02 at 03:26:48 UTC. `deploy-api` did not run, because its trigger reads `go/**` and `docker/**` alone, and #266 changed neither. The API of `8c2b725` holds the same Go code.
+**The base.** `main` is `b07a5db`, from #267. Cloud Build `deploy-api` `0abefd15` and `deploy-web` `40d0b108` built it with SUCCESS on 2026-10-02 at about 19:09 UTC.
 
-**The live check of PR-108 and PR-109 (D-1037).** The owner ran it on the iPhone at about 16:00 UTC, in session `Ubmw8vvPDr6ADDGgReew`. The header stayed at the top at the open questions. The log holds nine `SetPageHidden` calls and `push: deck ready sent` at 16:03:28 UTC for deck `pvlzIYsyybjb79SRBGWN`. The owner found five faults, F-196 to F-200, and chose one pull request for them (D-1043).
+**The live check of PR-110 passed.** The owner sent the F-196 prompt on the iPhone in session `6OqYbUEPlvXNqyFDcist`. F-196 to F-200 passed. The stored session asked the commander question, and it asked no gap question about a theme.
 
-**The code, done and tested.** A theme with no signal is no theme (D-1038). "Commander" before a format noun names the format (D-1039). The push is the title alone (D-1040). A copy counts only from a named set (D-1041). The owner confirmed that this rule applies under each pool rule (D-1044). The lease records the step of a build, and a reloaded page shows it (D-1042).
+**The code, done and tested.** Each change has its test:
 
-**The checks.** The Go tests and the 475 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on the tree of `711fd3e`, with 475 web tests: "every check passed".
+- The cold start draws after the update check, under a splash (F-201, D-1046).
+- The commander row has new words and "Suggest three" (D-1047).
+- A card whose halves share one front shows one face (F-202, D-1048).
+- A tap on the card art opens the large image on a touch screen (D-1049).
+- A phone shows "Back to top" after 300 pixels (D-1050).
+- A list sorted by price shows each price (D-1051).
+- A test reads the owned count of the named sets (D-1052).
+- The deck actions take two rows on a phone (D-1053).
 
-**The review.** The automatic Gitar review of `1bdda93` found three items. The next commit fixes two: the gap guard reads the whole collection, and a lease of the same token keeps its step. The author refuted the third, the art of a basic land from another set, under D-1041. The Gitar CI note named the missing review record, which the Codex review now supplies.
+**The checks.** The Go tests of `questions` and `candidates` pass. The web typecheck and lint pass, and 490 of 490 web tests pass. `make verify` did not run yet.
 
-**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. The Gitar review of `f2c916c` and of `3ccc917`, the commit of D-1044, approves, with 3 of 3 findings closed. The Gitar review of `711fd3e` approves too, and no thread is open.
+**The checkpoint (D-946).** The session passed 300K tokens after the code. The roadmap rows, the findings F-201 and F-202, and sequencing step 106 wait for the next session.
 
-**The Codex review.** The repeat review approves effective head `711fd3e`. P2-1 is fixed, and its UI regression test passes. GitHub verify passes. The local `make verify` of the reviewer stopped during Go linking, because the system disk had no free space. The author run on the same tree passed. The record is `docs/reviews/pr-267.md`.
-
-**The open work.** The review is ready for owner merge. The pull request waits for the owner's confirmation, then auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
+**The open work.** Write PR-111 and its findings in `docs/design-roadmap.md`. Run `make verify`. Open the pull request, and mark PR-111 merged at once (D-822). Then do the Gitar pass and the Codex review. After the deploy, the owner checks the eight changes on the iPhone.
 
 ## How to resume
 
@@ -99,7 +104,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The live check of PR-110 on the iPhone of the owner** (D-1038 to D-1042). After the deploy, send the prompt of F-196 again. Read the questions, the art, the push, and a relaunch.
+0. **Finish PR-111 on `fix/phone-live-check-3`** (D-1045 to D-1054). Write the roadmap rows, run `make verify`, and open the pull request. After the deploy, the owner checks the eight changes on the iPhone.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -123,12 +128,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-01b: the phone connection and the push, PR-108
-
-**The owner answered OQ-90 first.** The page tells the API when it goes to the background (D-1033). The session read the logs of 2026-09-30 before any code, and found the order of F-190.
-
-**The relaunch at `/` lost the build screen.** The owner chose a launch that opens the session of a running build (D-1034).
-
 ### 2026-10-02: the live check of PR-108, PR-109
 
 **The deploy of #265 read SUCCESS.** The owner started the iPhone check, and sent a screenshot of a blank band at the open questions (F-195).
@@ -141,6 +140,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner sent five faults with screenshots.** The owner chose one pull request, and rejected both art options for a rule of owned copies. The owner also asked for a check of each claim before a question.
 
+### 2026-10-02c: eight changes after the live check, PR-111
+
+**The deploy of `b07a5db` read SUCCESS for both builds.** The owner ran the iPhone check, and F-196 to F-200 passed.
+
+**The owner sent eight changes and chose one pull request.** The owner chose a splash for the cold start, and named the owned count a requirement. The session passed 300K tokens after the code.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-01b, the records of 2026-08-31 to 2026-09-30, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02b, the records of 2026-08-31 to 2026-10-01b, and 104 more sections, word for word. Read it for the detail behind a decision.

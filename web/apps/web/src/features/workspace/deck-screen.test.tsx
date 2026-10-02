@@ -219,6 +219,16 @@ describe("DeckScreen", () => {
     expect(deleteDeck).not.toHaveBeenCalled();
   });
 
+  it("puts the three outlined actions on one row, and Delete on the row above on a phone (D-1053)", async () => {
+    await renderAt("/decks/d1");
+    const row = await screen.findByTestId("deck-actions-outlined");
+    expect(within(row).getAllByRole("button").map((b) => b.textContent)).toEqual(["Add favorite", "Rename", "Share"]);
+    expect(row).toHaveClass("order-last", "basis-full", "sm:order-none", "sm:basis-auto");
+    const remove = screen.getByRole("button", { name: "Delete" });
+    expect(row).not.toContainElement(remove);
+    expect(screen.getByTestId("deck-actions")).toContainElement(remove);
+  });
+
   it("writes the favorite mark", async () => {
     await renderAt("/decks/d1");
     await userEvent.setup().click(await screen.findByRole("button", { name: "Add to your favorites" }));

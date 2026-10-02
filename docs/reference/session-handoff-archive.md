@@ -15,6 +15,34 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-02b, PR-110
+
+**Branch `fix/phone-live-check-2`: PR-110, five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** The pull request is #267.
+
+Author provider: Claude Code
+
+**The base.** `main` is `e872724`, from #266. Cloud Build `deploy-web` `bf58ef3a` built it with SUCCESS on 2026-10-02 at 03:26:48 UTC. `deploy-api` did not run, because its trigger reads `go/**` and `docker/**` alone, and #266 changed neither. The API of `8c2b725` holds the same Go code.
+
+**The live check of PR-108 and PR-109 (D-1037).** The owner ran it on the iPhone at about 16:00 UTC, in session `Ubmw8vvPDr6ADDGgReew`. The header stayed at the top at the open questions. The log holds nine `SetPageHidden` calls and `push: deck ready sent` at 16:03:28 UTC for deck `pvlzIYsyybjb79SRBGWN`. The owner found five faults, F-196 to F-200, and chose one pull request for them (D-1043).
+
+**The code, done and tested.** A theme with no signal is no theme (D-1038). "Commander" before a format noun names the format (D-1039). The push is the title alone (D-1040). A copy counts only from a named set (D-1041). The owner confirmed that this rule applies under each pool rule (D-1044). The lease records the step of a build, and a reloaded page shows it (D-1042).
+
+**The checks.** The Go tests and the 475 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on the tree of `711fd3e`, with 475 web tests: "every check passed".
+
+**The review.** The automatic Gitar review of `1bdda93` found three items. The next commit fixes two: the gap guard reads the whole collection, and a lease of the same token keeps its step. The author refuted the third, the art of a basic land from another set, under D-1041. The Gitar CI note named the missing review record, which the Codex review now supplies.
+
+**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. The Gitar review of `f2c916c` and of `3ccc917`, the commit of D-1044, approves, with 3 of 3 findings closed. The Gitar review of `711fd3e` approves too, and no thread is open.
+
+**The Codex review.** The repeat review approves effective head `711fd3e`. P2-1 is fixed, and its UI regression test passes. GitHub verify passes. The local `make verify` of the reviewer stopped during Go linking, because the system disk had no free space. The author run on the same tree passed. The record is `docs/reviews/pr-267.md`.
+
+**The open work.** The review is ready for owner merge. The pull request waits for the owner's confirmation, then auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
+
+### 2026-10-01b: the phone connection and the push, PR-108
+
+**The owner answered OQ-90 first.** The page tells the API when it goes to the background (D-1033). The session read the logs of 2026-09-30 before any code, and found the order of F-190.
+
+**The relaunch at `/` lost the build screen.** The owner chose a launch that opens the session of a running build (D-1034).
+
 ## The resume section of 2026-10-02, PR-109
 
 **Branch `fix/phone-live-check`: PR-109, the header of a phone after the open questions (F-195, D-1036, D-1037).** The pull request is #266.

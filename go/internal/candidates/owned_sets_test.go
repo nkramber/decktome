@@ -37,3 +37,31 @@ func TestOwnedInSetsKeepsTheBasicLands(t *testing.T) {
 		t.Errorf("no set limit changed the counts: %v", same)
 	}
 }
+
+// TestOwnedInSetsCountsOnlyTheNamedSetCopies is D-1052. A reader who owns
+// a card from a named set and from another set owns, for this deck, the
+// copies of the named set alone. The count the deck shows is that number.
+func TestOwnedInSetsCountsOnlyTheNamedSetCopies(t *testing.T) {
+	idx := cards.NewIndex(
+		[]*mtgv1.Card{
+			{OracleId: "o-sol", Name: "Sol Ring", CardTypes: []string{"Artifact"}},
+			{OracleId: "o-plains", Name: "Plains", Supertypes: []string{"Basic"}, CardTypes: []string{"Land"}},
+		},
+		[]cards.Printing{
+			{ScryfallID: "p-sol-ltc", OracleID: "o-sol", Name: "Sol Ring", SetCode: "LTC", CollectorNumber: "1"},
+			{ScryfallID: "p-sol-c21", OracleID: "o-sol", Name: "Sol Ring", SetCode: "C21", CollectorNumber: "2"},
+			{ScryfallID: "p-plains-ltr", OracleID: "o-plains", Name: "Plains", SetCode: "LTR", CollectorNumber: "3"},
+			{ScryfallID: "p-plains-m21", OracleID: "o-plains", Name: "Plains", SetCode: "M21", CollectorNumber: "4"},
+		},
+		nil, time.Unix(1000, 0).UTC())
+	owned := map[string]int32{"o-sol": 4, "o-plains": 30}
+	printings := map[string]int32{"p-sol-ltc": 1, "p-sol-c21": 3, "p-plains-ltr": 10, "p-plains-m21": 20}
+
+	got := OwnedInSets(idx, owned, printings, []string{"ltr", "ltc"})
+	if got["o-sol"] != 1 {
+		t.Errorf("Sol Ring = %d, want the 1 copy of LTC and not the 3 of C21", got["o-sol"])
+	}
+	if got["o-plains"] != 30 {
+		t.Errorf("Plains = %d, want all 30: a basic land keeps its whole count", got["o-plains"])
+	}
+}

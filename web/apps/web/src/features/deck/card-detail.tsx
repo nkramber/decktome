@@ -8,6 +8,7 @@ import { cardClient } from "../../lib/api";
 import { errorMessage } from "../../lib/errors";
 import { Thumbs } from "../feedback/thumbs";
 import { FaceImage, facesOf } from "./card-tile";
+import { ZoomFace } from "./card-zoom";
 import { priceText } from "./deck-stats";
 import { cardQueryRetry } from "../../lib/card-retry";
 
@@ -100,17 +101,23 @@ export function CardDetail({
             {faces.length === 0 && <p className="text-sm text-muted-foreground">No card data for this entry.</p>}
             {faces.map((face, i) => (
               <section key={`${oracleId}-${i}`} aria-label={faces.length > 1 ? `${face.name} (face ${i + 1} of ${faces.length})` : face.name} className="grid gap-3 sm:grid-cols-[minmax(0,12rem)_1fr]">
-                <FaceImage face={face} />
+                <ZoomFace face={face}>
+                  <FaceImage face={face} />
+                </ZoomFace>
                 <div className="flex flex-col gap-2 text-sm">
-                  {faces.length > 1 && <h3 className="font-medium">{face.name}</h3>}
-                  {face.manaCost && (
-                    <p>
-                      <span className="text-muted-foreground">Mana cost </span>
-                      <span className="font-mono">{face.manaCost}</span>
-                    </p>
-                  )}
-                  <p className="text-muted-foreground">{face.typeLine}</p>
-                  {face.oracleText && <p className="whitespace-pre-line leading-relaxed">{face.oracleText}</p>}
+                  {(face.halves ?? [{ ...face, name: faces.length > 1 ? face.name : "" }]).map((half, j) => (
+                    <div key={j} className="flex flex-col gap-2" data-testid={face.halves ? "card-half" : undefined}>
+                      {half.name && <h3 className="font-medium">{half.name}</h3>}
+                      {half.manaCost && (
+                        <p>
+                          <span className="text-muted-foreground">Mana cost </span>
+                          <span className="font-mono">{half.manaCost}</span>
+                        </p>
+                      )}
+                      <p className="text-muted-foreground">{half.typeLine}</p>
+                      {half.oracleText && <p className="whitespace-pre-line leading-relaxed">{half.oracleText}</p>}
+                    </div>
+                  ))}
                 </div>
               </section>
             ))}

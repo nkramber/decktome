@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { startServiceWorker, swUpdateIntervalMs } from "./pwa-register";
+import { pendingShell, startServiceWorker, swUpdateIntervalMs } from "./pwa-register";
 
 const { registerSW } = vi.hoisted(() => ({ registerSW: vi.fn() }));
 vi.mock("virtual:pwa-register", () => ({ registerSW }));
@@ -64,5 +64,54 @@ describe("startServiceWorker", () => {
     startServiceWorker();
     const options = registerSW.mock.calls[0][0] as RegisterOptions;
     expect(() => options.onRegisteredSW?.("/sw.js", undefined)).not.toThrow();
+  });
+});
+
+// D-1046. A cold start after a deploy drew the old home page, and the
+// plugin reloaded it 2 to 5 seconds later. The page now asks first.
+describe("pendingShell", () => {
+  type Fake = { installing: unknown; waiting: unknown; update: ReturnType<typeof vi.fn> };
+  function container(controller: boolean, registration: Fake | undefined): ServiceWorkerContainer {
+    return { controller: controller ? {} : null, getRegistration: () => Promise.resolve(registration) } as unknown as ServiceWorkerContainer;
+  }
+  function fake(found: boolean, fail = false): Fake {
+    const r: Fake = { installing: null, waiting: null, update: vi.fn() };
+    r.update.mockImplementation(() => {
+      if (fail) return Promise.reject(new Error("offline"));
+      if (found) r.installing = {};
+      return Promise.resolve();
+    });
+    return r;
+  }
+
+  it("draws at once on a first visit, with no worker in control", async () => {
+    const r = fake(true);
+    expect(await pendingShell(container(false, r))).toBe(false);
+    expect(r.update).not.toHaveBeenCalled();
+  });
+
+  it("reports a new worker that the check finds", async () => {
+    expect(await pendingShell(container(true, fake(true)))).toBe(true);
+  });
+
+  it("reports a worker that installs already, with no second check", async () => {
+    const r = fake(false);
+    r.installing = {};
+    expect(await pendingShell(container(true, r))).toBe(true);
+    expect(r.update).not.toHaveBeenCalled();
+  });
+
+  it("draws when the shell is current, and when the check fails offline", async () => {
+    expect(await pendingShell(container(true, fake(false)))).toBe(false);
+    expect(await pendingShell(container(true, fake(false, true)))).toBe(false);
+  });
+
+  it("draws after the time limit when the check hangs", async () => {
+    vi.useFakeTimers();
+    const r = fake(false);
+    r.update.mockImplementation(() => new Promise(() => {}));
+    const answer = pendingShell(container(true, r), 3_000);
+    await vi.advanceTimersByTimeAsync(3_000);
+    expect(await answer).toBe(false);
   });
 });
