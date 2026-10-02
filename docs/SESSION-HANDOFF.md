@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-01b)
 
-**Branch `fix/phone-connection-and-push`: PR-108, the installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** The pull request is #PRNUM.
+**Branch `fix/phone-connection-and-push`: PR-108, the installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** The pull request is #265.
 
 Author provider: Claude Code
 

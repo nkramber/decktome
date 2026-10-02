@@ -2931,7 +2931,7 @@ Gate:
 
 > *In plain English:* a chosen collection now means your own cards. When the collection can not cover the request, the agent asks once whether to fill the gaps. The commander pick has no "You decide" button, and a toast on a phone no longer hides a button.
 
-**PR-108: The installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** ✅ merged as #PRNUM. The mark comes before any review (D-822). D-1016 puts both faults in one pull request, because both start when the phone suspends the page.
+**PR-108: The installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** ✅ merged as #265. The mark comes before any review (D-822). D-1016 puts both faults in one pull request, because both start when the phone suspends the page.
 
 - **The cause (F-190).** The logs of 2026-09-30 show the order. The phone suspended the page, and the stream broke on the phone alone. Cloud Run kept the request open for 109 seconds. The page wrote a failure line and gave the answer back. A second send met the build in progress, and the launch at 17:58:11 opened `/`.
 - **A lost stream (F-190).** A broken connection during a build, or a send during a build, reads the session again. A question turn keeps its failure line and its reload. The page then shows "The build continues on the server" and waits for the deck. A return to view reads the session at once.
