@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The review.** Gitar approved `4284865`, and the author answered both Gitar CI notes. The review record approves effective head `4284865` with no finding. The live iPhone check waits for the deploy under D-1037.
 
-**The open work.** After the deploy of this fix, the owner runs the iPhone check one time. It reads a switch of apps during a build, the push, and the deck on the return. It also reads a relaunch at `/` and the header at the open questions. The Cloud Run log then shows a `SetPageHidden` call and a `push: deck ready sent` line.
+**The open work.** The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828, D-834). After the deploy of this fix, the owner runs the iPhone check one time. It reads a switch of apps during a build, the push, and the deck on the return. It also reads a relaunch at `/` and the header at the open questions. The Cloud Run log then shows a `SetPageHidden` call and a `push: deck ready sent` line.
 
 ## How to resume
 
