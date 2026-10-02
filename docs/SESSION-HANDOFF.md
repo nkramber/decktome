@@ -27,9 +27,9 @@ Author provider: Claude Code
 
 **The risk.** A budget request now sees lower prices, because the builder reads the cheapest printing. No paid deck gate run measured this change.
 
-**The checks.** The Go tests pass. The web tests of `chat`, `deck`, and `shell` pass, and the web typecheck and lint pass.
+**The checks.** `make verify` on `965fe48` reads "every check passed", with 494 of 494 web tests, under Node 22.
 
-**The open work.** Run `make verify`, open the pull request, then the Gitar pass and the Codex review. After the deploy, the owner checks on the iPhone, and the cold start comes first.
+**The open work.** The Gitar pass and the Codex review. After the deploy, the owner checks on the iPhone, and the cold start comes first.
 
 ## How to resume
 
