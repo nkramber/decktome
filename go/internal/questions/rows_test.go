@@ -597,8 +597,26 @@ func TestClosedRowsHaveOptions(t *testing.T) {
 	}
 }
 
+// TestCommanderRowWords is D-1047: the commander row keeps the owner's
+// words, and its one option says how many names follow.
+func TestCommanderRowWords(t *testing.T) {
+	row, ok := load(t).Row("commander")
+	if !ok {
+		t.Fatal("no commander row")
+	}
+	if want := "Do you have a commander in mind, or would you rather I choose three for you to pick from?"; row.Text != want {
+		t.Errorf("text = %q, want %q", row.Text, want)
+	}
+	if len(row.Options) != 1 || row.Options[0] != "Suggest three" {
+		t.Errorf("options = %q, want [Suggest three]", row.Options)
+	}
+	if !row.Fixed {
+		t.Error("the commander row is not fixed, so the phrasing model can reword it")
+	}
+}
+
 // TestNoDeclineRows is D-690 and D-1014. The commander row offers
-// "Suggest one", and the pick row offers three named commanders, so the
+// "Suggest three", and the pick row offers three named commanders, so the
 // UI shows no "You decide" control beside either. Any other row with no
 // option of its own must keep the control.
 func TestNoDeclineRows(t *testing.T) {

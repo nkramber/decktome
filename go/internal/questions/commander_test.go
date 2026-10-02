@@ -255,7 +255,7 @@ func TestNoneRepeatsThePickRowWithNewNames(t *testing.T) {
 }
 
 // TestCommanderRowShowsNoDecline is D-690 and D-1014. The commander row
-// offers "Suggest one", and the pick row offers three names, so neither
+// offers "Suggest three", and the pick row offers three names, so neither
 // question tells the UI to show a "You decide" control.
 func TestCommanderRowShowsNoDecline(t *testing.T) {
 	wants := commanderClassify()

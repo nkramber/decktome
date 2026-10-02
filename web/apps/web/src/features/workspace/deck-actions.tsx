@@ -100,7 +100,7 @@ export function DeckActions({ deck }: { deck: Deck }) {
   }
 
   return (
-<div className="mb-5 flex flex-wrap items-center gap-2">
+<div className="mb-5 flex flex-wrap items-center gap-2" data-testid="deck-actions">
         <Button asChild variant="ghost" size="sm">
           <Link to="/decks">
             <ArrowLeftIcon aria-hidden="true" />
@@ -109,7 +109,11 @@ export function DeckActions({ deck }: { deck: Deck }) {
         </Button>
         <span className="grow" />
 
-        <Button variant="outline" size="sm" aria-pressed={deck.favorite} aria-label={deck.favorite ? "Remove from your favorites" : "Add to your favorites"} onClick={() => void onFavorite()}>
+        {/* The three outlined actions share one row. On a phone that row
+            sits under the back link and Delete, and a wider screen puts
+            all of them on one line (D-1053). */}
+        <div className="order-last flex basis-full gap-2 sm:order-none sm:basis-auto" data-testid="deck-actions-outlined">
+        <Button variant="outline" size="sm" className="flex-1 sm:flex-none" aria-pressed={deck.favorite} aria-label={deck.favorite ? "Remove from your favorites" : "Add to your favorites"} onClick={() => void onFavorite()}>
           <StarIcon className={cn("size-4", deck.favorite && "fill-warning text-warning")} aria-hidden="true" />
           {deck.favorite ? "Favorite" : "Add favorite"}
         </Button>
@@ -122,7 +126,7 @@ export function DeckActions({ deck }: { deck: Deck }) {
           }}
         >
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
               <PencilIcon aria-hidden="true" />
               Rename
             </Button>
@@ -159,7 +163,7 @@ export function DeckActions({ deck }: { deck: Deck }) {
           }}
         >
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm" aria-pressed={deck.shared}>
+            <Button variant="outline" size="sm" className="flex-1 sm:flex-none" aria-pressed={deck.shared}>
               <Share2Icon aria-hidden="true" />
               {deck.shared ? "Shared" : "Share"}
             </Button>
@@ -198,6 +202,7 @@ export function DeckActions({ deck }: { deck: Deck }) {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
 
         <AlertDialog>
           <AlertDialogTrigger asChild>

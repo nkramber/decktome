@@ -470,7 +470,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </section>
 
       {commanderEntries.length > 0 && !filterActive && (
-        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership={!commanderOwnership} onOpen={setDetail} feedbackDeckId={feedbackId} />
+        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership={!commanderOwnership} showPrice={sort === "price"} onOpen={setDetail} feedbackDeckId={feedbackId} />
       )}
       {groups.map((g) => (
         <CardGroup
@@ -480,10 +480,11 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           entries={g.cards}
           byId={byId}
           commanders={commanders}
+          showPrice={sort === "price"}
           onOpen={setDetail} feedbackDeckId={feedbackId}
         />
       ))}
-      {visibleSide.length > 0 && <CardGroup title="Sideboard" count={countOf(visibleSide)} entries={visibleSide} byId={byId} commanders={commanders} onOpen={setDetail} feedbackDeckId={feedbackId} />}
+      {visibleSide.length > 0 && <CardGroup title="Sideboard" count={countOf(visibleSide)} entries={visibleSide} byId={byId} commanders={commanders} showPrice={sort === "price"} onOpen={setDetail} feedbackDeckId={feedbackId} />}
       {visibleUpgrades.length > 0 && (
         <CardGroup title="Upgrades to buy" count={countOf(visibleUpgrades)} entries={visibleUpgrades} byId={byId} commanders={commanders} onOpen={setDetail} feedbackDeckId={feedbackId} />
       )}
@@ -503,6 +504,7 @@ export function CardGroup({
   byId,
   commanders,
   hideOwnership = false,
+  showPrice = false,
   onOpen,
   feedbackDeckId,
 }: {
@@ -512,6 +514,7 @@ export function CardGroup({
   byId: Map<string, Card>;
   commanders: Set<string>;
   hideOwnership?: boolean;
+  showPrice?: boolean;
   onOpen?: (entry: DeckCard) => void;
   feedbackDeckId?: string;
 }) {
@@ -529,6 +532,7 @@ export function CardGroup({
             card={byId.get(e.oracleId)}
             isCommander={commanders.has(e.oracleId)}
             hideOwnership={hideOwnership}
+            showPrice={showPrice}
             onOpen={onOpen ? () => onOpen(e) : undefined}
             feedbackDeckId={feedbackDeckId}
           />

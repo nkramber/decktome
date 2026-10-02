@@ -441,6 +441,20 @@ describe("DeckView", () => {
     expect(names).toEqual(["Delver of Secrets // Insectile Aberration", "Llanowar Elves"]);
   });
 
+  it("shows the price of each owned card when the list sorts by price, and not before (D-1051)", async () => {
+    const user = userEvent.setup();
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    expect(screen.queryByTestId("card-price")).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "price");
+    const group = screen.getByRole("region", { name: /^Cards by price/ });
+    const forest = within(group).getAllByTestId("card-tile").find((tile) => within(tile).queryByAltText("Forest (card)"));
+    expect(within(forest!).getByTestId("card-price")).toHaveTextContent("no price");
+    const elves = within(group).getAllByTestId("card-tile").find((tile) => within(tile).queryByAltText("Llanowar Elves (card)"));
+    expect(within(elves!).getByTestId("buy-mark")).toHaveTextContent("To buy: $0.50");
+    expect(within(elves!).queryByTestId("card-price")).not.toBeInTheDocument();
+  });
+
   it("opens the card detail from a tile with the rulings and their dates (PR-20)", async () => {
     const user = userEvent.setup();
     renderDeck();

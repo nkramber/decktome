@@ -597,6 +597,8 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-198 | **The push of a finished build shows three lines.** The iPhone showed "Your deck is ready", "from Deck Tome", and the deck name. iOS adds the middle line from the manifest name. | ✅ PR-110: the push is the title "Your deck is ready!" alone (D-1040). |
 | F-199 | **A deck limited to sets holds a card that the user owns from another set alone.** The deck of the live check held Ghost Quarter, Chromatic Lantern, Lightning Greaves, and Sword of the Animist. Each one has a printing in LTC, but the owner owns copies from SLD, TMC, MSC, and FIC. The app showed that art, and it counted those copies as owned. | ✅ PR-110: a copy counts only when its printing is in a named set (D-1041). |
 | F-200 | **A reloaded page shows a line in place of the live build screen.** The owner reopened the app during a build and read "The build continues on the server". The phase of a build went out on the stream alone, so the reloaded page had no step to show. | ✅ PR-110: the lease records the step, and the page shows the same working row and stepper (D-1042). |
+| F-201 | **A cold start after a deploy reloads the home page.** The app drew the old cached shell. The browser then found the new service worker, and the page reloaded 2 to 5 seconds later (D-692). | ✅ PR-111: the page draws after the update check, and a splash covers the reload (D-1046). |
+| F-202 | **A card with two halves on one front shows that front twice.** The card data gives each half of an adventure or a split card the image of the whole card. The commander pick showed "Thranduil, Sindarin Liege // Silvan Rally" with two identical images. | ✅ PR-111: such a card is one face, with the text of each half (D-1048). |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2995,6 +2997,27 @@ The live check after the deploy runs on the iPhone of the owner. It sends the sa
 
 > *In plain English:* when the agent asked its questions on a phone, the page moved up. The header left the screen, and a blank band showed under the chat. The page now stays in place.
 
+**PR-111: Eight changes after the live check of PR-110 (F-201, F-202, D-1045 to D-1054).** ✅ merged as #268. The mark comes before any review (D-822). The live check of PR-110 passed on `b07a5db`. The owner chose one pull request for eight changes (D-1045).
+
+- **The cold start (F-201, D-1046).** `pendingShell` asks for the newest service worker before the first render. A new worker keeps a splash on the screen until the reload.
+- **The commander row (D-1047).** The fixed row has the words of the owner, and its button reads "Suggest three".
+- **One front (F-202, D-1048).** `sharedFront` finds halves with one image. The tile, the detail, and the commander pick show one face.
+- **The large art (D-1049).** `ZoomFace` opens the large image on a touch screen. A tap beside it closes the view.
+- **Back to top (D-1050).** `BackToTop` shows on a phone after 300 pixels of scroll of the main region.
+- **The price sort (D-1051).** A list sorted by price shows the price beside each owned mark.
+- **The named sets (D-1052).** A regression test reads the owned count of a card with copies in two sets.
+- **The deck actions (D-1053).** The three outlined buttons share one row, and Delete sits above them on a phone.
+
+Gate:
+- A Go test or a web test reads each of the eight changes.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy runs on the iPhone of the owner.
+
+> *In plain English:* after a deploy, the app no longer shows the home page and then reloads it. Cards with two halves on one front show one picture. A phone gets a large card view, a button back to the top, and tidier deck buttons.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3397,6 +3420,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 103. **PR-108** the installed app after a dropped connection, and the push of a finished build (F-190, F-192, D-1033, D-1034).
 104. **PR-109** the header of a phone after the open questions (F-195, D-1036, D-1037).
 105. **PR-110** five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).
+106. **PR-111** eight changes after the live check of PR-110 (F-201, F-202, D-1045 to D-1054).
 
 ## 9. Open questions
 
