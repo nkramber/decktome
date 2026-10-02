@@ -20,9 +20,11 @@ Author provider: Claude Code
 
 **The checks.** The Go tests and the 474 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on `f2c916c`: "every check passed".
 
-**The review.** The automatic Gitar review of `1bdda93` found three items. The next commit fixes two: the gap guard reads the whole collection, and a lease of the same token keeps its step. The author refuted the third, the art of a basic land from another set, under D-1041. The Gitar CI note named the missing review record, which `make codex-review` writes.
+**The review.** The automatic Gitar review of `1bdda93` found three items. The next commit fixes two: the gap guard reads the whole collection, and a lease of the same token keeps its step. The author refuted the third, the art of a basic land from another set, under D-1041. The Gitar CI note named the missing review record, which the Codex review now supplies.
 
-**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. The Gitar review of `f2c916c` approves, with 3 of 3 findings closed. The next commit records D-1044, and it gets its own Gitar pass before `make codex-review PR=267`.
+**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. Gitar approves `3ccc917`, and all findings are closed.
+
+**The Codex review.** The review of effective head `3ccc917` found P2-1: a Stop during `READING` says that a deck will appear. The verdict is Changes required. The record gives the correction and the regression check.
 
 **The open work.** The pull request waits for its review loop, the confirmation of the owner, and the auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
 
