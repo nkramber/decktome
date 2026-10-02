@@ -2945,9 +2945,10 @@ Gate:
 - The web tests read a lost stream that waits for the deck, and the read on a return to view.
 - The web tests also read the page reports and the launch record.
 - `make verify` passes.
-- A live check on the iPhone of the owner: a switch of apps during a build, a push, and the deck on the return. UNVERIFIED until the owner runs it.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy runs on the iPhone of the owner. A switch of apps during a build gives a push, and the return shows the deck. Production deploys from `main` alone (D-579), so this check comes after the merge, and it does not stop it (D-1007). UNVERIFIED until the owner runs it.
 
 > *In plain English:* when your phone puts the app to sleep during a build, the app no longer shows a dead error. It picks the build up again, and it reopens the build after a restart. When you leave the app during a build, you get a notification when the deck is ready.
 

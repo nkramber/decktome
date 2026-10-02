@@ -27,9 +27,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on `77b7999`: "every check passed", with 472 of 472 web tests. `TestEmulatorPagePresence` passes on the local emulator. `TestEmulatorListRenameDelete` fails on the base commit too, because older data in the local emulator holds its fixed id.
 
-**The review.** Gitar confirmed its fix and approved `e9e2844`. The repeat Codex review fixed P2-1 at `e9e2844`. Its verdict is `Blocked` because the PR-108 gate still awaits the owner iPhone check after deploy. `docs/reviews/pr-265.md` holds the current record.
+**The review.** Gitar approved `e9e2844`. The repeat Codex review closed P2-1 at `e9e2844`, and it read `Blocked` on the live check alone. That check needs the deploy, so the gate now follows D-1007, as PR-26 did. `docs/reviews/pr-265-response.md` answers both rounds.
 
-**The open work.** The owner must decide how the iPhone gate applies before merge, because it requires a deploy first. After deploy, the owner runs the live check on an iPhone. It reads a switch of apps during a build, a push, and the deck on the return.
+**The open work.** The repeat Codex review, then the confirmation of the owner and the auto-merge (D-828, D-834). After the deploy, the owner runs the live check on an iPhone. It reads a switch of apps during a build, a push, and the deck on the return.
 
 ## How to resume
 
