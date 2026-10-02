@@ -422,6 +422,23 @@ describe("SessionPage", () => {
       expect(localStorage.getItem("decktome.runningBuild")).toBeNull();
     });
 
+    // F-190: a question turn holds no build, so a lost stream there keeps
+    // the failure line and its reload.
+    it("a lost stream during a question turn keeps the failure line", async () => {
+      getSession.mockResolvedValue({
+        session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "elves", agentMessage: "Here is a plan.", questions: [], answers: [] }] },
+      });
+      chat.mockImplementationOnce(async function* () {
+        yield ev("phase", BuildPhase.READING);
+        throw ConnectError.from(new TypeError("Load failed"));
+      });
+      await renderAt("/session/s1");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "go on{enter}");
+      expect(await screen.findByRole("button", { name: "Reload the session" })).toBeInTheDocument();
+      expect(screen.queryByTestId("server-build")).not.toBeInTheDocument();
+    });
+
     // F-190: a return to the app read the session only at the next tick.
     it("reads the session at once when the page comes back to view, and reports each move (D-1033)", async () => {
       getSession.mockResolvedValue({ session: { id: "s1", collectionId: "", deckIds: [], turns: [] }, building: true });

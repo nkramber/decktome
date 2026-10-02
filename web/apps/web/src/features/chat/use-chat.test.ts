@@ -7,7 +7,7 @@ import { BuildPhase } from "@mtg/api-client/mtg/v1/agent_service_pb";
 
 import { SessionStatus, SlotState } from "@mtg/api-client/mtg/v1/session_pb";
 
-import { answerLabel, answerText, byteLength, codeName, emptyState, fromSession, lostStream, mergeOpen, stillAsked, streamFailure } from "./use-chat";
+import { answerLabel, answerText, byteLength, codeName, emptyState, fromSession, lostBuild, mergeOpen, stillAsked, streamFailure } from "./use-chat";
 
 vi.mock("../../lib/api", () => ({ agentClient: {} }));
 
@@ -124,21 +124,23 @@ describe("use-chat helpers", () => {
 });
 
 // The phase of a turn rides beside the status lines (D-435).
-// F-190: a phone that suspends the page breaks the stream, and the turn
+// F-190: a phone that suspends the page breaks the stream, and the build
 // runs on at the server.
-describe("lostStream", () => {
-  it("reads a broken connection and a build in progress as a lost stream", () => {
-    expect(lostStream(new TypeError("Load failed"))).toBe(true);
-    expect(lostStream(ConnectError.from(new TypeError("Load failed")))).toBe(true);
-    expect(lostStream(ConnectError.from("missing EndStreamResponse"))).toBe(true);
-    expect(lostStream(new ConnectError("a build is in progress", Code.Aborted))).toBe(true);
+describe("lostBuild", () => {
+  const lost = ConnectError.from(new TypeError("Load failed"));
+  it("reads a broken connection during a build, and a build in progress, as a lost build", () => {
+    expect(lostBuild(new TypeError("Load failed"), BuildPhase.BUILDING)).toBe(true);
+    expect(lostBuild(lost, BuildPhase.SHORTLIST)).toBe(true);
+    expect(lostBuild(ConnectError.from("missing EndStreamResponse"), BuildPhase.CHECKING)).toBe(true);
+    expect(lostBuild(new ConnectError("a build is in progress", Code.Aborted), BuildPhase.UNSPECIFIED)).toBe(true);
   });
 
-  it("keeps a failure the server answered", () => {
-    expect(lostStream(new ConnectError("the session is busy", Code.Unavailable))).toBe(false);
-    expect(lostStream(new ConnectError("bad", Code.InvalidArgument))).toBe(false);
-    expect(lostStream(new ConnectError("a fault", Code.Unknown))).toBe(false);
-    expect(lostStream(new Error("other"))).toBe(false);
+  it("keeps the failure line of a question turn, and of a failure the server answered", () => {
+    expect(lostBuild(lost, BuildPhase.READING)).toBe(false);
+    expect(lostBuild(lost, BuildPhase.UNSPECIFIED)).toBe(false);
+    expect(lostBuild(new ConnectError("the session is busy", Code.Unavailable), BuildPhase.BUILDING)).toBe(false);
+    expect(lostBuild(new ConnectError("a fault", Code.Unknown), BuildPhase.BUILDING)).toBe(false);
+    expect(lostBuild(new Error("other"), BuildPhase.BUILDING)).toBe(false);
   });
 });
 

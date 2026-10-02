@@ -196,15 +196,22 @@ export function streamFailure(err: unknown): AgentError {
   return { code: "stream", message: errorMessage(err), retryable: false } as AgentError;
 }
 
-// lostStream says that the connection broke under the turn, or that a
-// build of the session runs on the server. A phone breaks the stream when
-// it suspends the page, and the server runs the turn on (D-303). The
-// browser raises a TypeError, and a stream cut in its body misses its
-// end message. Each case reads the stored session again (F-190).
-export function lostStream(err: unknown): boolean {
+// buildPhases are the phases of a deck build. The phase of the read of
+// the message comes before them, and a question turn ends there.
+export const buildPhases = new Set([BuildPhase.SHORTLIST, BuildPhase.BUILDING, BuildPhase.CHECKING, BuildPhase.REPAIRING]);
+
+// lostBuild says that a build of the session runs on the server and this
+// page lost its stream. A phone breaks the stream when it suspends the
+// page, and the build runs on (D-303). The browser raises a TypeError,
+// and a stream cut in its body misses its end message. A send during the
+// build gets Aborted. Each case reads the stored session again (F-190).
+// A question turn holds no build, so its lost stream keeps the failure
+// line and its reload.
+export function lostBuild(err: unknown, phase: BuildPhase): boolean {
+  if (err instanceof ConnectError && err.code === Code.Aborted) return true;
+  if (!buildPhases.has(phase)) return false;
   if (err instanceof TypeError) return true;
   if (!(err instanceof ConnectError)) return false;
-  if (err.code === Code.Aborted) return true;
   return err.code === Code.Unknown && (err.cause instanceof TypeError || err.rawMessage.includes("missing EndStreamResponse"));
 }
 
@@ -222,8 +229,8 @@ export type SendResult = { ok: boolean; restored: Question[] };
 // starts before React commits the session_started event still carries
 // the right id, and the collection goes with the first message only.
 //
-// onLost runs in place of a failure line when the stream of a stored
-// session breaks, so the caller reads the session again (F-190).
+// onLost runs in place of a failure line when a build of a stored session
+// loses its stream, so the caller reads the session again (F-190).
 export function useChat(
   initial: ChatState,
   collectionId: string,
@@ -334,7 +341,7 @@ export function useChat(
       } catch (err) {
         ok = false;
         if (!controller.signal.aborted) {
-          const resume = sessionId.current !== "" && lostStream(err) ? lost.current : undefined;
+          const resume = sessionId.current !== "" && lostBuild(err, latest.current.phase) ? lost.current : undefined;
           if (resume) resume();
           else update((s) => ({ ...s, thread: [...s.thread, item({ kind: "failure", failure: streamFailure(err) })] }));
         }
