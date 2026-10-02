@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-02c)
 
-**Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** The pull request is open, pending the Gitar pass, the Codex review, and the auto-merge.
+**Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** The pull request is #268. Gitar and Codex approved it, and it is pending the auto-merge.
 
 Author provider: Claude Code
 
