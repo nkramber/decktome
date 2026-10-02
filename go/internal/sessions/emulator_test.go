@@ -449,3 +449,48 @@ func TestEmulatorBuildLease(t *testing.T) {
 		t.Error("the delete left the lease")
 	}
 }
+
+// TestEmulatorPagePresence is D-1033: the page writes whether it is
+// hidden, a write never moves the version that Put compares, and the
+// delete removes the record.
+func TestEmulatorPagePresence(t *testing.T) {
+	repo, done := emulatorRepo(t)
+	defer done()
+	ctx := t.Context()
+	uid := "presence-" + time.Now().UTC().Format("150405.000000000")
+	now := time.Unix(1000, 0).UTC()
+	if err := repo.SetHidden(ctx, uid, "s1", true, now); !errors.Is(err, ErrNotFound) {
+		t.Errorf("a write for a session that is not stored gave %v, want ErrNotFound", err)
+	}
+	if err := repo.Put(ctx, uid, &mtgv1.Session{Id: "s1"}, sampleState(), 0); err != nil {
+		t.Fatal(err)
+	}
+	if hidden, at, err := repo.Hidden(ctx, uid, "s1"); err != nil || hidden || !at.IsZero() {
+		t.Fatalf("a new session reads hidden=%v at %v (%v), want shown", hidden, at, err)
+	}
+	if err := repo.SetHidden(ctx, uid, "s1", true, now); err != nil {
+		t.Fatal(err)
+	}
+	if hidden, at, err := repo.Hidden(ctx, uid, "s1"); err != nil || !hidden || !at.Equal(now) {
+		t.Errorf("after a hide, hidden=%v at %v (%v), want true at %v", hidden, at, err, now)
+	}
+	later := now.Add(time.Minute)
+	if err := repo.SetHidden(ctx, uid, "s1", false, later); err != nil {
+		t.Fatal(err)
+	}
+	if hidden, at, _ := repo.Hidden(ctx, uid, "s1"); hidden || !at.Equal(later) {
+		t.Errorf("after a return, hidden=%v at %v, want false at %v", hidden, at, later)
+	}
+	if err := repo.Put(ctx, uid, &mtgv1.Session{Id: "s1"}, sampleState(), 1); err != nil {
+		t.Errorf("a Put after a presence write gave %v", err)
+	}
+	if err := repo.SetHidden(ctx, uid, "s1", true, later); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Delete(ctx, uid, "s1", later); err != nil {
+		t.Fatal(err)
+	}
+	if hidden, _, _ := repo.Hidden(ctx, uid, "s1"); hidden {
+		t.Error("the delete left the presence record")
+	}
+}

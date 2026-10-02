@@ -919,6 +919,107 @@ func TestNoPushWhileTheClientReads(t *testing.T) {
 	}
 }
 
+// tickClock answers a time one second later on each call, so a test
+// can order a page report against the start of a turn.
+func tickClock() func() time.Time {
+	var mu sync.Mutex
+	at := time.Unix(1000, 0).UTC()
+	return func() time.Time {
+		mu.Lock()
+		defer mu.Unlock()
+		at = at.Add(time.Second)
+		return at
+	}
+}
+
+// hiddenDuringBuild runs one build turn and reads its stream to the end,
+// as a suspended phone keeps its stream open. While the build runs, it
+// sends each page report of reports. It answers the pushes.
+func hiddenDuringBuild(t *testing.T, before []bool, reports []bool) []string {
+	t.Helper()
+	store := newFakeStore()
+	pn := &fakePush{}
+	deck := &mtgv1.Deck{Summary: "a deck", Validation: &mtgv1.ValidationResult{}}
+	fd := &fakeDecks{res: &generate.Result{Deck: deck}, started: make(chan struct{}), release: make(chan struct{})}
+	opts := append(buildOpts(t, fd), WithDeckStore(&fakeDeckStore{}), WithPush(pn), WithClock(tickClock()))
+	client, _ := testServerOpts(t, store, opts, readySteps(t)...)
+	first := chat(t, client, &mtgv1.ChatRequest{Message: "build me a lifegain commander deck for 50 dollars"})
+	report := func(hidden bool) error {
+		req := connect.NewRequest(&mtgv1.SetPageHiddenRequest{SessionId: first.started, Hidden: hidden})
+		_, err := client.SetPageHidden(context.Background(), req)
+		return err
+	}
+	for _, h := range before {
+		if err := report(h); err != nil {
+			t.Fatalf("SetPageHidden(%v): %v", h, err)
+		}
+	}
+	errs := make(chan error, 1)
+	go func() {
+		defer close(fd.release)
+		select {
+		case <-fd.started:
+		case <-time.After(5 * time.Second):
+			errs <- errors.New("the build never started")
+			return
+		}
+		for _, h := range reports {
+			if err := report(h); err != nil {
+				errs <- err
+				return
+			}
+		}
+		errs <- nil
+	}()
+	second := chat(t, client, &mtgv1.ChatRequest{SessionId: first.started, Message: "Karlov, bracket 3"})
+	if err := <-errs; err != nil {
+		t.Fatal(err)
+	}
+	if second.deck == nil {
+		t.Fatalf("no deck: %v", second.order)
+	}
+	return pn.sent()
+}
+
+// TestPushWhenThePageIsHidden is D-1033 and F-192. A phone suspends the
+// page and keeps the stream open, so the stream context never ends. The
+// page reported that it went to the background, and the build sends the
+// push when it stores the deck.
+func TestPushWhenThePageIsHidden(t *testing.T) {
+	if got := hiddenDuringBuild(t, nil, []bool{true}); len(got) != 1 {
+		t.Errorf("pushes = %v, want one for a hidden page", got)
+	}
+}
+
+// TestNoPushAfterThePageCameBack is D-1033: a page that came back before
+// the deck landed reads the deck in the stream.
+func TestNoPushAfterThePageCameBack(t *testing.T) {
+	if got := hiddenDuringBuild(t, nil, []bool{true, false}); len(got) != 0 {
+		t.Errorf("pushes = %v, want none for a page that came back", got)
+	}
+}
+
+// TestNoPushForAHiddenPageOfAnEarlierTurn is D-1033: a report from
+// before this turn names an earlier page, and the page of this turn sent
+// the turn, so it was on view.
+func TestNoPushForAHiddenPageOfAnEarlierTurn(t *testing.T) {
+	if got := hiddenDuringBuild(t, []bool{true}, nil); len(got) != 0 {
+		t.Errorf("pushes = %v, want none for a report of an earlier turn", got)
+	}
+}
+
+// TestSetPageHiddenNeedsAStoredSession is D-1033: a report for a session
+// that is not stored is NotFound, and a bad id is InvalidArgument.
+func TestSetPageHiddenNeedsAStoredSession(t *testing.T) {
+	client, _ := testServerOpts(t, newFakeStore(), nil)
+	for id, want := range map[string]connect.Code{"nope": connect.CodeNotFound, "": connect.CodeInvalidArgument, "a/b": connect.CodeInvalidArgument} {
+		_, err := client.SetPageHidden(context.Background(), connect.NewRequest(&mtgv1.SetPageHiddenRequest{SessionId: id, Hidden: true}))
+		if connect.CodeOf(err) != want {
+			t.Errorf("SetPageHidden(%q) = %v, want %v", id, err, want)
+		}
+	}
+}
+
 // TestDeckIDWriteRetriesAfterAConflict is D-303. Another write lands
 // between the turn's Put and the deck id write, and the id is appended
 // to the current session instead of lost.

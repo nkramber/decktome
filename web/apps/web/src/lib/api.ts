@@ -28,10 +28,20 @@ export const transport = createConnectTransport({
   interceptors: [bearerInterceptor],
 });
 
+// The page report of D-1033 goes out as the page leaves view, and a phone
+// can suspend the page at once after. A keepalive request outlives the
+// page, so the report still reaches the API.
+const keepaliveTransport = createConnectTransport({
+  baseUrl: import.meta.env.VITE_API_BASE_URL ?? "",
+  interceptors: [bearerInterceptor],
+  fetch: (input, init) => globalThis.fetch(input, { ...init, keepalive: true }),
+});
+
 export const healthClient = createClient(HealthService, transport);
 export const collectionClient = createClient(CollectionService, transport);
 export const deckClient = createClient(DeckService, transport);
 export const agentClient = createClient(AgentService, transport);
+export const pageClient = createClient(AgentService, keepaliveTransport);
 export const cardClient = createClient(CardService, transport);
 export const feedbackClient = createClient(FeedbackService, transport);
 export const pushClient = createClient(PushService, transport);

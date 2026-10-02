@@ -196,6 +196,25 @@ export function streamFailure(err: unknown): AgentError {
   return { code: "stream", message: errorMessage(err), retryable: false } as AgentError;
 }
 
+// buildPhases are the phases of a deck build. The phase of the read of
+// the message comes before them, and a question turn ends there.
+export const buildPhases = new Set([BuildPhase.SHORTLIST, BuildPhase.BUILDING, BuildPhase.CHECKING, BuildPhase.REPAIRING]);
+
+// lostBuild says that a build of the session runs on the server and this
+// page lost its stream. A phone breaks the stream when it suspends the
+// page, and the build runs on (D-303). The browser raises a TypeError,
+// and a stream cut in its body misses its end message. A send during the
+// build gets Aborted. Each case reads the stored session again (F-190).
+// A question turn holds no build, so its lost stream keeps the failure
+// line and its reload.
+export function lostBuild(err: unknown, phase: BuildPhase): boolean {
+  if (err instanceof ConnectError && err.code === Code.Aborted) return true;
+  if (!buildPhases.has(phase)) return false;
+  if (err instanceof TypeError) return true;
+  if (!(err instanceof ConnectError)) return false;
+  return err.code === Code.Unknown && (err.cause instanceof TypeError || err.rawMessage.includes("missing EndStreamResponse"));
+}
+
 // SendResult says how the send ended. `ok` is true when the stream ended
 // without a thrown error and without a stop, so the caller can restore a
 // draft the user should not lose. `restored` names the questions the send
@@ -209,7 +228,16 @@ export type SendResult = { ok: boolean; restored: Question[] };
 // The session id and the collection id live in refs, so a send that
 // starts before React commits the session_started event still carries
 // the right id, and the collection goes with the first message only.
-export function useChat(initial: ChatState, collectionId: string, poolRule: PoolRule, onSessionStarted?: (id: string) => void) {
+//
+// onLost runs in place of a failure line when a build of a stored session
+// loses its stream, so the caller reads the session again (F-190).
+export function useChat(
+  initial: ChatState,
+  collectionId: string,
+  poolRule: PoolRule,
+  onSessionStarted?: (id: string) => void,
+  onLost?: () => void,
+) {
   const [state, setState] = useState<ChatState>(initial);
   // latest mirrors the committed state, so a send that fails before the
   // first render still knows which questions it took off the open list.
@@ -224,6 +252,10 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
   useEffect(() => {
     started.current = onSessionStarted;
   }, [onSessionStarted]);
+  const lost = useRef(onLost);
+  useEffect(() => {
+    lost.current = onLost;
+  }, [onLost]);
 
   useEffect(() => {
     mounted.current = true;
@@ -309,7 +341,9 @@ export function useChat(initial: ChatState, collectionId: string, poolRule: Pool
       } catch (err) {
         ok = false;
         if (!controller.signal.aborted) {
-          update((s) => ({ ...s, thread: [...s.thread, item({ kind: "failure", failure: streamFailure(err) })] }));
+          const resume = sessionId.current !== "" && lostBuild(err, latest.current.phase) ? lost.current : undefined;
+          if (resume) resume();
+          else update((s) => ({ ...s, thread: [...s.thread, item({ kind: "failure", failure: streamFailure(err) })] }));
         }
       } finally {
         // A superseded or stopped send leaves the state to the live one.

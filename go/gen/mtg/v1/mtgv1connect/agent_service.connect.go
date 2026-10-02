@@ -51,6 +51,9 @@ const (
 	// AgentServiceReadImportBracketProcedure is the fully-qualified name of the AgentService's
 	// ReadImportBracket RPC.
 	AgentServiceReadImportBracketProcedure = "/mtg.v1.AgentService/ReadImportBracket"
+	// AgentServiceSetPageHiddenProcedure is the fully-qualified name of the AgentService's
+	// SetPageHidden RPC.
+	AgentServiceSetPageHiddenProcedure = "/mtg.v1.AgentService/SetPageHidden"
 )
 
 // AgentServiceClient is a client for the mtg.v1.AgentService service.
@@ -73,6 +76,10 @@ type AgentServiceClient interface {
 	// ReadImportBracket asks the bracket judge again for an imported deck
 	// whose bracket is the floor alone (D-854).
 	ReadImportBracket(context.Context, *connect.Request[v1.ReadImportBracketRequest]) (*connect.Response[v1.ReadImportBracketResponse], error)
+	// SetPageHidden records that the page of a session went to the
+	// background, or came back. A build that stores its deck while the
+	// page is hidden sends the push of a finished build (D-1033).
+	SetPageHidden(context.Context, *connect.Request[v1.SetPageHiddenRequest]) (*connect.Response[v1.SetPageHiddenResponse], error)
 }
 
 // NewAgentServiceClient constructs a client for the mtg.v1.AgentService service. By default, it
@@ -128,6 +135,12 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("ReadImportBracket")),
 			connect.WithClientOptions(opts...),
 		),
+		setPageHidden: connect.NewClient[v1.SetPageHiddenRequest, v1.SetPageHiddenResponse](
+			httpClient,
+			baseURL+AgentServiceSetPageHiddenProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("SetPageHidden")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -140,6 +153,7 @@ type agentServiceClient struct {
 	deleteSession     *connect.Client[v1.DeleteSessionRequest, v1.DeleteSessionResponse]
 	importDeck        *connect.Client[v1.ImportDeckRequest, v1.ImportDeckResponse]
 	readImportBracket *connect.Client[v1.ReadImportBracketRequest, v1.ReadImportBracketResponse]
+	setPageHidden     *connect.Client[v1.SetPageHiddenRequest, v1.SetPageHiddenResponse]
 }
 
 // Chat calls mtg.v1.AgentService.Chat.
@@ -177,6 +191,11 @@ func (c *agentServiceClient) ReadImportBracket(ctx context.Context, req *connect
 	return c.readImportBracket.CallUnary(ctx, req)
 }
 
+// SetPageHidden calls mtg.v1.AgentService.SetPageHidden.
+func (c *agentServiceClient) SetPageHidden(ctx context.Context, req *connect.Request[v1.SetPageHiddenRequest]) (*connect.Response[v1.SetPageHiddenResponse], error) {
+	return c.setPageHidden.CallUnary(ctx, req)
+}
+
 // AgentServiceHandler is an implementation of the mtg.v1.AgentService service.
 type AgentServiceHandler interface {
 	// Chat sends one user message and streams the agent's response events.
@@ -197,6 +216,10 @@ type AgentServiceHandler interface {
 	// ReadImportBracket asks the bracket judge again for an imported deck
 	// whose bracket is the floor alone (D-854).
 	ReadImportBracket(context.Context, *connect.Request[v1.ReadImportBracketRequest]) (*connect.Response[v1.ReadImportBracketResponse], error)
+	// SetPageHidden records that the page of a session went to the
+	// background, or came back. A build that stores its deck while the
+	// page is hidden sends the push of a finished build (D-1033).
+	SetPageHidden(context.Context, *connect.Request[v1.SetPageHiddenRequest]) (*connect.Response[v1.SetPageHiddenResponse], error)
 }
 
 // NewAgentServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -248,6 +271,12 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("ReadImportBracket")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceSetPageHiddenHandler := connect.NewUnaryHandler(
+		AgentServiceSetPageHiddenProcedure,
+		svc.SetPageHidden,
+		connect.WithSchema(agentServiceMethods.ByName("SetPageHidden")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.AgentService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AgentServiceChatProcedure:
@@ -264,6 +293,8 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 			agentServiceImportDeckHandler.ServeHTTP(w, r)
 		case AgentServiceReadImportBracketProcedure:
 			agentServiceReadImportBracketHandler.ServeHTTP(w, r)
+		case AgentServiceSetPageHiddenProcedure:
+			agentServiceSetPageHiddenHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -299,4 +330,8 @@ func (UnimplementedAgentServiceHandler) ImportDeck(context.Context, *connect.Req
 
 func (UnimplementedAgentServiceHandler) ReadImportBracket(context.Context, *connect.Request[v1.ReadImportBracketRequest]) (*connect.Response[v1.ReadImportBracketResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.ReadImportBracket is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) SetPageHidden(context.Context, *connect.Request[v1.SetPageHiddenRequest]) (*connect.Response[v1.SetPageHiddenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.SetPageHidden is not implemented"))
 }

@@ -30,6 +30,10 @@ service AgentService {
   // ReadImportBracket asks the bracket judge again for an imported deck
   // whose bracket is the floor alone (D-854).
   rpc ReadImportBracket(ReadImportBracketRequest) returns (ReadImportBracketResponse) {}
+  // SetPageHidden records that the page of a session went to the
+  // background, or came back. A build that stores its deck while the
+  // page is hidden sends the push of a finished build (D-1033).
+  rpc SetPageHidden(SetPageHiddenRequest) returns (SetPageHiddenResponse) {}
 }
 
 message ListSessionsRequest {
@@ -77,6 +81,15 @@ message DeleteSessionRequest {
 }
 
 message DeleteSessionResponse {}
+
+message SetPageHiddenRequest {
+  string session_id = 1;
+  // hidden is true when the page went to the background, and false when
+  // it came back.
+  bool hidden = 2;
+}
+
+message SetPageHiddenResponse {}
 
 // BuildPhase names where a turn stands (roadmap PR-19). The stepper of
 // the chat reads it beside the status lines.

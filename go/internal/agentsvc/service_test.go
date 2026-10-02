@@ -53,6 +53,14 @@ type fakeStore struct {
 	// beforeDelete runs before each Delete, so a test can slip a lease in
 	// between the reads of DeleteSession and its delete.
 	beforeDelete func()
+	// presence holds whether the page of each session is hidden, as the
+	// presence document does (D-1033).
+	presence map[string]fakePresence
+}
+
+type fakePresence struct {
+	hidden bool
+	at     time.Time
 }
 
 type fakeLease struct {
@@ -94,6 +102,26 @@ func (f *fakeStore) Release(_ context.Context, _, id, token string) error {
 		delete(f.leases, id)
 	}
 	return nil
+}
+
+func (f *fakeStore) SetHidden(_ context.Context, _, id string, hidden bool, at time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if _, ok := f.sessions[id]; !ok {
+		return sessions.ErrNotFound
+	}
+	if f.presence == nil {
+		f.presence = map[string]fakePresence{}
+	}
+	f.presence[id] = fakePresence{hidden: hidden, at: at}
+	return nil
+}
+
+func (f *fakeStore) Hidden(_ context.Context, _, id string) (bool, time.Time, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	p := f.presence[id]
+	return p.hidden, p.at, nil
 }
 
 func newFakeStore() *fakeStore {
@@ -1300,6 +1328,7 @@ func (f *fakeStore) Delete(_ context.Context, _, id string, now time.Time) error
 	delete(f.sessions, id)
 	delete(f.states, id)
 	delete(f.versions, id)
+	delete(f.presence, id)
 	return nil
 }
 
