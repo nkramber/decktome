@@ -237,6 +237,10 @@ type Printing struct {
 	// PriceFinish names the Scryfall price key PriceUSD came from: "usd",
 	// "usd_foil", or "usd_etched". Empty when the printing has no price.
 	PriceFinish string
+	// NotForPlay marks a printing that no tournament allows: a memorabilia
+	// set, a gold border, or an oversized card. Its price never counts as
+	// the price of the card (D-1057).
+	NotForPlay bool
 }
 
 // parsePrinting reads the minimal printing row for collection resolution.
@@ -253,6 +257,9 @@ func parsePrinting(line []byte) (Printing, error) {
 		Artist          string            `json:"artist"`
 		Digital         bool              `json:"digital"`
 		ReleasedAt      string            `json:"released_at"`
+		SetType         string            `json:"set_type"`
+		BorderColor     string            `json:"border_color"`
+		Oversized       bool              `json:"oversized"`
 		Prices          map[string]string `json:"prices"`
 		ImageUris       *rawImages        `json:"image_uris"`
 		CardFaces       []struct {
@@ -270,7 +277,8 @@ func parsePrinting(line []byte) (Printing, error) {
 	p := Printing{ScryfallID: r.ID, OracleID: r.OracleID, Name: r.Name,
 		SetCode: r.Set, CollectorNumber: r.CollectorNumber, Layout: meldLayout(r.Layout, r.Name, r.AllParts),
 		Digital: r.Digital, ReleasedAt: r.ReleasedAt, SetName: r.SetName,
-		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto()}
+		Rarity: r.Rarity, Artist: r.Artist, ImageUris: r.ImageUris.proto(),
+		NotForPlay: r.SetType == "memorabilia" || r.BorderColor == "gold" || r.Oversized}
 	p.PriceUSD, p.PriceFinish = usdPrice(r.Prices)
 	return p, nil
 }

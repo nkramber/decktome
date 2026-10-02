@@ -243,10 +243,10 @@ type Card struct {
 	ProducedMana []Color `protobuf:"varint,18,rep,packed,name=produced_mana,json=producedMana,proto3,enum=mtg.v1.Color" json:"produced_mana,omitempty"`
 	// default_printing shows one representative printing for display.
 	DefaultPrinting *Printing `protobuf:"bytes,19,opt,name=default_printing,json=defaultPrinting,proto3" json:"default_printing,omitempty"`
-	// price_usd is the display price. Today: the Scryfall usd price of the
-	// default printing on the snapshot day. Target (D-17, D-26, I-2): the
-	// lowest NM market estimate across legal printings and finishes, as a
-	// 7-day median with outliers dropped. Zero means no price. Advisory only.
+	// price_usd is the display price. Today: the lowest Scryfall usd price
+	// of a paper printing that a player can play, on the snapshot day
+	// (D-1057). Target (D-17, D-26, I-2): that price as a 7-day median with
+	// outliers dropped. Zero means no price. Advisory only.
 	PriceUsd float64 `protobuf:"fixed64,20,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
 	// price_as_of is the date of the price data, ISO 8601 (YYYY-MM-DD).
 	PriceAsOf string `protobuf:"bytes,21,opt,name=price_as_of,json=priceAsOf,proto3" json:"price_as_of,omitempty"`

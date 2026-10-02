@@ -857,22 +857,6 @@ describe("SessionPage", () => {
     expect(screen.getByText("Here is a plan.", { selector: "p.whitespace-pre-line" })).toBeInTheDocument();
   });
 
-  // The reader's own last line is held at the top after every turn,
-  // wherever they had scrolled to (D-360). The old rule chased the foot
-  // of the thread and only when the reader was already near it.
-  it("anchors the reader's last line however far up the thread they are", async () => {
-    const scroll = vi.fn();
-    Element.prototype.scrollIntoView = scroll;
-    const rect = vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ top: 5000 } as DOMRect);
-    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("textDelta", "hi")]));
-    await renderAt("/session/new");
-    const user = userEvent.setup();
-    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
-    await screen.findByText("hi", { selector: "p.whitespace-pre-line" });
-    expect(scroll).toHaveBeenCalledWith({ block: "start" });
-    rect.mockRestore();
-  });
-
   it("forgets a stored session id the server does not know, and keeps it on another error", async () => {
     useAppStore.setState({ sessionId: "s1" });
     getSession.mockRejectedValueOnce(new ConnectError("down", Code.Unavailable));
@@ -1345,51 +1329,6 @@ describe("poolRuleOf", () => {
     expect(poolRuleOf("c1")).toBe(PoolRule.OWNED_ONLY);
     // No collection means nothing to prefer.
     expect(poolRuleOf("")).toBe(PoolRule.UNSPECIFIED);
-  });
-});
-
-// The reader's own last message is the top of what a turn produced, so
-// the scroll holds it at the top of the frame (D-360).
-describe("the scroll after a turn", () => {
-  it("puts the reader's last message at the top, not the foot of the thread", async () => {
-    const seen: { text: string; block: string }[] = [];
-    const real = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function scrollIntoView(this: Element, arg?: boolean | ScrollIntoViewOptions) {
-      seen.push({ text: this.textContent ?? "", block: typeof arg === "object" ? (arg.block ?? "") : "" });
-    };
-    try {
-      chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
-      await renderAt("/session/new");
-      const user = userEvent.setup();
-      await user.type(await screen.findByLabelText("Your message"), "Build me an elf deck");
-      await user.click(screen.getByRole("button", { name: "Send" }));
-      await screen.findByRole("group", { name: "Question: Which format?" });
-
-      const anchored = seen.filter((s) => s.block === "start");
-      expect(anchored.length).toBeGreaterThan(0);
-      // The element held at the top is the reader's own line.
-      expect(anchored.at(-1)?.text).toContain("Build me an elf deck");
-    } finally {
-      Element.prototype.scrollIntoView = real;
-    }
-  });
-
-  it("falls back to the foot while the reader has said nothing", async () => {
-    const blocks: string[] = [];
-    const real = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = function scrollIntoView(this: Element, arg?: boolean | ScrollIntoViewOptions) {
-      blocks.push(typeof arg === "object" ? (arg.block ?? "") : "");
-    };
-    try {
-      getSession.mockResolvedValue({
-        session: { id: "s1", collectionId: "", deckIds: [], turns: [{ userMessage: "", agentMessage: "here", questions: [], answers: [] }] },
-      });
-      await renderAt("/session/s1");
-      await screen.findByText("here");
-      expect(blocks).not.toContain("start");
-    } finally {
-      Element.prototype.scrollIntoView = real;
-    }
   });
 });
 

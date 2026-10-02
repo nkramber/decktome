@@ -39,7 +39,7 @@ export function BackToTop({ scroller }: { scroller: RefObject<HTMLElement | null
     <button
       type="button"
       onClick={onClick}
-      className="fixed top-[calc(var(--header-height,0px)+0.5rem)] left-1/2 z-20 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-card/95 px-4 text-sm font-medium shadow-raised print:hidden"
+      className="fixed top-[calc(var(--header-height,0px)+0.5rem)] left-1/2 z-20 flex min-h-11 -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-card/95 px-4 text-sm font-medium print:hidden"
     >
       <ArrowUpIcon className="size-4" aria-hidden="true" />
       Back to top

@@ -455,6 +455,22 @@ describe("DeckView", () => {
     expect(within(elves!).queryByTestId("card-price")).not.toBeInTheDocument();
   });
 
+  it("prices an owned card by the printing the reader owns, and sorts on that price (D-1058)", async () => {
+    const user = userEvent.setup();
+    renderDeck({
+      ...deck,
+      cards: [
+        { ...deck.cards[0], ownedPrinting: { scryfallId: "p-old", artist: "Rob Alexander", imageUris: img("forest-alpha"), priceUsd: 40 } },
+        ...deck.cards.slice(1),
+      ],
+    } as unknown as Deck);
+    await screen.findByAltText("Forest (card)");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "price");
+    const tiles = within(screen.getByRole("region", { name: /^Cards by price/ })).getAllByTestId("card-tile");
+    expect(within(tiles[0]!).getByAltText("Forest (card)")).toBeInTheDocument();
+    expect(within(tiles[0]!).getByTestId("card-price")).toHaveTextContent("$40.00");
+  });
+
   it("opens the card detail from a tile with the rulings and their dates (PR-20)", async () => {
     const user = userEvent.setup();
     renderDeck();

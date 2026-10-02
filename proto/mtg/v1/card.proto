@@ -41,10 +41,10 @@ message Card {
   repeated Color produced_mana = 18;
   // default_printing shows one representative printing for display.
   Printing default_printing = 19;
-  // price_usd is the display price. Today: the Scryfall usd price of the
-  // default printing on the snapshot day. Target (D-17, D-26, I-2): the
-  // lowest NM market estimate across legal printings and finishes, as a
-  // 7-day median with outliers dropped. Zero means no price. Advisory only.
+  // price_usd is the display price. Today: the lowest Scryfall usd price
+  // of a paper printing that a player can play, on the snapshot day
+  // (D-1057). Target (D-17, D-26, I-2): that price as a 7-day median with
+  // outliers dropped. Zero means no price. Advisory only.
   double price_usd = 20;
   // price_as_of is the date of the price data, ISO 8601 (YYYY-MM-DD).
   string price_as_of = 21;
