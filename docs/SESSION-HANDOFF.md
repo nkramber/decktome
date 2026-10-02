@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-02b)
 
-**Branch `fix/phone-live-check-2`: PR-110, five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** The pull request is #PR_NUMBER.
+**Branch `fix/phone-live-check-2`: PR-110, five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** The pull request is #267.
 
 Author provider: Claude Code
 
@@ -18,9 +18,9 @@ Author provider: Claude Code
 
 **The code, done and tested.** A theme with no signal is no theme (D-1038). "Commander" before a format noun names the format (D-1039). The push is the title alone (D-1040). A copy counts only from a named set (D-1041). The lease records the step of a build, and a reloaded page shows it (D-1042).
 
-**The checks.** The Go tests and the 474 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. CHECKS_PENDING
+**The checks.** The Go tests and the 474 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on `54a9f06`: "every check passed".
 
-**The review.** REVIEW_PENDING
+**The review.** The Gitar pass and the Codex review follow the first push.
 
 **The open work.** The pull request waits for its review loop, the confirmation of the owner, and the auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
 

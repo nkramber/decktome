@@ -2974,7 +2974,7 @@ Gate:
 
 The live check after the deploy runs on the iPhone of the owner (D-1037). It reads the push and the relaunch of PR-108, and the header at the open questions. Production deploys from `main` alone (D-579).
 
-**PR-110: Five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** The owner ran the iPhone check on 2026-10-02 against `e872724`. The header stayed at the top, and the push came at 16:03:28 UTC. The owner chose one pull request for the five faults (D-1043).
+**PR-110: Five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** ✅ merged as #267. The mark comes before any review (D-822). The owner ran the iPhone check on 2026-10-02 against `e872724`. The header stayed at the top, and the push came at 16:03:28 UTC. The owner chose one pull request for the five faults (D-1043).
 
 - **The theme (F-196, D-1038).** `ThemeMatch.Empty` reports a theme with no signal. The theme floor, the gap question, and the deck name skip such a theme.
 - **The commander (F-197, D-1039).** `namesCommander` skips "commander" before a format noun, so "the best commander deck" leaves the commander question open.
