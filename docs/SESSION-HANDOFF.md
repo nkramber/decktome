@@ -24,11 +24,9 @@ Author provider: Claude Code
 
 **The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. The Gitar review of `f2c916c` and of `3ccc917`, the commit of D-1044, approves, with 3 of 3 findings closed.
 
-**The Codex review.** The record of `3ccc917` reads `Changes required`, with one finding. P2-1: a Stop during `READING` promised a deck. The next commit restores the reply line of a reading turn, with a regression test. `docs/reviews/pr-267-response.md` holds the answer. That commit gets a Gitar pass, then a repeat run of `make codex-review PR=267`.
+**The Codex review.** The repeat review approves effective head `711fd3e`. P2-1 is fixed, and its UI regression test passes. GitHub verify passes. Local `make verify` stopped during Go linking because the volume had no free space. The record is `docs/reviews/pr-267.md`.
 
-**The Codex review.** The review of effective head `3ccc917` found P2-1: a Stop during `READING` says that a deck will appear. The verdict is Changes required. The record gives the correction and the regression check.
-
-**The open work.** The pull request waits for its review loop, the confirmation of the owner, and the auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
+**The open work.** The review is ready for owner merge. The pull request waits for the owner's confirmation, then auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
 
 ## How to resume
 
