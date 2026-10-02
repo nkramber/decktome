@@ -22,7 +22,7 @@ Author provider: Claude Code
 
 **The checks.** `make smoke` runs the phone spec, and 3 of 3 tests pass. `make verify` passes: "every check passed", with 473 of 473 web tests. The web tests need Node 22, because Node 20 fails each worker with `ERR_REQUIRE_ESM`.
 
-**The review.** Gitar approved `4284865`. The Codex review read `Blocked` there with no finding, because the Gitar CI note had no answer. A comment on the pull request answers it, and `docs/reviews/pr-266-response.md` records the answer. The repeat review follows the Gitar pass.
+**The review.** Gitar approved `4284865`, and the author answered both Gitar CI notes. The review record approves effective head `4284865` with no finding. The live iPhone check waits for the deploy under D-1037.
 
 **The open work.** After the deploy of this fix, the owner runs the iPhone check one time. It reads a switch of apps during a build, the push, and the deck on the return. It also reads a relaunch at `/` and the header at the open questions. The Cloud Run log then shows a `SetPageHidden` call and a `push: deck ready sent` line.
 
