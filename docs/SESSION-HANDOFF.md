@@ -31,7 +31,9 @@ Author provider: Claude Code
 
 **The checkpoint (D-946).** The first session passed 300K tokens after the code and the roadmap rows. A second clean session ran `make verify` and opened the pull request.
 
-**The open work.** Do the Gitar pass and the Codex review. Ask the owner for the merge confirmation. After the deploy, the owner checks the eight changes on the iPhone.
+**The review.** Gitar approved effective head `4f13cd5`, with no code finding or open thread. The Codex review record approves the same head. No finding stays open.
+
+**The open work.** The owner confirms the merge. After the deploy, the owner checks the eight changes on the iPhone.
 
 ## How to resume
 
