@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-02c)
 
-**Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** No pull request is open yet.
+**Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** The pull request is open, pending the Gitar pass, the Codex review, and the auto-merge.
 
 Author provider: Claude Code
 
@@ -27,11 +27,11 @@ Author provider: Claude Code
 - A test reads the owned count of the named sets (D-1052).
 - The deck actions take two rows on a phone (D-1053).
 
-**The checks.** The Go tests of `questions` and `candidates` pass. The web typecheck and lint pass, and 490 of 490 web tests pass. `make verify` did not run yet.
+**The checks.** The Go tests of `questions` and `candidates` pass. The web typecheck and lint pass. `make verify` on `dbc2c2d` reads "every check passed", with 490 of 490 web tests, under Node 22.
 
-**The checkpoint (D-946).** The session passed 300K tokens after the code. The roadmap rows, the findings F-201 and F-202, and sequencing step 106 wait for the next session.
+**The checkpoint (D-946).** The first session passed 300K tokens after the code and the roadmap rows. A second clean session ran `make verify` and opened the pull request.
 
-**The open work.** Write PR-111 and its findings in `docs/design-roadmap.md`. Run `make verify`. Open the pull request, and mark PR-111 merged at once (D-822). Then do the Gitar pass and the Codex review. After the deploy, the owner checks the eight changes on the iPhone.
+**The open work.** Do the Gitar pass and the Codex review. Ask the owner for the merge confirmation. After the deploy, the owner checks the eight changes on the iPhone.
 
 ## How to resume
 
@@ -104,7 +104,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **Finish PR-111 on `fix/phone-live-check-3`** (D-1045 to D-1054). Write the roadmap rows, run `make verify`, and open the pull request. After the deploy, the owner checks the eight changes on the iPhone.
+0. **The live check of PR-111** (D-1045 to D-1054). After the deploy, the owner checks the eight changes on the iPhone.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
