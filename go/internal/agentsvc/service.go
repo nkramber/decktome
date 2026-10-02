@@ -70,6 +70,13 @@ type Store interface {
 	Leased(ctx context.Context, uid, id string, now time.Time) (bool, error)
 	// Release ends the lease that token holds.
 	Release(ctx context.Context, uid, id, token string) error
+	// SetHidden records that the page of a session went to the
+	// background, or came back, at the given time. It returns
+	// sessions.ErrNotFound for a session that is not stored (D-1033).
+	SetHidden(ctx context.Context, uid, id string, hidden bool, at time.Time) error
+	// Hidden reports whether the page of a session is hidden, and the
+	// time of the last change (D-1033).
+	Hidden(ctx context.Context, uid, id string) (bool, time.Time, error)
 }
 
 // PreconSource hands out the precon set for the current card index, or
@@ -381,6 +388,21 @@ func detached(ctx context.Context, d time.Duration) (context.Context, context.Ca
 	return context.WithTimeout(context.WithoutCancel(ctx), d)
 }
 
+// turnStartKey holds the time a Chat call started. The build reads it to
+// tell a hidden page of this turn from one of an earlier turn (D-1033).
+type turnStartKey struct{}
+
+func withTurnStart(ctx context.Context, at time.Time) context.Context {
+	return context.WithValue(ctx, turnStartKey{}, at)
+}
+
+// turnStart answers the start of the Chat call, or the zero time outside
+// one.
+func turnStart(ctx context.Context) time.Time {
+	at, _ := ctx.Value(turnStartKey{}).(time.Time)
+	return at
+}
+
 var (
 	errNoUser          = errors.New("no user in the request context")
 	errNoMessage       = errors.New("message or answers are required")
@@ -473,6 +495,7 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 	if uid == "" {
 		return connect.NewError(connect.CodeUnauthenticated, errNoUser)
 	}
+	ctx = withTurnStart(ctx, s.now())
 	if strings.TrimSpace(req.Msg.GetMessage()) == "" && len(req.Msg.GetAnswers()) == 0 && req.Msg.GetRerunDeckId() == "" {
 		return connect.NewError(connect.CodeInvalidArgument, errNoMessage)
 	}

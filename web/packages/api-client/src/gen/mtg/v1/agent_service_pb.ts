@@ -20,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/agent_service.proto.
  */
 export const file_mtg_v1_agent_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIjwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiWQoUTGlzdFNlc3Npb25zUmVzcG9uc2USKAoIc2Vzc2lvbnMYASADKAsyFi5tdGcudjEuU2Vzc2lvblN1bW1hcnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIpECCg5TZXNzaW9uU3VtbWFyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWZpcnN0X21lc3NhZ2UYAyABKAkSFQoNY29sbGVjdGlvbl9pZBgEIAEoCRIlCgZzdGF0dXMYBSABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxISCgpkZWNrX2NvdW50GAYgASgFEhwKBXVzYWdlGAcgASgLMg0ubXRnLnYxLlVzYWdlEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKFFVwZGF0ZVNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEbmFtZRgCIAEoCSJAChVVcGRhdGVTZXNzaW9uUmVzcG9uc2USJwoHc2Vzc2lvbhgBIAEoCzIWLm10Zy52MS5TZXNzaW9uU3VtbWFyeSIqChREZWxldGVTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIhcKFURlbGV0ZVNlc3Npb25SZXNwb25zZSLJAQoLQ2hhdFJlcXVlc3QSEgoKc2Vzc2lvbl9pZBgBIAEoCRIVCg1jb2xsZWN0aW9uX2lkGAIgASgJEg8KB21lc3NhZ2UYAyABKAkSHwoHYW5zd2VycxgEIAMoCzIOLm10Zy52MS5BbnN3ZXISIwoJcG9vbF9ydWxlGAcgASgOMhAubXRnLnYxLlBvb2xSdWxlEhUKDXJlcnVuX2RlY2tfaWQYCCABKAlKBAgFEAZKBAgGEAdSBHNlZWRSD2tlZXBfb3JhY2xlX2lkcyI+CgpBZ2VudEVycm9yEgwKBGNvZGUYASABKAkSDwoHbWVzc2FnZRgCIAEoCRIRCglyZXRyeWFibGUYAyABKAgivwIKDENoYXRSZXNwb25zZRIZCg9zZXNzaW9uX3N0YXJ0ZWQYASABKAlIABIUCgp0ZXh0X2RlbHRhGAIgASgJSAASJAoIcXVlc3Rpb24YAyABKAsyEC5tdGcudjEuUXVlc3Rpb25IABIeCgVzbG90cxgEIAEoCzINLm10Zy52MS5TbG90c0gAEhAKBnN0YXR1cxgFIAEoCUgAEhwKBGRlY2sYBiABKAsyDC5tdGcudjEuRGVja0gAEhMKBWVycm9yGAcgASgJQgIYAUgAEiUKB2ZhaWx1cmUYCCABKAsyEi5tdGcudjEuQWdlbnRFcnJvckgAEh4KBXVzYWdlGAkgASgLMg0ubXRnLnYxLlVzYWdlSAASIwoFcGhhc2UYCiABKA4yEi5tdGcudjEuQnVpbGRQaGFzZUgAQgcKBWV2ZW50IicKEUdldFNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkiSAoSR2V0U2Vzc2lvblJlc3BvbnNlEiAKB3Nlc3Npb24YASABKAsyDy5tdGcudjEuU2Vzc2lvbhIQCghidWlsZGluZxgCIAEoCCKGAQoRSW1wb3J0RGVja1JlcXVlc3QSDAoEdGV4dBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWNvbGxlY3Rpb25faWQYAyABKAkSIAoGZm9ybWF0GAQgASgOMhAubXRnLnYxLkZvcm1hdElkEhwKFGNvbW1hbmRlcl9vcmFjbGVfaWRzGAUgAygJIrIBChJJbXBvcnREZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrEhIKCnNlc3Npb25faWQYAiABKAkSFAoMbmVlZHNfZm9ybWF0GAMgASgIEisKEWNvbW1hbmRlcl9vcHRpb25zGAQgAygLMhAubXRnLnYxLkRlY2tDYXJkEikKCnVucmVzb2x2ZWQYBSADKAsyFS5tdGcudjEuVW5yZXNvbHZlZFJvdyIrChhSZWFkSW1wb3J0QnJhY2tldFJlcXVlc3QSDwoHZGVja19pZBgBIAEoCSI3ChlSZWFkSW1wb3J0QnJhY2tldFJlc3BvbnNlEhoKBGRlY2sYASABKAsyDC5tdGcudjEuRGVjayrCAQoKQnVpbGRQaGFzZRIbChdCVUlMRF9QSEFTRV9VTlNQRUNJRklFRBAAEhcKE0JVSUxEX1BIQVNFX1JFQURJTkcQARIZChVCVUlMRF9QSEFTRV9TSE9SVExJU1QQAhIYChRCVUlMRF9QSEFTRV9CVUlMRElORxADEhgKFEJVSUxEX1BIQVNFX0NIRUNLSU5HEAQSGQoVQlVJTERfUEhBU0VfUkVQQUlSSU5HEAUSFAoQQlVJTERfUEhBU0VfRE9ORRAGMpwECgxBZ2VudFNlcnZpY2USNQoEQ2hhdBITLm10Zy52MS5DaGF0UmVxdWVzdBoULm10Zy52MS5DaGF0UmVzcG9uc2UiADABEkUKCkdldFNlc3Npb24SGS5tdGcudjEuR2V0U2Vzc2lvblJlcXVlc3QaGi5tdGcudjEuR2V0U2Vzc2lvblJlc3BvbnNlIgASSwoMTGlzdFNlc3Npb25zEhsubXRnLnYxLkxpc3RTZXNzaW9uc1JlcXVlc3QaHC5tdGcudjEuTGlzdFNlc3Npb25zUmVzcG9uc2UiABJOCg1VcGRhdGVTZXNzaW9uEhwubXRnLnYxLlVwZGF0ZVNlc3Npb25SZXF1ZXN0Gh0ubXRnLnYxLlVwZGF0ZVNlc3Npb25SZXNwb25zZSIAEk4KDURlbGV0ZVNlc3Npb24SHC5tdGcudjEuRGVsZXRlU2Vzc2lvblJlcXVlc3QaHS5tdGcudjEuRGVsZXRlU2Vzc2lvblJlc3BvbnNlIgASRQoKSW1wb3J0RGVjaxIZLm10Zy52MS5JbXBvcnREZWNrUmVxdWVzdBoaLm10Zy52MS5JbXBvcnREZWNrUmVzcG9uc2UiABJaChFSZWFkSW1wb3J0QnJhY2tldBIgLm10Zy52MS5SZWFkSW1wb3J0QnJhY2tldFJlcXVlc3QaIS5tdGcudjEuUmVhZEltcG9ydEJyYWNrZXRSZXNwb25zZSIAQjJaMGdpdGh1Yi5jb20vbmtyYW1iZXIvZGVja3RvbWUvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_mtg_v1_collection, file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
+  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIjwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiWQoUTGlzdFNlc3Npb25zUmVzcG9uc2USKAoIc2Vzc2lvbnMYASADKAsyFi5tdGcudjEuU2Vzc2lvblN1bW1hcnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIpECCg5TZXNzaW9uU3VtbWFyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWZpcnN0X21lc3NhZ2UYAyABKAkSFQoNY29sbGVjdGlvbl9pZBgEIAEoCRIlCgZzdGF0dXMYBSABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxISCgpkZWNrX2NvdW50GAYgASgFEhwKBXVzYWdlGAcgASgLMg0ubXRnLnYxLlVzYWdlEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKFFVwZGF0ZVNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEbmFtZRgCIAEoCSJAChVVcGRhdGVTZXNzaW9uUmVzcG9uc2USJwoHc2Vzc2lvbhgBIAEoCzIWLm10Zy52MS5TZXNzaW9uU3VtbWFyeSIqChREZWxldGVTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIhcKFURlbGV0ZVNlc3Npb25SZXNwb25zZSI6ChRTZXRQYWdlSGlkZGVuUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEg4KBmhpZGRlbhgCIAEoCCIXChVTZXRQYWdlSGlkZGVuUmVzcG9uc2UiyQEKC0NoYXRSZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSFQoNY29sbGVjdGlvbl9pZBgCIAEoCRIPCgdtZXNzYWdlGAMgASgJEh8KB2Fuc3dlcnMYBCADKAsyDi5tdGcudjEuQW5zd2VyEiMKCXBvb2xfcnVsZRgHIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIVCg1yZXJ1bl9kZWNrX2lkGAggASgJSgQIBRAGSgQIBhAHUgRzZWVkUg9rZWVwX29yYWNsZV9pZHMiPgoKQWdlbnRFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEQoJcmV0cnlhYmxlGAMgASgIIr8CCgxDaGF0UmVzcG9uc2USGQoPc2Vzc2lvbl9zdGFydGVkGAEgASgJSAASFAoKdGV4dF9kZWx0YRgCIAEoCUgAEiQKCHF1ZXN0aW9uGAMgASgLMhAubXRnLnYxLlF1ZXN0aW9uSAASHgoFc2xvdHMYBCABKAsyDS5tdGcudjEuU2xvdHNIABIQCgZzdGF0dXMYBSABKAlIABIcCgRkZWNrGAYgASgLMgwubXRnLnYxLkRlY2tIABITCgVlcnJvchgHIAEoCUICGAFIABIlCgdmYWlsdXJlGAggASgLMhIubXRnLnYxLkFnZW50RXJyb3JIABIeCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZUgAEiMKBXBoYXNlGAogASgOMhIubXRnLnYxLkJ1aWxkUGhhc2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIkgKEkdldFNlc3Npb25SZXNwb25zZRIgCgdzZXNzaW9uGAEgASgLMg8ubXRnLnYxLlNlc3Npb24SEAoIYnVpbGRpbmcYAiABKAgihgEKEUltcG9ydERlY2tSZXF1ZXN0EgwKBHRleHQYASABKAkSDAoEbmFtZRgCIAEoCRIVCg1jb2xsZWN0aW9uX2lkGAMgASgJEiAKBmZvcm1hdBgEIAEoDjIQLm10Zy52MS5Gb3JtYXRJZBIcChRjb21tYW5kZXJfb3JhY2xlX2lkcxgFIAMoCSKyAQoSSW1wb3J0RGVja1Jlc3BvbnNlEhoKBGRlY2sYASABKAsyDC5tdGcudjEuRGVjaxISCgpzZXNzaW9uX2lkGAIgASgJEhQKDG5lZWRzX2Zvcm1hdBgDIAEoCBIrChFjb21tYW5kZXJfb3B0aW9ucxgEIAMoCzIQLm10Zy52MS5EZWNrQ2FyZBIpCgp1bnJlc29sdmVkGAUgAygLMhUubXRnLnYxLlVucmVzb2x2ZWRSb3ciKwoYUmVhZEltcG9ydEJyYWNrZXRSZXF1ZXN0Eg8KB2RlY2tfaWQYASABKAkiNwoZUmVhZEltcG9ydEJyYWNrZXRSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sqwgEKCkJ1aWxkUGhhc2USGwoXQlVJTERfUEhBU0VfVU5TUEVDSUZJRUQQABIXChNCVUlMRF9QSEFTRV9SRUFESU5HEAESGQoVQlVJTERfUEhBU0VfU0hPUlRMSVNUEAISGAoUQlVJTERfUEhBU0VfQlVJTERJTkcQAxIYChRCVUlMRF9QSEFTRV9DSEVDS0lORxAEEhkKFUJVSUxEX1BIQVNFX1JFUEFJUklORxAFEhQKEEJVSUxEX1BIQVNFX0RPTkUQBjLsBAoMQWdlbnRTZXJ2aWNlEjUKBENoYXQSEy5tdGcudjEuQ2hhdFJlcXVlc3QaFC5tdGcudjEuQ2hhdFJlc3BvbnNlIgAwARJFCgpHZXRTZXNzaW9uEhkubXRnLnYxLkdldFNlc3Npb25SZXF1ZXN0GhoubXRnLnYxLkdldFNlc3Npb25SZXNwb25zZSIAEksKDExpc3RTZXNzaW9ucxIbLm10Zy52MS5MaXN0U2Vzc2lvbnNSZXF1ZXN0GhwubXRnLnYxLkxpc3RTZXNzaW9uc1Jlc3BvbnNlIgASTgoNVXBkYXRlU2Vzc2lvbhIcLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVxdWVzdBodLm10Zy52MS5VcGRhdGVTZXNzaW9uUmVzcG9uc2UiABJOCg1EZWxldGVTZXNzaW9uEhwubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXF1ZXN0Gh0ubXRnLnYxLkRlbGV0ZVNlc3Npb25SZXNwb25zZSIAEkUKCkltcG9ydERlY2sSGS5tdGcudjEuSW1wb3J0RGVja1JlcXVlc3QaGi5tdGcudjEuSW1wb3J0RGVja1Jlc3BvbnNlIgASWgoRUmVhZEltcG9ydEJyYWNrZXQSIC5tdGcudjEuUmVhZEltcG9ydEJyYWNrZXRSZXF1ZXN0GiEubXRnLnYxLlJlYWRJbXBvcnRCcmFja2V0UmVzcG9uc2UiABJOCg1TZXRQYWdlSGlkZGVuEhwubXRnLnYxLlNldFBhZ2VIaWRkZW5SZXF1ZXN0Gh0ubXRnLnYxLlNldFBhZ2VIaWRkZW5SZXNwb25zZSIAQjJaMGdpdGh1Yi5jb20vbmtyYW1iZXIvZGVja3RvbWUvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_mtg_v1_collection, file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.ListSessionsRequest
@@ -207,6 +207,44 @@ export const DeleteSessionResponseSchema: GenMessage<DeleteSessionResponse> = /*
   messageDesc(file_mtg_v1_agent_service, 6);
 
 /**
+ * @generated from message mtg.v1.SetPageHiddenRequest
+ */
+export type SetPageHiddenRequest = Message<"mtg.v1.SetPageHiddenRequest"> & {
+  /**
+   * @generated from field: string session_id = 1;
+   */
+  sessionId: string;
+
+  /**
+   * hidden is true when the page went to the background, and false when
+   * it came back.
+   *
+   * @generated from field: bool hidden = 2;
+   */
+  hidden: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.SetPageHiddenRequest.
+ * Use `create(SetPageHiddenRequestSchema)` to create a new message.
+ */
+export const SetPageHiddenRequestSchema: GenMessage<SetPageHiddenRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 7);
+
+/**
+ * @generated from message mtg.v1.SetPageHiddenResponse
+ */
+export type SetPageHiddenResponse = Message<"mtg.v1.SetPageHiddenResponse"> & {
+};
+
+/**
+ * Describes the message mtg.v1.SetPageHiddenResponse.
+ * Use `create(SetPageHiddenResponseSchema)` to create a new message.
+ */
+export const SetPageHiddenResponseSchema: GenMessage<SetPageHiddenResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 8);
+
+/**
  * @generated from message mtg.v1.ChatRequest
  */
 export type ChatRequest = Message<"mtg.v1.ChatRequest"> & {
@@ -259,7 +297,7 @@ export type ChatRequest = Message<"mtg.v1.ChatRequest"> & {
  * Use `create(ChatRequestSchema)` to create a new message.
  */
 export const ChatRequestSchema: GenMessage<ChatRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 7);
+  messageDesc(file_mtg_v1_agent_service, 9);
 
 /**
  * AgentError is a failure the UI can act on.
@@ -292,7 +330,7 @@ export type AgentError = Message<"mtg.v1.AgentError"> & {
  * Use `create(AgentErrorSchema)` to create a new message.
  */
 export const AgentErrorSchema: GenMessage<AgentError> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 8);
+  messageDesc(file_mtg_v1_agent_service, 10);
 
 /**
  * ChatResponse is one streamed step of the agent's turn.
@@ -394,7 +432,7 @@ export type ChatResponse = Message<"mtg.v1.ChatResponse"> & {
  * Use `create(ChatResponseSchema)` to create a new message.
  */
 export const ChatResponseSchema: GenMessage<ChatResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 9);
+  messageDesc(file_mtg_v1_agent_service, 11);
 
 /**
  * @generated from message mtg.v1.GetSessionRequest
@@ -411,7 +449,7 @@ export type GetSessionRequest = Message<"mtg.v1.GetSessionRequest"> & {
  * Use `create(GetSessionRequestSchema)` to create a new message.
  */
 export const GetSessionRequestSchema: GenMessage<GetSessionRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 10);
+  messageDesc(file_mtg_v1_agent_service, 12);
 
 /**
  * @generated from message mtg.v1.GetSessionResponse
@@ -437,7 +475,7 @@ export type GetSessionResponse = Message<"mtg.v1.GetSessionResponse"> & {
  * Use `create(GetSessionResponseSchema)` to create a new message.
  */
 export const GetSessionResponseSchema: GenMessage<GetSessionResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 11);
+  messageDesc(file_mtg_v1_agent_service, 13);
 
 /**
  * ImportDeckRequest carries one deck list: an Archidekt text export or an
@@ -489,7 +527,7 @@ export type ImportDeckRequest = Message<"mtg.v1.ImportDeckRequest"> & {
  * Use `create(ImportDeckRequestSchema)` to create a new message.
  */
 export const ImportDeckRequestSchema: GenMessage<ImportDeckRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 12);
+  messageDesc(file_mtg_v1_agent_service, 14);
 
 /**
  * @generated from message mtg.v1.ImportDeckResponse
@@ -537,7 +575,7 @@ export type ImportDeckResponse = Message<"mtg.v1.ImportDeckResponse"> & {
  * Use `create(ImportDeckResponseSchema)` to create a new message.
  */
 export const ImportDeckResponseSchema: GenMessage<ImportDeckResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 13);
+  messageDesc(file_mtg_v1_agent_service, 15);
 
 /**
  * @generated from message mtg.v1.ReadImportBracketRequest
@@ -554,7 +592,7 @@ export type ReadImportBracketRequest = Message<"mtg.v1.ReadImportBracketRequest"
  * Use `create(ReadImportBracketRequestSchema)` to create a new message.
  */
 export const ReadImportBracketRequestSchema: GenMessage<ReadImportBracketRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 14);
+  messageDesc(file_mtg_v1_agent_service, 16);
 
 /**
  * @generated from message mtg.v1.ReadImportBracketResponse
@@ -571,7 +609,7 @@ export type ReadImportBracketResponse = Message<"mtg.v1.ReadImportBracketRespons
  * Use `create(ReadImportBracketResponseSchema)` to create a new message.
  */
 export const ReadImportBracketResponseSchema: GenMessage<ReadImportBracketResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 15);
+  messageDesc(file_mtg_v1_agent_service, 17);
 
 /**
  * BuildPhase names where a turn stands (roadmap PR-19). The stepper of
@@ -712,6 +750,18 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof ReadImportBracketRequestSchema;
     output: typeof ReadImportBracketResponseSchema;
+  },
+  /**
+   * SetPageHidden records that the page of a session went to the
+   * background, or came back. A build that stores its deck while the
+   * page is hidden sends the push of a finished build (D-1033).
+   *
+   * @generated from rpc mtg.v1.AgentService.SetPageHidden
+   */
+  setPageHidden: {
+    methodKind: "unary";
+    input: typeof SetPageHiddenRequestSchema;
+    output: typeof SetPageHiddenResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_agent_service, 0);

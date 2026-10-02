@@ -158,6 +158,52 @@ func (r *Repo) Release(ctx context.Context, uid, id, token string) error {
 	})
 }
 
+// presenceDoc holds whether the page of one session is hidden. It sits
+// apart from the session, as the lease does, so a write of it never
+// changes the version that Put compares (D-1033).
+func (r *Repo) presenceDoc(uid, id string) *firestore.DocumentRef {
+	return r.doc(uid, id).Collection("private").Doc("presence")
+}
+
+// storedPresence is the presence shape. At is the time of the change.
+type storedPresence struct {
+	Hidden bool      `firestore:"hidden"`
+	At     time.Time `firestore:"at"`
+}
+
+// SetHidden records that the page of a session went to the background,
+// or came back, at the given time. A session that is not stored returns
+// ErrNotFound and writes nothing, so a late write after a delete leaves
+// no orphan document (D-1033).
+func (r *Repo) SetHidden(ctx context.Context, uid, id string, hidden bool, at time.Time) error {
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		if _, err := tx.Get(r.doc(uid, id)); err != nil {
+			if status.Code(err) == codes.NotFound {
+				return fmt.Errorf("%w: %s", ErrNotFound, id)
+			}
+			return err
+		}
+		return tx.Set(r.presenceDoc(uid, id), storedPresence{Hidden: hidden, At: at})
+	})
+}
+
+// Hidden reports whether the page of a session is hidden, and the time
+// of the last change. A session with no record reads as shown.
+func (r *Repo) Hidden(ctx context.Context, uid, id string) (bool, time.Time, error) {
+	snap, err := r.presenceDoc(uid, id).Get(ctx)
+	if status.Code(err) == codes.NotFound {
+		return false, time.Time{}, nil
+	}
+	if err != nil {
+		return false, time.Time{}, err
+	}
+	var p storedPresence
+	if err := snap.DataTo(&p); err != nil {
+		return false, time.Time{}, err
+	}
+	return p.Hidden, p.At, nil
+}
+
 // NewID reserves a session id without a write.
 func (r *Repo) NewID(uid string) string {
 	return r.client.Collection("users").Doc(uid).Collection("sessions").NewDoc().ID
@@ -420,6 +466,9 @@ func (r *Repo) Delete(ctx context.Context, uid, id string, now time.Time) error 
 			return err
 		}
 		if err := tx.Delete(r.leaseDoc(uid, id)); err != nil {
+			return err
+		}
+		if err := tx.Delete(r.presenceDoc(uid, id)); err != nil {
 			return err
 		}
 		return tx.Delete(r.stateDoc(uid, id))

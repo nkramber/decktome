@@ -284,3 +284,10 @@ func (m *memStore) Leased(context.Context, string, string, time.Time) (bool, err
 }
 
 func (m *memStore) Release(context.Context, string, string, string) error { return nil }
+
+// The probe reads the stream to its end, so its page is never hidden.
+func (m *memStore) SetHidden(context.Context, string, string, bool, time.Time) error { return nil }
+
+func (m *memStore) Hidden(context.Context, string, string) (bool, time.Time, error) {
+	return false, time.Time{}, nil
+}

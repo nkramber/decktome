@@ -6,7 +6,15 @@ import { RouterProvider } from "react-router";
 
 import { Providers } from "./app/providers";
 import { createAppRouter } from "./app/router";
+import { takeRunningBuild } from "./features/chat/running-build";
 import { startServiceWorker } from "./lib/pwa-register";
+
+// A launch at "/" opens the session of a build that ran when the app
+// last closed (D-1034). The router reads the address it starts on.
+if (window.location.pathname === "/") {
+  const to = takeRunningBuild();
+  if (to) window.history.replaceState(null, "", to);
+}
 
 const root = document.getElementById("root");
 if (!root) {

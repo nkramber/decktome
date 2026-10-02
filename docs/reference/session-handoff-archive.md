@@ -15,6 +15,39 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-01, PR-107
+
+**Branch `fix/owned-pool-and-commander-pick`: PR-107, the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** The pull request is #264.
+
+Author provider: Claude Code
+
+**The base.** `main` is `07203ba`, from #263. Cloud Build `deploy-api` `7b4cbb1f` and `deploy-web` `4aaed5e2` built it with SUCCESS on 2026-10-01 at 03:44:08 and 03:44:53 UTC. The first `mtg-snapshot` run on `worker:c63e2c2` started at 03:00 UTC and logged no `stale pass ended`. No snapshot holds a legality diff marker, so the pass ends with no line. The line waits for a real legality change (D-1023).
+
+**The owner answers.** OQ-88 (D-1027) and OQ-89 (D-1028). The iPhone check of PR-106 passes (D-1029). The toast fix joins this pull request (D-1030). A named card stays under "Only my cards" (D-1031). The theme floor is 15 for a 60-card format (D-1032).
+
+**The code, done and tested.**
+
+- F-191: the row `commander_pick` sets `no_decline` (D-1014).
+- F-194: at 600px or less, a toast shows under the header. The layout writes `--header-height` (D-1030).
+- F-188: the web has no checkbox, and a chosen collection sends `POOL_RULE_OWNED_ONLY` (D-1011).
+- `go/internal/questions/pool_gap.go` runs the three checks. The row `pool_gap` asks on its own key.
+- The rules engine warns for a named card the collection lacks. The buy table names an unowned commander (D-1031).
+- `e2e/smoke.spec.ts` and `e2e/phone.spec.ts` answer the gap question.
+
+**The checks.** `make verify` passes: "every check passed", with 463 of 463 web tests. A Firestore emulator of the owner holds port 8281, so `make smoke` can not start. The owner chose the workflow `.github/workflows/smoke.yml`, and run 36894498992 passed on `6d0b889`.
+
+**The review.** Gitar approved the current head, and its one finding is fixed and resolved. Codex reviewed effective head `509e7c6` with no finding. The verdict is Ready for owner merge. Smoke run `36939627381` passed on branch tip `601c892` after the cache fix.
+
+**The context checkpoint.** The first session ended at 300K tokens of context (D-946). A second clean session ran the Codex review.
+
+**The open work.** The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828, D-834). No finding stays open.
+
+### 2026-09-29g: the web push of a finished build, PR-26
+
+**The owner chose PR-26.** The session found no staleness job for I-1, so the legality event has no source. The owner chose web push and the finished build alone (D-1004).
+
+**The console had no key page for the owner.** The session read the default VAPID key in the SDK, and the step left the plan. The owner chose the grant by the session and the toggle in the account menu (D-1005).
+
 ## The resume section of 2026-09-30b, PR-106
 
 **Branch `fix/session-reload-and-phone-layout`: PR-106, four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).** The pull request is #263.

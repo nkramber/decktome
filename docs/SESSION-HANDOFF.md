@@ -6,32 +6,27 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-01)
+## RESUME HERE (2026-10-01b)
 
-**Branch `fix/owned-pool-and-commander-pick`: PR-107, the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1012, D-1030).** The pull request is #264.
+**Branch `fix/phone-connection-and-push`: PR-108, the installed app on a phone after a dropped connection, and the push of a finished build (F-190, F-192, D-1015, D-1016).** The pull request is #PRNUM.
 
 Author provider: Claude Code
 
-**The base.** `main` is `07203ba`, from #263. Cloud Build `deploy-api` `7b4cbb1f` and `deploy-web` `4aaed5e2` built it with SUCCESS on 2026-10-01 at 03:44:08 and 03:44:53 UTC. The first `mtg-snapshot` run on `worker:c63e2c2` started at 03:00 UTC and logged no `stale pass ended`. No snapshot holds a legality diff marker, so the pass ends with no line. The line waits for a real legality change (D-1023).
+**The base.** `main` is `5353fbe`, from #264. Cloud Build `deploy-api` `4822f058` and `deploy-web` `b0e45ccd` built it with SUCCESS on 2026-10-01 at 23:32:49 and 23:33:31 UTC.
 
-**The owner answers.** OQ-88 (D-1027) and OQ-89 (D-1028). The iPhone check of PR-106 passes (D-1029). The toast fix joins this pull request (D-1030). A named card stays under "Only my cards" (D-1031). The theme floor is 15 for a 60-card format (D-1032).
+**The owner answers.** OQ-90 (D-1033): the page tells the API when it goes to the background. A launch at `/` opens the session of a running build (D-1034). The owner does not remember the screen of 17:58 on 2026-09-30, so the logs alone give the cause.
+
+**The cause of F-190, from the logs.** The phone suspended the page, and the stream broke on the phone alone. Cloud Run kept the request open for 109 seconds, so the context did not end and no push went out (F-192). The page wrote a failure line, gave the answer back, and started no build watch. The send at 17:58:04 met the build in progress in 3 ms. The launch at 17:58:11 opened `/` and read no session.
 
 **The code, done and tested.**
 
-- F-191: the row `commander_pick` sets `no_decline` (D-1014).
-- F-194: at 600px or less, a toast shows under the header. The layout writes `--header-height` (D-1030).
-- F-188: the web has no checkbox, and a chosen collection sends `POOL_RULE_OWNED_ONLY` (D-1011).
-- `go/internal/questions/pool_gap.go` runs the three checks. The row `pool_gap` asks on its own key.
-- The rules engine warns for a named card the collection lacks. The buy table names an unowned commander (D-1031).
-- `e2e/smoke.spec.ts` and `e2e/phone.spec.ts` answer the gap question.
+- `SetPageHidden` writes `private/presence` of the session. A build sends the push when the stream ended, or when the page reported a leave after the start of the turn.
+- A lost stream of a stored session reads the session again, with no failure line. A return to view reads it at once.
+- `web/apps/web/src/features/chat/running-build.ts` keeps the id of a running build, and `main.tsx` opens it at a launch at `/`.
 
-**The checks.** `make verify` passes: "every check passed", with 463 of 463 web tests. A Firestore emulator of the owner holds port 8281, so `make smoke` can not start. The owner chose the workflow `.github/workflows/smoke.yml`, and run 36894498992 passed on `6d0b889`.
+**The checks.** CHECKS
 
-**The review.** Gitar approved the current head, and its one finding is fixed and resolved. Codex reviewed effective head `509e7c6` with no finding. The verdict is Ready for owner merge. Smoke run `36939627381` passed on branch tip `601c892` after the cache fix.
-
-**The context checkpoint.** The first session ended at 300K tokens of context (D-946). A second clean session ran the Codex review.
-
-**The open work.** The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828, D-834). No finding stays open.
+**The open work.** The live check on the iPhone of the owner waits for the deploy of the merge. It reads a switch of apps during a build, a push, and the deck on the return. The review waits for the push of the branch.
 
 ## How to resume
 
@@ -104,7 +99,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The third pull request after I-1: investigate F-190, and fix F-192** (D-1015, D-1016). The installed app on a phone fails too easily when the connection drops. The push misses a switch of apps. Ask OQ-90 first.
+0. **The live check of PR-108 on the iPhone of the owner** (D-1033, D-1034). After the deploy, switch apps during a build. Then read the push, the deck on the return, and a relaunch.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -128,12 +123,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-09-29g: the web push of a finished build, PR-26
-
-**The owner chose PR-26.** The session found no staleness job for I-1, so the legality event has no source. The owner chose web push and the finished build alone (D-1004).
-
-**The console had no key page for the owner.** The session read the default VAPID key in the SDK, and the step left the plan. The owner chose the grant by the session and the toggle in the account menu (D-1005).
-
 ### 2026-09-30b: four screen fixes, PR-106
 
 **The deploy of I-1 read SUCCESS.** No deck was stale, and the session can not write under `users/`. The owner chose to wait for a real stale deck (D-1023).
@@ -146,6 +135,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner sent a screenshot of a toast over a button.** The owner chose a toast under the header on a phone, in this pull request (D-1030, F-194).
 
+### 2026-10-01b: the phone connection and the push, PR-108
+
+**The owner answered OQ-90 first.** The page tells the API when it goes to the background (D-1033). The session read the logs of 2026-09-30 before any code, and found the order of F-190.
+
+**The relaunch at `/` lost the build screen.** The owner chose a launch that opens the session of a running build (D-1034).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-09-30b, the records of 2026-08-31 to 2026-09-30, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-01, the records of 2026-08-31 to 2026-09-30, and 104 more sections, word for word. Read it for the detail behind a decision.

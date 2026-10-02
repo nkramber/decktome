@@ -770,15 +770,36 @@ func (s *Server) storeDeck(ctx context.Context, uid string, session *mtgv1.Sessi
 		s.log.ErrorContext(ctx, "the deck id was not recorded on the session",
 			"session", session.GetId(), "deck", d.GetId(), "err", err)
 	}
-	// The stream context ends when the client leaves, and the build runs
-	// on (D-303). So a done context means the user left the page, and a
-	// device that took push hears that the deck is ready (D-1005). A user
-	// on the page reads the deck in the stream and gets no push.
-	if s.push != nil && ctx.Err() != nil {
+	// A device that took push hears that the deck is ready when the user
+	// left the page (D-1005). A user on the page reads the deck in the
+	// stream and gets no push.
+	if s.push != nil && s.pageLeft(ctx, sctx, uid, session.GetId()) {
 		pctx, pcancel := detached(ctx, pushLimit)
 		defer pcancel()
 		s.push.DeckReady(pctx, uid, d)
 	}
+}
+
+// pageLeft reports whether the user left the page of the turn. The
+// stream context ends when the client leaves, and the build runs on
+// (D-303). A phone can suspend the page and keep the stream open, so the
+// page also reports when it goes to the background. Only a report after
+// the start of this turn counts, because an older one names an earlier
+// page (D-1033, F-192).
+func (s *Server) pageLeft(ctx, sctx context.Context, uid, id string) bool {
+	if ctx.Err() != nil {
+		return true
+	}
+	start := turnStart(ctx)
+	if start.IsZero() {
+		return false
+	}
+	hidden, at, err := s.store.Hidden(sctx, uid, id)
+	if err != nil {
+		s.log.WarnContext(ctx, "the page presence could not be read, so no push goes out", "session", id, "err", err)
+		return false
+	}
+	return hidden && !at.Before(start)
 }
 
 // sendRevision runs the turn after a build: the revise call reads the

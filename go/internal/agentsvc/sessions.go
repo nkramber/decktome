@@ -140,6 +140,22 @@ func (s *Server) UpdateSession(ctx context.Context, req *connect.Request[mtgv1.U
 	return connect.NewResponse(&mtgv1.UpdateSessionResponse{Session: sum}), nil
 }
 
+// SetPageHidden records that the page of a session went to the
+// background, or came back. A phone can suspend the page and keep its
+// stream open, so the server can not see the page leave. The build reads
+// this record when it stores its deck, and it sends the push of a
+// finished build to a page that is hidden (D-1033, F-192).
+func (s *Server) SetPageHidden(ctx context.Context, req *connect.Request[mtgv1.SetPageHiddenRequest]) (*connect.Response[mtgv1.SetPageHiddenResponse], error) {
+	uid, id, err := s.sessionRef(ctx, req.Msg.GetSessionId())
+	if err != nil {
+		return nil, err
+	}
+	if err := s.store.SetHidden(ctx, uid, id, req.Msg.GetHidden(), s.now()); err != nil {
+		return nil, storeError(err)
+	}
+	return connect.NewResponse(&mtgv1.SetPageHiddenResponse{}), nil
+}
+
 // DeleteSession removes a conversation and the decks it built, for good
 // (D-433, D-456). A session with a build in flight waits: the build writes
 // its deck id onto the session when it ends, and a delete under it

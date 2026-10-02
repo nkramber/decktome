@@ -7,7 +7,7 @@ import { BuildPhase } from "@mtg/api-client/mtg/v1/agent_service_pb";
 
 import { SessionStatus, SlotState } from "@mtg/api-client/mtg/v1/session_pb";
 
-import { answerLabel, answerText, byteLength, codeName, emptyState, fromSession, mergeOpen, stillAsked, streamFailure } from "./use-chat";
+import { answerLabel, answerText, byteLength, codeName, emptyState, fromSession, lostStream, mergeOpen, stillAsked, streamFailure } from "./use-chat";
 
 vi.mock("../../lib/api", () => ({ agentClient: {} }));
 
@@ -124,6 +124,24 @@ describe("use-chat helpers", () => {
 });
 
 // The phase of a turn rides beside the status lines (D-435).
+// F-190: a phone that suspends the page breaks the stream, and the turn
+// runs on at the server.
+describe("lostStream", () => {
+  it("reads a broken connection and a build in progress as a lost stream", () => {
+    expect(lostStream(new TypeError("Load failed"))).toBe(true);
+    expect(lostStream(ConnectError.from(new TypeError("Load failed")))).toBe(true);
+    expect(lostStream(ConnectError.from("missing EndStreamResponse"))).toBe(true);
+    expect(lostStream(new ConnectError("a build is in progress", Code.Aborted))).toBe(true);
+  });
+
+  it("keeps a failure the server answered", () => {
+    expect(lostStream(new ConnectError("the session is busy", Code.Unavailable))).toBe(false);
+    expect(lostStream(new ConnectError("bad", Code.InvalidArgument))).toBe(false);
+    expect(lostStream(new ConnectError("a fault", Code.Unknown))).toBe(false);
+    expect(lostStream(new Error("other"))).toBe(false);
+  });
+});
+
 describe("the build phase", () => {
   it("starts unset, and a repair marks the state", () => {
     expect(emptyState.phase).toBe(BuildPhase.UNSPECIFIED);

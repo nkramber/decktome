@@ -20,6 +20,7 @@ vi.mock("firebase/auth");
 
 const chat = vi.fn();
 const getSession = vi.fn();
+const setPageHidden = vi.fn();
 const getDeck = vi.fn();
 const getCards = vi.fn();
 const listDecks = vi.fn();
@@ -30,6 +31,7 @@ vi.mock("../../lib/api", () => ({
     chat: (...args: unknown[]) => chat(...args),
     getSession: (...args: unknown[]) => getSession(...args),
   },
+  pageClient: { setPageHidden: (...args: unknown[]) => setPageHidden(...args) },
   feedbackClient: { submitFeedback: (...args: unknown[]) => submitFeedback(...args) },
   deckClient: { getDeck: (...args: unknown[]) => getDeck(...args), exportDeck: vi.fn(), listDecks: (...args: unknown[]) => listDecks(...args) },
   cardClient: { getCards: (...args: unknown[]) => getCards(...args) },
@@ -44,6 +46,13 @@ async function* events(list: Ev[]) {
   }
 }
 const ev = (c: string, value: unknown): Ev => ({ event: { case: c, value } });
+
+// setVisibility moves the page to the background or back, as a phone
+// does on a switch of apps.
+function setVisibility(v: "hidden" | "visible") {
+  Object.defineProperty(document, "visibilityState", { configurable: true, get: () => v });
+  document.dispatchEvent(new Event("visibilitychange"));
+}
 
 const submitFeedback = vi.fn();
 const formatQuestion = { id: "q1", slot: "format", text: "Which format?", options: ["Commander", "Standard", "Modern"], optionOracleIds: [] };
@@ -65,6 +74,9 @@ beforeEach(() => {
   useAppStore.setState({ collectionId: "", sessionId: "", poolMode: "any" });
   chat.mockReset();
   getSession.mockReset();
+  setPageHidden.mockReset();
+  setPageHidden.mockResolvedValue({});
+  setVisibility("visible");
   getDeck.mockReset();
   getCards.mockReset();
   listDecks.mockReset();
@@ -378,6 +390,51 @@ describe("SessionPage", () => {
       await user.click(await screen.findByRole("button", { name: "Stop" }));
 
       expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+    });
+
+    // F-190: a phone suspended the page during a build, the stream broke,
+    // and the page showed a failure line. A second send met the build in
+    // progress, and the installed app has no reload.
+    it("a lost stream during a build reads the session and waits for the deck (F-190)", async () => {
+      chat.mockImplementationOnce(async function* () {
+        yield ev("sessionStarted", "s1");
+        yield ev("phase", BuildPhase.SHORTLIST);
+        // The page moves to the address of the session first, as it does
+        // in the seconds of a real build.
+        await new Promise((r) => setTimeout(r, 50));
+        throw ConnectError.from(new TypeError("Load failed"));
+      });
+      const stored = { id: "s1", collectionId: "", deckIds: [] as string[], turns: [{ userMessage: "elves", agentMessage: "", questions: [], answers: [] }] };
+      getSession.mockResolvedValueOnce({ session: stored, building: true });
+      getSession.mockResolvedValue({ session: { ...stored, deckIds: ["d1"] }, building: false });
+      getDeck.mockResolvedValue({ deck });
+      const { router } = await renderAt("/session/new");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+      expect(screen.queryByTestId("recovery")).not.toBeInTheDocument();
+      // D-1034: a launch at "/" now opens this session.
+      expect(JSON.parse(localStorage.getItem("decktome.runningBuild") ?? "{}").id).toBe("s1");
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d1"));
+      expect(localStorage.getItem("decktome.runningBuild")).toBeNull();
+    });
+
+    // F-190: a return to the app read the session only at the next tick.
+    it("reads the session at once when the page comes back to view, and reports each move (D-1033)", async () => {
+      getSession.mockResolvedValue({ session: { id: "s1", collectionId: "", deckIds: [], turns: [] }, building: true });
+      await renderAt("/session/s1");
+      await screen.findByTestId("server-build");
+      expect(getSession).toHaveBeenCalledTimes(1);
+      setVisibility("hidden");
+      setVisibility("visible");
+      await waitFor(() => expect(getSession).toHaveBeenCalledTimes(2));
+      expect(setPageHidden.mock.calls.map((c) => c[0])).toEqual([
+        { sessionId: "s1", hidden: true },
+        { sessionId: "s1", hidden: false },
+      ]);
     });
 
     it("a gone session stops the reads", async () => {

@@ -26,6 +26,8 @@ import { UnfinishedChats } from "./unfinished-chats";
 import { Thumbs } from "../feedback/thumbs";
 import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-card";
 import { useBuildWatch } from "./use-build-watch";
+import { clearRunningBuild, noteRunningBuild } from "./running-build";
+import { usePageHidden } from "./use-page-hidden";
 import { byteLength, type ChatState, emptyState, fromSession, maxMessageBytes, type SendInput, type ThreadItem, useChat } from "./use-chat";
 
 // The chat screen (ui plan, step 3). The id "new" means no session yet.
@@ -175,6 +177,10 @@ export function SessionPage() {
   );
 }
 
+// buildPhases are the phases of a deck build. The phase of the read of
+// the message comes before them, and a question turn ends there.
+const buildPhases = new Set([BuildPhase.SHORTLIST, BuildPhase.BUILDING, BuildPhase.CHECKING, BuildPhase.REPAIRING]);
+
 // pruneDrafts keeps the drafts of the open questions only.
 export function pruneDrafts(drafts: Record<string, Draft>, open: { id: string }[]): Record<string, Draft> {
   const ids = new Set(open.map((q) => q.id));
@@ -259,7 +265,9 @@ export function ChatPanel({
     },
     [setSessionId, onStarted],
   );
-  const { state, send, stop } = useChat(initial, sendCollection, sendPoolRule, onSessionStarted);
+  // A lost stream reads the stored session again by itself, so a phone
+  // that suspended the page finds the build that runs on (F-190).
+  const { state, send, stop } = useChat(initial, sendCollection, sendPoolRule, onSessionStarted, onResume);
   // A build runs on the server after a Stop or a reload, and the server
   // stores its deck (D-303). The page reads the session until the build
   // ends (REV-046). The watch holds until its own read sees the end,
@@ -288,6 +296,16 @@ export function ChatPanel({
     [onBuildEnded],
   );
   useBuildWatch(state.sessionId, serverBuild, onServerBuildEnded);
+  usePageHidden(state.sessionId, state.busy || serverBuild);
+  // The page keeps the id of a session while its build runs, so a launch
+  // of the app at "/" opens it again (D-1034).
+  const buildRuns = (state.busy && buildPhases.has(state.phase)) || (serverBuild && !serverReply);
+  useEffect(() => {
+    const id = state.sessionId;
+    if (id === "") return;
+    if (buildRuns) noteRunningBuild(id);
+    else clearRunningBuild(id);
+  }, [buildRuns, state.sessionId]);
   const [message, setMessage] = useState("");
   const [drafts, setDrafts] = useState<Record<string, Draft>>({});
   const bytes = byteLength(message);
