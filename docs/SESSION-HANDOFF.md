@@ -18,13 +18,13 @@ Author provider: Claude Code
 
 **The code, done and tested.** A theme with no signal is no theme (D-1038). "Commander" before a format noun names the format (D-1039). The push is the title alone (D-1040). A copy counts only from a named set (D-1041). The owner confirmed that this rule applies under each pool rule (D-1044). The lease records the step of a build, and a reloaded page shows it (D-1042).
 
-**The checks.** The Go tests and the 475 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on `f2c916c`: "every check passed".
+**The checks.** The Go tests and the 475 web tests pass. `make store-check` passes with `TestEmulatorBuildPhase`. `make smoke` passes 6 of 6. `make verify` passes on the tree of `711fd3e`, with 475 web tests: "every check passed".
 
 **The review.** The automatic Gitar review of `1bdda93` found three items. The next commit fixes two: the gap guard reads the whole collection, and a lease of the same token keeps its step. The author refuted the third, the art of a basic land from another set, under D-1041. The Gitar CI note named the missing review record, which the Codex review now supplies.
 
-**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. The Gitar review of `f2c916c` and of `3ccc917`, the commit of D-1044, approves, with 3 of 3 findings closed.
+**The checkpoint (D-946).** The session passed 300K tokens after the fix commit. A clean session continued the work. The Gitar review of `f2c916c` and of `3ccc917`, the commit of D-1044, approves, with 3 of 3 findings closed. The Gitar review of `711fd3e` approves too, and no thread is open.
 
-**The Codex review.** The repeat review approves effective head `711fd3e`. P2-1 is fixed, and its UI regression test passes. GitHub verify passes. Local `make verify` stopped during Go linking because the volume had no free space. The record is `docs/reviews/pr-267.md`.
+**The Codex review.** The repeat review approves effective head `711fd3e`. P2-1 is fixed, and its UI regression test passes. GitHub verify passes. The local `make verify` of the reviewer stopped during Go linking, because the system disk had no free space. The author run on the same tree passed. The record is `docs/reviews/pr-267.md`.
 
 **The open work.** The review is ready for owner merge. The pull request waits for the owner's confirmation, then auto-merge (D-828, D-834). After the deploy, the owner sends the same prompt on the iPhone. The check reads the commander question, the gap question, the art, the push, and a relaunch during the build.
 
