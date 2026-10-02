@@ -2979,7 +2979,7 @@ The live check after the deploy runs on the iPhone of the owner (D-1037). It rea
 - **The theme (F-196, D-1038).** `ThemeMatch.Empty` reports a theme with no signal. The theme floor, the gap question, and the deck name skip such a theme.
 - **The commander (F-197, D-1039).** `namesCommander` skips "commander" before a format noun, so "the best commander deck" leaves the commander question open.
 - **The push (F-198, D-1040).** The push sends the title alone. iOS still adds "from Deck Tome" under it.
-- **The sets (F-199, D-1041).** `candidates.OwnedInSets` counts the copies of the named sets. The build, the revision, and each question hint read that count, and the art comes from those sets alone.
+- **The sets (F-199, D-1041).** `candidates.OwnedInSets` counts the copies of the named sets. The build, the revision, and each question hint read that count, and the art comes from those sets alone. The rule applies under each pool rule, so the buy list names a card owned only from another set (D-1044).
 - **The reload (F-200, D-1042).** The build lease records the phase, the repair, and the working line. `GetSession` returns them, and the page shows the same working row and stepper with no Stop.
 
 Gate:
