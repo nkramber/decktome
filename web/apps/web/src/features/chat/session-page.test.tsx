@@ -456,13 +456,19 @@ describe("SessionPage", () => {
 
     // Gitar, #265: a panel that mounts in the background never sent the
     // return, so a user back on the page still got the push.
-    it("a page that mounts in the background reports its return (D-1033)", async () => {
+    it("a page that mounts in the background reports the leave and the return (D-1033)", async () => {
       getSession.mockResolvedValue({ session: { id: "s1", collectionId: "", deckIds: [], turns: [] }, building: true });
       setVisibility("hidden");
       await renderAt("/session/s1");
       await screen.findByTestId("server-build");
+      // Codex, #265 P2-1: the mount reports the leave at once.
+      await waitFor(() => expect(setPageHidden).toHaveBeenCalledWith({ sessionId: "s1", hidden: true }));
       setVisibility("visible");
       await waitFor(() => expect(setPageHidden).toHaveBeenCalledWith({ sessionId: "s1", hidden: false }));
+      expect(setPageHidden.mock.calls.map((c) => c[0])).toEqual([
+        { sessionId: "s1", hidden: true },
+        { sessionId: "s1", hidden: false },
+      ]);
     });
 
     it("a gone session stops the reads", async () => {

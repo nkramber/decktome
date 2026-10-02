@@ -21,13 +21,15 @@ Author provider: Claude Code
 **The code, done and tested.**
 
 - `SetPageHidden` writes `private/presence` of the session. A build sends the push when the stream ended, or when the page reported a leave after the start of the turn.
-- A lost stream of a stored session reads the session again, with no failure line. A return to view reads it at once.
+- A build that lost its stream reads the session again, with no failure line. A return to view reads it at once.
 - `web/apps/web/src/features/chat/running-build.ts` keeps the id of a running build, and `main.tsx` opens it at a launch at `/`.
 - `go.opentelemetry.io/otel/sdk` moves to v1.45.0 for GO-2026-6505, because the advisory failed `govulncheck` on each pull request (D-1035).
 
 **The checks.** `make verify` passes on `77b7999`: "every check passed", with 472 of 472 web tests. `TestEmulatorPagePresence` passes on the local emulator. `TestEmulatorListRenameDelete` fails on the base commit too, because older data in the local emulator holds its fixed id.
 
-**The review.** Codex reviewed effective head `673c86f`. Verdict: Changes required. Finding P2-1: an active page that mounts hidden sends no initial presence report. The live iPhone check waits for the deploy.
+**The review.** Gitar round 1 found a lost return report after a remount, and `b4bda71` fixed it. Gitar approved `673c86f`. Codex round 1 at `673c86f` found P2-1: a page that mounts hidden sends no report. `docs/reviews/pr-265-response.md` answers it, and the repeat review waits.
+
+**The open work.** The repeat Codex review, then the confirmation of the owner and the auto-merge (D-828, D-834). After the deploy, the owner runs the live check on an iPhone. It reads a switch of apps during a build, a push, and the deck on the return.
 
 ## How to resume
 

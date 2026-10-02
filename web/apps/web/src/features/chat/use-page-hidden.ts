@@ -10,10 +10,8 @@ import { pageClient } from "../../lib/api";
 export function usePageHidden(sessionId: string, active: boolean) {
   useEffect(() => {
     if (!active || sessionId === "") return;
-    // A return to view goes out only after a report of a leave. A page
-    // that mounts in the background can hold a leave that an earlier
-    // mount reported, so its return always goes out.
-    let reported = document.visibilityState === "hidden";
+    // A return to view goes out only after a report of a leave.
+    let reported = false;
     const onChange = () => {
       const hidden = document.visibilityState === "hidden";
       if (hidden === reported) return;
@@ -21,6 +19,9 @@ export function usePageHidden(sessionId: string, active: boolean) {
       // A lost report sends no push, and the stream still shows the deck.
       void pageClient.setPageHidden({ sessionId, hidden }).catch(() => {});
     };
+    // A page that mounts in the background reports the leave at once, so
+    // the build reads it, and the return then goes out too.
+    onChange();
     document.addEventListener("visibilitychange", onChange);
     return () => document.removeEventListener("visibilitychange", onChange);
   }, [sessionId, active]);
