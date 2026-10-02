@@ -630,12 +630,35 @@ func slotHasNouns(key string) bool {
 	return ok
 }
 
-// namesCommander reports whether the message uses the word at all. It
-// scopes a delegation that would otherwise read as an answer to any open
-// question (D-147).
+// namesCommander reports whether the message names the card that leads
+// the deck. It scopes a delegation that would otherwise read as an answer
+// to any open question (D-147).
+//
+// The word before a format noun names the format and not the card. "The
+// best possible commander deck" asks for a deck, and the reader still
+// picks its commander (F-197, D-1039).
 func namesCommander(message string) bool {
-	return hasPhrase(message, "commander")
+	text := strings.ToLower(message)
+	toks := tokens(text)
+	for _, at := range commanderWord.FindAllStringIndex(text, -1) {
+		if negatedAt(toks, len(tokens(text[:at[0]]))) {
+			continue
+		}
+		if formatNoun.MatchString(text[at[1]:]) {
+			continue
+		}
+		return true
+	}
+	return false
 }
+
+// commanderWord finds the word, and formatNoun reads the word after it
+// when only space stands between them. "Commander. Bracket 3" holds a
+// full stop, so it names the card and then the power.
+var (
+	commanderWord = regexp.MustCompile(`\bcommander\b`)
+	formatNoun    = regexp.MustCompile(`^\s+(deck|decks|format|game|games|pod|bracket|list)\b`)
+)
 
 // ordinals name a commander by its place in the offered list.
 //

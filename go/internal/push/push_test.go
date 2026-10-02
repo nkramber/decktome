@@ -25,11 +25,11 @@ func TestValidID(t *testing.T) {
 
 func TestDeckMessage(t *testing.T) {
 	m := DeckMessage(&mtgv1.Deck{Id: "d 1", Name: "Karlov lifegain"})
-	if m.Title != "Your deck is ready" || m.Body != "Karlov lifegain" || m.URL != "/decks/d%201" {
+	if m.Title != "Your deck is ready!" || m.Body != "" || m.URL != "/decks/d%201" {
 		t.Errorf("first build = %+v", m)
 	}
 	m = DeckMessage(&mtgv1.Deck{Id: "d2", RevisedFromDeckId: "d1"})
-	if m.Title != "Your revised deck is ready" || m.Body == "" || m.URL != "/decks/d2" {
+	if m.Title != "Your revised deck is ready!" || m.Body != "" || m.URL != "/decks/d2" {
 		t.Errorf("revision = %+v", m)
 	}
 }

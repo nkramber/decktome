@@ -64,8 +64,11 @@ type fakePresence struct {
 }
 
 type fakeLease struct {
-	token string
-	until time.Time
+	token    string
+	until    time.Time
+	phase    mtgv1.BuildPhase
+	repaired bool
+	status   string
 }
 
 func (f *fakeStore) Lease(ctx context.Context, _, id, token string, now, until time.Time) error {
@@ -81,7 +84,11 @@ func (f *fakeStore) Lease(ctx context.Context, _, id, token string, now, until t
 	if f.leases == nil {
 		f.leases = map[string]fakeLease{}
 	}
-	f.leases[id] = fakeLease{token: token, until: until}
+	next := fakeLease{token: token, until: until}
+	if l, ok := f.leases[id]; ok && l.token == token {
+		next.phase, next.repaired, next.status = l.phase, l.repaired, l.status
+	}
+	f.leases[id] = next
 	return nil
 }
 
@@ -93,6 +100,37 @@ func (f *fakeStore) Leased(_ context.Context, _, id string, now time.Time) (bool
 	}
 	l, ok := f.leases[id]
 	return ok && now.Before(l.until), nil
+}
+
+func (f *fakeStore) LeaseState(_ context.Context, _, id string, now time.Time) (sessions.LeaseState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.leaseErr != nil {
+		return sessions.LeaseState{}, f.leaseErr
+	}
+	l, ok := f.leases[id]
+	if !ok || !now.Before(l.until) {
+		return sessions.LeaseState{}, nil
+	}
+	return sessions.LeaseState{Leased: true, Phase: l.phase, Repaired: l.repaired, Status: l.status}, nil
+}
+
+func (f *fakeStore) SetStep(_ context.Context, _, id string, phase mtgv1.BuildPhase, status string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	l, ok := f.leases[id]
+	if !ok {
+		return nil
+	}
+	if phase != mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED {
+		l.phase = phase
+	}
+	if status != "" {
+		l.status = status
+	}
+	l.repaired = l.repaired || phase == mtgv1.BuildPhase_BUILD_PHASE_REPAIRING
+	f.leases[id] = l
+	return nil
 }
 
 func (f *fakeStore) Release(_ context.Context, _, id, token string) error {
@@ -581,6 +619,52 @@ func TestGetSessionReportsABuild(t *testing.T) {
 				t.Errorf("building = %v, want %v", got, tc.want)
 			}
 		})
+	}
+}
+
+// TestGetSessionReportsTheStepOfTheBuild is D-1042 (F-200). A page that
+// reloads during a build reads the step and the repair from the lease,
+// and a lease that ended reports neither.
+func TestGetSessionReportsTheStepOfTheBuild(t *testing.T) {
+	now := time.Unix(1000, 0).UTC()
+	cat, err := questions.Load()
+	if err != nil {
+		t.Fatalf("catalog: %v", err)
+	}
+	client, _ := fakeClient(t)
+	store := newFakeStore()
+	store.sessions["sess-1"] = &mtgv1.Session{Id: "sess-1"}
+	store.leases = map[string]fakeLease{"sess-1": {token: "other", until: now.Add(time.Minute)}}
+	quiet := slog.New(slog.NewTextHandler(io.Discard, nil))
+	srv, err := New(cat, client, store, func(context.Context) string { return "u1" },
+		WithLogger(quiet), WithClock(func() time.Time { return now }))
+	if err != nil {
+		t.Fatalf("server: %v", err)
+	}
+	for _, p := range []mtgv1.BuildPhase{mtgv1.BuildPhase_BUILD_PHASE_BUILDING,
+		mtgv1.BuildPhase_BUILD_PHASE_REPAIRING, mtgv1.BuildPhase_BUILD_PHASE_CHECKING} {
+		if err := store.SetStep(context.Background(), "u1", "sess-1", p, ""); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := store.SetStep(context.Background(), "u1", "sess-1", mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED, "revising the deck"); err != nil {
+		t.Fatal(err)
+	}
+	get := func() *mtgv1.GetSessionResponse {
+		res, err := srv.GetSession(context.Background(), connect.NewRequest(&mtgv1.GetSessionRequest{SessionId: "sess-1"}))
+		if err != nil {
+			t.Fatalf("get session: %v", err)
+		}
+		return res.Msg
+	}
+	if m := get(); !m.GetBuilding() || m.GetPhase() != mtgv1.BuildPhase_BUILD_PHASE_CHECKING || !m.GetRepaired() ||
+		m.GetStatus() != "revising the deck" {
+		t.Errorf("during the build = building %v, phase %v, repaired %v, status %q; want true, CHECKING, true, revising",
+			m.GetBuilding(), m.GetPhase(), m.GetRepaired(), m.GetStatus())
+	}
+	store.leases["sess-1"] = fakeLease{token: "other", until: now, phase: mtgv1.BuildPhase_BUILD_PHASE_CHECKING}
+	if m := get(); m.GetBuilding() || m.GetPhase() != mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED {
+		t.Errorf("after the lease ended = building %v, phase %v; want false and none", m.GetBuilding(), m.GetPhase())
 	}
 }
 

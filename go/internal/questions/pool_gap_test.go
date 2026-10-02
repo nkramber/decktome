@@ -107,6 +107,34 @@ func TestPoolGapChecks(t *testing.T) {
 		}
 	})
 
+	// A theme of stop words holds no signal, so no card is on it, and a
+	// claim of 0 such cards is false (F-196, D-1038).
+	t.Run("a theme of stop words is no theme", func(t *testing.T) {
+		h := gapHints(t, 80, 80, true)
+		if g := h.PoolGap("the best possible deck", nil, []string{"Heliod, Sun-Crowned"}); g.Kind != "" {
+			t.Errorf("gap = %+v, want none: the theme names no card", g)
+		}
+	})
+
+	// A reader who owns no copy of the named sets has the largest gap. The
+	// whole map says a collection exists, and the narrowed map counts
+	// (D-1041, the review of #267).
+	t.Run("no owned copy of the named sets is the largest gap", func(t *testing.T) {
+		h := gapHints(t, 80, 80, true)
+		h.PrintingCounts = func() map[string]int32 { return map[string]int32{} }
+		h.UseSets([]string{"ltr"})
+		if g := h.PoolGap("", nil, []string{"Heliod, Sun-Crowned"}); g.Kind != GapUnowned || !slices.Equal(g.Names, []string{"Heliod, Sun-Crowned"}) {
+			t.Errorf("gap = %+v, want Heliod: no copy of it is from the named sets", g)
+		}
+		h.Colors = []mtgv1.Color{mtgv1.Color_COLOR_W}
+		if g := h.PoolGap("", nil, nil); g.Kind != GapColors || g.Have != 0 {
+			t.Errorf("gap = %+v, want 0 owned cards of the named sets", g)
+		}
+		if thin, n := h.ThinTheme("soldiers"); !thin || n != 0 {
+			t.Errorf("thin theme = %v with %d cards, want thin with 0", thin, n)
+		}
+	})
+
 	t.Run("a colorless request counts colorless cards alone", func(t *testing.T) {
 		h := gapHints(t, 80, 80, true)
 		h.UseColorless(true)
@@ -218,4 +246,36 @@ func TestTheGapQuestionAsksOnTheReaderChoice(t *testing.T) {
 			}
 		}
 	})
+}
+
+// TestHintsOwnTheCopiesOfTheNamedSets is D-1041 (F-199). A set named
+// inside the turn narrows the owned map that each hint reads. With no
+// read of the printings, the whole map answers.
+func TestHintsOwnTheCopiesOfTheNamedSets(t *testing.T) {
+	idx := cards.NewIndex(
+		[]*mtgv1.Card{
+			{OracleId: "o-ring", Name: "The One Ring", CardTypes: []string{"Artifact"}},
+			{OracleId: "o-gq", Name: "Ghost Quarter", CardTypes: []string{"Land"}},
+		},
+		[]cards.Printing{
+			{ScryfallID: "p-ring", OracleID: "o-ring", Name: "The One Ring", SetCode: "LTR", CollectorNumber: "1"},
+			{ScryfallID: "p-gq", OracleID: "o-gq", Name: "Ghost Quarter", SetCode: "SLD", CollectorNumber: "2"},
+		},
+		nil, time.Unix(1000, 0).UTC())
+	h := &CandidateHints{
+		Index:          idx,
+		Owned:          map[string]int32{"o-ring": 1, "o-gq": 4},
+		PrintingCounts: func() map[string]int32 { return map[string]int32{"p-ring": 1, "p-gq": 4} },
+	}
+	if got := h.owned(); got["o-gq"] != 4 {
+		t.Fatalf("owned with no set limit = %v, want the whole map", got)
+	}
+	h.UseSets([]string{"ltr", "ltc"})
+	if got := h.owned(); got["o-gq"] != 0 || got["o-ring"] != 1 {
+		t.Errorf("owned for the Lord of the Rings sets = %v, want The One Ring alone", got)
+	}
+	h.UseSets([]string{"sld"})
+	if got := h.owned(); got["o-gq"] != 4 || got["o-ring"] != 0 {
+		t.Errorf("owned after a new set limit = %v, want Ghost Quarter alone", got)
+	}
 }

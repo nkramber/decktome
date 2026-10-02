@@ -592,6 +592,11 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-193 | **On a phone, the deck screen shows the chat before the deck.** Below the `lg` width of 1024px, `ChatPanel` of `web/apps/web/src/features/chat/session-page.tsx` puts the chat box above the deck in one column. So a user who opens a deck reads the chat first, and the deck summary sits under it. | ✅ PR-106 collapses the chat of the deck screen below the `lg` width, and one tap opens it. A turn that works or asks opens it again (D-1017, D-1026). |
 | F-194 | **On a phone, a toast covers the last button of a page.** The owner reported it on 2026-10-01 with a screenshot of the installed app. The toast "Chat deleted" sat over the Build button of the box "Build a new deck". Sonner put each toast 16px over the bottom buffer, and that button is the last control of the page. | ✅ PR-107: on a phone, `Toaster` of `web/apps/web/src/components/ui/toaster.tsx` shows each toast under the header, and the desktop keeps the bottom right (D-1030). |
 | F-195 | **On a phone, the header leaves the top when the questions open.** The owner reported it on 2026-10-02 with a screenshot of the installed app, in session `R29hLFZ88fmjqgTHLI8Q`. A blank band sat under the chat, and no scroll and no relaunch cleared it. The line `reply-announcement` of `ChatPanel` is an absolute box with no positioned ancestor, so it ran past the foot of the main region. The document grew 46px taller than the screen, and the focus on the open questions scrolled it. The fault dates from #228 (2026-09-25), and a probe of `07203ba` read it too. | ✅ PR-109: the main region of `web/apps/web/src/app/layout.tsx` is `relative`, so it clips each absolute box in it (D-1036). |
+| F-196 | **The gap question claims 0 cards of a theme that names no card.** The live check of 2026-10-02 sent "Build me the best possible commander deck using ONLY the Lord of the Rings set and the Hobbit set". The classifier read "the best possible deck" as the theme, and each word of it is a stop word. The question read "Your collection holds 0 the best possible deck cards", and the deck took the same name. | ✅ PR-110: a theme with no signal is no theme for the gap question, the floor, and the name (D-1038). |
+| F-197 | **The word of the format hands over the commander choice.** In the same prompt, "the best" and "commander deck" read as "you pick the commander" under D-167. The agent asked no commander question, and it took The Queen of Dale, the top card of the pool. | ✅ PR-110: "commander" before a format noun names the format (D-1039). |
+| F-198 | **The push of a finished build shows three lines.** The iPhone showed "Your deck is ready", "from Deck Tome", and the deck name. iOS adds the middle line from the manifest name. | ✅ PR-110: the push is the title "Your deck is ready!" alone (D-1040). |
+| F-199 | **A deck limited to sets holds a card that the user owns from another set alone.** The deck of the live check held Ghost Quarter, Chromatic Lantern, Lightning Greaves, and Sword of the Animist. Each one has a printing in LTC, but the owner owns copies from SLD, TMC, MSC, and FIC. The app showed that art, and it counted those copies as owned. | ✅ PR-110: a copy counts only when its printing is in a named set (D-1041). |
+| F-200 | **A reloaded page shows a line in place of the live build screen.** The owner reopened the app during a build and read "The build continues on the server". The phase of a build went out on the stream alone, so the reloaded page had no step to show. | ✅ PR-110: the lease records the step, and the page shows the same working row and stepper (D-1042). |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -2969,6 +2974,25 @@ Gate:
 
 The live check after the deploy runs on the iPhone of the owner (D-1037). It reads the push and the relaunch of PR-108, and the header at the open questions. Production deploys from `main` alone (D-579).
 
+**PR-110: Five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** ✅ merged as #267. The mark comes before any review (D-822). The owner ran the iPhone check on 2026-10-02 against `e872724`. The header stayed at the top, and the push came at 16:03:28 UTC. The owner chose one pull request for the five faults (D-1043).
+
+- **The theme (F-196, D-1038).** `ThemeMatch.Empty` reports a theme with no signal. The theme floor, the gap question, and the deck name skip such a theme.
+- **The commander (F-197, D-1039).** `namesCommander` skips "commander" before a format noun, so "the best commander deck" leaves the commander question open.
+- **The push (F-198, D-1040).** The push sends the title alone. iOS still adds "from Deck Tome" under it.
+- **The sets (F-199, D-1041).** `candidates.OwnedInSets` counts the copies of the named sets. The build, the revision, and each question hint read that count, and the art comes from those sets alone. The rule applies under each pool rule, so the buy list names a card owned only from another set (D-1044).
+- **The reload (F-200, D-1042).** The build lease records the phase, the repair, and the working line. `GetSession` returns them, and the page shows the same working row and stepper with no Stop.
+
+Gate:
+- A Go test reads each fault: the format word, the empty theme, the push, the owned sets, and the step.
+- `TestEmulatorBuildPhase` passes in `make store-check`.
+- A web test relaunches during a build and reads the line, the step, and no Stop.
+- `make smoke` passes.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy runs on the iPhone of the owner. It sends the same prompt, and it reads the commander question, the gap question, the art, the push, and a relaunch. Production deploys from `main` alone (D-579).
+
 > *In plain English:* when the agent asked its questions on a phone, the page moved up. The header left the screen, and a blank band showed under the chat. The page now stays in place.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
@@ -3372,6 +3396,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 102. **PR-107** the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1027 to D-1032).
 103. **PR-108** the installed app after a dropped connection, and the push of a finished build (F-190, F-192, D-1033, D-1034).
 104. **PR-109** the header of a phone after the open questions (F-195, D-1036, D-1037).
+105. **PR-110** five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).
 
 ## 9. Open questions
 

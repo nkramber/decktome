@@ -57,6 +57,10 @@ type CandidateHints struct {
 	printingsDone bool
 	printings     map[string]int32
 
+	// inSet is the owned map of the sets of inSetKey (D-1041).
+	inSet    map[string]int32
+	inSetKey string
+
 	commanders map[string][]string
 	// The thin-theme count runs the whole PR-6 build, so it runs once per
 	// key and the answer is kept. The key carries the format, the
@@ -314,7 +318,7 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		Theme:          theme,
 		Colors:         h.Colors,
 		PoolRule:       h.Pool,
-		Owned:          h.Owned,
+		Owned:          h.owned(),
 		WantPair:       h.WantPair,
 		WantBackground: h.WantBackground,
 		Colorless:      h.Colorless,
@@ -390,6 +394,9 @@ func (h *CandidateHints) key(theme string) string {
 	}
 	b.WriteString("|")
 	b.WriteString(h.Pool.String())
+	// The sets change the owned map, so they change each answer (D-1041).
+	b.WriteString("|")
+	b.WriteString(strings.Join(h.SetCodes, ","))
 	return b.String()
 }
 
@@ -423,7 +430,7 @@ func (h *CandidateHints) ThinTheme(theme string) (bool, int) {
 		Theme:    theme,
 		Colors:   h.Colors,
 		PoolRule: pool,
-		Owned:    h.Owned,
+		Owned:    h.owned(),
 	})
 	if err != nil {
 		h.warn("thin theme", err)
@@ -542,6 +549,22 @@ func (h *CandidateHints) ResolveSetGroup(phrase string) (codes, names []string, 
 		return nil, nil, false
 	}
 	return codes, tbl.Names(codes), true
+}
+
+// owned is the count map the offer, the theme count, and the gap
+// question read. A deck limited to sets owns the copies of those sets
+// alone, so a Secret Lair Ghost Quarter is no copy of a Lord of the Rings
+// deck (F-199, D-1041). With no read of the printings, the whole map
+// answers.
+func (h *CandidateHints) owned() map[string]int32 {
+	if len(h.SetCodes) == 0 || len(h.Owned) == 0 || h.PrintingCounts == nil {
+		return h.Owned
+	}
+	if key := strings.Join(h.SetCodes, ","); h.inSet == nil || h.inSetKey != key {
+		h.inSet = candidates.OwnedInSets(h.Index, h.Owned, h.printingCounts(), h.SetCodes)
+		h.inSetKey = key
+	}
+	return h.inSet
 }
 
 // printingCounts reads the collection's copies per printing once.

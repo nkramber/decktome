@@ -83,6 +83,8 @@ func refreshGap(s *State, src FactSource) {
 // the colorless flag included, because the classifier can set either
 // inside the turn.
 func (h *CandidateHints) PoolGap(theme string, named, commanders []string) Gap {
+	// The whole map says whether a collection exists. A reader who owns
+	// no copy of the named sets has the largest gap, and asks (D-1041).
 	if h == nil || h.Index == nil || len(h.Owned) == 0 {
 		return Gap{}
 	}
@@ -103,7 +105,7 @@ func (h *CandidateHints) poolGap(theme string, named, commanders []string) Gap {
 	var missing []string
 	for _, name := range append(slices.Clone(commanders), named...) {
 		card, ok := h.Index.ByName(strings.TrimSpace(name))
-		if !ok || candidates.IsBasicLand(card) || h.Owned[card.GetOracleId()] > 0 || hasName(missing, card.GetName()) {
+		if !ok || candidates.IsBasicLand(card) || h.owned()[card.GetOracleId()] > 0 || hasName(missing, card.GetName()) {
 			continue
 		}
 		missing = append(missing, card.GetName())
@@ -117,7 +119,7 @@ func (h *CandidateHints) poolGap(theme string, named, commanders []string) Gap {
 		Theme:     theme,
 		Colors:    h.Colors,
 		PoolRule:  mtgv1.PoolRule_POOL_RULE_OWNED_ONLY,
-		Owned:     h.Owned,
+		Owned:     h.owned(),
 		SetCodes:  h.SetCodes,
 		Colorless: h.Colorless,
 	}
@@ -128,7 +130,7 @@ func (h *CandidateHints) poolGap(theme string, named, commanders []string) Gap {
 		list, err := h.Builder.Build(h.Index, req)
 		if err != nil {
 			h.warn("pool gap", err)
-		} else if want := candidates.ThemeFloor(h.Format); list.Stats.OnThemeOwned < want {
+		} else if want := candidates.ThemeFloor(h.Format); !list.Theme.Empty() && list.Stats.OnThemeOwned < want {
 			return Gap{Kind: GapTheme, Theme: theme, Have: list.Stats.OnThemeOwned, Want: want}
 		}
 	}

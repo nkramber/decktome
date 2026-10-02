@@ -318,14 +318,14 @@ func (n *Notifier) DeckReady(ctx context.Context, uid string, d *mtgv1.Deck) {
 }
 
 // DeckMessage is the push for a stored deck. A tap opens the deck.
+//
+// The title is the whole message. iOS shows the line "from Deck Tome"
+// from the manifest name under the title, and a body adds a third line
+// (F-198, D-1040).
 func DeckMessage(d *mtgv1.Deck) Message {
-	title := "Your deck is ready"
+	title := "Your deck is ready!"
 	if d.GetRevisedFromDeckId() != "" {
-		title = "Your revised deck is ready"
+		title = "Your revised deck is ready!"
 	}
-	body := d.GetName()
-	if body == "" {
-		body = "Tap to open it."
-	}
-	return Message{Title: title, Body: body, URL: "/decks/" + url.PathEscape(d.GetId())}
+	return Message{Title: title, URL: "/decks/" + url.PathEscape(d.GetId())}
 }

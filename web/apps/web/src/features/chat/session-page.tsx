@@ -179,6 +179,9 @@ export function SessionPage() {
       initial={fromSession(session.data.session, deck.data?.deck, base.data?.deck)}
       session={session.data.session}
       building={session.data.building}
+      buildPhase={session.data.phase}
+      buildRepaired={session.data.repaired}
+      buildStatus={session.data.status}
       deckError={deckError}
       onDeckBuilt={toDeck}
       onResume={onResume}
@@ -226,6 +229,9 @@ export function ChatPanel({
   onDeckBuilt,
   onResume,
   building = false,
+  buildPhase = BuildPhase.UNSPECIFIED,
+  buildRepaired = false,
+  buildStatus = "",
   onBuildEnded,
 }: {
   initial: ChatState;
@@ -240,6 +246,11 @@ export function ChatPanel({
   onResume?: () => void;
   // building says that a build of the stored session runs on the server.
   building?: boolean;
+  // buildPhase, buildRepaired, and buildStatus are the step of that
+  // build and its working line (D-1042).
+  buildPhase?: BuildPhase;
+  buildRepaired?: boolean;
+  buildStatus?: string;
   // onBuildEnded takes the fresh session when that build ends (REV-046).
   onBuildEnded?: (res: GetSessionResponse) => void;
 }) {
@@ -284,24 +295,47 @@ export function ChatPanel({
     setSeenBuilding(building);
     if (building && !state.busy) setWatching(true);
   }
+  // stopped says the reader pressed Stop. Stop ends the stream and not
+  // the build, so the page says the build goes on (D-303).
+  const [stopped, setStopped] = useState(false);
   const onStop = useCallback(() => {
-    if (state.phase !== BuildPhase.UNSPECIFIED) setWatching(true);
+    if (state.phase !== BuildPhase.UNSPECIFIED) {
+      setWatching(true);
+      setStopped(true);
+    }
     stop();
   }, [state.phase, stop]);
   const serverBuild = watching && !state.busy && state.sessionId !== "";
+  // The step of a build that runs on the server. A reload reads it from
+  // the session, and each read of the watch moves it on, so the page shows
+  // the stepper of the page that sent the turn (F-200, D-1042).
+  const [serverStep, setServerStep] = useState({ phase: buildPhase, repaired: buildRepaired, status: buildStatus });
+  const [seenStep, setSeenStep] = useState({ phase: buildPhase, repaired: buildRepaired, status: buildStatus });
+  // A read that names no step keeps the last one: the watch ends the
+  // build on its own read, and a read of another view can come first.
+  if (seenStep.phase !== buildPhase || seenStep.repaired !== buildRepaired || seenStep.status !== buildStatus) {
+    setSeenStep({ phase: buildPhase, repaired: buildRepaired, status: buildStatus });
+    if (buildPhase !== BuildPhase.UNSPECIFIED) setServerStep({ phase: buildPhase, repaired: buildRepaired, status: buildStatus });
+  }
+  const serverPhase = serverStep.phase !== BuildPhase.UNSPECIFIED ? serverStep.phase : state.phase;
   // A first turn holds its session while the agent reads the message, so
-  // a reload then waits for a reply, not a deck (F-186). A turn of this
-  // panel names its own phase, and the stored status is older than it.
+  // a reload then waits for a reply, not a deck (F-186). The step of the
+  // server wins, then a turn of this panel, then the stored status.
   const serverReply =
-    state.phase !== BuildPhase.UNSPECIFIED ? state.phase === BuildPhase.READING : session?.status === SessionStatus.ASKING;
+    serverPhase !== BuildPhase.UNSPECIFIED ? serverPhase === BuildPhase.READING : session?.status === SessionStatus.ASKING;
   const onServerBuildEnded = useCallback(
     (res: GetSessionResponse) => {
       setWatching(false);
+      setStopped(false);
+      setServerStep({ phase: BuildPhase.UNSPECIFIED, repaired: false, status: "" });
       onBuildEnded?.(res);
     },
     [onBuildEnded],
   );
-  useBuildWatch(state.sessionId, serverBuild, onServerBuildEnded);
+  const onServerBuildRuns = useCallback((res: GetSessionResponse) => {
+    if (res.phase !== BuildPhase.UNSPECIFIED) setServerStep({ phase: res.phase, repaired: res.repaired, status: res.status });
+  }, []);
+  useBuildWatch(state.sessionId, serverBuild, onServerBuildEnded, onServerBuildRuns);
   usePageHidden(state.sessionId, state.busy || serverBuild);
   // The page keeps the id of a session while its build runs, so a launch
   // of the app at "/" opens it again (D-1034).
@@ -555,37 +589,46 @@ export function ChatPanel({
   // this is. The newest status line carries that, so the working row says
   // it rather than a line of its own (D-375). The stepper under it lights
   // the step the server named (D-435).
-  const step = state.busy ? (shown.reduce((text, item) => (item.kind === "status" ? item.text : text), "") ?? "") : "";
+  const lastStatus = shown.reduce((text, item) => (item.kind === "status" ? item.text : text), "") ?? "";
+  const step = state.busy ? lastStatus : "";
   const working = (
     <div className="flex flex-col gap-2" role="status">
       <p className="sr-only" data-testid="reply-announcement">
         {announcement}
       </p>
-      {state.busy && (
+      {(state.busy || serverBuild) && (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3" data-testid={state.busy ? undefined : "server-build"}>
             <span className="flex items-center gap-2.5">
               <span className="flex gap-1" aria-hidden="true">
                 <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.3s]" />
                 <span className="size-2 animate-bounce rounded-full bg-primary [animation-delay:-0.15s]" />
                 <span className="size-2 animate-bounce rounded-full bg-primary" />
               </span>
-              <span className="font-display text-[15px] font-semibold text-foreground">{sentence(step) || "The agent is working..."}</span>
+              <span className="font-display text-[15px] font-semibold text-foreground">
+                {(state.busy ? sentence(step) : serverReply ? "" : sentence(serverStep.status || lastStatus || "building the deck")) ||
+                  "The agent is working..."}
+              </span>
             </span>
-            <Button type="button" variant="outline" size="sm" onClick={onStop}>
-              Stop
-            </Button>
+            {state.busy && (
+              <Button type="button" variant="outline" size="sm" onClick={onStop}>
+                Stop
+              </Button>
+            )}
           </div>
           {state.loadingCards && (
             <p className="text-sm text-muted-foreground" data-testid="cards-loading">
               The card database loads after a restart of the server. Your message goes again by itself when it is ready.
             </p>
           )}
-          <BuildStepper phase={state.phase} repaired={state.repaired} />
+          <BuildStepper
+            phase={state.busy ? state.phase : serverPhase}
+            repaired={state.busy ? state.repaired : serverStep.repaired || state.repaired}
+          />
         </>
       )}
-      {serverBuild && (
-        <p className="text-sm text-muted-foreground" data-testid="server-build">
+      {serverBuild && stopped && (
+        <p className="text-sm text-muted-foreground" data-testid="server-build-stopped">
           {serverReply
             ? "The agent is still reading your message on the server. Its reply shows here when it is ready."
             : "The build continues on the server. The deck shows here when it is ready."}

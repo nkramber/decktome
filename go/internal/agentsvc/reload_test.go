@@ -95,6 +95,11 @@ func TestReloadDuringFirstTurnFindsTheSession(t *testing.T) {
 	if !res.Msg.GetBuilding() {
 		t.Error("a reload during the first turn reads no running turn, so the page never polls")
 	}
+	// The page shows the step of the turn, as the page that sent it does
+	// (F-200, D-1042).
+	if got := res.Msg.GetPhase(); got != mtgv1.BuildPhase_BUILD_PHASE_READING {
+		t.Errorf("phase during the first turn = %v, want READING", got)
+	}
 	turns := res.Msg.GetSession().GetTurns()
 	if len(turns) != 1 || turns[0].GetUserMessage() != message {
 		t.Errorf("the stored turns before the reply = %+v, want the user line alone", turns)
@@ -112,6 +117,9 @@ func TestReloadDuringFirstTurnFindsTheSession(t *testing.T) {
 	}
 	if res.Msg.GetBuilding() {
 		t.Error("the turn ended, and the session still reads as running")
+	}
+	if got := res.Msg.GetPhase(); got != mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED {
+		t.Errorf("phase after the turn = %v, want none", got)
 	}
 	turns = res.Msg.GetSession().GetTurns()
 	if len(turns) != 1 || len(turns[0].GetQuestions()) == 0 {

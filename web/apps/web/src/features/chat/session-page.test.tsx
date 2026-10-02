@@ -317,8 +317,13 @@ describe("SessionPage", () => {
       await user.click(screen.getByRole("button", { name: "Send" }));
       await user.click(await screen.findByRole("button", { name: "Stop" }));
 
-      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+      // The page keeps the working line and the stepper, and Stop goes:
+      // the stream is closed, and the build goes on (F-200, D-1042).
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("Building the deck...");
       expect(screen.getByTestId("server-build").closest('[role="status"]')).not.toBeNull();
+      expect(screen.getByTestId("server-build-stopped")).toHaveTextContent("The build continues on the server.");
+      expect(screen.queryByRole("button", { name: "Stop" })).not.toBeInTheDocument();
+      expect(within(screen.getByTestId("build-stepper")).getByText("Shortlist").closest("li")).toHaveAttribute("aria-current", "step");
       // A send now meets a build in progress, so the box stays away.
       expect(screen.queryByLabelText("Your message")).not.toBeInTheDocument();
 
@@ -327,6 +332,25 @@ describe("SessionPage", () => {
       expect(screen.getByTestId("server-build")).toBeInTheDocument();
       await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
       await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d1"));
+    });
+
+    it("a Stop while the agent reads the first message promises a reply, not a deck (D-375)", async () => {
+      chat.mockImplementationOnce(async function* (_req: unknown, opts: { signal: AbortSignal }) {
+        yield ev("sessionStarted", "s1");
+        yield ev("phase", BuildPhase.READING);
+        await new Promise((_, reject) => opts.signal.addEventListener("abort", () => reject(new ConnectError("canceled", Code.Canceled))));
+      });
+      const stored = { id: "s1", collectionId: "", deckIds: [] as string[], turns: [{ userMessage: "elves", agentMessage: "", questions: [], answers: [] }] };
+      getSession.mockResolvedValue({ session: stored, building: true, phase: BuildPhase.READING });
+      await renderAt("/session/new");
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      await user.type(await screen.findByLabelText("Your message"), "elves");
+      await user.click(screen.getByRole("button", { name: "Send" }));
+      await user.click(await screen.findByRole("button", { name: "Stop" }));
+
+      const line = await screen.findByTestId("server-build-stopped");
+      expect(line).toHaveTextContent("The agent is still reading your message on the server.");
+      expect(line).not.toHaveTextContent("deck");
     });
 
     it("a reload during a build says so, reads the session, and shows the turn the build stored", async () => {
@@ -357,7 +381,8 @@ describe("SessionPage", () => {
         building: false,
       });
       await renderAt("/session/s1");
-      expect(await screen.findByTestId("server-build")).toHaveTextContent("The agent is still reading your message on the server.");
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("The agent is working...");
+      expect(screen.queryByTestId("server-build-stopped")).not.toBeInTheDocument();
       expect(screen.getByText("elves")).toBeInTheDocument();
 
       await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
@@ -389,7 +414,34 @@ describe("SessionPage", () => {
       await user.click(screen.getByRole("button", { name: "Submit answers" }));
       await user.click(await screen.findByRole("button", { name: "Stop" }));
 
-      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("Building the deck...");
+      expect(screen.getByTestId("server-build-stopped")).toHaveTextContent("The build continues on the server.");
+    });
+
+    // F-200: the owner relaunched the installed app during a build, and the
+    // page showed a line in place of the working row and the stepper.
+    it("a relaunch during a build shows the working line and the step of the server (F-200)", async () => {
+      const stored = { id: "s1", collectionId: "", deckIds: [] as string[], turns: [{ userMessage: "elves", agentMessage: "", questions: [], answers: [] }] };
+      getSession.mockResolvedValueOnce({ session: stored, building: true, phase: BuildPhase.BUILDING, repaired: false, status: "building the deck" });
+      getSession.mockResolvedValueOnce({ session: stored, building: true, phase: BuildPhase.CHECKING, repaired: true, status: "building the deck" });
+      getSession.mockResolvedValue({ session: { ...stored, deckIds: ["d1"] }, building: false });
+      getDeck.mockResolvedValue({ deck });
+      const { router } = await renderAt("/session/s1");
+
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("Building the deck...");
+      const stepper = screen.getByTestId("build-stepper");
+      expect(within(stepper).getByText("Build").closest("li")).toHaveAttribute("aria-current", "step");
+      expect(screen.queryByTestId("server-build-stopped")).not.toBeInTheDocument();
+      expect(screen.queryByText(/continues on the server/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Stop" })).not.toBeInTheDocument();
+
+      // Each read of the watch moves the step on, and a repair shows.
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      expect(within(screen.getByTestId("build-stepper")).getByText("Check").closest("li")).toHaveAttribute("aria-current", "step");
+      expect(within(screen.getByTestId("build-stepper")).getByText("Repair")).toBeInTheDocument();
+
+      await act(() => vi.advanceTimersByTimeAsync(buildPollMs));
+      await waitFor(() => expect(router.state.location.pathname).toBe("/decks/d1"));
     });
 
     // F-190: a phone suspended the page during a build, the stream broke,
@@ -413,7 +465,8 @@ describe("SessionPage", () => {
       await user.type(await screen.findByLabelText("Your message"), "elves");
       await user.click(screen.getByRole("button", { name: "Send" }));
 
-      expect(await screen.findByTestId("server-build")).toHaveTextContent("The build continues on the server.");
+      expect(await screen.findByTestId("server-build")).toHaveTextContent("Building the deck...");
+      expect(screen.queryByTestId("server-build-stopped")).not.toBeInTheDocument();
       expect(screen.queryByTestId("recovery")).not.toBeInTheDocument();
       // D-1034: a launch at "/" now opens this session.
       expect(JSON.parse(localStorage.getItem("decktome.runningBuild") ?? "{}").id).toBe("s1");

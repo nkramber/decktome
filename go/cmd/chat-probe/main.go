@@ -285,6 +285,16 @@ func (m *memStore) Leased(context.Context, string, string, time.Time) (bool, err
 
 func (m *memStore) Release(context.Context, string, string, string) error { return nil }
 
+// The probe reads the stream to its end, so no page reloads to read the
+// step of a build.
+func (m *memStore) LeaseState(context.Context, string, string, time.Time) (sessions.LeaseState, error) {
+	return sessions.LeaseState{}, nil
+}
+
+func (m *memStore) SetStep(context.Context, string, string, mtgv1.BuildPhase, string) error {
+	return nil
+}
+
 // The probe reads the stream to its end, so its page is never hidden.
 func (m *memStore) SetHidden(context.Context, string, string, bool, time.Time) error { return nil }
 

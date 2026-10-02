@@ -13,12 +13,20 @@ export const buildPollMs = 5000;
 // runs on the server and this page holds no stream: after a reload, or
 // after Stop (REV-046). It calls onEnded once, with the fresh session,
 // when the server no longer reports a build. A session that is gone, or
-// that belongs to another user, stops the reads.
-export function useBuildWatch(sessionId: string, watch: boolean, onEnded: (res: GetSessionResponse) => void) {
+// that belongs to another user, stops the reads. onRuns takes each read
+// while the build runs, so the page shows its step (D-1042).
+export function useBuildWatch(
+  sessionId: string,
+  watch: boolean,
+  onEnded: (res: GetSessionResponse) => void,
+  onRuns?: (res: GetSessionResponse) => void,
+) {
   const ended = useRef(onEnded);
+  const runs = useRef(onRuns);
   useEffect(() => {
     ended.current = onEnded;
-  }, [onEnded]);
+    runs.current = onRuns;
+  }, [onEnded, onRuns]);
   useEffect(() => {
     if (!watch || sessionId === "") return;
     let live = true;
@@ -34,6 +42,7 @@ export function useBuildWatch(sessionId: string, watch: boolean, onEnded: (res: 
           ended.current(res);
           return;
         }
+        runs.current?.(res);
       } catch (err) {
         if (!live) return;
         const code = ConnectError.from(err).code;

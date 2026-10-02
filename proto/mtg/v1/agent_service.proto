@@ -180,6 +180,15 @@ message GetSessionResponse {
   // or on another one that holds its lease (D-922). A page that reloads
   // during a build reads it and polls until it ends (REV-046).
   bool building = 2;
+  // phase is the step the running build stands at, and repaired says a
+  // repair turn ran in it. A page that reloads during a build shows the
+  // same stepper as the page that started it (F-200, D-1042). Both are
+  // empty when no build runs.
+  BuildPhase phase = 3;
+  bool repaired = 4;
+  // status is the working line the build streamed last, such as
+  // "revising the deck". It is empty when no build runs.
+  string status = 5;
 }
 
 // ImportDeckRequest carries one deck list: an Archidekt text export or an

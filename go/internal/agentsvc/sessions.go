@@ -195,6 +195,37 @@ func (s *Server) DeleteSession(ctx context.Context, req *connect.Request[mtgv1.D
 
 // sendPhase streams where the turn stands (D-435). A client that left
 // can not receive it, and the turn goes on.
-func (s *Server) sendPhase(ctx context.Context, stream *connect.ServerStream[mtgv1.ChatResponse], session *mtgv1.Session, phase mtgv1.BuildPhase) {
+//
+// The lease of a running build records the step too, so a page that
+// reloads during the build shows the same stepper (F-200, D-1042). The
+// write runs detached, because a client that left is the one that needs
+// it. The end of a turn records nothing, as the release of the lease
+// ends the record.
+func (s *Server) sendPhase(ctx context.Context, stream *connect.ServerStream[mtgv1.ChatResponse], uid string, session *mtgv1.Session, phase mtgv1.BuildPhase) {
 	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Phase{Phase: phase}})
+	if phase == mtgv1.BuildPhase_BUILD_PHASE_DONE {
+		return
+	}
+	s.recordStep(ctx, uid, session, phase, "")
+}
+
+// sendStep streams the working line of a build and records it with the
+// lease, so a reloaded page shows the same line (D-1042).
+func (s *Server) sendStep(ctx context.Context, stream *connect.ServerStream[mtgv1.ChatResponse], uid string, session *mtgv1.Session, status string) {
+	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: status}})
+	s.recordStep(ctx, uid, session, mtgv1.BuildPhase_BUILD_PHASE_UNSPECIFIED, status)
+}
+
+// recordStep writes the step to the lease. The write runs detached,
+// because a client that left is the one that needs it.
+func (s *Server) recordStep(ctx context.Context, uid string, session *mtgv1.Session, phase mtgv1.BuildPhase, status string) {
+	if session.GetId() == "" {
+		return
+	}
+	wctx, cancel := detached(ctx, storeLimit)
+	defer cancel()
+	if err := s.store.SetStep(wctx, uid, session.GetId(), phase, status); err != nil {
+		s.log.WarnContext(ctx, "the build step was not recorded, so a reloaded page shows no step",
+			"session", session.GetId(), "phase", phase.String(), "status", status, "err", err)
+	}
 }
