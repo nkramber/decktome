@@ -2936,6 +2936,7 @@ Gate:
 - **The cause (F-190).** The logs of 2026-09-30 show the order. The phone suspended the page, and the stream broke on the phone alone. Cloud Run kept the request open for 109 seconds. The page wrote a failure line and gave the answer back. A second send met the build in progress, and the launch at 17:58:11 opened `/`.
 - **A lost stream (F-190).** A broken connection during a build, or a send during a build, reads the session again. A question turn keeps its failure line and its reload. The page then shows "The build continues on the server" and waits for the deck. A return to view reads the session at once.
 - **The relaunch (D-1034).** The page keeps the id of a session while its build runs. A launch at `/` opens that session one time.
+- **The advisory GO-2026-6505 (D-1035).** The pull request moves `go.opentelemetry.io/otel/sdk` to v1.45.0, so `govulncheck` passes again.
 - **The push (F-192, D-1033).** The page calls `SetPageHidden` with a keepalive request when it leaves view, and again when it comes back. The record sits at `users/<uid>/sessions/<id>/private/presence`. A build sends the push when the stream ended, or when the page reported a leave after the start of the turn.
 
 Gate:

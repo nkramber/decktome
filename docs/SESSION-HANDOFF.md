@@ -23,6 +23,7 @@ Author provider: Claude Code
 - `SetPageHidden` writes `private/presence` of the session. A build sends the push when the stream ended, or when the page reported a leave after the start of the turn.
 - A lost stream of a stored session reads the session again, with no failure line. A return to view reads it at once.
 - `web/apps/web/src/features/chat/running-build.ts` keeps the id of a running build, and `main.tsx` opens it at a launch at `/`.
+- `go.opentelemetry.io/otel/sdk` moves to v1.45.0 for GO-2026-6505, because the advisory failed `govulncheck` on each pull request (D-1035).
 
 **The checks.** `make verify` passes on `77b7999`: "every check passed", with 472 of 472 web tests. `TestEmulatorPagePresence` passes on the local emulator. `TestEmulatorListRenameDelete` fails on the base commit too, because older data in the local emulator holds its fixed id.
 
