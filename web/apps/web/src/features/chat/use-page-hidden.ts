@@ -10,8 +10,10 @@ import { pageClient } from "../../lib/api";
 export function usePageHidden(sessionId: string, active: boolean) {
   useEffect(() => {
     if (!active || sessionId === "") return;
-    // A return to view goes out only after a report of a leave.
-    let reported = false;
+    // A return to view goes out only after a report of a leave. A page
+    // that mounts in the background can hold a leave that an earlier
+    // mount reported, so its return always goes out.
+    let reported = document.visibilityState === "hidden";
     const onChange = () => {
       const hidden = document.visibilityState === "hidden";
       if (hidden === reported) return;
