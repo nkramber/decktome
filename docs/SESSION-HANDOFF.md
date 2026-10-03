@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 504 of 504 web tests, under Node 22. `make store-check` passes on the Firestore emulator.
 
-**The review.** Ready for owner merge on effective head `f4c414b8753b0f427b5f9a7b352792454d62faa1`. No open findings. The record is `docs/reviews/pr-270.md`.
+**The review.** Gitar approved `f4c414b` with no finding and no thread, and the session answered its CI note and its risk line on the token (D-1061). The Codex record says Ready for owner merge on effective head `f4c414b8753b0f427b5f9a7b352792454d62faa1`. No open findings. The record is `docs/reviews/pr-270.md`.
 
 **The open work.** The owner confirms the merge, then the author session turns on auto-merge (D-828). After deploy, the owner checks the share page and chat on an iPhone (D-1068).
 
