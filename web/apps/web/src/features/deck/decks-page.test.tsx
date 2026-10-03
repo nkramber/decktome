@@ -40,6 +40,7 @@ function deck(over: Record<string, unknown> = {}) {
     cards: [],
     sideboard: [],
     upgrades: [],
+    newOracleIds: [],
     ...over,
   };
 }
@@ -84,6 +85,14 @@ describe("DecksPage", () => {
     const [legal, stale] = await screen.findAllByRole("listitem");
     expect(within(stale).getByText(/No longer legal/)).toBeInTheDocument();
     expect(within(legal).queryByText(/No longer legal/)).not.toBeInTheDocument();
+  });
+
+  it("marks a deck that new cards fit, and no other deck (D-1091)", async () => {
+    listDecks.mockResolvedValue({ decks: [deck(), deck({ id: "d2", name: "Dino stomp", newOracleIds: ["o-new"] })], nextPageToken: "" });
+    await renderAt("/decks");
+    const [plain, fresh] = await screen.findAllByRole("listitem");
+    expect(within(fresh).getByText(/New cards/)).toBeInTheDocument();
+    expect(within(plain).queryByText(/New cards/)).not.toBeInTheDocument();
   });
 
   it("names the deck's color identity for a reader who sees no color", async () => {

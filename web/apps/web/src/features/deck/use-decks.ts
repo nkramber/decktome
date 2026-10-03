@@ -86,7 +86,7 @@ export function useCommanderCards(decks: Deck[]) {
   return query.data?.byId ?? new Map<string, Card>();
 }
 
-// The three writes of the library (PR-17). Each one refreshes every deck
+// The writes of the library (PR-17). Each one refreshes every deck
 // listing, so the grid shows the result with no reload.
 export function useDeckWrites() {
   const client = useQueryClient();
@@ -105,6 +105,11 @@ export function useDeckWrites() {
     mutationFn: (v: { deckId: string; favorite: boolean }) => deckClient.updateDeck({ deckId: v.deckId, favorite: v.favorite }),
     onSuccess: refresh,
   });
+  // The dismiss of the panel of new cards (D-1095).
+  const dismissNewCards = useMutation({
+    mutationFn: (v: { deckId: string }) => deckClient.updateDeck({ deckId: v.deckId, dismissNewCards: true }),
+    onSuccess: refresh,
+  });
   const remove = useMutation({
     mutationFn: (v: { deckId: string }) => deckClient.deleteDeck({ deckId: v.deckId }),
     onSuccess: refresh,
@@ -116,5 +121,5 @@ export function useDeckWrites() {
     mutationFn: (v: { deckId: string }) => deckClient.shareDeck({ deckId: v.deckId }),
     onSuccess: refresh,
   });
-  return { rename, setFavorite, remove, share };
+  return { rename, setFavorite, dismissNewCards, remove, share };
 }

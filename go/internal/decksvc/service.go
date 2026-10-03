@@ -39,11 +39,11 @@ type Option func(*Server)
 
 // DeckSource reads and writes the decks a build kept (D-245). List
 // answers from the flat fields and carries no cards. Update writes the
-// two fields the user owns, and Delete removes a deck for good (PR-17).
+// fields the user owns, and Delete removes a deck for good (PR-17).
 type DeckSource interface {
 	Get(ctx context.Context, uid, id string) (*mtgv1.Deck, error)
 	List(ctx context.Context, uid string, f decks.Filter, scan int) ([]*mtgv1.Deck, error)
-	Update(ctx context.Context, uid, id string, name *string, favorite *bool) (*mtgv1.Deck, error)
+	Update(ctx context.Context, uid, id string, name *string, favorite *bool, dismissNewCards bool) (*mtgv1.Deck, error)
 	Delete(ctx context.Context, uid, id string) error
 	// Share records the hash of a share token, Revoke ends the link, and
 	// LookupShare answers the deck a hash opens (D-315).
@@ -143,7 +143,7 @@ var (
 	errBadDeckID      = fmt.Errorf("deck_id: %w", gzstore.ErrBadID)
 	errEmptyName      = errors.New("name: a deck name needs a character that is not a space")
 	errLongName       = fmt.Errorf("name: a deck name takes at most %d bytes", maxNameBytes)
-	errNoUpdate       = errors.New("give a name or a favorite mark to write")
+	errNoUpdate       = errors.New("give a name, a favorite mark, or a dismiss to write")
 	errBadBracket     = errors.New("power_bracket: a Commander bracket is 1 to 5, or 0 for every bracket")
 	errBadCollection  = fmt.Errorf("collection_id: %w", gzstore.ErrBadID)
 )
@@ -349,10 +349,11 @@ func (s *Server) UpdateDeck(ctx context.Context, req *connect.Request[mtgv1.Upda
 		}
 		name = &trimmed
 	}
-	if name == nil && req.Msg.Favorite == nil {
+	dismiss := req.Msg.GetDismissNewCards()
+	if name == nil && req.Msg.Favorite == nil && !dismiss {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoUpdate)
 	}
-	d, err := s.decks.Update(ctx, uid, id, name, req.Msg.Favorite)
+	d, err := s.decks.Update(ctx, uid, id, name, req.Msg.Favorite, dismiss)
 	if errors.Is(err, decks.ErrNotFound) {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}

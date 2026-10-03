@@ -70,6 +70,9 @@ type storedDeck struct {
 	// RevisedFromDeckID names the deck a revision came from. The backfill
 	// counts a revision apart from a first build (D-638, D-861).
 	RevisedFromDeckID string `firestore:"revised_from_deck_id"`
+	// NewOracleIDs are the new cards of the snapshot job, so the list
+	// marks a deck that new cards fit (D-1091).
+	NewOracleIDs []string `firestore:"new_oracle_ids"`
 }
 
 // listFields are the flat fields List reads. The list never inflates a
@@ -82,6 +85,7 @@ type storedDeck struct {
 var listFields = []string{
 	"session_id", "name", "format_id", "created_at", "legality_as_of", "buy_cost_usd", "stale",
 	"favorite", "power_bracket", "power_sixty_step", "card_count", "commander_oracle_ids", "commander_names",
+	"new_oracle_ids",
 }
 
 func (r *Repo) col(uid string) *firestore.CollectionRef {
@@ -117,8 +121,9 @@ func (r *Repo) Put(ctx context.Context, uid string, d *mtgv1.Deck) error {
 
 // Rewrite writes a new read of a deck that the store holds. The fields
 // that the user owns stay as the store holds them: the name, the favorite
-// mark, and the share link (D-315). A deck that the user deleted stays
-// deleted, and the answer is ErrNotFound (REV-007).
+// mark, and the share link (D-315). The new cards of the snapshot job
+// stay too (D-1091). A deck that the user deleted stays deleted, and the
+// answer is ErrNotFound (REV-007).
 func (r *Repo) Rewrite(ctx context.Context, uid string, d *mtgv1.Deck) error {
 	if d.GetId() == "" || uid == "" {
 		return errors.New("decks: a rewrite needs a user and a deck id")
@@ -131,6 +136,7 @@ func (r *Repo) Rewrite(ctx context.Context, uid string, d *mtgv1.Deck) error {
 		}
 		next := proto.CloneOf(d)
 		next.Name, next.Favorite, next.Shared, next.ShareToken = cur.GetName(), cur.GetFavorite(), cur.GetShared(), cur.GetShareToken()
+		next.NewOracleIds, next.NewCardsVersion = cur.GetNewOracleIds(), cur.GetNewCardsVersion()
 		updated, err := restore(next, sd)
 		if err != nil {
 			return err
@@ -161,6 +167,7 @@ func toStored(d *mtgv1.Deck, payload []byte) storedDeck {
 		CardCount:          int64(CardCount(d)),
 		CommanderOracleIDs: d.GetCommanderOracleIds(),
 		CommanderNames:     CommanderNames(d),
+		NewOracleIDs:       d.GetNewOracleIds(),
 		DeckGz:             payload,
 		SchemaVersion:      schemaVersion,
 	}
@@ -325,6 +332,7 @@ func storedToProto(id string, sd storedDeck) *mtgv1.Deck {
 		Favorite:           sd.Favorite,
 		CardCount:          int32(sd.CardCount), //nolint:gosec // CardCount was an int32 at Put
 		CommanderOracleIds: sd.CommanderOracleIDs,
+		NewOracleIds:       sd.NewOracleIDs,
 		CreatedAt:          timestamppb.New(sd.CreatedAt),
 	}
 }
@@ -373,7 +381,7 @@ func (r *Repo) Delete(ctx context.Context, uid, id string) error {
 // mark (PR-17). A nil pointer leaves that field as it is. The write
 // carries both the flat field and the packed proto, so a later Get reads
 // the same value the list shows.
-func (r *Repo) Update(ctx context.Context, uid, id string, name *string, favorite *bool) (*mtgv1.Deck, error) {
+func (r *Repo) Update(ctx context.Context, uid, id string, name *string, favorite *bool, dismissNewCards bool) (*mtgv1.Deck, error) {
 	doc := r.doc(uid, id)
 	var out *mtgv1.Deck
 	err := r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
@@ -397,6 +405,9 @@ func (r *Repo) Update(ctx context.Context, uid, id string, name *string, favorit
 		}
 		if favorite != nil {
 			d.Favorite = *favorite
+		}
+		if dismissNewCards {
+			d.NewOracleIds = nil
 		}
 		payload, err := gzstore.MarshalProto(&d)
 		if err != nil {

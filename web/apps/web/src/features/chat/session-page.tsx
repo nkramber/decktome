@@ -17,6 +17,7 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
+import { NewCardsPanel } from "../deck/new-cards-panel";
 import { StaleBanner } from "../deck/stale-banner";
 import { ReportProblem } from "../feedback/report-problem";
 import { PoolPicker, useCollections } from "./pool-picker";
@@ -769,6 +770,18 @@ export function ChatPanel({
               pin();
               void send({ message: "", answers: [], rerunDeckId: builtDeck.id });
             }}
+          />
+          <NewCardsPanel
+            deck={builtDeck}
+            busy={state.busy}
+            onRevise={
+              state.sessionId !== ""
+                ? (message) => {
+                    pin();
+                    void send({ message, answers: [] });
+                  }
+                : undefined
+            }
           />
           <section aria-label="Deck">
             <DeckView deck={builtDeck} base={deckOverride ? baseOverride : state.baseDeck} />

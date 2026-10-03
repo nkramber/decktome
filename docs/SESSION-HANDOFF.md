@@ -6,27 +6,35 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03e)
+## RESUME HERE (2026-10-03f)
 
-**Branch `ops/spend-cap-two-dollars`: the per-user spend cap moves from $5 to $2 a month (D-1109).** The pull request is #279.
+**Branch `feat/push-third-event`: PR-120, the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).** The pull request is #278.
 
 Author provider: Claude Code
 
-**The base.** `main` is `fbbcd60`, from #276. The session worked in the worktree `../decktome-cap`. The main checkout holds the branch `feat/push-third-event` of #278. The open pull requests #277 and #278 hold decision ids below 1109, so this pull request takes D-1109.
+**The base.** `main` is `a083208`, from #279. The branch merged `fbbcd60` of #276 and then `a083208` on 2026-10-03. #276 took PR-119 and D-1092, so this item is PR-120, and its panel decision is D-1095. This session did not read the deploy of `fbbcd60`. Before the merge, `main` was `e135aab`, from #275. Cloud Build `4dffc8c5` of `deploy-api` and `afd93b41` of `deploy-web` built `e135aab`, and both read SUCCESS. `/version.json` and `/readyz` name `e135aab`. The run `mtg-snapshot-p2t6g` of 20:00 UTC ran `worker:e135aab`, and it logged "cards refresh: snapshot current".
 
-**The owner request.** The owner asked for a cap of $2 a month on all usage of each user. The owner's account keeps no limit.
+**The owner choices.** The new-cards event comes before the email digest (D-1090). The pass reads the theme of the chat, and the cards of the deck when the chat holds none. The push uses the toggle of D-1005, and a tap opens the deck with a panel (D-1091). A dismiss or the next pass clears the panel (D-1095).
 
-**The live change.** The live service read `SPEND_CAP_USD=5`. The override of D-576 already turned the cap off for the owner's account. On 2026-10-03 the session set `SPEND_CAP_USD=2` on `mtg-api`. Revision `mtg-api-00113-fmw` serves all traffic, on the same image `fbbcd60`. Its startup log reads a cap of 2 and one override. The deploy of `cloudbuild/api.yaml` keeps each environment variable, so a later merge keeps the cap.
+**The code.**
 
-**The code.** `go/cmd/api/main.go` moves the default from $5 to $2, so a service with no value reads the same cap. The test of `spendCap` pins the value 2. `docs/setup-gcp.md` reads the new cap.
+- `go/internal/cards`: `NewlyLegal`, `CompareVersions`, the marker `new_cards.json`, and `PendingNewCards`.
+- `go/internal/candidates`: `ThemeScores`, `DeckTheme`, and `FitFloor`.
+- `go/internal/newcards`: the pass, and the pick of each deck.
+- `go/internal/push`: `Notifier.NewCards` and `NewCardsMessage`.
+- `go/cmd/worker`: the refresh writes the marker, and the new pass runs after the stale pass.
+- The deck proto holds `new_oracle_ids` and `new_cards_version`, and `UpdateDeck` takes `dismiss_new_cards`. A rerun of a marker skips each deck that holds its version (D-1095). The list of decks carries the field.
+- The web app: the panel "New cards for this deck", and the mark "New cards" in the list.
 
-**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `TestSpendCap` pins the default of 2.
+**The checks.** `make verify` reads "every check passed" on `c3f5878`, with 544 of 544 web tests under Node 22. Each CI check of `c3f5878` passed. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
 
-**The review.** Gitar reviewed effective head `6e352bc` and closed its archive-index finding on `35ece27`. The review record approves effective head `6e352bc`.
+**The review.** Gitar approved effective head `7938370`, and both finding threads are closed. The earlier Codex review found P2-1: a later marker had left an earlier failed marker pending. The author fixed it in `82b9089` and `c3f5878`. The repeat review confirmed the fix. `make verify` passed on `7938370`. The record is `docs/reviews/pr-278.md`, and its verdict is Ready for owner merge.
 
 **The open work.**
 
-1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
+1. The owner confirmed the merge on 2026-10-03. The first auto-merge met a conflict with #279, so the branch merged `a083208`. The pull request is pending the auto-merge.
+2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
+3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 
 ## How to resume
 
@@ -73,6 +81,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 - Comprehensive Rules: the current file is 2026-08-19 (D-272). The rule citations in the corpus match the 2026-08-07 text. The session of 2026-09-12 read rules 709.4c, 710.2, 712.8a, 712.12, 715.2, and 722.2a in that file for PR-44.
 - Ban-list snapshot: 2026-08-24. Next announcement 2026-10-12, in `internal/cards/announcement_dates.json`. A test fails when that file holds no future date. This is by design.
+- The Scryfall API, read 2026-10-03: Reality Fracture released 2026-10-02 with 268 first printings. Star Trek releases 2026-11-13, and its 75 first printings read `not_legal` in each format.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
@@ -99,6 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
+0. **PR-120: the push of new cards that fit a deck** (D-1090, D-1091, D-1095). The resume section holds the open work.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
@@ -111,7 +121,7 @@ Twenty-two things a fresh session gets wrong without this file.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. PR-118 adds the legality event (D-1087). The email digest and the new-cards event wait.
+9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. PR-118 adds the legality event (D-1087). PR-120 adds the new-cards event (D-1090). The email digest waits.
 10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
@@ -124,12 +134,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03c: the push of a legality change, PR-118
-
-**The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
-
-**The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
-
 ### 2026-10-03d: a user record for each user who signs in, PR-119
 
 **The owner asked why an invited user had no user record.** The logs showed a sign-in and two page reads, and no creation. Only a creation wrote the record.
@@ -140,6 +144,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
 
+### 2026-10-03f: the push of new cards, PR-120
+
+**The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
+
+**The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03d, the records of 2026-08-31 to 2026-10-03b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03e, the records of 2026-08-31 to 2026-10-03c, and 104 more sections, word for word. Read it for the detail behind a decision.

@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
 import { buildPollMs } from "../chat/use-build-watch";
+import { reviseMessage } from "../deck/new-cards-panel";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
@@ -40,7 +41,11 @@ vi.mock("../../lib/api", () => ({
     chat: (...a: unknown[]) => chat(...a),
     readImportBracket: (...a: unknown[]) => readImportBracket(...a),
   },
-  cardClient: { getCards: () => Promise.resolve({ cards: [], missingOracleIds: [] }) },
+  // The one card data is the new card of the panel (D-1091).
+  cardClient: {
+    getCards: (req: { oracleIds: string[] }) =>
+      Promise.resolve({ cards: req.oracleIds.includes("o-rex") ? [{ oracleId: "o-rex", name: "Tyrant Rex" }] : [], missingOracleIds: [] }),
+  },
   deckClient: {
     listDecks: (...a: unknown[]) => listDecks(...a),
     getDeck: (...a: unknown[]) => getDeck(...a),
@@ -141,6 +146,16 @@ describe("DeckScreen", () => {
     await waitFor(() => expect(chat).toHaveBeenCalled());
     expect(chat.mock.calls[0][0]).toMatchObject({ sessionId: "s1", rerunDeckId: "d1", message: "", answers: [] });
     expect(await screen.findByText("Rerun this deck after the rule change.")).toBeInTheDocument();
+  });
+
+  it("the Revise button of the new cards sends a revise in the chat (D-1091)", async () => {
+    getDeck.mockResolvedValue({ deck: { ...deck, newOracleIds: ["o-rex"] } });
+    await renderAt("/decks/d1");
+    const user = userEvent.setup();
+    expect(await screen.findByText("Tyrant Rex")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Revise with these cards" }));
+    await waitFor(() => expect(chat).toHaveBeenCalled());
+    expect(chat.mock.calls[0][0]).toMatchObject({ sessionId: "s1", message: reviseMessage(["Tyrant Rex"]) });
   });
 
   it("reads the deck of the path and shows it", async () => {

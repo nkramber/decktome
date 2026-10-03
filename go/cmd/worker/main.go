@@ -31,6 +31,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/nkramber/decktome/go/internal/candidates"
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/gcpenv"
 	"github.com/nkramber/decktome/go/internal/notify"
@@ -169,6 +170,14 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 		sender = fcm
 	}
 	decksOf := firestoreDecks(project, sender, logger)
+	newCardsOf := firestoreNewCards(project, sender, logger)
+	loadVersion := func(ctx context.Context, version string) (*cards.Index, error) {
+		return cards.LoadVersion(ctx, store, version, logger)
+	}
+	fit, err := candidates.New()
+	if err != nil {
+		return fmt.Errorf("theme table: %w", err)
+	}
 	calendar, err := cards.Announcements()
 	if err != nil {
 		return fmt.Errorf("announcement calendar: %w", err)
@@ -208,11 +217,19 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 		// A snapshot covers an announcement only when a legality
 		// changed. The calendar date is UTC midnight and the 09:00Z
 		// snapshot on that day can predate the post.
-		changed, err := cards.LegalityDiff(refreshCtx, store, previous, current)
+		changed, fresh, err := cards.CompareVersions(refreshCtx, store, previous, current)
 		if err != nil {
 			return fmt.Errorf("legality diff %s to %s: %w", previous, current, err)
 		}
-		logger.Info("legality_diff", "from", previous, "to", current, "changed_cards", changed)
+		logger.Info("legality_diff", "from", previous, "to", current, "changed_cards", changed, "new_cards", len(fresh))
+		// The cards that this snapshot made legal for the first time wait
+		// for the new-cards pass (D-1091).
+		if len(fresh) > 0 {
+			nrec := cards.NewCardsRecord{SnapshotAsOf: asOf.Format(time.RFC3339), Cards: fresh}
+			if err := cards.WriteNewCards(refreshCtx, store, current, nrec); err != nil {
+				return fmt.Errorf("write new-cards marker %s: %w", current, err)
+			}
+		}
 		if changed == 0 {
 			return nil
 		}
@@ -249,8 +266,10 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 			return err
 		}
 		// The stale pass runs after the refresh, and in a skipped hour
-		// too, so a pass that failed or stopped runs again (I-1).
-		return stalePass(ctx, store, decksOf, logger, time.Now)
+		// too, so a pass that failed or stopped runs again (I-1). The
+		// new-cards pass runs after it, on the same rule (D-1091).
+		staleErr := stalePass(ctx, store, decksOf, logger, time.Now)
+		return errors.Join(staleErr, newCardsPass(ctx, store, loadVersion, newCardsOf, fit, logger, time.Now))
 	}
 
 	logger.Info("worker started in loop mode", "version", version)
@@ -261,6 +280,9 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 		}
 		if err := stalePass(ctx, store, decksOf, logger, time.Now); err != nil {
 			logger.Error("stale pass failed", "err", err)
+		}
+		if err := newCardsPass(ctx, store, loadVersion, newCardsOf, fit, logger, time.Now); err != nil {
+			logger.Error("new cards pass failed", "err", err)
 		}
 	}
 	cycle()

@@ -313,6 +313,16 @@ func (n *Notifier) DecksStale(ctx context.Context, uid string, decks []*mtgv1.De
 	n.send(ctx, uid, StaleMessage(decks), "decks stale", "decks", len(decks))
 }
 
+// NewCards sends one push to each device of the user for all the decks
+// that one new-cards pass gave cards (D-1091). A failure goes to the log
+// alone, because the panel of each deck holds the same news.
+func (n *Notifier) NewCards(ctx context.Context, uid string, decks []*mtgv1.Deck) {
+	if len(decks) == 0 {
+		return
+	}
+	n.send(ctx, uid, NewCardsMessage(decks), "new cards", "decks", len(decks))
+}
+
 func (n *Notifier) send(ctx context.Context, uid string, m Message, event string, key string, val any) {
 	ids, err := n.store.IDs(ctx, uid)
 	if err != nil {
@@ -358,6 +368,21 @@ func StaleMessage(decks []*mtgv1.Deck) Message {
 	title := "One of your decks is no longer legal."
 	if name := strings.TrimSpace(d.GetName()); name != "" {
 		title = `Your deck "` + name + `" is no longer legal.`
+	}
+	return Message{Title: title, URL: "/decks/" + url.PathEscape(d.GetId())}
+}
+
+// NewCardsMessage is the push for the decks that new cards of a new set
+// fit (D-1091). One deck opens that deck and its panel of new cards. More
+// decks open the list.
+func NewCardsMessage(decks []*mtgv1.Deck) Message {
+	if len(decks) > 1 {
+		return Message{Title: fmt.Sprintf("New cards fit %d of your decks.", len(decks)), URL: "/decks"}
+	}
+	d := decks[0]
+	title := "New cards fit one of your decks."
+	if name := strings.TrimSpace(d.GetName()); name != "" {
+		title = `New cards fit your deck "` + name + `".`
 	}
 	return Message{Title: title, URL: "/decks/" + url.PathEscape(d.GetId())}
 }
