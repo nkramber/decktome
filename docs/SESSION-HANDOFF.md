@@ -111,13 +111,14 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **The live check of PR-112** (D-1055 to D-1060). After the deploy, the owner checks on the iPhone. The cold start comes first, because only the first launch after a deploy tests D-1046.
-0. **The share page, the next pull request** (owner, 2026-10-02). Start it after the live check of PR-112. The owner asked for these changes:
-   - The shared page shows the mana curve, the mana sources, the card types, and the average mana value.
-   - It shows the sample hand.
-   - It shows the filters of role, color, mana value, and type, and the sort. It shows no owned filter.
-   - It always shows the card price. A shared link can not prove ownership. Each `SharedCard` carries its `Card`, so the price can follow D-1057 and D-1060.
-   - The caption "Card types, a card counts once per type" becomes "Card types" (`web/apps/web/src/features/deck/deck-view.tsx`).
-   - Record each change as a D- row in that pull request.
+0. **The share page, the next pull request** (owner, 2026-10-02). Start it after the live check of PR-112.
+   - The shared page shows the mana curve, the mana sources, the card types, the average mana value, and the sample hand.
+   - It has the filters of role, color, mana value, and type, and the sort, but no owned filter.
+   - It always shows the price (D-1057, D-1060), because a link can not prove ownership.
+   - It shows the art of the deck view, the owned printing (D-299). The owner accepts that this reveals the owned printing. The deck of session 2I0xZcfjoqBR0b1IH2IQ shows only LOTR or Hobbit art.
+   - The deck stores the token, so the dialog can copy the old link above "This deck has a link". An old link needs one new link.
+   - Remove "The link, shown once" and "A new link replaces the old one". The caption "Card types" drops its clause.
+   - Record each owner answer as a D- row in that pull request.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
