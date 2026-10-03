@@ -211,6 +211,15 @@ gcloud run services update mtg-api --region us-central1 \
 
 The session of 2026-09-24 ran this step on the image of `930d1a6`, and revision `mtg-api-00078-hv2` holds the two secrets. Each later deploy keeps them. The API log reads `feedback notices on` at start when both are set. To stop the notices, run the same command with `--remove-secrets=PUSHOVER_APP_TOKEN,PUSHOVER_USER_KEY`.
 
+The Resend key of PR-115 needs the same one step (D-1077). Section 8.1 of `docs/setup-gcp.md` creates the secret `resend-api-key`. After the deploy of PR-115, mount it on the service one time:
+
+```
+gcloud run services update mtg-api --region us-central1 \
+  --update-secrets=RESEND_API_KEY=resend-api-key:1
+```
+
+Each later deploy keeps it. The API log reads `the approval email is on` at start when the key is set. Without it, an approval adds the email to the invite list and sends no email. Section 15.2 of `docs/setup-gcp.md` opens the admin screen with `make grant-admin`.
+
 ## 5. Deploy the web app
 
 The four `VITE_FIREBASE_` values never change. `docs/setup-gcp.md` section 13 holds them.
@@ -266,6 +275,8 @@ CAUTION: the pin holds until `--to-latest`. A deploy during the pin makes a new 
 CAUTION: during the pin, `/readyz` names the commit of the old revision. So the web build of a merge that changed `go/` or `docker/` waits for its API, and it fails after 25 minutes (D-943). Run the web build again after `--to-latest`.
 
 A revision older than `mtg-api-00077-vwp` holds no Pushover secret, so a rollback to it sends no notice of a verdict. The store still keeps each verdict.
+
+A revision older than PR-115 has no request for beta access and no admin screen. A rollback to it keeps each stored request, and the admin claim of each account.
 
 ### 8.2 The jobs
 

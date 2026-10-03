@@ -37,6 +37,7 @@ coverage/
 /go/allow
 /go/deactivate-user
 /go/mark-verified
+/go/grant-admin
 /go/feedback
 /go/feedback-harvest
 /go/case-check

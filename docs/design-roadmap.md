@@ -601,8 +601,9 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-202 | **A card with two halves on one front shows that front twice.** The card data gives each half of an adventure or a split card the image of the whole card. The commander pick showed "Thranduil, Sindarin Liege // Silvan Rally" with two identical images. | ✅ PR-111: such a card is one face, with the text of each half (D-1048). |
 | F-203 | **A deck priced each owned card at its default printing.** A list sorted by price showed the price of the default printing, and not the price of the printing that the reader owns. | ✅ PR-112: the tile and the sort read the price of the owned printing (D-1058). A card to buy reads its cheapest printing (D-1057). |
 | F-204 | **No source confirms the condition of the Scryfall price.** Scryfall uses the TCGplayer market price, and TCGplayer keeps a market price for each condition. The owner requires LP/SP or better (D-1057). | ⚠ The pages of TCGplayer refused the session (HTTP 403, 2026-10-02). A source with a price for each condition closes it. |
-| F-206 | **A cold start after a deploy shows the splash, then an error.** The update check of the splash starts the install of the new worker before workbox listens. Workbox never sees the install, so the reload never comes. After 15 seconds the old shell draws, and its chunks are gone (D-1067). | 🔧 PR-113: the page reloads when the new worker takes control (D-1068). A local replay in Chromium of `7b5cebf` showed no reload in 25 seconds. The same replay of the fix reloaded in about one second. The first launch after the deploy of PR-114 is the first test on the iPhone (D-1070). |
+| F-206 | **A cold start after a deploy shows the splash, then an error.** The update check of the splash starts the install of the new worker before workbox listens. Workbox never sees the install, so the reload never comes. After 15 seconds the old shell draws, and its chunks are gone (D-1067). | ✅ PR-113: the page reloads when the new worker takes control (D-1068). A local replay in Chromium of `7b5cebf` showed no reload in 25 seconds. The same replay of the fix reloaded in about one second. On the iPhone, the first launch after the deploy of PR-114 showed "Updating", then a reload with no error (D-1072). |
 | F-205 | **A card with no USD price has no second price source.** The snapshot of 2026-09-25 holds 219 playable paper cards with no USD price. Of these, 32 have a Cardmarket EUR price (D-1060). | ❓ PR-112 shows "Price unknown" for such a card. A second source, such as MTGJSON or eBay, waits for the owner (D-1060). |
+| F-207 | **On a phone, the "Back to top" button covers the first question.** PR-114 put the first question at the top of the view (D-1071). The fixed button under the header then sat on the question text (D-1072). | 🔧 PR-115: on a phone, the anchor also leaves the band of the button, 52 pixels. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -3067,13 +3068,6 @@ The live check after the deploy runs on the iPhone of the owner. The first launc
 - **The live sweep.** The share step reads the stored link or makes one. A made-up token reads the error state.
 - **The test of F-206.** The change of `web/` makes `deploy-web` run, and the phone then runs the shell of `c19aa26` (D-1070).
 
-**PR-115: A request for beta access, an admin screen, and a "Leave feedback" button (D-1072 to D-1078).** 🔧 in progress. The owner put the feedback button in the same pull request (D-1073).
-
-- **The request (D-1074, D-1075).** The sign-in page sends `InviteService.RequestAccess`. One record for each email goes to `access_requests`, and the owner gets a Pushover notice.
-- **The admin screen (D-1076, D-1077).** `/admin` lists the requests. An approval adds the email to the invite list, and Resend sends the approval email.
-- **The note (D-1078).** A row under the top bar holds the "Leave feedback" button. A note is the feedback kind `general`.
-- **The question view (D-1072).** A phone leaves the band of the "Back to top" button above the first question.
-
 Gate:
 - A web test reads the share dialog, the anchor of the chat page, and the docked thread box.
 - `make verify` passes.
@@ -3083,6 +3077,26 @@ Gate:
 The live check after the deploy runs on the iPhone of the owner. Its first launch tests F-206.
 
 > *In plain English:* the share dialog now shows only your link and a copy button. When the agent asks questions, the first question sits at the top of the screen. This update is also the first real test of the fix for the error after an update.
+
+**PR-115: A request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).** 🔧 in progress. The live check of PR-114 ran on `a97cf82` (D-1072). The owner put the feedback button in the same pull request (D-1073).
+
+- **The request (D-1074, D-1075).** The sign-in page sends `InviteService.RequestAccess` with no sign-in. A limit for each client address bounds it. One record for each email goes to `access_requests`, and the owner gets a Pushover notice.
+- **The admin role (D-1076).** `AdminService` lists, approves, and dismisses a request. Each call needs the custom claim `admin: true`. `make grant-admin` sets the claim, and the claim works after the next sign-in.
+- **The approval (D-1077).** An approval adds the email to `config/allowlist`. Resend then sends the approval email from a subdomain of `decktome.com`. The API key sits in the secret `resend-api-key`.
+- **The admin screen.** The account menu of an admin opens `/admin`. The page lists the open requests, with a button to approve and a button to dismiss.
+- **The note (D-1078).** A row under the top bar holds the "Leave feedback" button. A note is the feedback kind `general` with the screen. It moves no counter, and the triage calls no judge for it.
+- **The question view (F-207, D-1072).** On a phone, the anchor of the first question also leaves the band of the "Back to top" button.
+
+Gate:
+- A Go test reads the request record, the admin claim, the approval, the email, and the note.
+- A web test reads the request form, the admin page, the feedback row, and the anchor on a phone.
+- `make store-check` passes on the emulator, and `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The approval email needs the Resend account, its DNS records at GoDaddy, and the secret. `docs/setup-gcp.md` holds these steps of the owner. Until then an approval adds the email and sends no email.
+
+> *In plain English:* a visitor without an invite can now ask for one from the sign-in page. The owner gets a phone notice and approves the request on a new admin page. The approved person then gets an email. Each main screen has a "Leave feedback" button. On a phone, the "Back to top" button no longer covers the first question.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -3490,6 +3504,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 107. **PR-112** four results of the live check of PR-111 (F-201, F-203, F-204, F-205, D-1055 to D-1060).
 108. **PR-113** the share page, the cold start, and the chat questions (F-206, D-1061 to D-1068).
 109. **PR-114** the results of the live check of PR-113 (F-206, D-1069 to D-1071).
+110. **PR-115** a request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).
 
 ## 9. Open questions
 

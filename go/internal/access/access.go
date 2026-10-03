@@ -91,7 +91,7 @@ func NewRepo(client *firestore.Client) *Repo { return &Repo{client: client} }
 // state, so a dismissed request stays dismissed.
 func (r *Repo) Put(ctx context.Context, email, note string, now time.Time) (created bool, err error) {
 	ref := r.client.Collection(Collection).Doc(Key(email))
-	err = r.client.RunTransaction(ctx, func(ctx context.Context, tx *firestore.Transaction) error {
+	err = r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
 		created = false
 		snap, err := tx.Get(ref)
 		if status.Code(err) == codes.NotFound {

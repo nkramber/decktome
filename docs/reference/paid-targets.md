@@ -93,7 +93,9 @@ With `--here`, the cycle commits on the branch of the session and pushes nothing
 
 `make deck-gate-dry` builds every deck gate shortlist over the trimmed snapshot of the repo and calls no provider (D-521). `make deck-gate-trim` rewrites that snapshot from the local store, and the fixture must stay under 10 MB. Both are free.
 
-`make allow EMAIL=... PROJECT_ID=...` invites one email to the deployed app, and `make disallow` takes one off (D-420). Both write one Firestore document of the deployed project with the caller's own credentials, and neither calls a model. `make mark-verified PROJECT_ID=...` lists each account of the deployed app with no proof of its email (D-903). With `UIDS=...` and `APPLY=1` it marks the named accounts as proved in Firebase Auth. It calls no model.
+`make allow EMAIL=... PROJECT_ID=...` invites one email to the deployed app, and `make disallow` takes one off (D-420). Both write one Firestore document of the deployed project with the caller's own credentials, and neither calls a model. `make grant-admin EMAIL=... PROJECT_ID=...` sets the custom claim `admin: true` on one account of the deployed app, and `REMOVE=1` takes it off (D-1076). It calls no model.
+
+`make mark-verified PROJECT_ID=...` lists each account of the deployed app with no proof of its email (D-903). With `UIDS=...` and `APPLY=1` it marks the named accounts as proved in Firebase Auth. It calls no model.
 
 `make deactivate-user USER_UID=... PROJECT_ID=...` closes one account and keeps each record of it (D-941). It prints the plan and changes nothing. With `CONFIRM=1`, it marks `users/<uid>` closed, then it deletes the Firebase Auth user. The API then refuses the user within one minute, and the share links of the user answer NotFound. It calls no provider, so it costs nothing. Ask the owner before a run with `CONFIRM=1`, as for each write to production.
 
