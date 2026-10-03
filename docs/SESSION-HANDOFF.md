@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22. `make store-check` passes on the emulator, with the new `prooflink` store.
 
-**The review.** The Gitar pass and the Codex review wait for the first push.
+**The review.** Gitar approved `e763450` with no finding and no thread. The session answered its CI note of the first body. The Codex review comes next.
 
 **The open work.**
 
