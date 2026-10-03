@@ -107,8 +107,9 @@ func TestNewCardsPassNoMarker(t *testing.T) {
 }
 
 // TestNewCardsPassOlderMarker runs a marker that a stopped pass left,
-// also after a newer marker ended, and runs pending markers oldest first.
-// A newer marker holds only the cards new since the version before it.
+// also after a newer marker ended. Two pending markers run as one pass
+// with one push. A newer marker holds only the cards new since the
+// version before it.
 func TestNewCardsPassOlderMarker(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -151,8 +152,8 @@ func TestNewCardsPassOlderMarker(t *testing.T) {
 		t.Fatalf("older marker = %+v ok=%v err=%v, want an ended pass", rec, ok, err)
 	}
 
-	// Two pending markers run in order on a new deck, so the newer cards
-	// replace the older ones (D-1095).
+	// Two pending markers join in one pass on a new deck, with one push
+	// and the newest version.
 	deck = &mtgv1.Deck{Id: "d2", SessionId: "s2", CommanderOracleIds: []string{"cmd"},
 		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}}
 	write("20261113T090000", cards.NewCardsRecord{SnapshotAsOf: "2026-11-13T09:00:00Z", Cards: []string{"late"}})
@@ -160,8 +161,9 @@ func TestNewCardsPassOlderMarker(t *testing.T) {
 	if err := newCardsPass(ctx, store, load, open, allFit{}, log, now); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(deck.GetNewOracleIds(), []string{"next"}) || deck.GetNewCardsVersion() != "20261113T110000" || len(sent) != 3 {
-		t.Errorf("two pending markers: deck %v version %q, pushes %v, want [next] from the newer marker and two more pushes",
+	got := slices.Sorted(slices.Values(deck.GetNewOracleIds()))
+	if !slices.Equal(got, []string{"late", "next"}) || deck.GetNewCardsVersion() != "20261113T110000" || len(sent) != 2 {
+		t.Errorf("two pending markers: deck %v version %q, pushes %v, want [late next], the newest version, and one more push",
 			deck.GetNewOracleIds(), deck.GetNewCardsVersion(), sent)
 	}
 	if pending, err := cards.PendingNewCards(ctx, store); err != nil || len(pending) != 0 {

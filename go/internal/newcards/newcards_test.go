@@ -225,3 +225,61 @@ func TestPass(t *testing.T) {
 		t.Error("a pass with no version ran, want an error")
 	}
 }
+
+// everyFit scores every card 1 for every theme, and names the theme of
+// a deck with no chat.
+type everyFit struct{}
+
+func (everyFit) ThemeScores(_ string, _ *cards.Index, cs []*mtgv1.Card) []float64 {
+	out := make([]float64, len(cs))
+	for i := range out {
+		out[i] = 1
+	}
+	return out
+}
+
+func (everyFit) DeckTheme(*cards.Index, []*mtgv1.Card) string { return "deck" }
+
+// TestPassJoinedMarkers is D-1095 for a pass that joins two markers. A
+// deck that a newer marker wrote stays as it is. A deck that dismissed
+// the cards of the older marker takes only the newer cards. A deck that
+// shows the older cards keeps them beside the newer ones.
+func TestPassJoinedMarkers(t *testing.T) {
+	ctx := context.Background()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	idx := cards.NewIndex([]*mtgv1.Card{
+		card("cmd", "Commander", green, legalCmd),
+		card("a", "Alpha", green, legalCmd),
+		card("b", "Beta", green, legalCmd),
+	}, nil, nil, time.Now())
+	store := &fakeStore{}
+	newer := commanderDeck("newer", "", "cmd")
+	newer.NewOracleIds, newer.NewCardsVersion = []string{"x"}, "v3"
+	store.put("u1", newer)
+	dismissed := commanderDeck("dismissed", "", "cmd")
+	dismissed.NewCardsVersion = "v1"
+	store.put("u1", dismissed)
+	shown := commanderDeck("shown", "", "cmd")
+	shown.NewOracleIds, shown.NewCardsVersion = []string{"a"}, "v1"
+	store.put("u2", shown)
+	in := Input{
+		Index: idx, Version: "v2", New: []string{"a", "b"}, From: map[string]string{"a": "v1", "b": "v2"},
+		KeyOf: cmdKey, Fit: everyFit{}, Floor: 0.32,
+	}
+	res, err := Pass(ctx, store, in, log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := store.decks["u1/newer"]; !slices.Equal(got.GetNewOracleIds(), []string{"x"}) || got.GetNewCardsVersion() != "v3" {
+		t.Errorf("a deck of a newer marker = %v %q, want [x] v3", got.GetNewOracleIds(), got.GetNewCardsVersion())
+	}
+	if got := store.decks["u1/dismissed"].GetNewOracleIds(); !slices.Equal(got, []string{"b"}) {
+		t.Errorf("a dismissed deck = %v, want [b] alone", got)
+	}
+	if got := slices.Sorted(slices.Values(store.decks["u2/shown"].GetNewOracleIds())); !slices.Equal(got, []string{"a", "b"}) {
+		t.Errorf("a deck that shows the older cards = %v, want [a b]", got)
+	}
+	if len(res.Hit["u1"]) != 1 || len(res.Hit["u2"]) != 1 {
+		t.Errorf("hits = %+v, want the dismissed deck and the shown deck", res.Hit)
+	}
+}

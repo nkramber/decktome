@@ -63,13 +63,14 @@ func firestoreNewCards(project string, sender push.Sender, logger *slog.Logger) 
 	}
 }
 
-// newCardsPass runs the pass of D-1091 for each new-cards marker with no
-// ended pass, oldest first. A newer marker holds only the cards that are
-// new since the version before it, so it never stands in for an older
-// one. The first failure stops the run, and the next run starts again at
-// that marker. It loads the whole index of the newest version only when
-// a marker waits, about once for each set. The end of each pass goes
-// into its marker.
+// newCardsPass runs the pass of D-1091 over each new-cards marker with
+// no ended pass. A newer marker holds only the cards that are new since
+// the version before it, so it never stands in for an older one. One
+// pass joins the cards of every pending marker under the newest version,
+// so each user gets one push. A failure leaves every marker without an
+// end, and the next run of the job runs them again. It loads the whole
+// index of the newest version only when a marker waits, about once for
+// each set. The end of the pass goes into each marker.
 func newCardsPass(ctx context.Context, store cards.Store, load loadIndex, open openNewCards, fit newcards.Fitter,
 	logger *slog.Logger, now func() time.Time) error {
 	ctx, cancel := context.WithTimeout(ctx, newCardsPassTimeout)
@@ -80,6 +81,17 @@ func newCardsPass(ctx context.Context, store cards.Store, load loadIndex, open o
 	}
 	if len(pending) == 0 {
 		return nil
+	}
+	marked := pending[len(pending)-1].Version
+	var fresh []string
+	from := map[string]string{}
+	for _, p := range pending {
+		for _, id := range p.Record.Cards {
+			if _, ok := from[id]; !ok {
+				fresh = append(fresh, id)
+			}
+			from[id] = p.Version
+		}
 	}
 	latest, err := store.LatestVersion(ctx)
 	if err != nil {
@@ -98,30 +110,30 @@ func newCardsPass(ctx context.Context, store cards.Store, load loadIndex, open o
 		return err
 	}
 	defer closeStore()
-	for _, p := range pending {
-		marked, rec := p.Version, p.Record
-		res, err := newcards.Pass(ctx, deckStore, newcards.Input{
-			Index: idx, Version: marked, New: rec.Cards, KeyOf: keyOf, ThemeOf: theme, Fit: fit, Floor: candidates.FitFloor,
-		}, logger)
-		// The cards of the hit decks are stored, so a later pass does not hit
-		// them again. Their push goes out now, also after a failed pass.
-		if notify != nil && len(res.Hit) > 0 {
-			pctx, pcancel := context.WithTimeout(context.WithoutCancel(ctx), pushNotifyTimeout)
-			for _, uid := range slices.Sorted(maps.Keys(res.Hit)) {
-				notify(pctx, uid, res.Hit[uid])
-			}
-			pcancel()
+	res, err := newcards.Pass(ctx, deckStore, newcards.Input{
+		Index: idx, Version: marked, New: fresh, From: from, KeyOf: keyOf, ThemeOf: theme, Fit: fit, Floor: candidates.FitFloor,
+	}, logger)
+	// The cards of the hit decks are stored, so a later pass does not hit
+	// them again. Their push goes out now, also after a failed pass.
+	if notify != nil && len(res.Hit) > 0 {
+		pctx, pcancel := context.WithTimeout(context.WithoutCancel(ctx), pushNotifyTimeout)
+		for _, uid := range slices.Sorted(maps.Keys(res.Hit)) {
+			notify(pctx, uid, res.Hit[uid])
 		}
-		if err != nil {
-			return fmt.Errorf("new cards pass for %s: %w", marked, err)
-		}
-		rec.Pass = now().UTC().Format(time.RFC3339)
-		rec.Decks = res.Fit
-		if err := cards.WriteNewCards(ctx, store, marked, rec); err != nil {
-			return fmt.Errorf("write new-cards marker %s: %w", marked, err)
-		}
-		logger.Info("new cards pass ended", "marker", marked, "index", latest, "new cards", len(rec.Cards),
-			"read", res.Read, "fit", res.Fit, "written", res.Written, "users hit", len(res.Hit))
+		pcancel()
 	}
+	if err != nil {
+		return fmt.Errorf("new cards pass for %s: %w", marked, err)
+	}
+	ended := now().UTC().Format(time.RFC3339)
+	for _, p := range pending {
+		rec := p.Record
+		rec.Pass, rec.Decks = ended, res.Fit
+		if err := cards.WriteNewCards(ctx, store, p.Version, rec); err != nil {
+			return fmt.Errorf("write new-cards marker %s: %w", p.Version, err)
+		}
+	}
+	logger.Info("new cards pass ended", "marker", marked, "markers", len(pending), "index", latest, "new cards", len(fresh),
+		"read", res.Read, "fit", res.Fit, "written", res.Written, "users hit", len(res.Hit))
 	return nil
 }
