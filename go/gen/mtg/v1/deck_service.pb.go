@@ -807,7 +807,7 @@ type UpdateDeckRequest struct {
 	Name *string `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
 	// favorite sets or clears the star. Unset leaves the mark as it is.
 	Favorite *bool `protobuf:"varint,3,opt,name=favorite,proto3,oneof" json:"favorite,omitempty"`
-	// dismiss_new_cards clears the panel of new cards (D-1092). False
+	// dismiss_new_cards clears the panel of new cards (D-1095). False
 	// leaves it as it is.
 	DismissNewCards bool `protobuf:"varint,4,opt,name=dismiss_new_cards,json=dismissNewCards,proto3" json:"dismiss_new_cards,omitempty"`
 	unknownFields   protoimpl.UnknownFields

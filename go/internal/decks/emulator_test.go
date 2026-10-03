@@ -201,7 +201,7 @@ func TestEmulatorUpdateDeck(t *testing.T) {
 		t.Errorf("after the mark write: name %q favorite %v", after.GetName(), after.GetFavorite())
 	}
 
-	// The dismiss clears the new cards alone (D-1092). The list carries
+	// The dismiss clears the new cards alone (D-1095). The list carries
 	// them, so it marks the deck (D-1091).
 	if len(after.GetNewOracleIds()) != 1 {
 		t.Fatalf("new cards before the dismiss = %v", after.GetNewOracleIds())
@@ -413,7 +413,7 @@ func TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck(t *testing.T) {
 		t.Fatalf("after the rewrite: summary %q, name %q, shared %v, token %q, err %v", d.GetSummary(), d.GetName(), d.GetShared(), d.GetShareToken(), err)
 	}
 	if got := d.GetNewOracleIds(); len(got) != 1 || got[0] != "new-1" || d.GetNewCardsVersion() != "v1" {
-		t.Errorf("a rewrite dropped the new cards of the snapshot job: %v, version %q (D-1091, D-1092)", got, d.GetNewCardsVersion())
+		t.Errorf("a rewrite dropped the new cards of the snapshot job: %v, version %q (D-1091, D-1095)", got, d.GetNewCardsVersion())
 	}
 	if _, _, err := repo.LookupShare(ctx, "h-rw-one"); err != nil {
 		t.Errorf("a rewrite dropped the link: %v", err)

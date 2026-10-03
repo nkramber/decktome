@@ -105,7 +105,7 @@ export function useDeckWrites() {
     mutationFn: (v: { deckId: string; favorite: boolean }) => deckClient.updateDeck({ deckId: v.deckId, favorite: v.favorite }),
     onSuccess: refresh,
   });
-  // The dismiss of the panel of new cards (D-1092).
+  // The dismiss of the panel of new cards (D-1095).
   const dismissNewCards = useMutation({
     mutationFn: (v: { deckId: string }) => deckClient.updateDeck({ deckId: v.deckId, dismissNewCards: true }),
     onSuccess: refresh,

@@ -1,5 +1,5 @@
 // Package newcards finds the cards of a new set that fit each saved deck,
-// the third event of PR-26 (D-1090 to D-1092). The snapshot job runs the
+// the third event of PR-26 (D-1090, D-1091, D-1095). The snapshot job runs the
 // pass after a snapshot makes cards legal for the first time. Each deck
 // takes at most PerDeck cards, and the pass replaces the cards of the
 // last pass.
@@ -43,7 +43,7 @@ type Input struct {
 	// Index is the newest snapshot.
 	Index *cards.Index
 	// Version names the snapshot version of the new-cards marker. A deck
-	// that a pass of this version wrote is not written again (D-1092).
+	// that a pass of this version wrote is not written again (D-1095).
 	Version string
 	// New are the oracle ids of the new cards (cards.NewlyLegal).
 	New []string
@@ -69,7 +69,7 @@ type Result struct {
 }
 
 // Pass reads every stored deck and writes the new cards that fit it. A
-// deck that takes no card loses the cards of the last pass (D-1092). A
+// deck that takes no card loses the cards of the last pass (D-1095). A
 // deck that a pass of the same version wrote is not written and not hit,
 // so a pass that runs again after a failure sends no second push, and a
 // dismiss stays. A deck whose cards do not change takes the version and

@@ -22,7 +22,7 @@ service DeckService {
   // to D-309).
   rpc ExportDeck(ExportDeckRequest) returns (ExportDeckResponse) {}
   // UpdateDeck writes the fields a user owns: the name, the favorite
-  // mark (PR-17), and the dismiss of the new cards (D-1092). It changes
+  // mark (PR-17), and the dismiss of the new cards (D-1095). It changes
   // nothing the agent built.
   rpc UpdateDeck(UpdateDeckRequest) returns (UpdateDeckResponse) {}
   // DeleteDeck removes a deck for good, with the chat that built it and
@@ -156,7 +156,7 @@ message UpdateDeckRequest {
   optional string name = 2;
   // favorite sets or clears the star. Unset leaves the mark as it is.
   optional bool favorite = 3;
-  // dismiss_new_cards clears the panel of new cards (D-1092). False
+  // dismiss_new_cards clears the panel of new cards (D-1095). False
   // leaves it as it is.
   bool dismiss_new_cards = 4;
 }

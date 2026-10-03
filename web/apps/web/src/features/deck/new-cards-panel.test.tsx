@@ -63,7 +63,7 @@ describe("NewCardsPanel", () => {
     expect(await axe(container)).toHaveNoViolations();
   });
 
-  it("dismisses the panel through UpdateDeck (D-1092)", async () => {
+  it("dismisses the panel through UpdateDeck (D-1095)", async () => {
     render(<NewCardsPanel deck={deck} />);
     await screen.findByText("Tyrant Rex, Hatchling Egg");
     expect(screen.queryByRole("button", { name: "Revise with these cards" })).not.toBeInTheDocument();

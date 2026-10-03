@@ -27,7 +27,7 @@ export function reviseMessage(names: string[]): string {
 // names the cards and runs a revise in the chat of the deck. A screen
 // with no chat shows the panel without the Revise button. A dismiss
 // clears the panel, and the next pass of the snapshot job replaces it
-// (D-1092).
+// (D-1095).
 export function NewCardsPanel(props: { deck: Deck; busy?: boolean; onRevise?: (message: string) => void }) {
   const [dismissed, setDismissed] = useState("");
   const ids = newCardIds(props.deck);

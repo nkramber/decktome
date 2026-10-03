@@ -365,7 +365,7 @@ export type UpdateDeckRequest = Message<"mtg.v1.UpdateDeckRequest"> & {
   favorite?: boolean | undefined;
 
   /**
-   * dismiss_new_cards clears the panel of new cards (D-1092). False
+   * dismiss_new_cards clears the panel of new cards (D-1095). False
    * leaves it as it is.
    *
    * @generated from field: bool dismiss_new_cards = 4;
@@ -568,7 +568,7 @@ export const DeckService: GenService<{
   },
   /**
    * UpdateDeck writes the fields a user owns: the name, the favorite
-   * mark (PR-17), and the dismiss of the new cards (D-1092). It changes
+   * mark (PR-17), and the dismiss of the new cards (D-1095). It changes
    * nothing the agent built.
    *
    * @generated from rpc mtg.v1.DeckService.UpdateDeck

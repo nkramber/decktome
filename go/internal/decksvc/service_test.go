@@ -714,7 +714,7 @@ func TestUpdateDeck(t *testing.T) {
 		}
 	})
 
-	// D-1092: the dismiss clears the panel of new cards alone.
+	// D-1095: the dismiss clears the panel of new cards alone.
 	t.Run("dismisses the new cards", func(t *testing.T) {
 		src := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": {Id: "d1", Name: "a deck", NewOracleIds: []string{"n1"}}}}
 		res, err := update(src, &mtgv1.UpdateDeckRequest{DeckId: "d1", DismissNewCards: true})

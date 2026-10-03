@@ -134,7 +134,7 @@ func (f fakeFit) ThemeScores(theme string, _ *cards.Index, cs []*mtgv1.Card) []f
 
 func (f fakeFit) DeckTheme(*cards.Index, []*mtgv1.Card) string { return f.deckTheme }
 
-// TestPass is D-1091 and D-1092: a deck takes the cards of the theme of
+// TestPass is D-1091 and D-1095: a deck takes the cards of the theme of
 // its chat, a deck with no chat takes the theme of its cards, a rerun
 // writes and pushes nothing, a rerun after a dismiss keeps the dismiss,
 // and a pass with no fit clears the last cards with no push.

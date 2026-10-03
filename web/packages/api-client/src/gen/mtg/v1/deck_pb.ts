@@ -270,7 +270,7 @@ export type Deck = Message<"mtg.v1.Deck"> & {
    * new_oracle_ids names up to three new cards of a new set that fit the
    * deck, best first (D-1091). The new-cards pass of the snapshot job
    * writes it, and its next pass replaces it. UpdateDeck clears it when
-   * the user dismisses the panel (D-1092).
+   * the user dismisses the panel (D-1095).
    *
    * @generated from field: repeated string new_oracle_ids = 33;
    */
@@ -279,7 +279,7 @@ export type Deck = Message<"mtg.v1.Deck"> & {
   /**
    * new_cards_version names the snapshot version of the new-cards marker
    * whose pass last wrote new_oracle_ids. A rerun of the same marker
-   * skips the deck, so a dismiss stays and no second push goes (D-1092).
+   * skips the deck, so a dismiss stays and no second push goes (D-1095).
    *
    * @generated from field: string new_cards_version = 34;
    */
