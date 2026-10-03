@@ -193,9 +193,12 @@ type Server struct {
 	// does not wire it.
 	push PushNotifier
 	// archidekt reads a deck by its URL for the import form (D-1100). A
-	// nil one refuses each read. fetches limits the reads of each user.
+	// nil one refuses each read. fetches limits the reads of each user on
+	// this instance (D-1106). reads records each read, and an import keeps
+	// a link only after one (D-1107). A nil one refuses each read too.
 	archidekt *archidekt.Client
 	fetches   *ratelimit.Limiter
+	reads     ReadLog
 	log       *slog.Logger
 }
 
@@ -353,6 +356,16 @@ func WithPush(p PushNotifier) Option { return func(s *Server) { s.push = p } }
 
 // WithArchidekt wires the read of an Archidekt deck URL (PR-121, D-1100).
 func WithArchidekt(c *archidekt.Client) Option { return func(s *Server) { s.archidekt = c } }
+
+// ReadLog records the deck reads of each user (D-1107). The Firestore one
+// is deckreads.Repo.
+type ReadLog interface {
+	Add(ctx context.Context, uid string, deckID int64, text string, now time.Time) error
+	Has(ctx context.Context, uid string, deckID int64, text string, now time.Time) (bool, error)
+}
+
+// WithReadLog wires the record of each deck read (D-1107).
+func WithReadLog(l ReadLog) Option { return func(s *Server) { s.reads = l } }
 
 // New wires the service.
 func New(cat *questions.Catalog, client *llm.Client, store Store, userFn auth.UserFunc, opts ...Option) (*Server, error) {

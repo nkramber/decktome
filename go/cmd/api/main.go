@@ -36,6 +36,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/collections"
 	"github.com/nkramber/decktome/go/internal/collectionsvc"
 	"github.com/nkramber/decktome/go/internal/decks"
+	"github.com/nkramber/decktome/go/internal/deckreads"
 	"github.com/nkramber/decktome/go/internal/decksvc"
 	"github.com/nkramber/decktome/go/internal/feedback"
 	"github.com/nkramber/decktome/go/internal/feedbacksvc"
@@ -677,6 +678,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 		agentsvc.WithPreconTable(tableSrc),
 		agentsvc.WithScorer(scorer),
 		agentsvc.WithArchidekt(archidekt.New()),
+		agentsvc.WithReadLog(deckreads.NewRepo(fs)),
 	}
 	prices, err := llm.LoadPrices()
 	if err != nil {

@@ -3188,8 +3188,9 @@ The live check after the deploy: a verified user with no record opens the app, a
 
 - **The field (D-1103).** The import dialog gets a field "Deck link" and a button "Read". The field names no site, as D-889 asks.
 - **Archidekt (D-1100).** `FetchDeckList` reads a public deck through `go/internal/archidekt` and answers its list as Arena text. The form shows the list, and the user selects Import as for a pasted list.
-- **The safety of the read (D-1100).** The server makes the API URL again from the deck id. It follows no redirect, caps the answer at 4 MiB, and allows each user 10 reads a minute.
+- **The safety of the read (D-1100).** The server makes the API URL again from the deck id. It follows no redirect, caps the answer at 4 MiB, and allows each user 10 reads a minute on each API instance (D-1106).
 - **The link back (D-1101).** The deck keeps `source_url`, and the deck page and the share page link to the Archidekt deck.
+- **The record of a read (D-1107).** `go/internal/deckreads` keeps each read for one hour in `deck_reads/<uid>`: the deck id and a hash of the text. `ImportDeck` keeps a link only after such a read.
 - **Moxfield (D-1102, D-1103).** The app asks Moxfield for nothing. A Moxfield link gets the exact steps: More, then Export, then Copy for Arena.
 - **Any other site (D-1104).** The link gets the general steps. The page files an import report of the host, and the owner gets a notice. The triage class I2 writes a defect row.
 
@@ -3202,6 +3203,7 @@ Gate:
 - The parser reads the real Moxfield export of the owner, with its name and its commander.
 - The tests of the web form cover the read, the exact steps, the general steps with the report, and the error of the server.
 - The share page links to the Archidekt deck. A list that the user edits after the read keeps no link, as a revision keeps none.
+- An import refuses a link with no read of the same deck and text. A fault of the record fails the read and the import. `make store-check` runs the store against the emulator.
 - `make verify` passes.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).

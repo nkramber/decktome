@@ -83,9 +83,9 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 	case msg.GetCollectionId() != "" && !gzstore.ValidID(msg.GetCollectionId()):
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadCollectionID)
 	}
-	source, err := sourceURL(msg.GetSourceUrl())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	source, cerr := s.sourceURL(ctx, uid, msg.GetSourceUrl(), msg.GetText())
+	if cerr != nil {
+		return nil, cerr
 	}
 	importer, ok := s.decks.(Importer)
 	if !ok || s.deckStore == nil || s.index == nil {

@@ -24,7 +24,7 @@ Author provider: Claude Code
 - The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
 - `go/internal/deckreads` records each read for one hour: the deck id and a hash of the text. `ImportDeck` refuses a link with no such read.
 
-**The checks.** The checks of the correction run next.
+**The checks.** `make verify` passes on the correction of the first Codex review. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
 **The review.** The first Gitar review found two items, and both had full merit. `a5583df` fixed both, and Gitar then approved `a5583df`. The first Codex review of `a5583df` asked for changes: P2-1, the cap of each instance, and P2-2, a link with no read. `docs/reviews/pr-277-response.md` answers both. The repeat review waits. The state is pending the auto-merge (D-828).
 
