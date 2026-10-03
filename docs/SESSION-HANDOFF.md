@@ -30,12 +30,12 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 524 of 524 web tests, under Node 22. `make store-check` passes on the emulator.
 
-**The review.** Gitar's current review passes. It has no findings or open threads. The review record approves effective head `a21c35e87a24173037afe053cf225b4110c9e8f1`. One metadata commit and push must carry the record and this hand-off. `review-gate` must pass after the push.
+**The review.** Gitar approved `a21c35e` with no finding and no thread. The session answered its CI note of the first push. The Codex record `docs/reviews/pr-272.md` says Ready for owner merge on effective head `a21c35e87a24173037afe053cf225b4110c9e8f1`, with no finding. It names one risk: the approval email stays off until the owner mounts the Resend secret.
 
 **The open work.**
 
-1. Do the Gitar pass, then the Codex review.
-2. The owner confirms the merge, then the author session turns on auto-merge (D-828).
+1. The owner confirms the merge, then the author session turns on auto-merge (D-828). The merge is pending the auto-merge.
+2. The CI emulator lane skips `internal/access`, and the local `make store-check` covers it.
 3. After the deploy, the owner does section 8.1 of `docs/setup-gcp.md`, then mounts the secret.
 4. The owner runs `make grant-admin` with section 15.2, and signs in again.
 5. The live check: a request, its notice, an approval, the email, a note, and the first question on the phone.
