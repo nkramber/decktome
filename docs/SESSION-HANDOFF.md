@@ -143,4 +143,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03c, the records of 2026-08-31 to 2026-10-03, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03d, the records of 2026-08-31 to 2026-10-03b, and 104 more sections, word for word. Read it for the detail behind a decision.
