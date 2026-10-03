@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 524 of 524 web tests, under Node 22. `make store-check` passes on the emulator.
 
-**The review.** Gitar: waits for the first review of this head. Codex: waits for the Gitar pass (D-823).
+**The review.** Gitar's current review passes. It has no findings or open threads. The review record approves effective head `a21c35e87a24173037afe053cf225b4110c9e8f1`. One metadata commit and push must carry the record and this hand-off. `review-gate` must pass after the push.
 
 **The open work.**
 
