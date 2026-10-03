@@ -30,17 +30,16 @@ import { useDeckWrites } from "../deck/use-decks";
 export function DeckActions({ deck }: { deck: Deck }) {
   const id = deck.id;
   const navigate = useNavigate();
-  const { rename, setFavorite, remove, share, revokeShare } = useDeckWrites();
+  const { rename, setFavorite, remove, share } = useDeckWrites();
   const [renameOpen, setRenameOpen] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [shareOpen, setShareOpen] = useState(false);
   // The deck holds the token of its link, so the dialog shows the link
-  // again (D-1061). A deck shared before D-1061 holds none, and it needs
-  // one new link. made holds the answer of a share or a revoke until the
-  // deck refreshes: a link, "" for none, or null to read the deck.
-  const [made, setMade] = useState<string | null>(null);
+  // again (D-1061). A shown link has no revoke and no new link (D-1069).
+  // made holds the answer of a share until the deck refreshes.
+  const [made, setMade] = useState("");
   const stored = deck.shared && deck.shareToken ? `${window.location.origin}/d/${deck.shareToken}` : "";
-  const link = made ?? stored;
+  const link = made || stored;
   const title = deck.name || "Untitled deck";
 
   async function onShare() {
@@ -58,16 +57,6 @@ export function DeckActions({ deck }: { deck: Deck }) {
       await notify("success", "Link copied", "Anyone who holds it can read the deck.");
     } catch (err) {
       await notify("error", "Could not copy the link", errorMessage(err));
-    }
-  }
-
-  async function onRevoke() {
-    try {
-      await revokeShare.mutateAsync({ deckId: id });
-      setMade("");
-      await notify("success", "Link revoked", "The old link opens nothing now.");
-    } catch (err) {
-      await notify("error", "Could not revoke the link", errorMessage(err));
     }
   }
 
@@ -163,7 +152,7 @@ export function DeckActions({ deck }: { deck: Deck }) {
           open={shareOpen}
           onOpenChange={(open) => {
             setShareOpen(open);
-            if (!open) setMade(null);
+            if (!open) setMade("");
           }}
         >
           <DialogTrigger asChild>
@@ -190,19 +179,18 @@ export function DeckActions({ deck }: { deck: Deck }) {
                 </div>
               </div>
             )}
-            <p className="text-sm" data-testid="share-state">
-              {link ? "This deck has a link." : deck.shared && made === null ? "This deck has a link. Make a new one to see it, and the old one dies." : "This deck has no link yet."}
-            </p>
-            <DialogFooter>
-              {(link || (deck.shared && made === null)) && (
-                <Button type="button" variant="ghost" className="text-danger hover:bg-danger/10" disabled={revokeShare.isPending} onClick={() => void onRevoke()}>
-                  Revoke the link
-                </Button>
-              )}
-              <Button type="button" disabled={share.isPending} onClick={() => void onShare()}>
-                {link || (deck.shared && made === null) ? "Make a new link" : "Make a link"}
-              </Button>
-            </DialogFooter>
+            {!link && (
+              <>
+                <p className="text-sm" data-testid="share-state">
+                  This deck has no link yet.
+                </p>
+                <DialogFooter>
+                  <Button type="button" disabled={share.isPending} onClick={() => void onShare()}>
+                    Make a link
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
           </DialogContent>
         </Dialog>
         </div>

@@ -30,7 +30,6 @@ const updateDeck = vi.fn();
 const deleteDeck = vi.fn();
 const listDecks = vi.fn();
 const shareDeck = vi.fn();
-const revokeShare = vi.fn();
 const readImportBracket = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
@@ -48,7 +47,6 @@ vi.mock("../../lib/api", () => ({
     updateDeck: (...a: unknown[]) => updateDeck(...a),
     deleteDeck: (...a: unknown[]) => deleteDeck(...a),
     shareDeck: (...a: unknown[]) => shareDeck(...a),
-    revokeShare: (...a: unknown[]) => revokeShare(...a),
     exportDeck: vi.fn(),
   },
 }));
@@ -178,12 +176,10 @@ describe("DeckScreen", () => {
     await waitFor(() => expect(updateDeck).toHaveBeenCalledWith({ deckId: "d1", name: "Marwyn ramp" }));
   });
 
-  it("makes a share link, shows it again, and revokes it (D-315, D-1061)", async () => {
+  it("makes a share link, and shows it again with no buttons (D-315, D-1061, D-1069)", async () => {
     const t = "t".repeat(43);
     shareDeck.mockReset();
     shareDeck.mockResolvedValue({ token: t });
-    revokeShare.mockReset();
-    revokeShare.mockResolvedValue({});
     await renderAt("/decks/d1");
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Share" }));
@@ -194,32 +190,31 @@ describe("DeckScreen", () => {
     await user.click(screen.getByRole("button", { name: "Make a link" }));
     await waitFor(() => expect(shareDeck).toHaveBeenCalledWith({ deckId: "d1" }));
     expect(await screen.findByLabelText("The link")).toHaveValue(`${window.location.origin}/d/${t}`);
-    // The deck holds the token, so a second open shows the same link above the state.
+    expect(screen.queryByTestId("share-state")).not.toBeInTheDocument();
+    // The deck holds the token, so a second open shows the same link, with
+    // no state line, no revoke, and no new link.
     await user.click(screen.getByRole("button", { name: "Close" }));
     await user.click(await screen.findByRole("button", { name: "Shared" }));
-    const field = await screen.findByLabelText("The link");
-    expect(field).toHaveValue(`${window.location.origin}/d/${t}`);
-    const state = screen.getByTestId("share-state");
-    expect(state).toHaveTextContent("This deck has a link.");
-    expect(field.compareDocumentPosition(state) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // The revoke ends it, and the link goes from the dialog at once.
-    getDeck.mockResolvedValue({ deck: { ...deck, shared: false, shareToken: "" } });
-    await user.click(screen.getByRole("button", { name: "Revoke the link" }));
-    await waitFor(() => expect(revokeShare).toHaveBeenCalledWith({ deckId: "d1" }));
-    expect(await screen.findByTestId("share-state")).toHaveTextContent("This deck has no link yet.");
-    expect(screen.queryByLabelText("The link")).not.toBeInTheDocument();
+    expect(await screen.findByLabelText("The link")).toHaveValue(`${window.location.origin}/d/${t}`);
+    expect(screen.getByRole("button", { name: "Copy the link" })).toBeInTheDocument();
+    expect(screen.queryByTestId("share-state")).not.toBeInTheDocument();
+    expect(screen.queryByText("This deck has a link.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Revoke the link" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Make a new link" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Make a link" })).not.toBeInTheDocument();
   });
 
-  // A deck shared before D-1061 holds no token. Its link still opens, but
-  // the dialog can not show it, so it offers one new link.
-  it("offers one new link for a deck shared before the token was stored", async () => {
+  // A shared deck with no stored token shows the dialog of an unshared
+  // deck (D-1069).
+  it("offers a link for a shared deck with no stored token", async () => {
     getDeck.mockResolvedValue({ deck: { ...deck, shared: true, shareToken: "" } });
     await renderAt("/decks/d1");
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "Shared" }));
-    expect(await screen.findByTestId("share-state")).toHaveTextContent("This deck has a link. Make a new one to see it, and the old one dies.");
+    expect(await screen.findByTestId("share-state")).toHaveTextContent("This deck has no link yet.");
     expect(screen.queryByLabelText("The link")).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Make a new link" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Make a link" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Revoke the link" })).not.toBeInTheDocument();
   });
 
   it("asks before it deletes, and goes back to the library after", async () => {

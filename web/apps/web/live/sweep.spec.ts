@@ -460,47 +460,33 @@ test("the check account sweeps every screen of the deployed web app", async ({ b
       await dp.getByRole("button", { name: "Keep the deck" }).click();
     });
 
-    // One share link: read it signed out, revoke it, and read it again.
-    // A link that the step made stays live until a revoke, so a break
-    // in the step still revokes it.
-    let link = "";
-    let revoked = false;
-    const revoke = async () => {
-      await dp.getByRole("button", { name: "Revoke the link" }).click();
-      await expect(dp.getByTestId("share-state")).toHaveText("This deck has no link yet.");
-      revoked = true;
-    };
+    // One share link: read it signed out on a desktop and a phone. The app
+    // offers no revoke (D-1069), so the step reads the stored link, or makes
+    // one, and the link stays live. A made-up token reads the error state.
     await sweep.step("share", [dp, anonD.page, anonP.page], async () => {
+      await dp.getByRole("button", { name: /^Share/ }).click();
+      const make = dp.getByRole("button", { name: "Make a link" });
+      if (await make.count()) await make.click();
+      const linkBox = dp.getByLabel("The link", { exact: true });
+      await expect(linkBox).not.toHaveValue("");
+      const link = new URL(await linkBox.inputValue()).pathname;
+      await sweep.look(dp, "share dialog", "desktop");
+      await dp.keyboard.press("Escape");
+      for (const [a, view] of [
+        [anonD.page, "desktop"],
+        [anonP.page, "phone"],
+      ] as const) {
+        await a.goto(link);
+        await expect(a.getByText("A shared deck, read-only.")).toBeVisible({ timeout: 60_000 });
+        await sweep.look(a, "shared deck", view);
+      }
+      sweep.expect4xx(anonD.page, true);
       try {
-        await dp.getByRole("button", { name: /^Share/ }).click();
-        await dp.getByRole("button", { name: /^Make (a|a new) link$/ }).click();
-        const linkBox = dp.getByLabel("The link", { exact: true });
-        await expect(linkBox).not.toHaveValue("");
-        link = new URL(await linkBox.inputValue()).pathname;
-        await sweep.look(dp, "share dialog", "desktop");
-        for (const [a, view] of [
-          [anonD.page, "desktop"],
-          [anonP.page, "phone"],
-        ] as const) {
-          await a.goto(link);
-          await expect(a.getByText("A shared deck, read-only.")).toBeVisible({ timeout: 60_000 });
-          await sweep.look(a, "shared deck", view);
-        }
-        await revoke();
-        await dp.keyboard.press("Escape");
-        sweep.expect4xx(anonD.page, true);
-        await anonD.page.goto(link);
+        await anonD.page.goto(`/d/${"x".repeat(43)}`);
         await expect(anonD.page.getByRole("alert")).toBeVisible({ timeout: 60_000 });
-        await sweep.look(anonD.page, "revoked share", "desktop");
+        await sweep.look(anonD.page, "dead share", "desktop");
       } finally {
         sweep.expect4xx(anonD.page, false);
-        if (link && !revoked) {
-          await dp.keyboard.press("Escape").catch(() => undefined);
-          await dp.goto(deckPath);
-          await dp.getByRole("button", { name: /^Share/ }).click();
-          await revoke().catch(() => sweep.note("share", "flow", `the link ${link} stays live: revoke it on the deck screen`));
-          await dp.keyboard.press("Escape").catch(() => undefined);
-        }
       }
     });
   }
