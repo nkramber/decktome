@@ -3176,6 +3176,7 @@ Gate:
 - `go/internal/importfault` keeps the host of an unknown site and never its path. The notice names the site.
 - The parser reads the real Moxfield export of the owner, with its name and its commander.
 - The tests of the web form cover the read, the exact steps, the general steps with the report, and the error of the server.
+- The share page links to the Archidekt deck. A list that the user edits after the read keeps no link, as a revision keeps none.
 - `make verify` passes.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).

@@ -243,6 +243,9 @@ message SharedDeck {
   // import keeps it in the ids alone, so the page found no commander
   // (REV-021). The public copy holds no owned mark and no owner price.
   repeated SharedCard commanders = 10;
+  // source_url is the Archidekt deck that an import read, or empty. The
+  // public copy links to it, as Archidekt asks (D-1101).
+  string source_url = 11;
 }
 
 // SharedCard is one entry of a shared deck, with the card data inline,

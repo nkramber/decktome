@@ -194,6 +194,19 @@ describe("a deck link", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent(/^paste the link of a deck page$/);
   });
 
+  it("sends no link for a list that the reader edited after the read (D-1101)", async () => {
+    const text = "Deck\n4 Lightning Bolt (2x2) 117\n";
+    fetchDeckList.mockResolvedValueOnce({ text, name: "Burn", sourceUrl: "https://archidekt.com/decks/42", leftOut: 0, site: "Archidekt", exportSteps: [], knownSite: true });
+    importDeck.mockResolvedValueOnce({ deck: stored, sessionId: "s9", commanderOptions: [], unresolved: [] });
+    const user = await openAndRead("archidekt.com/decks/42");
+
+    const list = screen.getByRole("textbox", { name: "Deck list" });
+    await waitFor(() => expect(list).toHaveValue(text));
+    await user.type(list, "1 Shock");
+    await user.click(screen.getByRole("button", { name: "Import" }));
+    await waitFor(() => expect(importDeck).toHaveBeenCalledWith(expect.objectContaining({ sourceUrl: "" })));
+  });
+
   it("sends no link for a list that the reader pasted", async () => {
     importDeck.mockResolvedValueOnce({ deck: stored, sessionId: "s9", commanderOptions: [], unresolved: [] });
     await openAndPaste("4 Lightning Bolt");

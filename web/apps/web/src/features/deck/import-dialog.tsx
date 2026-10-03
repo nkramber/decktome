@@ -240,7 +240,12 @@ function ImportBody({ onClose }: { onClose: () => void }) {
               id="deck-text"
               rows={8}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                // A list edited by hand no longer matches its source, and a
+                // changed deck keeps no link (D-1101).
+                setText(e.target.value);
+                setSourceUrl("");
+              }}
               placeholder={"Commander\n1 Heroes in a Half Shell (TMC) 6\n\nDeck\n1 Acidic Slime (TMC) 48"}
               className="min-h-32 rounded-card border border-border bg-background p-2 font-mono text-xs"
             />

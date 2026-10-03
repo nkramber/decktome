@@ -154,6 +154,19 @@ describe("SharedDeckPage", () => {
     expect(within(commander).getByAltText("Ezuri, Renegade Leader (card)")).toBeInTheDocument();
   });
 
+  it("links to the Archidekt deck of an import, and to no other link (D-1101)", async () => {
+    getSharedDeck.mockResolvedValue({ deck: { ...shared, sourceUrl: "https://archidekt.com/decks/42" } });
+    await renderAt(`/d/${token}`);
+    expect(await screen.findByRole("link", { name: "Archidekt" })).toHaveAttribute("href", "https://archidekt.com/decks/42");
+  });
+
+  it("shows no source line for a link of another site", async () => {
+    getSharedDeck.mockResolvedValue({ deck: { ...shared, sourceUrl: "https://evil.example/decks/42" } });
+    await renderAt(`/d/${token}`);
+    await screen.findByRole("heading", { name: shared.name });
+    expect(screen.queryByTestId("import-source")).not.toBeInTheDocument();
+  });
+
   // REV-022: a cold start answers Unavailable until the card index loads,
   // and the page had retry off, so a first visit stayed on the error.
   it("retries a cold start and then shows the deck", async () => {

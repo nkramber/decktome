@@ -1161,7 +1161,10 @@ type SharedDeck struct {
 	// data. A build keeps the commander out of cards since F-124, and an
 	// import keeps it in the ids alone, so the page found no commander
 	// (REV-021). The public copy holds no owned mark and no owner price.
-	Commanders    []*SharedCard `protobuf:"bytes,10,rep,name=commanders,proto3" json:"commanders,omitempty"`
+	Commanders []*SharedCard `protobuf:"bytes,10,rep,name=commanders,proto3" json:"commanders,omitempty"`
+	// source_url is the Archidekt deck that an import read, or empty. The
+	// public copy links to it, as Archidekt asks (D-1101).
+	SourceUrl     string `protobuf:"bytes,11,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1264,6 +1267,13 @@ func (x *SharedDeck) GetCommanders() []*SharedCard {
 		return x.Commanders
 	}
 	return nil
+}
+
+func (x *SharedDeck) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
+	}
+	return ""
 }
 
 // SharedCard is one entry of a shared deck, with the card data inline,
@@ -1863,7 +1873,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x05speed\x18\x04 \x01(\x05R\x05speed\x12\x1d\n" +
 	"\n" +
 	"extra_turn\x18\x05 \x01(\bR\textraTurn\x12(\n" +
-	"\x10mass_land_denial\x18\x06 \x01(\bR\x0emassLandDenial\"\x93\x03\n" +
+	"\x10mass_land_denial\x18\x06 \x01(\bR\x0emassLandDenial\"\xb2\x03\n" +
 	"\n" +
 	"SharedDeck\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12&\n" +
@@ -1879,7 +1889,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
 	"commanders\x18\n" +
 	" \x03(\v2\x12.mtg.v1.SharedCardR\n" +
-	"commanders\"\xfe\x01\n" +
+	"commanders\x12\x1d\n" +
+	"\n" +
+	"source_url\x18\v \x01(\tR\tsourceUrl\"\xfe\x01\n" +
 	"\n" +
 	"SharedCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +

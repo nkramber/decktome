@@ -21,11 +21,11 @@ Author provider: Claude Code
 - `go/internal/archidekt` reads one deck and writes its Arena text. `go/internal/decklink` sorts a link and holds the steps of each site.
 - `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
 - `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
-- The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt".
+- The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
 
 **The checks.** `make verify` passed at `1e00529`, and so did `make ste-check` and `make ref-check`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** The Gitar pass and the Codex review of #277 wait. The state is pending the auto-merge (D-828).
+**The review.** The first Gitar review of #277 found two items, and both had full merit. The share page did not show the Archidekt link of D-1101, and a list edited after the read kept its link. The correction commit fixes both, with a test of each. The Codex review waits. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
