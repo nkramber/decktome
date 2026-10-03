@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
+
+// ProofService sends the email that proves an address, and it takes the
+// link of that email (D-1081, D-1082).
+//
+// SendLink needs a sign-in on the invite list, and it is the one
+// procedure that takes an email that is not proved yet. OpenLink needs
+// no sign-in: the code of the link is its credential. A limit per
+// client address bounds it.
+service ProofService {
+  rpc SendLink(SendLinkRequest) returns (SendLinkResponse) {}
+  rpc OpenLink(OpenLinkRequest) returns (OpenLinkResponse) {}
+}
+
+message SendLinkRequest {}
+
+message SendLinkResponse {
+  // already_proved is true when the account proved its email before.
+  // The server then sends no email.
+  bool already_proved = 1;
+}
+
+message OpenLinkRequest {
+  // code is the last part of the link, 10 characters.
+  string code = 1;
+}
+
+message OpenLinkResponse {
+  // custom_token signs the browser in to the account of the link. The
+  // email of that account is proved when the answer comes (D-1082). It
+  // is empty when the server can not sign a token: the email is still
+  // proved, and the person signs in with the password.
+  string custom_token = 1;
+}

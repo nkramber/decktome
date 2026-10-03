@@ -96,19 +96,27 @@ export async function signIn(email: string, password: string): Promise<void> {
   await mod.signInWithEmailAndPassword(auth, email, password);
 }
 
-// createAccount makes the account and sends the link that proves the
-// email. The invite gate trusts a proved email alone (D-903). A link that
-// fails to send leaves the account as it is, and the gate offers a resend.
+// createAccount makes the account. The caller then sends the link that
+// proves the email, because the invite gate trusts a proved email alone
+// (D-903, D-1081).
 export async function createAccount(email: string, password: string): Promise<void> {
   const { auth, mod } = await loadAuth();
-  const cred = await mod.createUserWithEmailAndPassword(auth, email, password);
-  await mod.sendEmailVerification(cred.user).catch(() => undefined);
+  await mod.createUserWithEmailAndPassword(auth, email, password);
 }
 
-// sendProofAgain sends the link that proves the email once more (D-903).
-export async function sendProofAgain(): Promise<void> {
+// sendFirebaseProof sends the email of Firebase that proves the address.
+// It serves a server with no email of its own: local mode, or a deploy
+// with no Resend secret (D-1081).
+export async function sendFirebaseProof(): Promise<void> {
   const { auth, mod } = await loadAuth();
   if (auth.currentUser) await mod.sendEmailVerification(auth.currentUser);
+}
+
+// signInWithToken signs in with the custom token of a proof link
+// (D-1082).
+export async function signInWithToken(token: string): Promise<void> {
+  const { auth, mod } = await loadAuth();
+  await mod.signInWithCustomToken(auth, token);
 }
 
 // refreshProof reads the account again and takes a new token, so a proved

@@ -1,6 +1,7 @@
 // Package mail sends one email through the Resend API (D-1077). The
-// approval of a request for beta access is its one use. The API key
-// lives in Secret Manager, never in a file (D-639).
+// approval of a request for beta access and the link that proves an
+// email use it (D-1081). The API key lives in Secret Manager, never in a
+// file (D-639).
 package mail
 
 import (
@@ -8,8 +9,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 )
 
@@ -28,7 +32,9 @@ const userAgent = "decktome-api"
 // Timeout bounds one send.
 const Timeout = 10 * time.Second
 
-// Message is one plain-text email to one address.
+// Message is one email to one address. The text is the source, and the
+// send adds an HTML part with a real link for each URL of the text, so a
+// mail app never decides whether a link works (D-1080).
 type Message struct {
 	To      string
 	Subject string
@@ -79,6 +85,7 @@ func (r *Resend) Send(ctx context.Context, m Message) error {
 		"to":      []string{m.To},
 		"subject": m.Subject,
 		"text":    m.Text,
+		"html":    HTML(m.Text),
 	})
 	if err != nil {
 		return fmt.Errorf("mail: %w", err)
@@ -100,4 +107,24 @@ func (r *Resend) Send(ctx context.Context, m Message) error {
 		return fmt.Errorf("mail: status %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// link matches a URL of a text after the escape of HTML. The escape
+// leaves no angle bracket and no quote, so a URL ends at a space.
+var link = regexp.MustCompile(`https://[^\s]+`)
+
+// HTML writes the HTML part of a text. A blank line starts a paragraph,
+// a line break stays a line break, and each https URL becomes a link.
+func HTML(text string) string {
+	var b strings.Builder
+	for _, para := range strings.Split(strings.TrimSpace(text), "\n\n") {
+		lines := strings.Split(para, "\n")
+		for i, line := range lines {
+			lines[i] = link.ReplaceAllStringFunc(html.EscapeString(line), func(u string) string {
+				return `<a href="` + u + `">` + u + `</a>`
+			})
+		}
+		b.WriteString("<p>" + strings.Join(lines, "<br>") + "</p>\n")
+	}
+	return b.String()
 }

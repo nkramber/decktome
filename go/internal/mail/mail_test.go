@@ -28,7 +28,7 @@ func TestSendPostsTheResendShape(t *testing.T) {
 		t.Errorf("headers: auth %q, agent %q", auth, agent)
 	}
 	to, _ := got["to"].([]any)
-	if got["from"] != DefaultFrom || len(to) != 1 || to[0] != "ann@example.com" || got["subject"] != "s" || got["text"] != "t" {
+	if got["from"] != DefaultFrom || len(to) != 1 || to[0] != "ann@example.com" || got["subject"] != "s" || got["text"] != "t" || got["html"] != "<p>t</p>\n" {
 		t.Errorf("body = %v", got)
 	}
 }
@@ -55,5 +55,21 @@ func TestFromEnv(t *testing.T) {
 	env["MAIL_FROM"] = "X <x@y.z>"
 	if r := FromEnv(func(k string) string { return env[k] }); r.from != "X <x@y.z>" {
 		t.Errorf("from = %q", r.from)
+	}
+}
+
+// TestHTMLMakesEachURLALink is D-1080: the HTML part carries a real link,
+// so a mail app never decides whether the link works.
+func TestHTMLMakesEachURLALink(t *testing.T) {
+	text := "Hello,\n\nFollow this link.\n\nhttps://decktome.com/v/Ab3dEf9kQ2\n\nThanks,\nThe <team> & co"
+	want := "<p>Hello,</p>\n<p>Follow this link.</p>\n" +
+		`<p><a href="https://decktome.com/v/Ab3dEf9kQ2">https://decktome.com/v/Ab3dEf9kQ2</a></p>` + "\n" +
+		"<p>Thanks,<br>The &lt;team&gt; &amp; co</p>\n"
+	if got := HTML(text); got != want {
+		t.Errorf("HTML =\n%s\nwant\n%s", got, want)
+	}
+	inline := HTML("Create it at https://decktome.com/sign-in now")
+	if !strings.Contains(inline, `at <a href="https://decktome.com/sign-in">https://decktome.com/sign-in</a> now`) {
+		t.Errorf("an inline URL: %s", inline)
 	}
 }

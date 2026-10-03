@@ -89,6 +89,10 @@ func NewFirebase(ctx context.Context, projectID string) (*Firebase, error) {
 	return &Firebase{client: client}, nil
 }
 
+// Client answers the Admin SDK client, which the proof service shares
+// (D-1082).
+func (f *Firebase) Client() *fbauth.Client { return f.client }
+
 // Verify implements Verifier. The email and its email_verified claim come
 // from the token, and Firebase sets both for an email and password
 // account.
@@ -189,6 +193,9 @@ type interceptor struct {
 	// public names the procedures that need no sign-in, the shared deck
 	// reads of D-315. Such a call carries no user in its context.
 	public map[string]bool
+	// unproved names the procedures that an invited caller can call
+	// before it proves the email, the send of the proof link (D-1081).
+	unproved map[string]bool
 }
 
 // WithPublic names the procedures that need no sign-in (D-315). Every
@@ -200,6 +207,19 @@ func WithPublic(procedures ...string) Option {
 		}
 		for _, p := range procedures {
 			i.public[p] = true
+		}
+	}
+}
+
+// WithUnproved names the procedures that an invited caller can call
+// before it proves the email (D-1081). The invite list still applies.
+func WithUnproved(procedures ...string) Option {
+	return func(i *interceptor) {
+		if i.unproved == nil {
+			i.unproved = map[string]bool{}
+		}
+		for _, p := range procedures {
+			i.unproved[p] = true
 		}
 	}
 }
@@ -257,7 +277,7 @@ func unverified() *connect.Error {
 
 // resolve reads the Authorization header and returns the context that
 // carries the user, or the Connect error to answer with.
-func (i *interceptor) resolve(ctx context.Context, authorization string) (context.Context, error) {
+func (i *interceptor) resolve(ctx context.Context, procedure, authorization string) (context.Context, error) {
 	token, present := bearer(authorization)
 	if !present {
 		if i.fallback == "" {
@@ -285,7 +305,7 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 		if !ok {
 			return nil, notInvited()
 		}
-		if !id.EmailVerified {
+		if !id.EmailVerified && !i.unproved[procedure] {
 			return nil, unverified()
 		}
 	}
@@ -333,7 +353,7 @@ func (i *interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 		if req.Spec().IsClient || i.public[req.Spec().Procedure] {
 			return next(ctx, req)
 		}
-		ctx, err := i.resolve(ctx, req.Header().Get("Authorization"))
+		ctx, err := i.resolve(ctx, req.Spec().Procedure, req.Header().Get("Authorization"))
 		if err != nil {
 			return nil, err
 		}
@@ -350,7 +370,7 @@ func (i *interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) co
 		if i.public[conn.Spec().Procedure] {
 			return next(ctx, conn)
 		}
-		ctx, err := i.resolve(ctx, conn.RequestHeader().Get("Authorization"))
+		ctx, err := i.resolve(ctx, conn.Spec().Procedure, conn.RequestHeader().Get("Authorization"))
 		if err != nil {
 			return err
 		}

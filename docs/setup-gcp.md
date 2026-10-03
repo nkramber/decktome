@@ -180,7 +180,7 @@ The project holds six active versions with these two and the Cloud Build connect
 
 ### 8.1 The approval email
 
-An approval on the admin screen sends an email through Resend (PR-115, D-1077). The sender is `beta@mail.decktome.com`, and `MAIL_FROM` can name another. Without the key, an approval adds the email to the invite list and sends no email. Do these steps one time:
+An approval on the admin screen sends an email through Resend (PR-115, D-1077). The email that proves the address of a new account uses the same key (PR-116, D-1081). The sender is `beta@mail.decktome.com`, and `MAIL_FROM` can name another. Without the key, an approval adds the email to the invite list and sends no email. Without the key, the web app sends the email of Firebase to prove an address. Do these steps one time:
 
 1. Make an account at `resend.com`.
 2. On the Domains page, add the domain `mail.decktome.com`.
@@ -234,6 +234,15 @@ The API verifies Firebase ID tokens with Google's public keys, so the check of a
 ```
 gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:SA_API --role=roles/firebasecloudmessaging.admin
 ```
+
+The link that proves an email reads the account, marks the email proved, and signs a custom token (D-1081, D-1082). That needs two roles more. The session granted both on `decktome-prod` on 2026-10-03 (D-1084):
+
+```
+gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:SA_API --role=roles/firebaseauth.admin
+gcloud iam service-accounts add-iam-policy-binding SA_API --member=serviceAccount:SA_API --role=roles/iam.serviceAccountTokenCreator
+```
+
+The token needs `iamcredentials.googleapis.com` too. Without the two roles, the web app sends the email of Firebase.
 
 The push also needs `fcm.googleapis.com` and `fcmregistrations.googleapis.com`. Both were on for `decktome-prod`, read 2026-09-29. The scheduler account gets the Cloud Run Invoker role on each job in section 12.
 

@@ -342,6 +342,9 @@ func TestAllowlistRefusesAnEmailThatIsNotProved(t *testing.T) {
 		{"an email off the list that is not proved", "unproved", []Option{unlisted}, connect.CodePermissionDenied, RefusalNotInvited},
 		{"a listed email that is proved", "good", []Option{listed}, 0, ""},
 		{"local mode has no list", "unproved", nil, 0, ""},
+		{"an unproved procedure takes a listed email that is not proved", "unproved", []Option{listed, WithUnproved(mtgv1connect.HealthServiceCheckProcedure)}, 0, ""},
+		{"an unproved procedure still refuses an email off the list", "unproved", []Option{unlisted, WithUnproved(mtgv1connect.HealthServiceCheckProcedure)}, connect.CodePermissionDenied, RefusalNotInvited},
+		{"another procedure keeps the proof", "unproved", []Option{listed, WithUnproved("/mtg.v1.ProofService/SendLink")}, connect.CodePermissionDenied, RefusalUnverified},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			health, _ := newServer(t, tc.opts...)

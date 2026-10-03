@@ -12,6 +12,10 @@ import { byteLength, maxMessageBytes } from "../../lib/limits";
 import { thanks } from "./thumbs";
 import { useSubmitFeedback } from "./use-feedback";
 
+// phoneTop moves the dialog to the top of a narrow screen. The keyboard
+// of a phone takes the lower half, and a centered dialog sat under it.
+export const phoneTop = "max-md:top-[max(1rem,env(safe-area-inset-top))] max-md:translate-y-0";
+
 export type Place = { screen: string; sessionId?: string; deckId?: string };
 
 // placeOf names the screen of a path, with the session of a chat and the
@@ -54,7 +58,9 @@ export function FeedbackNoteDialog({ open, onOpenChange }: { open: boolean; onOp
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent aria-describedby={`${id}-about`}>
+        {/* On a phone the dialog sits at the top of the screen, so the
+            keyboard opens under it and never covers it (D-1079). */}
+        <DialogContent aria-describedby={`${id}-about`} className={phoneTop}>
           <DialogHeader>
             <DialogTitle>Leave feedback</DialogTitle>
             <DialogDescription id={`${id}-about`}>Tell us what works, what does not, or what you want next.</DialogDescription>

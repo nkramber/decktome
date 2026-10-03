@@ -6,39 +6,37 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-02g)
+## RESUME HERE (2026-10-03)
 
-**Branch `feat/request-beta-access`: PR-115, a request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).** The pull request is #272.
+**Branch `fix/phone-live-check-6`: PR-116, the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).** The pull request number comes when it opens.
 
 Author provider: Claude Code
 
-**The base.** `main` is `a97cf82`, from #271. Cloud Build `deploy-web` `8232db62` built it with SUCCESS at 04:25 UTC on 2026-10-03. `deploy-api` did not run.
+**The base.** `main` is `18b7756`, from #272. Cloud Build `deploy-api` `34195b09` and `deploy-web` `321c7e5b` built it with SUCCESS at 05:45 UTC on 2026-10-03. `/version.json` names it. The owner mounted `resend-api-key`, and revision `mtg-api-00109-4pt` logged "the approval email is on" at 05:52:23 UTC.
 
-**The live check of PR-114 (D-1072).** The cold start showed "Updating", then a reload with no error, so F-206 closes. The share dialog passed. The "Back to top" button covered the first question, and F-207 records it.
+**The live check of PR-115.** The request, its Pushover notice, the note, and the first question passed on the iPhone. The owner ran `make grant-admin`, and then the approval and its email passed. The owner asked for five changes (D-1079) and a new email that proves an address (D-1080 to D-1083).
 
 **The code.**
 
-- `InviteService.RequestAccess` stores one record for each email in `access_requests`, and it sends a Pushover notice (D-1075).
-- `AdminService` lists, approves, and dismisses a request. Each call needs the custom claim `admin: true` (D-1076).
-- An approval adds the email to `config/allowlist`, and Resend sends the approval email (D-1077).
-- `make grant-admin EMAIL=... PROJECT_ID=...` sets the claim. The account menu of an admin opens `/admin`.
-- The sign-in page has the request form, and the refusal line offers it (D-1074).
-- A row under the top bar holds the "Leave feedback" button (D-1078). `make feedback-list VERDICT=none` reads the notes.
-- On a phone, the anchor of the first question also leaves the band of the "Back to top" button (F-207).
+- The "Leave feedback" button sits at the center. On a phone, the note dialog sits at the top, above the keyboard.
+- After a request, the link reads "Return to login page". The sign-in links read "Create account" and "Request beta access", in one column.
+- The approval email has no footer line. Each email of the API carries an HTML part with real links (D-1080).
+- `ProofService.SendLink` sends the text of the owner with the link `https://decktome.com/v/<code>` (D-1081). `proof_links` keeps a hash of the code.
+- `ProofService.OpenLink` proves the email and answers a custom token, one time, for 3 days (D-1082). The page `/v/:code` signs in with it.
+- iOS opens the link in Safari, and the page names the home screen app. The proof screen reads the account again when it becomes visible (D-1083).
+- With no Resend key, or with a failed send, the web app sends the email of Firebase.
 
-**The documents.** The roadmap holds the PR-115 entry and sequence step 110. Section 8.1 of `docs/setup-gcp.md` holds the Resend account, the GoDaddy records, and the secret. Section 15.2 holds `make grant-admin`. `docs/deploy-and-rollback.md` mounts the secret.
+**The grants.** The session granted `roles/firebaseauth.admin` and `roles/iam.serviceAccountTokenCreator` to `mtg-api` on 2026-10-03 (D-1084).
 
-**The checks.** `make verify` reads "every check passed", with 524 of 524 web tests, under Node 22. `make store-check` passes on the emulator.
+**The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22. `make store-check` passes on the emulator, with the new `prooflink` store.
 
-**The review.** Gitar approved `a21c35e` with no finding and no thread. The session answered its CI note of the first push. The Codex record `docs/reviews/pr-272.md` says Ready for owner merge on effective head `a21c35e87a24173037afe053cf225b4110c9e8f1`, with no finding. It names one risk: the approval email stays off until the owner mounts the Resend secret.
+**The review.** The Gitar pass and the Codex review wait for the first push.
 
 **The open work.**
 
-1. The owner confirms the merge, then the author session turns on auto-merge (D-828). The merge is pending the auto-merge.
-2. The CI emulator lane skips `internal/access`, and the local `make store-check` covers it.
-3. After the deploy, the owner does section 8.1 of `docs/setup-gcp.md`, then mounts the secret.
-4. The owner runs `make grant-admin` with section 15.2, and signs in again.
-5. The live check: a request, its notice, an approval, the email, a note, and the first question on the phone.
+1. The Gitar pass, the Codex review, and the confirmation of the owner. The merge is pending the auto-merge.
+2. After the deploy, make an account with a new invited email. Open its link on a desktop and on the iPhone.
+3. Read the sender, the text, and the link of that email.
 
 ## How to resume
 
@@ -97,8 +95,8 @@ Twenty-two things a fresh session gets wrong without this file.
 - The harvest of 2026-09-29 read that newest verdict, a test of the owner (D-994). Its watermark is 2026-09-24 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-10-01 UTC: Cloud Build `7b4cbb1f` of `deploy-api` built `07203ba`, from #263, and ended SUCCESS at 03:44:08 UTC. The jobs `mtg-meta` and `mtg-snapshot` run `worker:07203ba`. The service serves revision `mtg-api-00101-xxh`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
-- The deployed web app, read 2026-10-01: build `4aaed5e2` of `deploy-web` built `07203ba`, from #263, and ended SUCCESS at 03:44:53 UTC. `/version.json` names `07203ba`.
+- The deployed API, read 2026-10-03 UTC: Cloud Build `34195b09` of `deploy-api` built `18b7756`, from #272, and ended SUCCESS at 05:45:01 UTC. The service serves revision `mtg-api-00109-4pt`, with the secret `resend-api-key`. On 2026-10-01 the jobs `mtg-meta` and `mtg-snapshot` ran `worker:07203ba`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed web app, read 2026-10-03: build `321c7e5b` of `deploy-web` built `18b7756`, from #272, and ended SUCCESS at 05:45:45 UTC. `/version.json` names `18b7756`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
@@ -111,7 +109,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-115: a request for beta access, an admin screen, and a "Leave feedback" button** (D-1072 to D-1078). The resume section holds the open work. The approval email waits for the Resend steps of the owner.
+0. **PR-116: the live check of PR-115, and an email of Deck Tome that proves an address** (F-208, D-1079 to D-1084). The resume section holds the open work.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -135,12 +133,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-02e: the share page, the cold start, and the chat, PR-113
-
-**The deploy of `7b5cebf` read SUCCESS for both builds.** The owner checked PR-112 on the iPhone. The cold start showed the splash, then an error, and the logs showed no data call after it.
-
-**The owner chose one pull request for three concerns.** The session found the cause of F-206 in the code of workbox-window, and proved it by a local replay. The owner asked for the chat rule of D-1066.
-
 ### 2026-10-02f: the results of the live check, PR-114
 
 **The deploy of `c19aa26` read SUCCESS for both builds.** The owner checked PR-113 on the iPhone. The first launch showed the old error once, and the other checks passed.
@@ -153,6 +145,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner named two parts for one pull request.** The owner chose the sign-in page, Firestore with a Pushover notice, an admin screen with a custom claim, and Resend. The owner added the feedback row.
 
+### 2026-10-03: the live check of PR-115, PR-116
+
+**The deploy of `18b7756` read SUCCESS for both builds.** The owner did the Resend steps and mounted the secret. The first check showed no "Access requests" item, because nobody ran `make grant-admin` before. The owner ran it, and then the approval and the email passed.
+
+**The owner asked for five changes and a new proof email.** The Firebase template permits no change of the message of that email, so the API sends it through Resend (D-1081). The owner chose this pull request, a sign-in by the link for 3 days, and the plan for iOS (D-1082, D-1083). The owner chose a grant by the session (D-1084).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02f, the records of 2026-08-31 to 2026-10-02d, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02g, the records of 2026-08-31 to 2026-10-02e, and 104 more sections, word for word. Read it for the detail behind a decision.

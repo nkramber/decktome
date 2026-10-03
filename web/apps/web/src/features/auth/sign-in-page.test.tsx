@@ -1,3 +1,4 @@
+import { Code, ConnectError } from "@connectrpc/connect";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createUserWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword } from "firebase/auth";
@@ -13,9 +14,11 @@ vi.mock("firebase/app");
 vi.mock("firebase/auth");
 const checkInvite = vi.fn();
 const requestAccess = vi.fn();
+const sendLink = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
   inviteClient: { checkInvite: (...a: unknown[]) => checkInvite(...a), requestAccess: (...a: unknown[]) => requestAccess(...a) },
+  proofClient: { sendLink: (...a: unknown[]) => sendLink(...a) },
 }));
 
 const signIn = vi.mocked(signInWithEmailAndPassword);
@@ -62,19 +65,39 @@ describe("SignInPage", () => {
     expect(signUp).toHaveBeenCalledWith(expect.anything(), "new@example.com", "secret1");
   });
 
-  // D-903: the API trusts a proved email alone, so a new account gets the
-  // link that proves it.
-  it("sends the link that proves the email after it makes the account", async () => {
-    const created = { uid: "u9" };
-    signUp.mockResolvedValue({ user: created } as never);
+  async function createNewAccount() {
+    // The new account is the signed-in user once Firebase makes it.
+    signUp.mockImplementation(() => {
+      state.user = { uid: "u9" } as never;
+      return Promise.resolve({ user: { uid: "u9" } } as never);
+    });
     vi.mocked(sendEmailVerification).mockClear();
     await renderAt("/sign-in");
     const user = userEvent.setup();
-    await user.click(screen.getByRole("button", { name: /Create account/ }));
+    await user.click(screen.getByRole("button", { name: "Create account" }));
     await user.type(screen.getByLabelText("Email"), "new@example.com");
     await user.type(screen.getByLabelText("Password"), "secret1");
     await user.click(screen.getByRole("button", { name: "Create account" }));
-    expect(vi.mocked(sendEmailVerification)).toHaveBeenCalledWith(created);
+  }
+
+  // D-903 and D-1081: the API trusts a proved email alone, so a new
+  // account gets the link that proves it, from the API.
+  it("asks the API for the link that proves the email after it makes the account", async () => {
+    sendLink.mockReset();
+    sendLink.mockResolvedValue({ alreadyProved: false });
+    await createNewAccount();
+    await vi.waitFor(() => expect(sendLink).toHaveBeenCalled());
+    expect(vi.mocked(sendEmailVerification)).not.toHaveBeenCalled();
+  });
+
+  // D-1081: a server with no email of its own answers Unimplemented, and
+  // the email of Firebase goes out in its place. A failed send does the
+  // same.
+  it.each([Code.Unimplemented, Code.Internal])("sends the email of Firebase when the API answers %s", async (code) => {
+    sendLink.mockReset();
+    sendLink.mockRejectedValue(new ConnectError("no email", code));
+    await createNewAccount();
+    await vi.waitFor(() => expect(vi.mocked(sendEmailVerification)).toHaveBeenCalled());
   });
 
   // D-903: an invited person whose address another person took first sets
@@ -177,6 +200,23 @@ describe("SignInPage", () => {
     await user.click(screen.getByRole("button", { name: "Request beta access" }));
     expect(requestAccess).toHaveBeenCalledWith({ email: "new@example.com", note: "Elves" });
     expect(await screen.findByRole("status")).toHaveTextContent(requestSent);
+    // D-1079: after a request, the link reads "Return to login page".
+    expect(screen.queryByRole("button", { name: "I have an account. Sign in." })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Return to login page" }));
+    expect(screen.getByRole("heading", { level: 1, name: "Sign in" })).toBeInTheDocument();
+  });
+
+  // D-1079: the links under the form read short names, in one column
+  // with one gap.
+  it("shows the short links in one column", async () => {
+    await renderAt("/sign-in");
+    const create = screen.getByRole("button", { name: "Create account" });
+    const request = screen.getByRole("button", { name: "Request beta access" });
+    const forgot = screen.getByRole("button", { name: "Forgot your password?" });
+    expect(create.parentElement).toBe(request.parentElement);
+    expect(forgot.parentElement).toBe(create.parentElement);
+    expect(create.parentElement).toHaveClass("flex-col", "gap-1");
+    expect(screen.queryByText(/New here\?|No invite yet\?/)).not.toBeInTheDocument();
   });
 
   // D-1074: the red refusal line offers the request, with the email of

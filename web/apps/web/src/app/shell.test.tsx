@@ -98,6 +98,8 @@ describe("the edges of the installed app", () => {
       // The header and the feedback row under it, 97 pixels each in
       // this test, so a toast never covers the row (D-1078).
       expect(screen.getByRole("button", { name: "Leave feedback" })).toBeInTheDocument();
+      // The button sits at the center of its row (D-1079).
+      expect(screen.getByRole("button", { name: "Leave feedback" }).parentElement).toHaveClass("justify-center");
       expect(document.documentElement.style.getPropertyValue("--header-height")).toBe("194px");
     } finally {
       height.mockRestore();

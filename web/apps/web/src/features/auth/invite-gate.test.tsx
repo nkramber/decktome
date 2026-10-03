@@ -15,12 +15,14 @@ vi.mock("firebase/app");
 vi.mock("firebase/auth");
 
 const listCollections = vi.fn();
+const sendLink = vi.fn();
 
 vi.mock("../../lib/api", () => ({
   healthClient: {
     check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "2026-08-24T09:01:52Z", cardSnapshotAgeHours: 2.5 }),
   },
   collectionClient: { listCollections: () => listCollections() },
+  proofClient: { sendLink: () => sendLink() },
   deckClient: { listDecks: () => Promise.resolve({ decks: [] }) },
   agentClient: {
     listSessions: () => Promise.resolve({ sessions: [], nextPageToken: "" }),
@@ -202,6 +204,24 @@ describe("the proof of the email", () => {
     expect(reader.getIdToken).toHaveBeenCalledWith(true);
   });
 
+  // D-1083: on an iPhone the link opens in Safari, so the installed app
+  // reads the proof again when it becomes visible, with no press.
+  it("opens the app when it becomes visible after the proof", async () => {
+    const reader = { ...fakeUser, emailVerified: false, reload: vi.fn(), getIdToken: vi.fn(() => Promise.resolve("token-2")) };
+    reader.reload.mockImplementation(() => {
+      reader.emailVerified = true;
+      return Promise.resolve();
+    });
+    state.user = reader as unknown as typeof fakeUser;
+    listCollections.mockRejectedValueOnce(unproved());
+    await renderAt("/session/new");
+    await screen.findByRole("heading", { level: 1, name: "Confirm your email address" });
+    await act(async () => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    expect(await screen.findByRole("heading", { level: 1, name: "New deck" })).toBeInTheDocument();
+  });
+
   it("keeps the screen, and says why, while the email is not proved", async () => {
     state.user = { ...fakeUser, emailVerified: false, reload: () => Promise.resolve() } as unknown as typeof fakeUser;
     listCollections.mockRejectedValue(unproved());
@@ -210,9 +230,25 @@ describe("the proof of the email", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByText(/not proved yet/)).toBeInTheDocument();
+    sendLink.mockResolvedValue({ alreadyProved: false });
     await user.click(screen.getByRole("button", { name: "Send the link again" }));
-    expect(vi.mocked(sendEmailVerification)).toHaveBeenCalled();
+    expect(sendLink).toHaveBeenCalled();
+    expect(vi.mocked(sendEmailVerification)).not.toHaveBeenCalled();
     expect(await screen.findByText(/A new link is on its way/)).toBeInTheDocument();
+  });
+
+  // D-1081: a resend within the cooldown of the API sends no second
+  // email, and the screen says to wait.
+  it("says to wait when the API refuses a resend within the cooldown", async () => {
+    state.user = { ...fakeUser, emailVerified: false, reload: () => Promise.resolve() } as unknown as typeof fakeUser;
+    listCollections.mockRejectedValue(unproved());
+    sendLink.mockRejectedValue(new ConnectError("wait one minute, then send the link again", Code.ResourceExhausted));
+    vi.mocked(sendEmailVerification).mockClear();
+    await renderAt("/session/new");
+    await screen.findByRole("heading", { level: 1, name: "Confirm your email address" });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Send the link again" }));
+    expect(await screen.findByText(/Wait a minute/)).toBeInTheDocument();
+    expect(vi.mocked(sendEmailVerification)).not.toHaveBeenCalled();
   });
 
   it("has no axe violations", async () => {

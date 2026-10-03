@@ -48,6 +48,8 @@ import (
 	"github.com/nkramber/decktome/go/internal/notify"
 	"github.com/nkramber/decktome/go/internal/precons"
 	"github.com/nkramber/decktome/go/internal/profile"
+	"github.com/nkramber/decktome/go/internal/prooflink"
+	"github.com/nkramber/decktome/go/internal/proofsvc"
 	"github.com/nkramber/decktome/go/internal/push"
 	"github.com/nkramber/decktome/go/internal/pushsvc"
 	"github.com/nkramber/decktome/go/internal/quality"
@@ -271,11 +273,28 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return nil
 	}
 	var adminOpts []adminsvc.Option
-	if resend := mail.FromEnv(os.Getenv); resend != nil {
+	resend := mail.FromEnv(os.Getenv)
+	if resend != nil {
 		adminOpts = append(adminOpts, adminsvc.WithMailer(resend))
 		logger.Info("the approval email is on")
 	}
 	adminServer := adminsvc.New(accessRepo, invite, logger, adminOpts...)
+	// The API sends the email that proves an address, and its short link
+	// signs in the browser that opens it (D-1081, D-1082). With no Resend
+	// secret, SendLink answers Unimplemented, and the web app sends the
+	// email of Firebase. With no Firebase verifier, no route exists.
+	var proofServer *proofsvc.Server
+	if fb, ok := authOpts.verifier.(*auth.Firebase); ok {
+		proofOpts := []proofsvc.Option{proofsvc.WithClosed(closedUsers)}
+		if resend != nil {
+			proofOpts = append(proofOpts, proofsvc.WithMailer(resend))
+			logger.Info("the proof email is on")
+		}
+		if inviteList != nil {
+			proofOpts = append(proofOpts, proofsvc.WithAllowlist(inviteList))
+		}
+		proofServer = proofsvc.New(proofsvc.NewFirebase(fb.Client()), prooflink.NewRepo(fs), logger, proofOpts...)
+	}
 
 	// The health RPC answers a probe, which carries no token. Every
 	// service answers an Internal error with one fixed sentence, and the
@@ -315,6 +334,20 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		append([]connect.HandlerOption{connect.WithInterceptors(
 			inviteLimiter.Interceptor(mtgv1connect.InviteServiceCheckInviteProcedure, mtgv1connect.InviteServiceRequestAccessProcedure),
 		)}, probeOpts...)...))
+	// OpenLink needs no sign-in, because its code is the credential, and
+	// a limit per client address bounds a guess (D-1082). SendLink takes
+	// an invited caller that has not proved the email yet (D-1081).
+	if proofServer != nil {
+		proofLimiter := ratelimit.New(inviteChecksPerMinute, time.Minute)
+		proofAuth := append(append([]auth.Option{}, authOpts.opts...),
+			auth.WithPublic(mtgv1connect.ProofServiceOpenLinkProcedure),
+			auth.WithUnproved(mtgv1connect.ProofServiceSendLinkProcedure))
+		mux.Handle(mtgv1connect.NewProofServiceHandler(proofServer,
+			append([]connect.HandlerOption{connect.WithInterceptors(
+				proofLimiter.Interceptor(mtgv1connect.ProofServiceOpenLinkProcedure),
+				auth.Interceptor(authOpts.verifier, proofAuth...),
+			)}, probeOpts...)...))
+	}
 	// Identity Platform calls this route as beforeCreate, and it refuses
 	// an account off the invite list before the account exists (D-990).
 	// A Google-signed token is its only way in, so it takes no sign-in.

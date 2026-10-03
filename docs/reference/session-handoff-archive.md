@@ -15,6 +15,46 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-02g, PR-115
+
+**Branch `feat/request-beta-access`: PR-115, a request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).** The pull request is #272.
+
+Author provider: Claude Code
+
+**The base.** `main` is `a97cf82`, from #271. Cloud Build `deploy-web` `8232db62` built it with SUCCESS at 04:25 UTC on 2026-10-03. `deploy-api` did not run.
+
+**The live check of PR-114 (D-1072).** The cold start showed "Updating", then a reload with no error, so F-206 closes. The share dialog passed. The "Back to top" button covered the first question, and F-207 records it.
+
+**The code.**
+
+- `InviteService.RequestAccess` stores one record for each email in `access_requests`, and it sends a Pushover notice (D-1075).
+- `AdminService` lists, approves, and dismisses a request. Each call needs the custom claim `admin: true` (D-1076).
+- An approval adds the email to `config/allowlist`, and Resend sends the approval email (D-1077).
+- `make grant-admin EMAIL=... PROJECT_ID=...` sets the claim. The account menu of an admin opens `/admin`.
+- The sign-in page has the request form, and the refusal line offers it (D-1074).
+- A row under the top bar holds the "Leave feedback" button (D-1078). `make feedback-list VERDICT=none` reads the notes.
+- On a phone, the anchor of the first question also leaves the band of the "Back to top" button (F-207).
+
+**The documents.** The roadmap holds the PR-115 entry and sequence step 110. Section 8.1 of `docs/setup-gcp.md` holds the Resend account, the GoDaddy records, and the secret. Section 15.2 holds `make grant-admin`. `docs/deploy-and-rollback.md` mounts the secret.
+
+**The checks.** `make verify` reads "every check passed", with 524 of 524 web tests, under Node 22. `make store-check` passes on the emulator.
+
+**The review.** Gitar approved `a21c35e` with no finding and no thread. The session answered its CI note of the first push. The Codex record `docs/reviews/pr-272.md` says Ready for owner merge on effective head `a21c35e87a24173037afe053cf225b4110c9e8f1`, with no finding. It names one risk: the approval email stays off until the owner mounts the Resend secret.
+
+**The open work.**
+
+1. The owner confirms the merge, then the author session turns on auto-merge (D-828). The merge is pending the auto-merge.
+2. The CI emulator lane skips `internal/access`, and the local `make store-check` covers it.
+3. After the deploy, the owner does section 8.1 of `docs/setup-gcp.md`, then mounts the secret.
+4. The owner runs `make grant-admin` with section 15.2, and signs in again.
+5. The live check: a request, its notice, an approval, the email, a note, and the first question on the phone.
+
+### 2026-10-02e: the share page, the cold start, and the chat, PR-113
+
+**The deploy of `7b5cebf` read SUCCESS for both builds.** The owner checked PR-112 on the iPhone. The cold start showed the splash, then an error, and the logs showed no data call after it.
+
+**The owner chose one pull request for three concerns.** The session found the cause of F-206 in the code of workbox-window, and proved it by a local replay. The owner asked for the chat rule of D-1066.
+
 ## The resume section of 2026-10-02f, PR-114
 
 **Branch `fix/phone-live-check-5`: PR-114, the results of the live check of PR-113 (F-206, D-1069 to D-1071).** The pull request is #271.
