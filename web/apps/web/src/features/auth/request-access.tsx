@@ -22,7 +22,19 @@ export const alreadyInvited = "This email is already invited. Create your accoun
 
 // RequestAccessForm asks for beta access (D-1074, D-1075). It takes the
 // email of the sign-in form, and an optional note.
-export function RequestAccessForm({ email, onEmail, onInvited }: { email: string; onEmail: (email: string) => void; onInvited: () => void }) {
+// onSent tells the page that the request went out, so the link under the
+// form reads "Return to login page" (D-1079).
+export function RequestAccessForm({
+  email,
+  onEmail,
+  onInvited,
+  onSent,
+}: {
+  email: string;
+  onEmail: (email: string) => void;
+  onInvited: () => void;
+  onSent?: () => void;
+}) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -39,6 +51,7 @@ export function RequestAccessForm({ email, onEmail, onInvited }: { email: string
         return;
       }
       setSent(true);
+      onSent?.();
     } catch (err) {
       setError(errorMessage(err));
     } finally {

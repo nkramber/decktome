@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { createBrowserRouter, createMemoryRouter, Outlet, type RouteObject } from "react-router";
 
 import { LoadingSession, RequireAuth, RootRedirect } from "../features/auth/require-auth";
-import { adminChunk, collectionChunk, decksChunk, deckScreenChunk, inviteGateChunk, sessionChunk, sharedDeckChunk, signInChunk } from "./chunks";
+import { adminChunk, collectionChunk, decksChunk, deckScreenChunk, inviteGateChunk, proofLinkChunk, sessionChunk, sharedDeckChunk, signInChunk } from "./chunks";
 import { PageFallback } from "./components/page-fallback";
 import type { Deferred } from "./deferred";
 import { Layout } from "./layout";
@@ -60,6 +60,9 @@ export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
         // A share link opens for anyone who holds it, with no sign-in
         // (D-315).
         { path: "/d/:token", element: page(sharedDeckChunk) },
+        // The link of the email that proves an address signs in, so it
+        // opens with no sign-in (D-1081, D-1082).
+        { path: "/v/:code", element: page(proofLinkChunk) },
         {
           element: <RequireAuth />,
           children: [

@@ -8,6 +8,7 @@ import { Label } from "../../components/ui/label";
 import { isInviteRefusal, signInErrorMessage } from "../../lib/errors";
 import { inviteClient } from "../../lib/api";
 import { createAccount, resetPassword, signIn } from "../../lib/firebase";
+import { sendProof } from "../../lib/proof";
 import { useAuth } from "./auth-context";
 import { alreadyInvited, RequestAccessForm } from "./request-access";
 
@@ -45,6 +46,7 @@ export function SignInPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
 
   if (!ready) return null;
   if (user) {
@@ -66,6 +68,9 @@ export function SignInPage() {
           return;
         }
         await createAccount(email, password);
+        // A link that fails to send leaves the account as it is, and the
+        // gate offers a resend (D-903, D-1081).
+        await sendProof().catch(() => undefined);
       } else {
         await signIn(email, password);
       }
@@ -106,6 +111,7 @@ export function SignInPage() {
     setMode(next);
     setError("");
     setInfo("");
+    setRequestSent(false);
   }
 
   return (
@@ -126,9 +132,10 @@ export function SignInPage() {
                   show("sign-up");
                   setInfo(alreadyInvited);
                 }}
+                onSent={() => setRequestSent(true)}
               />
               <Button variant="link" className="mt-2 px-0" onClick={() => show("sign-in")}>
-                I have an account. Sign in.
+                {requestSent ? "Return to login page" : "I have an account. Sign in."}
               </Button>
             </>
           ) : (
@@ -166,19 +173,23 @@ export function SignInPage() {
               {info}
             </p>
           </form>
-          {!creating && (
-            <Button variant="link" className="px-0" disabled={busy} onClick={() => void onReset()}>
-              Forgot your password?
+          {/* One column with one gap holds the links, so each pair has
+              the same space (D-1079). */}
+          <div className="mt-2 flex flex-col items-start gap-1">
+            {!creating && (
+              <Button variant="link" className="px-0" disabled={busy} onClick={() => void onReset()}>
+                Forgot your password?
+              </Button>
+            )}
+            <Button variant="link" className="px-0" onClick={() => show(creating ? "sign-in" : "sign-up")}>
+              {creating ? "I have an account. Sign in." : "Create account"}
             </Button>
-          )}
-          <Button variant="link" className="mt-2 px-0" onClick={() => show(creating ? "sign-in" : "sign-up")}>
-            {creating ? "I have an account. Sign in." : "New here? Create account"}
-          </Button>
-          {!refused && (
-            <Button variant="link" className="px-0" onClick={() => show("request")}>
-              No invite yet? Request beta access
-            </Button>
-          )}
+            {!refused && (
+              <Button variant="link" className="px-0" onClick={() => show("request")}>
+                Request beta access
+              </Button>
+            )}
+          </div>
             </>
           )}
         </CardContent>

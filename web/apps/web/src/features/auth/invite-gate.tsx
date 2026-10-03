@@ -5,7 +5,8 @@ import { type ReactNode, useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { collectionClient } from "../../lib/api";
-import { refreshProof, sendProofAgain } from "../../lib/firebase";
+import { refreshProof } from "../../lib/firebase";
+import { sendProof } from "../../lib/proof";
 import { useAppStore } from "../../lib/store";
 import { useAuth } from "./auth-context";
 import { type InviteState, setInviteState, useInviteState } from "./invite-state";
@@ -160,6 +161,25 @@ export function VerifyEmail() {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const onSignOut = () => void signOutAndClear(reset, () => queryClient.clear());
+  // The link can open in another app: Safari, when this is the installed
+  // app of an iPhone (D-1083). So the screen reads the proof again each
+  // time it becomes visible, and it goes on with no press.
+  useEffect(() => {
+    async function onVisible() {
+      if (document.visibilityState !== "visible") return;
+      try {
+        if (await refreshProof()) await queryClient.invalidateQueries({ queryKey: ["collections"] });
+      } catch {
+        // The Continue button still checks, and it shows a failure.
+      }
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+  }, [queryClient]);
   async function onContinue() {
     setBusy(true);
     setNote("");
@@ -179,7 +199,7 @@ export function VerifyEmail() {
     setBusy(true);
     setNote("");
     try {
-      await sendProofAgain();
+      await sendProof();
       setNote("A new link is on its way. Look in the spam folder too.");
     } catch {
       setNote("The link could not be sent. Wait a minute, then try again.");

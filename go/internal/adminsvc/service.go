@@ -171,13 +171,13 @@ func (s *Server) find(ctx context.Context, email string) (access.Request, error)
 	return r, nil
 }
 
-// approval is the email of an approved request (D-1077).
+// approval is the email of an approved request (D-1077). It has no
+// footer line (D-1080).
 func approval(to string) mail.Message {
 	return mail.Message{
 		To:      to,
 		Subject: "Your Deck Tome beta access is ready",
 		Text: "Your email is now on the Deck Tome beta list.\n\n" +
-			"Create your account with this email address at " + SignInURL + "\n\n" +
-			"You get this email because you asked for beta access on Deck Tome.",
+			"Create your account with this email address at " + SignInURL,
 	}
 }

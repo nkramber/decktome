@@ -100,9 +100,10 @@ export function Layout() {
         )}
       </header>
       {/* The "Leave feedback" row sits under the top bar on every screen
-          of a cleared reader, and it never scrolls away (D-1078). */}
+          of a cleared reader, and it never scrolls away (D-1078). The
+          button sits at the center of the row (D-1079). */}
       {rowShown && (
-        <div ref={feedbackRow} className="flex shrink-0 justify-end border-b border-border bg-background px-4 py-1.5 md:px-6 print:hidden">
+        <div ref={feedbackRow} className="flex shrink-0 justify-center border-b border-border bg-background px-4 py-1.5 md:px-6 print:hidden">
           <FeedbackButton />
         </div>
       )}

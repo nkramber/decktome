@@ -108,7 +108,7 @@ func TestApproveInvitesMarksAndMails(t *testing.T) {
 	if store.byEmail["bob@example.com"].Status != access.Approved {
 		t.Errorf("status = %q", store.byEmail["bob@example.com"].Status)
 	}
-	if len(mailer.sent) != 1 || mailer.sent[0].To != "bob@example.com" || !strings.Contains(mailer.sent[0].Text, SignInURL) {
+	if len(mailer.sent) != 1 || mailer.sent[0].To != "bob@example.com" || !strings.Contains(mailer.sent[0].Text, SignInURL) || strings.Contains(mailer.sent[0].Text, "You get this email") {
 		t.Errorf("sent = %+v", mailer.sent)
 	}
 }

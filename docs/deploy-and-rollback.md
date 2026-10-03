@@ -220,6 +220,8 @@ gcloud run services update mtg-api --region us-central1 \
 
 Each later deploy keeps it. The API log reads `the approval email is on` at start when the key is set. Without it, an approval adds the email to the invite list and sends no email. Section 15.2 of `docs/setup-gcp.md` opens the admin screen with `make grant-admin`.
 
+From PR-116, the log also reads `the proof email is on` (D-1081). A rollback to a revision before PR-116 brings back the email of Firebase. The web app of that revision has no page for a link of the new email.
+
 ## 5. Deploy the web app
 
 The four `VITE_FIREBASE_` values never change. `docs/setup-gcp.md` section 13 holds them.

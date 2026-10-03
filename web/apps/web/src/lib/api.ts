@@ -8,6 +8,7 @@ import { DeckService } from "@mtg/api-client/mtg/v1/deck_service_pb";
 import { FeedbackService } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { HealthService } from "@mtg/api-client/mtg/v1/health_pb";
 import { InviteService } from "@mtg/api-client/mtg/v1/invite_service_pb";
+import { ProofService } from "@mtg/api-client/mtg/v1/proof_service_pb";
 import { PushService } from "@mtg/api-client/mtg/v1/push_service_pb";
 
 import { currentIdToken } from "./firebase";
@@ -51,3 +52,6 @@ export const pushClient = createClient(PushService, transport);
 export const inviteClient = createClient(InviteService, transport);
 // The admin screen needs the admin claim on the token (D-1076).
 export const adminClient = createClient(AdminService, transport);
+// The email that proves an address comes from the API (D-1081). The open
+// of its link needs no sign-in, because the code is the credential.
+export const proofClient = createClient(ProofService, transport);

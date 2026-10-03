@@ -8,7 +8,7 @@ import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { makeQueryClient } from "../../lib/query-client";
-import { FeedbackNoteDialog, placeOf } from "./leave-feedback";
+import { FeedbackNoteDialog, phoneTop, placeOf } from "./leave-feedback";
 import { thanks } from "./thumbs";
 
 const submitFeedback = vi.fn();
@@ -73,6 +73,13 @@ describe("FeedbackNoteDialog", () => {
     await user.click(screen.getByRole("button", { name: "Send" }));
     expect(notify).toHaveBeenCalledWith("error", "Could not send your feedback", expect.any(String));
     expect(screen.getByLabelText("Your feedback")).toHaveValue("Hello");
+  });
+
+  // D-1079: on a phone the dialog sits at the top, above the keyboard.
+  it("sits at the top of a phone screen", async () => {
+    renderAt("/session/new");
+    const dialog = await screen.findByRole("dialog");
+    for (const name of phoneTop.split(" ")) expect(dialog).toHaveClass(name);
   });
 
   it("has no axe violations", async () => {
