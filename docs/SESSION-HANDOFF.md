@@ -27,13 +27,14 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `make store-check` passes against the emulator. A mutation of each new rule failed a test.
 
-**The review.** Gitar found three issues on `fdf7734`: no log of a failed write, many writes for one page, and no seed of `last_creation_at`. The branch fixes all three.
+**The review.** Gitar confirmed the three fixes on `6ac5e7a`. Codex reviewed effective head `6ac5e7ae3e394f6666b8ad6fb27df5982567a991` and found P2-1: concurrent creation writes can move the timestamps backwards. The verdict is Changes required.
 
 **The open work.**
 
-1. Get the Gitar pass of the fixes, then the Codex review.
-2. The owner confirmation of the merge, then the auto-merge.
-3. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+1. Fix P2-1 and rerun its regression test and `make verify`.
+2. Get a current Gitar pass, then a repeat Codex review.
+3. After approval, get the owner confirmation and turn on the auto-merge.
+4. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 
 ## How to resume
 
