@@ -15,6 +15,40 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-02e, PR-113
+
+**Branch `feat/share-page-stats`: PR-113, the share page, the cold start, and the chat questions (F-206, D-1061 to D-1068).** The pull request is #270.
+
+Author provider: Claude Code
+
+**The base.** `main` is `7b5cebf`, from #269. Cloud Build `deploy-api` `46a5da84` and `deploy-web` `53084ddf` built it with SUCCESS on 2026-10-03 at about 02:07 UTC.
+
+**The live check of PR-112 (D-1067).** The cheapest price and the owned price sort passed. The cold start showed the splash, then an error (F-206). The owner asked for the chat rule of D-1066. The owner did not check "Price unknown".
+
+**The code, done and tested.** Each change has its test:
+
+- The deck stores the token, and the share dialog shows the link again (D-1061, D-1065).
+- Each shared card carries the deck-view art and the cheapest-printing price (D-1062, D-1063).
+- The shared page shows the four stats, the sample hand, and the filters and sort, with no owned filter (D-1064).
+- The page reloads when a new worker takes control of a controlled page (F-206).
+- A turn that ends with questions shows the reader's latest message at the top (D-1066).
+
+**The proof of F-206.** A local replay in Chromium of `7b5cebf` showed the splash for 15 seconds and no reload. The old shell then drew. The same replay of the fix reloaded in about one second.
+
+**The risks.** The first launch after the deploy of PR-113 still runs the shell of `7b5cebf`, so it can show the error once. A deck shared before D-1061 needs one new link. A copy of the deck store now gives the links (D-1061).
+
+**The checks.** `make verify` reads "every check passed", with 504 of 504 web tests, under Node 22. `make store-check` passes on the Firestore emulator.
+
+**The review.** Gitar approved `f4c414b` with no finding and no thread, and the session answered its CI note and its risk line on the token (D-1061). The Codex record says Ready for owner merge on effective head `f4c414b8753b0f427b5f9a7b352792454d62faa1`. No open findings. The record is `docs/reviews/pr-270.md`.
+
+**The open work.** The owner confirms the merge, then the author session turns on auto-merge (D-828). After deploy, the owner checks the share page and chat on an iPhone (D-1068).
+
+### 2026-10-02c: eight changes after the live check, PR-111
+
+**The deploy of `b07a5db` read SUCCESS for both builds.** The owner ran the iPhone check, and F-196 to F-200 passed.
+
+**The owner sent eight changes and chose one pull request.** The owner chose a splash for the cold start, and named the owned count a requirement. The session passed 300K tokens after the code.
+
 ## The resume section of 2026-10-02d, PR-112
 
 **Branch `fix/phone-live-check-4`: PR-112, four results of the live check of PR-111 (F-201, F-203, F-204, F-205, D-1055 to D-1060).** The pull request is #269.

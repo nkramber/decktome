@@ -601,7 +601,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-202 | **A card with two halves on one front shows that front twice.** The card data gives each half of an adventure or a split card the image of the whole card. The commander pick showed "Thranduil, Sindarin Liege // Silvan Rally" with two identical images. | ✅ PR-111: such a card is one face, with the text of each half (D-1048). |
 | F-203 | **A deck priced each owned card at its default printing.** A list sorted by price showed the price of the default printing, and not the price of the printing that the reader owns. | ✅ PR-112: the tile and the sort read the price of the owned printing (D-1058). A card to buy reads its cheapest printing (D-1057). |
 | F-204 | **No source confirms the condition of the Scryfall price.** Scryfall uses the TCGplayer market price, and TCGplayer keeps a market price for each condition. The owner requires LP/SP or better (D-1057). | ⚠ The pages of TCGplayer refused the session (HTTP 403, 2026-10-02). A source with a price for each condition closes it. |
-| F-206 | **A cold start after a deploy shows the splash, then an error.** The update check of the splash starts the install of the new worker before workbox listens. Workbox never sees the install, so the reload never comes. After 15 seconds the old shell draws, and its chunks are gone (D-1067). | 🔧 PR-113: the page reloads when the new worker takes control (D-1068). A local replay in Chromium of `7b5cebf` showed no reload in 25 seconds. The same replay of the fix reloaded in about one second. |
+| F-206 | **A cold start after a deploy shows the splash, then an error.** The update check of the splash starts the install of the new worker before workbox listens. Workbox never sees the install, so the reload never comes. After 15 seconds the old shell draws, and its chunks are gone (D-1067). | 🔧 PR-113: the page reloads when the new worker takes control (D-1068). A local replay in Chromium of `7b5cebf` showed no reload in 25 seconds. The same replay of the fix reloaded in about one second. The first launch after the deploy of PR-114 is the first test on the iPhone (D-1070). |
 | F-205 | **A card with no USD price has no second price source.** The snapshot of 2026-09-25 holds 219 playable paper cards with no USD price. Of these, 32 have a Cardmarket EUR price (D-1060). | ❓ PR-112 shows "Price unknown" for such a card. A second source, such as MTGJSON or eBay, waits for the owner (D-1060). |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -1250,7 +1250,7 @@ Gate:
 > *In plain English:* tap a card and read everything about it. Filter the deck the way you think about it. Shuffle up and look at a seven-card hand.
 
 **PR-21: Share link and print view (D-315, D-508).** ✅ merged 2026-09-03 (#62). The free gate is `docs/reference/pr21-gate-2026-09-03.md`.
-"Share" on the deck page makes an unguessable token and shows the link, and "Revoke" ends it. A public read-only page at `/d/<token>` shows the name, the format, the power, the summary, the cards by role with art, and the export button. It shows no owner name, no collection, no session, and no owned printing. A print stylesheet renders the deck page as the list by role in black on white, with no images.
+"Share" on the deck page makes an unguessable token and shows the link, and "Revoke" ends it. D-1069 removes "Revoke" from the screen. A public read-only page at `/d/<token>` shows the name, the format, the power, the summary, the cards by role with art, and the export button. It shows no owner name, no collection, no session, and no owned printing. A print stylesheet renders the deck page as the list by role in black on white, with no images.
 
 Contract: `DeckService.ShareDeck`, `RevokeShare`, and `GetSharedDeck`. The last one needs no sign-in, and a rate limit per IP bounds it. The deck stores a hash of the token, never the token. 2026-09-03: `ExportSharedDeck` joins them for the export button of the public page, under the same limit. The shared message carries the card data inline, so the page makes one call (D-508).
 
@@ -3048,7 +3048,7 @@ The live check after the deploy runs on the iPhone of the owner, and it starts w
 - **The price (D-1063).** `SharedCard.price_usd` carries the cheapest-printing price, and each tile of the shared page shows it.
 - **The stats and the filters (D-1064, D-1065).** The shared page reuses `DeckStatsPanel`, `SampleHand`, and `FilterBar`, with no owned filter. The caption reads "Card types".
 - **The cold start (F-206).** `startServiceWorker` reloads the page when a new worker takes control of a controlled page.
-- **The questions (D-1066).** `useStickToBottom` puts the reader's latest message at the top when the turn ends with open questions.
+- **The questions (D-1066).** `useStickToBottom` puts the reader's latest message at the top when the turn ends with open questions. D-1071 puts the first question there.
 
 Gate:
 - A Go test or a web test reads each of the six changes.
@@ -3059,6 +3059,23 @@ Gate:
 The live check after the deploy runs on the iPhone of the owner. The first launch still runs the old shell, so the deploy after this one tests F-206.
 
 > *In plain English:* a shared deck now shows its charts, a sample hand, filters, prices, and the same card art as your own view. The share dialog shows your link again. A chat that asks you questions keeps your last message in view above them. An app update no longer ends on an error page.
+
+**PR-114: The results of the live check of PR-113 (F-206, D-1069 to D-1071).** ✅ merged as #271. The mark comes before any review (D-822). The live check of PR-113 ran on `c19aa26` (D-1070).
+
+- **The share dialog (D-1069).** A deck with a stored link shows the link and the copy button alone. A shared deck with no stored token shows the dialog of an unshared deck. The web app has no revoke, and the API keeps `RevokeShare`.
+- **The questions (D-1071).** `useStickToBottom` puts the first question at the top when the turn ends with open questions. A docked thread box goes to its end.
+- **The live sweep.** The share step reads the stored link or makes one. A made-up token reads the error state.
+- **The test of F-206.** The change of `web/` makes `deploy-web` run, and the phone then runs the shell of `c19aa26` (D-1070).
+
+Gate:
+- A web test reads the share dialog, the anchor of the chat page, and the docked thread box.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy runs on the iPhone of the owner. Its first launch tests F-206.
+
+> *In plain English:* the share dialog now shows only your link and a copy button. When the agent asks questions, the first question sits at the top of the screen. This update is also the first real test of the fix for the error after an update.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -3465,6 +3482,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 106. **PR-111** eight changes after the live check of PR-110 (F-201, F-202, D-1045 to D-1054).
 107. **PR-112** four results of the live check of PR-111 (F-201, F-203, F-204, F-205, D-1055 to D-1060).
 108. **PR-113** the share page, the cold start, and the chat questions (F-206, D-1061 to D-1068).
+109. **PR-114** the results of the live check of PR-113 (F-206, D-1069 to D-1071).
 
 ## 9. Open questions
 

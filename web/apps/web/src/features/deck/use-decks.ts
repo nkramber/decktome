@@ -109,16 +109,12 @@ export function useDeckWrites() {
     mutationFn: (v: { deckId: string }) => deckClient.deleteDeck({ deckId: v.deckId }),
     onSuccess: refresh,
   });
-  // The share link (D-315): a share answers the token, and a revoke ends
-  // the link. Both refresh the deck, which carries the shared mark and
-  // the token (D-1061).
+  // The share link (D-315): a share answers the token, and it refreshes
+  // the deck, which carries the shared mark and the token (D-1061). The
+  // app offers no revoke (D-1069).
   const share = useMutation({
     mutationFn: (v: { deckId: string }) => deckClient.shareDeck({ deckId: v.deckId }),
     onSuccess: refresh,
   });
-  const revokeShare = useMutation({
-    mutationFn: (v: { deckId: string }) => deckClient.revokeShare({ deckId: v.deckId }),
-    onSuccess: refresh,
-  });
-  return { rename, setFavorite, remove, share, revokeShare };
+  return { rename, setFavorite, remove, share };
 }

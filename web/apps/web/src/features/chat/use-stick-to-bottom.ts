@@ -42,19 +42,24 @@ function toFoot(b: HTMLElement | null, f: HTMLElement | null, given: WeakMap<Ele
   }
 }
 
-// topSlackPx is the space the view leaves above the reader's message when
-// it puts that message at the top (D-1066).
+// topSlackPx is the space the view leaves above the first question when
+// it puts that question at the top (D-1071).
 export const topSlackPx = 8;
 
 // toTop moves the thread box and the page so that the top of el sits at
-// the top of each, with a little space above it. given records each
-// scrollTop it sets.
+// the top of each, with a little space above it. A docked thread box that
+// does not hold el goes to its end, so the agent's last words sit above
+// el. given records each scrollTop it sets.
 function toTop(b: HTMLElement | null, el: HTMLElement, given: WeakMap<Element, number>) {
   if (el.getClientRects().length === 0) return;
   if (scrollsItself(b) && b.contains(el)) {
     b.scrollTop += el.getBoundingClientRect().top - b.getBoundingClientRect().top - topSlackPx;
     given.set(b, b.scrollTop);
     return;
+  }
+  if (scrollsItself(b)) {
+    b.scrollTop = b.scrollHeight;
+    given.set(b, b.scrollTop);
   }
   const page = pageOf(el);
   if (!page) return;
@@ -69,10 +74,9 @@ function toTop(b: HTMLElement | null, el: HTMLElement, given: WeakMap<Element, n
 // moves every ancestor, and that pushed the docked chat off the frame
 // (D-370). change is a key that changes with each change of the thread.
 //
-// A turn that ends with open questions puts the reader's latest message,
-// top, at the top of the view, and the questions read down from it. The
-// view then stays there until a send (D-1066). holdTop says the turn
-// asks.
+// A turn that ends with open questions puts the first question, top, at
+// the top of the view (D-1071). The view then stays there until a send
+// (D-1066). holdTop says the turn asks.
 export function useStickToBottom(box: RefObject<HTMLElement | null>, foot: RefObject<HTMLElement | null>, change: string, top?: RefObject<HTMLElement | null>, holdTop = false) {
   const pinned = useRef(true);
   // set holds the scrollTop that this hook last gave each scroller. A

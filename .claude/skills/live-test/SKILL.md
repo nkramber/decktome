@@ -67,7 +67,7 @@ The sweep walks the sign-in screens, the collection, the binder, the chat, the d
 
 A run with a build sends one vague message, so the agent asks its rows. The sweep answers each question with the first option, and the build ends on one deck. A free run sends no message, and it reads the newest deck of the account.
 
-The sweep never clicks a thumb or "Report a problem", because each one writes a reader verdict (D-635). It cancels each rename and delete dialog, and it revokes the one share link that it makes. `LIVE_SWEEP_DELETE=1` deletes the deck of the run at the end.
+The sweep never clicks a thumb or "Report a problem", because each one writes a reader verdict (D-635). It cancels each rename and delete dialog. The sweep reads the stored share link of the deck, or makes one when the deck has none. The app has no revoke (D-1069), so that link stays live until its deck ends. With `LIVE_SWEEP_BUILD=0`, the sweep can make a public link to an existing deck. `LIVE_SWEEP_DELETE=1` deletes the deck of the run at the end.
 
 A `flow` fault names a step that did not run, for example a control with a new name. Correct `web/apps/web/live/sweep.spec.ts` in the pull request that changed the control.
 

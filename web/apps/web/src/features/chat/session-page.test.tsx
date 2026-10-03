@@ -14,8 +14,14 @@ import { fakeUser, state } from "../../test-auth-state";
 import { renderAt } from "../../test-utils";
 import { poolLabel, poolRuleOf, pruneDrafts, sentence } from "./session-page";
 import { buildPollMs } from "./use-build-watch";
+import { useStickToBottom } from "./use-stick-to-bottom";
 
 vi.mock("firebase/app");
+// The chat page keeps the real scroll hook, and the spy reads its anchor.
+vi.mock("./use-stick-to-bottom", async (importOriginal) => {
+  const real = await importOriginal<typeof import("./use-stick-to-bottom")>();
+  return { ...real, useStickToBottom: vi.fn(real.useStickToBottom) };
+});
 vi.mock("firebase/auth");
 
 const chat = vi.fn();
@@ -831,6 +837,19 @@ describe("SessionPage", () => {
     await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
     await screen.findByRole("group", { name: "Question: Which format?" });
     expect(screen.getByTestId("open-questions")).toHaveFocus();
+  });
+
+  // D-1071: a turn that ends with questions anchors the view on the first
+  // question, and the questions form opens with that question.
+  it("anchors the view of a turn that asks on the questions", async () => {
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "elves{enter}");
+    await screen.findByRole("group", { name: "Question: Which format?" });
+    await waitFor(() => expect(vi.mocked(useStickToBottom).mock.calls.at(-1)?.[4]).toBe(true));
+    const anchor = vi.mocked(useStickToBottom).mock.calls.at(-1)?.[3];
+    expect(anchor?.current).toBe(screen.getByTestId("open-questions"));
   });
 
   it("refuses an answer over the 8 KiB cap", async () => {
