@@ -1,4 +1,4 @@
-import { Navigate, Outlet, useLocation } from "react-router";
+import { Navigate, Outlet } from "react-router";
 
 import { Skeleton } from "../../components/ui/skeleton";
 import { useAuth } from "./auth-context";
@@ -19,16 +19,15 @@ export function LoadingSession() {
   );
 }
 
-// Every route except /sign-in needs a signed-in user (D-275). The page the
-// user wanted goes along in the location state, so sign-in returns there.
+// Every route except /sign-in needs a signed-in user (D-275). The guard
+// keeps no page to return to, so a sign-in lands on the home page (D-1085).
 export function RequireAuth() {
   const { user, ready } = useAuth();
-  const location = useLocation();
   if (!ready) {
     return <LoadingSession />;
   }
   if (!user) {
-    return <Navigate to="/sign-in" replace state={{ from: location }} />;
+    return <Navigate to="/sign-in" replace />;
   }
   return <Outlet />;
 }
