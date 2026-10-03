@@ -29,9 +29,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` on `965fe48` reads "every check passed", with 494 of 494 web tests, under Node 22.
 
-**The review.** Gitar approved `b57de37`. The Codex review requires changes: P2-1, the price fallback when no eligible priced printing exists. F-204 remains open, and no paid deck gate measured the price change.
+**The review.** Gitar approved `b57de37`. The Codex review required changes: P2-1, the price fallback when no eligible priced printing exists. The correction clears that price, and `docs/reviews/pr-269-response.md` holds the answer. F-204 remains open, and no paid deck gate measured the price change.
 
-**The open work.** Correct P2-1, then rerun the review. After the deploy, the owner checks on the iPhone, and the cold start comes first.
+**The open work.** The Gitar pass of the correction, then the repeat Codex review. After the deploy, the owner checks on the iPhone, and the cold start comes first.
 
 ## How to resume
 

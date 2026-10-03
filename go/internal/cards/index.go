@@ -204,8 +204,10 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 	// is digital and whose paper printing the file also holds (D-221).
 	paper := map[string]Printing{}
 	// cheapest holds the lowest price of a paper printing that a player
-	// can play, per Oracle id (D-1057).
+	// can play, per Oracle id (D-1057). printed marks each Oracle id that
+	// the file holds a printing of.
 	cheapest := map[string]float64{}
+	printed := map[string]bool{}
 	// setCodes interns one string per set code, and cardSets collects the
 	// codes per Oracle id (D-373).
 	setCodes := map[string]string{}
@@ -255,6 +257,7 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 		if !p.Digital && c.DefaultPrinting.GetDigital() {
 			paper[c.OracleId] = newerPaper(paper[c.OracleId], p)
 		}
+		printed[c.OracleId] = true
 		if !p.Digital && !p.NotForPlay && !SkipLayouts[p.Layout] && p.PriceUSD > 0 {
 			if low, ok := cheapest[c.OracleId]; !ok || p.PriceUSD < low {
 				cheapest[c.OracleId] = p.PriceUSD
@@ -287,12 +290,17 @@ func NewIndex(cardList []*mtgv1.Card, printings []Printing, tags *TagIndex, asOf
 	}
 	// The price of a card is its cheapest paper printing (D-1057). A
 	// player buys the cheapest copy, so a budget, the model, and the buy
-	// cost all read that price. A card with no priced printing keeps the
-	// price of its default printing.
-	for oid, low := range cheapest {
-		if c, ok := idx.byOracleID[oid]; ok {
+	// cost all read that price. A card whose printings hold no such price
+	// has no price, because a digital or a memorabilia price is not the
+	// price of a copy to play. A card with no printing in the file keeps
+	// its own price, because nothing shows that price to be wrong.
+	for _, c := range cardList {
+		if low, ok := cheapest[c.OracleId]; ok {
 			c.PriceUsd = low
 			c.PriceAsOf = priceDate
+		} else if printed[c.OracleId] {
+			c.PriceUsd = 0
+			c.PriceAsOf = ""
 		}
 	}
 	for _, c := range cardList {
