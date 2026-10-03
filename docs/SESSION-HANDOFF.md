@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03e)
 
-**Branch `ops/spend-cap-two-dollars`: the per-user spend cap moves from $5 to $2 a month (D-1109).** The pull request is #PRNUM.
+**Branch `ops/spend-cap-two-dollars`: the per-user spend cap moves from $5 to $2 a month (D-1109).** The pull request is #279.
 
 Author provider: Claude Code
 
