@@ -6,33 +6,27 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03d)
+## RESUME HERE (2026-10-03e)
 
-**Branch `feat/user-record-at-sign-in`: PR-119, a user record for each user who signs in (F-210, D-1092 to D-1094).** The pull request is #276.
+**Branch `ops/spend-cap-two-dollars`: the per-user spend cap moves from $5 to $2 a month (D-1109).** The pull request is #279.
 
 Author provider: Claude Code
 
-**The base.** `main` is `e135aab`, from #275. The session worked in the worktree `../decktome-user-record`. The main checkout holds the branch `feat/push-third-event` of another session, with two decisions not committed. That session wrote the next two decision ids, so this pull request starts at D-1092.
+**The base.** `main` is `fbbcd60`, from #276. The session worked in the worktree `../decktome-cap`. The main checkout holds the branch `feat/push-third-event` of #278. The open pull requests #277 and #278 hold decision ids below 1109, so this pull request takes D-1109.
 
-**The fault (F-210).** The owner asked why an invited user had no record. The logs of `mtg-api` showed the sign-up, the proof of the email, and two page reads at 19:25 UTC on 2026-10-03. The user made nothing, and only a creation wrote the record.
+**The owner request.** The owner asked for a cap of $2 a month on all usage of each user. The owner's account keeps no limit.
 
-**The owner choices.** The first verified call writes the record, and no backfill reads Firebase Auth (D-1092). `last_seen_at` is the newest activity, at most once in five minutes. `last_creation_at` is the newest deck or chat (D-1093). A schema 1 record moves at the next visit (D-1094).
+**The live change.** The live service read `SPEND_CAP_USD=5`. The override of D-576 already turned the cap off for the owner's account. On 2026-10-03 the session set `SPEND_CAP_USD=2` on `mtg-api`. Revision `mtg-api-00113-fmw` serves all traffic, on the same image `fbbcd60`. Its startup log reads a cap of 2 and one override. The deploy of `cloudbuild/api.yaml` keeps each environment variable, so a later merge keeps the cap.
 
-**The code.**
+**The code.** `go/cmd/api/main.go` moves the default from $5 to $2, so a service with no value reads the same cap. The test of `spendCap` pins the value 2. `docs/setup-gcp.md` reads the new cap.
 
-- `go/internal/users`: `Repo.Touch`, the `Visits` cache, the field `last_creation_at`, and schema 2. `Touch` and `Seed` do the copy of D-1094.
-- `go/cmd/users-backfill`: the seed writes the newest deck or chat as `last_creation_at`.
-- `go/internal/auth`: `WithVisits`. The interceptor records a call after every check admits it, and only with a proved email.
-- `go/cmd/api`: the API wires `WithVisits` with `Repo.Touch`.
+**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `TestSpendCap` pins the default of 2.
 
-**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `make store-check` passes against the emulator. A mutation of each new rule failed a test.
-
-**The review.** Gitar confirmed the three fixes on `6ac5e7a` and completed a current pass of `99dd96f`. Codex reviewed effective head `99dd96fd5b0eaa1d477500f2c02886d60e8ec2ee`. P2-1 is fixed by the transaction in `Note`, and both regression tests pass. The verdict is Ready for owner merge. The existing record is `docs/reviews/pr-276.md`.
+**The review.** Gitar reviewed effective head `6e352bc` and closed its archive-index finding on `35ece27`. The review record approves effective head `6e352bc`.
 
 **The open work.**
 
-1. Get the owner confirmation and turn on the auto-merge.
-2. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
 
 ## How to resume
 
@@ -91,7 +85,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The harvest of 2026-09-29 read that newest verdict, a test of the owner (D-994). Its watermark is 2026-09-24 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-10-03 UTC: Cloud Build `34195b09` of `deploy-api` built `18b7756`, from #272, and ended SUCCESS at 05:45:01 UTC. The service serves revision `mtg-api-00109-4pt`, with the secret `resend-api-key`. On 2026-10-01 the jobs `mtg-meta` and `mtg-snapshot` ran `worker:07203ba`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed API, read 2026-10-03 UTC: The service serves revision `mtg-api-00113-fmw`, on the image `api:fbbcd60` from #276, with the secret `resend-api-key`. That revision reads `SPEND_CAP_USD=2` and one override (D-1109). On 2026-10-01 the jobs `mtg-meta` and `mtg-snapshot` ran `worker:07203ba`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
 - The deployed web app, read 2026-10-03: build `321c7e5b` of `deploy-web` built `18b7756`, from #272, and ended SUCCESS at 05:45:45 UTC. `/version.json` names `18b7756`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
@@ -105,7 +99,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-119: a user record for each user who signs in** (F-210, D-1092 to D-1094). The resume section holds the open work.
+0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
@@ -130,12 +124,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03b: the live check of PR-116, PR-117
-
-**The deploy of `11fc024` read SUCCESS for both builds.** The owner checked the proof email on a desktop and on the iPhone, and each part passed. The five changes of D-1079 passed too.
-
-**The owner found one fault.** A sign-in after a sign-out on the admin page returned to that page. The owner asked for a sign-in that always lands on the home page, and named `/session/new` (D-1085).
-
 ### 2026-10-03c: the push of a legality change, PR-118
 
 **The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
@@ -148,6 +136,10 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose a write at each verified call, and two times.** `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat (D-1092 to D-1094).
 
+### 2026-10-03e: the spend cap of $2, D-1109
+
+**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03c, the records of 2026-08-31 to 2026-10-03, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03d, the records of 2026-08-31 to 2026-10-03b, and 104 more sections, word for word. Read it for the detail behind a decision.
