@@ -35,9 +35,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 506 of 506 web tests, under Node 22. `make lint` passes after the last edit of the skill.
 
-**The review.** Gitar approved `b86717d` with no finding and no thread. The session answered its CI note and its risk line on the revoke (D-1069). The Codex review comes next.
+**The review.** Gitar approved `b86717d` with no finding and no thread. Codex found P2-1 on effective head `b86717d7e73006f59adf1bcc36d610090d592da8`. The verdict is Changes required.
 
-**The open work.** The Codex review, the confirmation of the owner, and the auto-merge (D-828).
+**The open work.** Correct P2-1, then get a new review. The owner must confirm before auto-merge (D-828).
 
 ## How to resume
 
