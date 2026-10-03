@@ -82,13 +82,19 @@ func TestCommanderLandsRankByClass(t *testing.T) {
 // listed a land the reader can never buy.
 func TestAnUnownedLandOverTheBudgetRanksLast(t *testing.T) {
 	b, _ := New()
-	idx := fixture(t, landRankCards())
-	for name, price := range map[string]float64{"Watery Grave": 300, "Polluted Delta": 30} {
-		c, ok := idx.ByName(name)
+	cards := landRankCards()
+	idx := fixture(t, cards)
+	// Every land has a price, because a land with none ranks as over the
+	// budget too (D-1060).
+	for _, l := range cards {
+		c, ok := idx.ByName(l.name)
 		if !ok {
-			t.Fatalf("no card named %q", name)
+			t.Fatalf("no card named %q", l.name)
 		}
-		c.PriceUsd = price
+		c.PriceUsd = map[string]float64{"Watery Grave": 300, "Polluted Delta": 30}[l.name]
+		if c.PriceUsd == 0 {
+			c.PriceUsd = 1
+		}
 	}
 	req := Request{Format: cmdr, Colors: blueBlack, Limits: landCap(2), BudgetUSD: 100}
 	list, err := b.Build(idx, req)
@@ -129,4 +135,32 @@ func TestAnOwnedLandLeadsItsClass(t *testing.T) {
 		t.Fatal(err)
 	}
 	sameNames(t, "a land cap of 3 with Path of Ancestry owned", list.Candidates, "Underground Sea", "Watery Grave", "Polluted Delta")
+}
+
+// TestAnUnpricedLandRanksAsOverTheBudget is D-1060. A card with no price
+// has no known cost, so a budget ranks it with the lands over the budget
+// and never reads it as free.
+func TestAnUnpricedLandRanksAsOverTheBudget(t *testing.T) {
+	b, _ := New()
+	cards := landRankCards()
+	idx := fixture(t, cards)
+	for _, l := range cards {
+		c, _ := idx.ByName(l.name)
+		c.PriceUsd = map[string]float64{"Watery Grave": 300, "Polluted Delta": 30, "Sunken Hollow": 0}[l.name]
+		if c.PriceUsd == 0 && l.name != "Sunken Hollow" {
+			c.PriceUsd = 1
+		}
+	}
+	req := Request{Format: cmdr, Colors: blueBlack, Limits: landCap(2), BudgetUSD: 100}
+	list, err := b.Build(idx, req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	have := map[string]bool{}
+	for _, c := range list.Candidates {
+		have[c.Card.GetName()] = true
+	}
+	if !have["Polluted Delta"] || have["Sunken Hollow"] {
+		t.Errorf("a land cap of 2 under a budget of $100 = %v, want Polluted Delta and no unpriced Sunken Hollow", names(list.Candidates))
+	}
 }

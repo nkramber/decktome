@@ -11,6 +11,7 @@ import { Input } from "../../components/ui/input";
 import { Select } from "../../components/ui/select";
 import { Skeleton } from "../../components/ui/skeleton";
 import { cn } from "../../lib/cn";
+import { priceText } from "../../lib/price";
 import { moveBehavior, offsetIn, resetTop, showTopButton } from "./binder-scroll";
 import { type BinderChoice, type BinderSortKey, useBinderArt } from "./use-collection";
 
@@ -401,12 +402,10 @@ function BinderTile({ entry, card }: { entry: CollectionEntry; card: Card | unde
         )}
         {condition && <span data-testid="condition-mark">{condition}</span>}
         {/* The reader sorts by price, so the price reads on the tile.
-            An unpriced row shows nothing (D-396). */}
-        {entry.priceUsd > 0 && (
-          <span className="ml-auto tabular-nums" data-testid="binder-price">
-            ${entry.priceUsd.toFixed(2)}
-          </span>
-        )}
+            An unpriced row reads "Price unknown" (D-396, D-1060). */}
+        <span className="ml-auto tabular-nums" data-testid="binder-price">
+          {priceText(entry.priceUsd)}
+        </span>
       </p>
     </article>
   );

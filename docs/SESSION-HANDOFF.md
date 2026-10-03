@@ -29,9 +29,19 @@ Author provider: Claude Code
 
 **The checks.** `make verify` on `965fe48` reads "every check passed", with 494 of 494 web tests, under Node 22.
 
-**The review.** Gitar approved `b57de37`. The Codex review required changes: P2-1, the price fallback when no eligible priced printing exists. The correction clears that price, and `docs/reviews/pr-269-response.md` holds the answer. F-204 remains open, and no paid deck gate measured the price change.
+**The review.** Gitar approved `b57de37`. The Codex record required changes: P2-1, the price fallback. Commit `ba42d54` answered it, and `docs/reviews/pr-269-response.md` holds the answer. Gitar then found on `ba42d54` that the cleared price read $0, which the budget reads as free. The owner chose D-1060: "Price unknown", and a budget counts such a card as over the budget.
 
-**The open work.** The Gitar pass of the correction, then the repeat Codex review. After the deploy, the owner checks on the iPhone, and the cold start comes first.
+**The checkpoint (D-946).** This session passed 300K tokens after the code of D-1060. The code and its tests are in the checkpoint commit. The Go tests of `candidates` and `generate` pass, and 419 of 419 web tests of `src/features` pass.
+
+**The open work.** Do these steps in a new clean session:
+
+1. Add the D-1060 bullet to the PR-112 entry of `docs/design-roadmap.md`.
+1. Add a finding with ❓ for a second price source.
+2. Run `make verify`, and push one time.
+3. Reply on the Gitar thread "Cleared price reads as $0" with the commit, then resolve it.
+4. Do the Gitar pass, then run `make codex-review PR=269` for round 2.
+
+After the deploy, the owner checks on the iPhone, and the cold start comes first.
 
 ## How to resume
 

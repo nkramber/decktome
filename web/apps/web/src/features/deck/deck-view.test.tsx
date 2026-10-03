@@ -423,6 +423,15 @@ describe("DeckView", () => {
     expect(within(buy).getByRole("row", { name: /Total/ })).toHaveTextContent("$0.50");
   });
 
+  it("names the cards to buy with no price, and never counts them as free (D-1060)", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    expect(screen.getByTestId("buy-cost")).toHaveTextContent("To buy: $0.50, plus 1 card with price unknown");
+    const buy = screen.getByRole("table", { name: /Cards to buy/ });
+    expect(within(buy).getByRole("row", { name: /Missing Card/ })).toHaveTextContent("Price unknown");
+    expect(within(buy).getByRole("row", { name: /Total/ })).toHaveTextContent("$0.50 + 1 unknown");
+  });
+
   it("filters the cards and sorts them (PR-20)", async () => {
     const user = userEvent.setup();
     renderDeck();
@@ -449,7 +458,7 @@ describe("DeckView", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "price");
     const group = screen.getByRole("region", { name: /^Cards by price/ });
     const forest = within(group).getAllByTestId("card-tile").find((tile) => within(tile).queryByAltText("Forest (card)"));
-    expect(within(forest!).getByTestId("card-price")).toHaveTextContent("no price");
+    expect(within(forest!).getByTestId("card-price")).toHaveTextContent("Price unknown");
     const elves = within(group).getAllByTestId("card-tile").find((tile) => within(tile).queryByAltText("Llanowar Elves (card)"));
     expect(within(elves!).getByTestId("buy-mark")).toHaveTextContent("To buy: $0.50");
     expect(within(elves!).queryByTestId("card-price")).not.toBeInTheDocument();

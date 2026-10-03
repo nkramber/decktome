@@ -141,7 +141,7 @@ describe("deck-stats", () => {
   });
 
   it("labels prices, severities, and roles", () => {
-    expect(priceText(0)).toBe("no price");
+    expect(priceText(0)).toBe("Price unknown");
     expect(priceText(1.5)).toBe("$1.50");
     expect(severityLabel(Severity.BLOCK)).toBe("Block");
     expect(severityLabel(Severity.WARN)).toBe("Warning");

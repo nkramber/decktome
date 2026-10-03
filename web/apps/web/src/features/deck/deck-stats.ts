@@ -148,9 +148,7 @@ export function severityLabel(s: Severity): string {
   }
 }
 
-export function priceText(usd: number): string {
-  return usd > 0 ? `$${usd.toFixed(2)}` : "no price";
-}
+export { priceText } from "../../lib/price";
 
 // cardPrice is the price of the printing a card stands for. An owned card
 // costs what the printing the reader owns costs (D-1058). A card to buy

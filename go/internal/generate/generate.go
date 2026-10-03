@@ -558,8 +558,17 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 			cost, what = DeckCostWith(deck, b.cards), "the whole deck"
 		}
 		if cost > req.BudgetUSD {
-			addFinding(deck, CodeOverBudget, mtgv1.Severity_SEVERITY_WARN,
-				fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f", what, cost, req.BudgetUSD))
+			msg := fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f", what, cost, req.BudgetUSD)
+			// An unpriced card adds nothing to the sum, so the warning
+			// names it and never calls it free (D-1060).
+			if n := UnpricedToBuy(deck, b.cards, req.OracleCounts); n > 0 {
+				verb := "have"
+				if n == 1 {
+					verb = "has"
+				}
+				msg += fmt.Sprintf(", and %s to buy %s no known price", plural(n, "card"), verb)
+			}
+			addFinding(deck, CodeOverBudget, mtgv1.Severity_SEVERITY_WARN, msg)
 		}
 	}
 	// A card the user said to keep must be in the deck. A deck without
