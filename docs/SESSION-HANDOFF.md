@@ -22,7 +22,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22.
 
-**The review.** The Gitar pass and the Codex review follow the push.
+**The review.** Codex reviewed effective head `054ce89` and found no defect. The verdict is Ready for owner merge. No finding remains open.
 
 **The open work.**
 
