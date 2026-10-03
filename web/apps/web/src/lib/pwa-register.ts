@@ -5,11 +5,21 @@ import { registerSW } from "virtual:pwa-register";
 // view, so it never keeps an old shell against a new API (D-621, REV-048).
 export const swUpdateIntervalMs = 60 * 60 * 1000;
 
-// startServiceWorker registers the worker of the build. The plugin runs
-// in autoUpdate mode, so the page reloads when a new worker takes over,
-// and a reader never runs an old shell against a new API (D-621, F-122).
-// An unsent draft lives in memory, and the reload drops it (D-692).
-export function startServiceWorker(): void {
+// startServiceWorker registers the worker of the build. The page reloads
+// when a new worker takes over, so a reader never runs an old shell
+// against a new API (D-621, F-122). An unsent draft lives in memory, and
+// the reload drops it (D-692).
+//
+// The plugin's own reload follows only an install that workbox saw. An
+// install that starts before workbox listens, such as the one the update
+// check of a cold start asks for, never reloads the page. The new worker
+// then drops the old chunks, and the old shell fails to load a page
+// (F-206). So the page also reloads on each change of its controller. A
+// first visit has no controller, and its first worker reloads nothing.
+export function startServiceWorker(sw: ServiceWorkerContainer | undefined = navigator.serviceWorker, reload: () => void = () => window.location.reload()): void {
+  if (sw?.controller) {
+    sw.addEventListener("controllerchange", () => reload(), { once: true });
+  }
   registerSW({
     immediate: true,
     onRegisteredSW(_swUrl, registration) {
