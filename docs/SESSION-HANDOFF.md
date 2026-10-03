@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-02e)
 
-**Branch `feat/share-page-stats`: PR-113, the share page, the cold start, and the chat questions (F-206, D-1061 to D-1068).** The pull request is not open yet.
+**Branch `feat/share-page-stats`: PR-113, the share page, the cold start, and the chat questions (F-206, D-1061 to D-1068).** The pull request is #270.
 
 Author provider: Claude Code
 
@@ -28,7 +28,9 @@ Author provider: Claude Code
 
 **The risks.** The first launch after the deploy of PR-113 still runs the shell of `7b5cebf`, so it can show the error once. A deck shared before D-1061 needs one new link. A copy of the deck store now gives the links (D-1061).
 
-**The open work.** Run `make verify`, push, and open the pull request. Then the Gitar pass and the Codex review.
+**The checks.** `make verify` reads "every check passed", with 504 of 504 web tests, under Node 22. `make store-check` passes on the Firestore emulator.
+
+**The open work.** The Gitar pass and the Codex review. Then the confirmation of the owner, and the auto-merge (D-828).
 
 ## How to resume
 

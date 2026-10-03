@@ -3041,7 +3041,7 @@ The live check after the deploy runs on the iPhone of the owner, and it starts w
 
 > *In plain English:* the chat now stays at the bottom while you read it, and a send takes you there. A card you own shows the price of your own copy. A card to buy shows the price of its cheapest playable copy. A card with no price says so, and a budget never counts it as free. The fix of the cold start gets its first real test after this deploy.
 
-**PR-113: The share page shows the stats, the filters, the price, and the deck-view art (F-206, D-1061 to D-1068).** 🔧 in review. The mark comes before any review (D-822). The live check of PR-112 ran on `7b5cebf` (D-1067). The owner chose one pull request for the share page, the cold start, and the chat rule (D-1068).
+**PR-113: The share page shows the stats, the filters, the price, and the deck-view art (F-206, D-1061 to D-1068).** ✅ merged as #270. The mark comes before any review (D-822). The live check of PR-112 ran on `7b5cebf` (D-1067). The owner chose one pull request for the share page, the cold start, and the chat rule (D-1068).
 
 - **The token (D-1061).** `Deck.share_token` holds the token of the link. The share dialog shows the link above "This deck has a link." A verdict snapshot and the public export drop the token.
 - **The art (D-1062).** `SharedCard.printing` carries the printing of the deck view, with no price. The tile shows its art.
