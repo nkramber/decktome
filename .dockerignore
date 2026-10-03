@@ -24,6 +24,7 @@ go/users-backfill
 go/allow
 go/deactivate-user
 go/mark-verified
+go/grant-admin
 go/deck-gate
 go/eval
 go/bracket-gate

@@ -68,6 +68,22 @@ export async function currentIdToken(): Promise<string> {
   }
 }
 
+// isAdmin reads the custom claim admin: true of the signed-in token
+// (D-1076). It answers false on any failure, and the API checks the
+// claim again on each admin call.
+export async function isAdmin(): Promise<boolean> {
+  try {
+    const { auth, mod } = await loadAuth();
+    await auth.authStateReady();
+    const user = auth.currentUser;
+    if (!user) return false;
+    const result = await mod.getIdTokenResult(user);
+    return result?.claims?.admin === true;
+  } catch {
+    return false;
+  }
+}
+
 // signOutOfApp ends the session. The caller clears the local state.
 export async function signOutOfApp(): Promise<void> {
   const { auth, mod } = await loadAuth();

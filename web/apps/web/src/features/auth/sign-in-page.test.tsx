@@ -5,15 +5,17 @@ import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { state } from "../../test-auth-state";
+import { alreadyInvited, requestSent } from "./request-access";
 import { notAuthorized, resetSent } from "./sign-in-page";
 import { renderAt } from "../../test-utils";
 
 vi.mock("firebase/app");
 vi.mock("firebase/auth");
 const checkInvite = vi.fn();
+const requestAccess = vi.fn();
 vi.mock("../../lib/api", () => ({
   healthClient: { check: () => Promise.resolve({ status: "ok", version: "test", cardSnapshot: "none" }) },
-  inviteClient: { checkInvite: (...a: unknown[]) => checkInvite(...a) },
+  inviteClient: { checkInvite: (...a: unknown[]) => checkInvite(...a), requestAccess: (...a: unknown[]) => requestAccess(...a) },
 }));
 
 const signIn = vi.mocked(signInWithEmailAndPassword);
@@ -25,6 +27,8 @@ beforeEach(() => {
   signUp.mockReset();
   checkInvite.mockReset();
   checkInvite.mockResolvedValue({ allowed: true });
+  requestAccess.mockReset();
+  requestAccess.mockResolvedValue({ alreadyInvited: false });
 });
 
 describe("SignInPage", () => {
@@ -159,6 +163,56 @@ describe("SignInPage", () => {
     await user.type(screen.getByLabelText("Password"), "wrong12");
     await user.click(screen.getByRole("button", { name: "Sign in" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("The email or the password is wrong.");
+  });
+
+  // D-1074: the sign-in page holds a link to the request form, and the
+  // request takes the email and the optional note.
+  it("sends a request for beta access with the email and the note", async () => {
+    await renderAt("/sign-in");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Request beta access/ }));
+    expect(screen.getByRole("heading", { level: 1, name: "Request beta access" })).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Email"), "new@example.com");
+    await user.type(screen.getByLabelText(/What do you want to build/), "Elves");
+    await user.click(screen.getByRole("button", { name: "Request beta access" }));
+    expect(requestAccess).toHaveBeenCalledWith({ email: "new@example.com", note: "Elves" });
+    expect(await screen.findByRole("status")).toHaveTextContent(requestSent);
+  });
+
+  // D-1074: the red refusal line offers the request, with the email of
+  // the form.
+  it("offers the request under the refusal, with the typed email", async () => {
+    checkInvite.mockResolvedValue({ allowed: false });
+    await renderAt("/sign-in");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Create account/ }));
+    await user.type(screen.getByLabelText("Email"), "off@example.com");
+    await user.type(screen.getByLabelText("Password"), "secret1");
+    await user.click(screen.getByRole("button", { name: "Create account" }));
+    await screen.findByText(notAuthorized);
+    await user.click(screen.getByRole("button", { name: "Request beta access" }));
+    expect(screen.getByLabelText("Email")).toHaveValue("off@example.com");
+    await user.click(screen.getByRole("button", { name: "Request beta access" }));
+    expect(requestAccess).toHaveBeenCalledWith({ email: "off@example.com", note: "" });
+  });
+
+  it("opens the create-account form for an email that is already invited", async () => {
+    requestAccess.mockResolvedValue({ alreadyInvited: true });
+    await renderAt("/sign-in");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /Request beta access/ }));
+    await user.type(screen.getByLabelText("Email"), "ann@example.com");
+    await user.click(screen.getByRole("button", { name: "Request beta access" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Create account" })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent(alreadyInvited);
+    expect(screen.getByLabelText("Email")).toHaveValue("ann@example.com");
+  });
+
+  it("has no axe violations on the request form", async () => {
+    const { container } = await renderAt("/sign-in");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: /Request beta access/ }));
+    expect(await axe(container)).toHaveNoViolations();
   });
 
   it("has no axe violations", async () => {

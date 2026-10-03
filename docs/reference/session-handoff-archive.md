@@ -15,6 +15,45 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-02f, PR-114
+
+**Branch `fix/phone-live-check-5`: PR-114, the results of the live check of PR-113 (F-206, D-1069 to D-1071).** The pull request is #271.
+
+Author provider: Claude Code
+
+**The base.** `main` is `c19aa26`, from #270. Cloud Build `deploy-api` `612c447c` and `deploy-web` `37448759` built it with SUCCESS on 2026-10-03 at about 03:04 UTC.
+
+**The live check of PR-113 (D-1070).**
+
+- The first launch showed "Updating", then the MIME error of `invite-gate-HN8YHvkr.js`. The live release does not hold that chunk. The second launch opened normally.
+- The share dialog showed the link again.
+- The shared page passed on all five parts: the stats, the sample hand, the filters, the price, and the art.
+- "Price unknown" passed.
+- The owner sent a screenshot of the wanted chat view, with the first question at the top (D-1071).
+
+**The code, done and tested.**
+
+- A deck with a stored link shows the link and the copy button alone (D-1069). A shared deck with no stored token shows the dialog of an unshared deck.
+- The web app has no revoke. The API keeps `RevokeShare`.
+- A turn that ends with questions puts the first question at the top (D-1071). A docked thread box goes to its end.
+- The live sweep reads the stored link or makes one. A made-up token reads the error state.
+
+**The test of F-206.** This pull request changes `web/`, so `deploy-web` runs. The phone then runs the shell of `c19aa26`, which holds the reload of F-206.
+
+**The risks.** A link now ends only with its deck. The owner said that no production link lacks a stored token. The sandbox refused the session a read of the `shares` collection, so this fact is unverified. The test deck of the live sweep keeps one live link.
+
+**The checks.** `make verify` reads "every check passed", with 506 of 506 web tests, under Node 22. `make lint` passes after the last edit of the skill.
+
+**The review.** Gitar approved the current branch. Its dashboard repeats the risk of a link that stays live, and the session answered it with D-1069. The first Codex review found P2-1 on `b86717d7e73006f59adf1bcc36d610090d592da8`. Commit `f346a58` corrects the skill and the sweep header. The repeat review says Ready for owner merge on effective head `f346a581e91638c85d57911195872e089711f797`. No finding stays open.
+
+**The open work.** The owner confirms the merge, then the author session turns on auto-merge (D-828). After the deploy, the owner opens the installed app first for the cold start of F-206. Then the owner checks the share dialog and the chat on the iPhone.
+
+### 2026-10-02d: four results of the live check, PR-112
+
+**The deploy of `d38bca5` read SUCCESS for both builds.** The owner checked the eight changes of PR-111 on the iPhone, and five passed at once.
+
+**The owner chose one pull request and the whole app for the price.** The owner replaced D-360, and asked for LP/SP condition or better. No source that the session read confirms the condition of the Scryfall price.
+
 ## The resume section of 2026-10-02e, PR-113
 
 **Branch `feat/share-page-stats`: PR-113, the share page, the cold start, and the chat questions (F-206, D-1061 to D-1068).** The pull request is #270.

@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { backToTopClearPx } from "../shell/back-to-top";
 import { footSlackPx, topSlackPx, useStickToBottom } from "./use-stick-to-bottom";
 
 // jsdom lays nothing out, so each test gives the page, the thread box,
@@ -131,6 +132,21 @@ describe("useStickToBottom (D-1056)", () => {
     // The send of the answers takes the view to the foot again.
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     expect(geo.page.scrollTop).toBe(1400);
+  });
+
+  // D-1072: on a phone the "Back to top" button sits above the question
+  // text, not on it.
+  it("leaves the band of the Back to top button above the first question on a phone", () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("max-width"), addEventListener() {}, removeEventListener() {} }));
+    try {
+      const view = render(<Harness change="1" />);
+      geo.foot.bottom += 600;
+      view.rerender(<Harness change="2" asks />);
+      expect(geo.first.top).toBe(topSlackPx + backToTopClearPx);
+      expect(geo.page.scrollTop).toBe(1000 - topSlackPx - backToTopClearPx);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("takes a docked thread box to its end, and the first question to the top", () => {

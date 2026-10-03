@@ -11,8 +11,13 @@ option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
 // It is the one procedure that needs no sign-in and reads a person's
 // input, so a limit per client address bounds it (D-315). It answers a
 // bare yes or no, and it never says whether an account exists.
+//
+// RequestAccess also needs no sign-in. It stores a request for beta
+// access, one record for each email, and the same limit per client
+// address bounds it (D-1075).
 service InviteService {
   rpc CheckInvite(CheckInviteRequest) returns (CheckInviteResponse) {}
+  rpc RequestAccess(RequestAccessRequest) returns (RequestAccessResponse) {}
 }
 
 message CheckInviteRequest {
@@ -24,4 +29,17 @@ message CheckInviteResponse {
   // allowed is true when the invite list holds the email. A server with
   // no list allows every email, which is local mode (guardrail 9).
   bool allowed = 1;
+}
+
+message RequestAccessRequest {
+  // email is the address the person wants to use.
+  string email = 1;
+  // note is optional, at most 500 characters (D-1074).
+  string note = 2;
+}
+
+message RequestAccessResponse {
+  // already_invited is true when the invite list holds the email. The
+  // server then stores no request, and the person can create an account.
+  bool already_invited = 1;
 }

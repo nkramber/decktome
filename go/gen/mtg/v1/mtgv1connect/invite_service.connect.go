@@ -36,11 +36,15 @@ const (
 	// InviteServiceCheckInviteProcedure is the fully-qualified name of the InviteService's CheckInvite
 	// RPC.
 	InviteServiceCheckInviteProcedure = "/mtg.v1.InviteService/CheckInvite"
+	// InviteServiceRequestAccessProcedure is the fully-qualified name of the InviteService's
+	// RequestAccess RPC.
+	InviteServiceRequestAccessProcedure = "/mtg.v1.InviteService/RequestAccess"
 )
 
 // InviteServiceClient is a client for the mtg.v1.InviteService service.
 type InviteServiceClient interface {
 	CheckInvite(context.Context, *connect.Request[v1.CheckInviteRequest]) (*connect.Response[v1.CheckInviteResponse], error)
+	RequestAccess(context.Context, *connect.Request[v1.RequestAccessRequest]) (*connect.Response[v1.RequestAccessResponse], error)
 }
 
 // NewInviteServiceClient constructs a client for the mtg.v1.InviteService service. By default, it
@@ -60,12 +64,19 @@ func NewInviteServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(inviteServiceMethods.ByName("CheckInvite")),
 			connect.WithClientOptions(opts...),
 		),
+		requestAccess: connect.NewClient[v1.RequestAccessRequest, v1.RequestAccessResponse](
+			httpClient,
+			baseURL+InviteServiceRequestAccessProcedure,
+			connect.WithSchema(inviteServiceMethods.ByName("RequestAccess")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // inviteServiceClient implements InviteServiceClient.
 type inviteServiceClient struct {
-	checkInvite *connect.Client[v1.CheckInviteRequest, v1.CheckInviteResponse]
+	checkInvite   *connect.Client[v1.CheckInviteRequest, v1.CheckInviteResponse]
+	requestAccess *connect.Client[v1.RequestAccessRequest, v1.RequestAccessResponse]
 }
 
 // CheckInvite calls mtg.v1.InviteService.CheckInvite.
@@ -73,9 +84,15 @@ func (c *inviteServiceClient) CheckInvite(ctx context.Context, req *connect.Requ
 	return c.checkInvite.CallUnary(ctx, req)
 }
 
+// RequestAccess calls mtg.v1.InviteService.RequestAccess.
+func (c *inviteServiceClient) RequestAccess(ctx context.Context, req *connect.Request[v1.RequestAccessRequest]) (*connect.Response[v1.RequestAccessResponse], error) {
+	return c.requestAccess.CallUnary(ctx, req)
+}
+
 // InviteServiceHandler is an implementation of the mtg.v1.InviteService service.
 type InviteServiceHandler interface {
 	CheckInvite(context.Context, *connect.Request[v1.CheckInviteRequest]) (*connect.Response[v1.CheckInviteResponse], error)
+	RequestAccess(context.Context, *connect.Request[v1.RequestAccessRequest]) (*connect.Response[v1.RequestAccessResponse], error)
 }
 
 // NewInviteServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -91,10 +108,18 @@ func NewInviteServiceHandler(svc InviteServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(inviteServiceMethods.ByName("CheckInvite")),
 		connect.WithHandlerOptions(opts...),
 	)
+	inviteServiceRequestAccessHandler := connect.NewUnaryHandler(
+		InviteServiceRequestAccessProcedure,
+		svc.RequestAccess,
+		connect.WithSchema(inviteServiceMethods.ByName("RequestAccess")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/mtg.v1.InviteService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case InviteServiceCheckInviteProcedure:
 			inviteServiceCheckInviteHandler.ServeHTTP(w, r)
+		case InviteServiceRequestAccessProcedure:
+			inviteServiceRequestAccessHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -106,4 +131,8 @@ type UnimplementedInviteServiceHandler struct{}
 
 func (UnimplementedInviteServiceHandler) CheckInvite(context.Context, *connect.Request[v1.CheckInviteRequest]) (*connect.Response[v1.CheckInviteResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.InviteService.CheckInvite is not implemented"))
+}
+
+func (UnimplementedInviteServiceHandler) RequestAccess(context.Context, *connect.Request[v1.RequestAccessRequest]) (*connect.Response[v1.RequestAccessResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.InviteService.RequestAccess is not implemented"))
 }

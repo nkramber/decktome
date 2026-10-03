@@ -23,10 +23,14 @@ import (
 // the allowlist reads (D-314). The email is empty for a token with none.
 // EmailVerified says the holder proved the email, and the allowlist
 // trusts a proved email alone (D-903).
+//
+// Admin is the custom claim admin: true, which opens the admin screen
+// of the owner (D-1076).
 type Identity struct {
 	UID           string
 	Email         string
 	EmailVerified bool
+	Admin         bool
 }
 
 // Verifier checks one ID token and returns the identity it names.
@@ -98,7 +102,8 @@ func (f *Firebase) Verify(ctx context.Context, idToken string) (Identity, error)
 	}
 	email, _ := tok.Claims["email"].(string)
 	verified, _ := tok.Claims["email_verified"].(bool)
-	return Identity{UID: tok.UID, Email: email, EmailVerified: verified}, nil
+	admin, _ := tok.Claims[AdminClaim].(bool)
+	return Identity{UID: tok.UID, Email: email, EmailVerified: verified, Admin: admin}, nil
 }
 
 type ctxKey struct{}
@@ -130,6 +135,25 @@ func Email(ctx context.Context) string {
 // WithEmail returns ctx with email set. Tests and the interceptor use it.
 func WithEmail(ctx context.Context, email string) context.Context {
 	return context.WithValue(ctx, emailKey{}, email)
+}
+
+// AdminClaim is the custom claim that names the admin (D-1076). A make
+// target sets it on the account of the owner.
+const AdminClaim = "admin"
+
+type adminKey struct{}
+
+// IsAdmin reads whether the verified token carries the admin claim. A
+// fallback user of local mode is never the admin.
+func IsAdmin(ctx context.Context) bool {
+	admin, _ := ctx.Value(adminKey{}).(bool)
+	return admin
+}
+
+// WithAdmin returns ctx with the admin mark set. Tests and the
+// interceptor use it.
+func WithAdmin(ctx context.Context, admin bool) context.Context {
+	return context.WithValue(ctx, adminKey{}, admin)
 }
 
 // Option tunes the interceptor.
@@ -276,7 +300,7 @@ func (i *interceptor) resolve(ctx context.Context, authorization string) (contex
 			return nil, err
 		}
 	}
-	return WithEmail(WithUserID(ctx, id.UID), id.Email), nil
+	return WithAdmin(WithEmail(WithUserID(ctx, id.UID), id.Email), id.Admin), nil
 }
 
 // bearer splits "Bearer <token>". present is false when the header is

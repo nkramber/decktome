@@ -78,6 +78,8 @@ type Item struct {
 	// file, so it is not the client's word. Text then holds the service
 	// the user named (D-883).
 	Import *mtgv1.ImportFault
+	// Screen names the screen of a general note (D-1078).
+	Screen string
 }
 
 // Repo stores feedback in Firestore. The caller owns the client.
@@ -101,6 +103,7 @@ type stored struct {
 	OracleID     string           `firestore:"oracle_id"`
 	Reasons      []string         `firestore:"reasons"`
 	Text         string           `firestore:"text"`
+	Screen       string           `firestore:"screen"`
 	Prompts      map[string]int64 `firestore:"prompts"`
 	CreatedAt    time.Time        `firestore:"created_at"`
 	// SessionGz and DeckGz hold the snapshot of D-635, as gzip protojson,
@@ -138,6 +141,7 @@ func (r *Repo) Add(ctx context.Context, uid string, item Item) (string, error) {
 		OracleID:     item.OracleID,
 		Reasons:      item.Reasons,
 		Text:         item.Text,
+		Screen:       item.Screen,
 		Prompts:      item.Prompts,
 		CreatedAt:    item.CreatedAt.UTC(),
 		SessionGz:    sessionGz,
@@ -257,6 +261,7 @@ func itemOf(id string, s stored) Item {
 		OracleID:     s.OracleID,
 		Reasons:      s.Reasons,
 		Text:         s.Text,
+		Screen:       s.Screen,
 		Prompts:      s.Prompts,
 		CreatedAt:    s.CreatedAt,
 	}
@@ -298,6 +303,10 @@ func (r *Repo) Find(ctx context.Context, id string) (Item, string, error) {
 	return Item{}, "", ErrNotFound
 }
 
+// NoVerdict is the verdict filter of Down that reads the general notes
+// alone (D-1078).
+const NoVerdict = "none"
+
 // Down reads the newest verdicts of every user, over one collection
 // group query (D-596). The documents sit under each user, and a group
 // query reads them all at once, so no caller walks the user list.
@@ -306,6 +315,14 @@ func (r *Repo) Find(ctx context.Context, id string) (Item, string, error) {
 // the common case. An empty verdict reads both.
 func (r *Repo) Down(ctx context.Context, verdict string, limit int) ([]Item, error) {
 	q := r.client.CollectionGroup("feedback").OrderBy("created_at", firestore.Desc).Limit(limit)
+	// NoVerdict reads the general notes, which store an empty verdict
+	// (D-1078). The index of the verdict serves this query too.
+	if verdict == NoVerdict {
+		verdict = ""
+		q = r.client.CollectionGroup("feedback").
+			Where("verdict", "==", "").
+			OrderBy("created_at", firestore.Desc).Limit(limit)
+	}
 	if verdict != "" {
 		q = r.client.CollectionGroup("feedback").
 			Where("verdict", "==", verdict).
@@ -408,6 +425,7 @@ var kindNames = map[mtgv1.FeedbackKind]string{
 	mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     "deck",
 	mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT:     "chat",
 	mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT:   "import",
+	mtgv1.FeedbackKind_FEEDBACK_KIND_GENERAL:  "general",
 }
 
 var verdictNames = map[mtgv1.FeedbackVerdict]string{

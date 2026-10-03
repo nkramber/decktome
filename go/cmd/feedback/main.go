@@ -37,7 +37,7 @@ func main() {
 }
 
 func run() error {
-	verdict := flag.String("verdict", "down", `the verdict to read: "down", "up", or "" for both`)
+	verdict := flag.String("verdict", "down", `the verdict to read: "down", "up", "none" for the general notes, or "" for all`)
 	limit := flag.Int("limit", 50, "how many verdicts to read, newest first")
 	asJSON := flag.Bool("json", false, "print the verdicts as JSON")
 	id := flag.String("id", "", "read one verdict by its id, over every user")

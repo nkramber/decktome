@@ -1,8 +1,11 @@
-import { BellIcon, BellOffIcon, LogOutIcon } from "lucide-react";
+import { BellIcon, BellOffIcon, LogOutIcon, ShieldIcon } from "lucide-react";
 import { type ReactNode, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
+import { useAuth } from "../../features/auth/auth-context";
 import { disablePush, enablePush, pushConfigured, type PushState, pushState } from "../../features/push/push";
+import { isAdmin } from "../../lib/firebase";
 import { notify } from "./notify";
 
 // A menu of the shell mounts closed once its chunk lands, and the caller
@@ -38,6 +41,7 @@ export function AccountMenuContent({
         <DropdownMenuLabel className="truncate font-normal text-muted-foreground">{email}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {pushConfigured() ? <PushMenuItem /> : null}
+        <AdminMenuItem />
         <DropdownMenuItem variant="destructive" onSelect={onSignOut}>
           <LogOutIcon aria-hidden="true" />
           Sign out
@@ -51,6 +55,28 @@ export function AccountMenuContent({
 // (PR-26, D-1005). It reads the state each time the menu opens. A browser
 // with no push shows no item, and an iPhone shows it in the app on the
 // Home Screen alone.
+// AdminMenuItem opens the admin screen. It shows for a token with the
+// admin claim alone (D-1076), and the API checks the claim again.
+function AdminMenuItem() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [admin, setAdmin] = useState(false);
+  useEffect(() => {
+    let live = true;
+    void isAdmin().then((yes) => live && setAdmin(yes));
+    return () => {
+      live = false;
+    };
+  }, [user]);
+  if (!admin) return null;
+  return (
+    <DropdownMenuItem onSelect={() => void navigate("/admin")}>
+      <ShieldIcon aria-hidden="true" />
+      Access requests
+    </DropdownMenuItem>
+  );
+}
+
 function PushMenuItem() {
   const [state, setState] = useState<PushState | "reading">("reading");
   useEffect(() => {

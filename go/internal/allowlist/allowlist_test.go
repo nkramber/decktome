@@ -55,3 +55,23 @@ func TestNormalize(t *testing.T) {
 		t.Errorf("Normalize = %q", got)
 	}
 }
+
+// TestForgetReadsTheListAgain is D-1076: an approval drops the cache, so
+// the next check reads the new invite.
+func TestForgetReadsTheListAgain(t *testing.T) {
+	emails := []string{"ann@example.com"}
+	reads := 0
+	l := New(func(context.Context) ([]string, error) {
+		reads++
+		return emails, nil
+	})
+	ctx := context.Background()
+	if ok, _ := l.Allowed(ctx, "bob@example.com"); ok {
+		t.Fatal("bob is not invited yet")
+	}
+	emails = append(emails, "bob@example.com")
+	l.Forget()
+	if ok, _ := l.Allowed(ctx, "bob@example.com"); !ok || reads != 2 {
+		t.Errorf("after Forget: allowed %v, reads %d, want true and 2", ok, reads)
+	}
+}

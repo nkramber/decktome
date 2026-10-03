@@ -95,7 +95,10 @@ describe("the edges of the installed app", () => {
     try {
       await renderAt("/decks");
       await screen.findByRole("navigation", { name: "Main" });
-      expect(document.documentElement.style.getPropertyValue("--header-height")).toBe("97px");
+      // The header and the feedback row under it, 97 pixels each in
+      // this test, so a toast never covers the row (D-1078).
+      expect(screen.getByRole("button", { name: "Leave feedback" })).toBeInTheDocument();
+      expect(document.documentElement.style.getPropertyValue("--header-height")).toBe("194px");
     } finally {
       height.mockRestore();
     }

@@ -1,5 +1,7 @@
 import { type RefObject, useEffect, useRef } from "react";
 
+import { backToTopClearPx, onPhone } from "../shell/back-to-top";
+
 // footSlackPx is how far above the foot of the chat a reader can stand
 // and still count as at the bottom. The page pads the chat, so the foot
 // never meets the edge of the frame exactly.
@@ -46,6 +48,13 @@ function toFoot(b: HTMLElement | null, f: HTMLElement | null, given: WeakMap<Ele
 // it puts that question at the top (D-1071).
 export const topSlackPx = 8;
 
+// topSlack is the space above the first question. A phone also leaves the
+// band of the "Back to top" button, so the button sits above the question
+// text (D-1072).
+export function topSlack(): number {
+  return onPhone() ? topSlackPx + backToTopClearPx : topSlackPx;
+}
+
 // toTop moves the thread box and the page so that the top of el sits at
 // the top of each, with a little space above it. A docked thread box that
 // does not hold el goes to its end, so the agent's last words sit above
@@ -53,7 +62,7 @@ export const topSlackPx = 8;
 function toTop(b: HTMLElement | null, el: HTMLElement, given: WeakMap<Element, number>) {
   if (el.getClientRects().length === 0) return;
   if (scrollsItself(b) && b.contains(el)) {
-    b.scrollTop += el.getBoundingClientRect().top - b.getBoundingClientRect().top - topSlackPx;
+    b.scrollTop += el.getBoundingClientRect().top - b.getBoundingClientRect().top - topSlack();
     given.set(b, b.scrollTop);
     return;
   }
@@ -63,7 +72,7 @@ function toTop(b: HTMLElement | null, el: HTMLElement, given: WeakMap<Element, n
   }
   const page = pageOf(el);
   if (!page) return;
-  page.scrollTop += el.getBoundingClientRect().top - page.getBoundingClientRect().top - topSlackPx;
+  page.scrollTop += el.getBoundingClientRect().top - page.getBoundingClientRect().top - topSlack();
   given.set(page, page.scrollTop);
 }
 

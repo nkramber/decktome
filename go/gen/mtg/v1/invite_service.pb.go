@@ -112,6 +112,106 @@ func (x *CheckInviteResponse) GetAllowed() bool {
 	return false
 }
 
+type RequestAccessRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// email is the address the person wants to use.
+	Email string `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	// note is optional, at most 500 characters (D-1074).
+	Note          string `protobuf:"bytes,2,opt,name=note,proto3" json:"note,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RequestAccessRequest) Reset() {
+	*x = RequestAccessRequest{}
+	mi := &file_mtg_v1_invite_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestAccessRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestAccessRequest) ProtoMessage() {}
+
+func (x *RequestAccessRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_invite_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestAccessRequest.ProtoReflect.Descriptor instead.
+func (*RequestAccessRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_invite_service_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *RequestAccessRequest) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *RequestAccessRequest) GetNote() string {
+	if x != nil {
+		return x.Note
+	}
+	return ""
+}
+
+type RequestAccessResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// already_invited is true when the invite list holds the email. The
+	// server then stores no request, and the person can create an account.
+	AlreadyInvited bool `protobuf:"varint,1,opt,name=already_invited,json=alreadyInvited,proto3" json:"already_invited,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *RequestAccessResponse) Reset() {
+	*x = RequestAccessResponse{}
+	mi := &file_mtg_v1_invite_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RequestAccessResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RequestAccessResponse) ProtoMessage() {}
+
+func (x *RequestAccessResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_invite_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RequestAccessResponse.ProtoReflect.Descriptor instead.
+func (*RequestAccessResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_invite_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RequestAccessResponse) GetAlreadyInvited() bool {
+	if x != nil {
+		return x.AlreadyInvited
+	}
+	return false
+}
+
 var File_mtg_v1_invite_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_invite_service_proto_rawDesc = "" +
@@ -120,9 +220,15 @@ const file_mtg_v1_invite_service_proto_rawDesc = "" +
 	"\x12CheckInviteRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\"/\n" +
 	"\x13CheckInviteResponse\x12\x18\n" +
-	"\aallowed\x18\x01 \x01(\bR\aallowed2Y\n" +
+	"\aallowed\x18\x01 \x01(\bR\aallowed\"@\n" +
+	"\x14RequestAccessRequest\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
+	"\x04note\x18\x02 \x01(\tR\x04note\"@\n" +
+	"\x15RequestAccessResponse\x12'\n" +
+	"\x0falready_invited\x18\x01 \x01(\bR\x0ealreadyInvited2\xa9\x01\n" +
 	"\rInviteService\x12H\n" +
-	"\vCheckInvite\x12\x1a.mtg.v1.CheckInviteRequest\x1a\x1b.mtg.v1.CheckInviteResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
+	"\vCheckInvite\x12\x1a.mtg.v1.CheckInviteRequest\x1a\x1b.mtg.v1.CheckInviteResponse\"\x00\x12N\n" +
+	"\rRequestAccess\x12\x1c.mtg.v1.RequestAccessRequest\x1a\x1d.mtg.v1.RequestAccessResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
 var (
 	file_mtg_v1_invite_service_proto_rawDescOnce sync.Once
@@ -136,16 +242,20 @@ func file_mtg_v1_invite_service_proto_rawDescGZIP() []byte {
 	return file_mtg_v1_invite_service_proto_rawDescData
 }
 
-var file_mtg_v1_invite_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_mtg_v1_invite_service_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_mtg_v1_invite_service_proto_goTypes = []any{
-	(*CheckInviteRequest)(nil),  // 0: mtg.v1.CheckInviteRequest
-	(*CheckInviteResponse)(nil), // 1: mtg.v1.CheckInviteResponse
+	(*CheckInviteRequest)(nil),    // 0: mtg.v1.CheckInviteRequest
+	(*CheckInviteResponse)(nil),   // 1: mtg.v1.CheckInviteResponse
+	(*RequestAccessRequest)(nil),  // 2: mtg.v1.RequestAccessRequest
+	(*RequestAccessResponse)(nil), // 3: mtg.v1.RequestAccessResponse
 }
 var file_mtg_v1_invite_service_proto_depIdxs = []int32{
 	0, // 0: mtg.v1.InviteService.CheckInvite:input_type -> mtg.v1.CheckInviteRequest
-	1, // 1: mtg.v1.InviteService.CheckInvite:output_type -> mtg.v1.CheckInviteResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: mtg.v1.InviteService.RequestAccess:input_type -> mtg.v1.RequestAccessRequest
+	1, // 2: mtg.v1.InviteService.CheckInvite:output_type -> mtg.v1.CheckInviteResponse
+	3, // 3: mtg.v1.InviteService.RequestAccess:output_type -> mtg.v1.RequestAccessResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -162,7 +272,7 @@ func file_mtg_v1_invite_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_invite_service_proto_rawDesc), len(file_mtg_v1_invite_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

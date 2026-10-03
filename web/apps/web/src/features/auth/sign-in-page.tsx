@@ -9,6 +9,7 @@ import { isInviteRefusal, signInErrorMessage } from "../../lib/errors";
 import { inviteClient } from "../../lib/api";
 import { createAccount, resetPassword, signIn } from "../../lib/firebase";
 import { useAuth } from "./auth-context";
+import { alreadyInvited, RequestAccessForm } from "./request-access";
 
 // notAuthorized is what a person off the invite list reads, and the form
 // stays where it is (D-592).
@@ -38,7 +39,7 @@ export function SignInPage() {
   const { user, ready, error: authError } = useAuth();
   const location = useLocation();
   const from = (location.state as { from?: Location } | null)?.from?.pathname ?? "/session/new";
-  const [mode, setMode] = useState<"sign-in" | "sign-up">("sign-in");
+  const [mode, setMode] = useState<"sign-in" | "sign-up" | "request">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -96,16 +97,42 @@ export function SignInPage() {
   }
 
   const creating = mode === "sign-up";
+  const requesting = mode === "request";
+  // A person off the invite list can ask for access at once, with the
+  // email of the form (D-1074).
+  const refused = error === notAuthorized;
+
+  function show(next: "sign-in" | "sign-up" | "request") {
+    setMode(next);
+    setError("");
+    setInfo("");
+  }
 
   return (
     <div className="mx-auto flex min-h-[80vh] w-full max-w-sm flex-col justify-center p-4 md:p-6">
       <Card className="shadow-raised">
         <CardHeader>
           <CardTitle asChild className="text-2xl tracking-tight">
-            <h1>{creating ? "Create account" : "Sign in"}</h1>
+            <h1>{requesting ? "Request beta access" : creating ? "Create account" : "Sign in"}</h1>
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {requesting ? (
+            <>
+              <RequestAccessForm
+                email={email}
+                onEmail={setEmail}
+                onInvited={() => {
+                  show("sign-up");
+                  setInfo(alreadyInvited);
+                }}
+              />
+              <Button variant="link" className="mt-2 px-0" onClick={() => show("sign-in")}>
+                I have an account. Sign in.
+              </Button>
+            </>
+          ) : (
+            <>
           <form onSubmit={onSubmit} className="flex flex-col gap-3">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
@@ -130,6 +157,11 @@ export function SignInPage() {
             <div role="alert" className="min-h-6 text-sm text-danger">
               {error || authError}
             </div>
+            {refused && (
+              <Button type="button" variant="outline" onClick={() => show("request")}>
+                Request beta access
+              </Button>
+            )}
             <p role="status" className="text-sm text-muted-foreground">
               {info}
             </p>
@@ -139,17 +171,16 @@ export function SignInPage() {
               Forgot your password?
             </Button>
           )}
-          <Button
-            variant="link"
-            className="mt-2 px-0"
-            onClick={() => {
-              setMode(creating ? "sign-in" : "sign-up");
-              setError("");
-              setInfo("");
-            }}
-          >
+          <Button variant="link" className="mt-2 px-0" onClick={() => show(creating ? "sign-in" : "sign-up")}>
             {creating ? "I have an account. Sign in." : "New here? Create account"}
           </Button>
+          {!refused && (
+            <Button variant="link" className="px-0" onClick={() => show("request")}>
+              No invite yet? Request beta access
+            </Button>
+          )}
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -23,6 +23,8 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/decktome/go/internal/access"
+	"github.com/nkramber/decktome/go/internal/adminsvc"
 	"github.com/nkramber/decktome/go/internal/agentsvc"
 	"github.com/nkramber/decktome/go/internal/allowlist"
 	"github.com/nkramber/decktome/go/internal/auth"
@@ -41,6 +43,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/health"
 	"github.com/nkramber/decktome/go/internal/invitesvc"
 	"github.com/nkramber/decktome/go/internal/llm"
+	"github.com/nkramber/decktome/go/internal/mail"
 	"github.com/nkramber/decktome/go/internal/meta"
 	"github.com/nkramber/decktome/go/internal/notify"
 	"github.com/nkramber/decktome/go/internal/precons"
@@ -197,8 +200,12 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// Each verdict pings the owner through Pushover (D-892, D-893). The
 	// token and the key come from Secret Manager, and a run without them
 	// sends nothing.
+	// One background sender serves the verdicts and the requests for
+	// access, so Pushover sees one connection at a time (D-892, D-1075).
+	var ownerNotices *notify.Background
 	if pushover := notify.FromEnv(os.Getenv); pushover != nil {
-		feedbackOpts = append(feedbackOpts, feedbacksvc.WithNotifier(notify.NewBackground(pushover, logger)))
+		ownerNotices = notify.NewBackground(pushover, logger)
+		feedbackOpts = append(feedbackOpts, feedbacksvc.WithNotifier(ownerNotices))
 		logger.Info("feedback notices on")
 	}
 	feedbackServer := feedbacksvc.New(feedback.NewRepo(fs), sessionRepo, deckRepo, userFn, feedbackOpts...)
@@ -242,7 +249,33 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	healthServer := health.New(version, cardServer)
 	// The create-account form asks the list before it makes an account
 	// (D-592). A nil list allows every email, which is local mode.
-	inviteServer := invitesvc.New(inviteListOrNil(inviteList))
+	// The same service stores a request for beta access, and the owner
+	// gets a notice of each new one (D-1075).
+	accessRepo := access.NewRepo(fs)
+	inviteOpts := []invitesvc.Option{invitesvc.WithRequests(accessRepo)}
+	if ownerNotices != nil {
+		inviteOpts = append(inviteOpts, invitesvc.WithNotifier(ownerNotices))
+	}
+	inviteServer := invitesvc.New(inviteListOrNil(inviteList), inviteOpts...)
+	// The admin screen approves a request: the email goes on the invite
+	// list, and Resend sends the approval email (D-1076, D-1077). This
+	// instance reads the list again at once, and the others within a
+	// minute (D-420).
+	invite := func(ctx context.Context, email string) error {
+		if err := allowlist.Add(ctx, fs, email); err != nil {
+			return err
+		}
+		if inviteList != nil {
+			inviteList.Forget()
+		}
+		return nil
+	}
+	var adminOpts []adminsvc.Option
+	if resend := mail.FromEnv(os.Getenv); resend != nil {
+		adminOpts = append(adminOpts, adminsvc.WithMailer(resend))
+		logger.Info("the approval email is on")
+	}
+	adminServer := adminsvc.New(accessRepo, invite, logger, adminOpts...)
 
 	// The health RPC answers a probe, which carries no token. Every
 	// service answers an Internal error with one fixed sentence, and the
@@ -271,13 +304,16 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
 	mux.Handle(mtgv1connect.NewFeedbackServiceHandler(feedbackServer, opts...))
 	mux.Handle(mtgv1connect.NewPushServiceHandler(pushServer, opts...))
+	// Each admin call needs a sign-in and the admin claim (D-1076).
+	mux.Handle(mtgv1connect.NewAdminServiceHandler(adminServer, opts...))
 	// CheckInvite needs no sign-in: it runs before an account exists
 	// (D-592). It reads a person's input, so the same limiter that
 	// bounds the shared deck reads bounds it, per client address (D-315).
+	// RequestAccess shares the bucket of each address (D-1075).
 	inviteLimiter := ratelimit.New(inviteChecksPerMinute, time.Minute)
 	mux.Handle(mtgv1connect.NewInviteServiceHandler(inviteServer,
 		append([]connect.HandlerOption{connect.WithInterceptors(
-			inviteLimiter.Interceptor(mtgv1connect.InviteServiceCheckInviteProcedure),
+			inviteLimiter.Interceptor(mtgv1connect.InviteServiceCheckInviteProcedure, mtgv1connect.InviteServiceRequestAccessProcedure),
 		)}, probeOpts...)...))
 	// Identity Platform calls this route as beforeCreate, and it refuses
 	// an account off the invite list before the account exists (D-990).

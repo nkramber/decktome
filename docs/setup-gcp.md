@@ -19,14 +19,14 @@ The roadmap (PR-22, D-310, D-314) fixes the shape. One table names each part.
 | The meta job | Cloud Run job, `docker/worker.Dockerfile`, `-meta` | Reads the deck list sources and fits the quality model daily at 06:00 UTC (D-492) |
 | The database | Firestore, Native mode, Standard edition | Sessions, decks, collections, usage, and the allowlist document `config/allowlist` (D-420) |
 | The bucket | Cloud Storage, `PROJECT_ID-cards` | The card snapshots, three versions kept (`cards.KeepVersions`), and the meta store |
-| The secrets | Secret Manager | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `TOPDECK_API_KEY` (D-492), and the Pushover pair `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` (D-893) |
+| The secrets | Secret Manager | `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `TOPDECK_API_KEY` (D-492), the Pushover pair `PUSHOVER_APP_TOKEN` and `PUSHOVER_USER_KEY` (D-893), and the Resend key `RESEND_API_KEY` (D-1077) |
 | Sign-in | Firebase Authentication with Identity Platform, email and password | The blocking function of section 15.1 refuses an account off the allowlist (D-990), and the API refuses every email that is not on the allowlist (D-314) |
 | The web app | Firebase Hosting on your domain | The Vite build of `web/apps/web`, with a free managed certificate |
 | The images | Artifact Registry | The two container images |
 | The schedules | Cloud Scheduler, two jobs | Runs the two Cloud Run jobs |
 | The alarm | Cloud Billing budget | Sends an email at a spend threshold |
 
-The repo holds the two Dockerfiles and the Firestore rules and indexes. The Go code reads `PROJECT_ID`, `CARDS_BUCKET`, `ALLOWED_ORIGINS`, the three keys, and the optional Pushover pair from the environment. `gcpenv.OnCloudRun` reads `K_SERVICE`, which Cloud Run sets, and the API then refuses every request with no token (`cmd/api/main.go`).
+The repo holds the two Dockerfiles and the Firestore rules and indexes. The Go code reads `PROJECT_ID`, `CARDS_BUCKET`, `ALLOWED_ORIGINS`, the three keys, the optional Pushover pair, and the optional `RESEND_API_KEY` and `MAIL_FROM` from the environment. `gcpenv.OnCloudRun` reads `K_SERVICE`, which Cloud Run sets, and the API then refuses every request with no token (`cmd/api/main.go`).
 
 PR-22 added four things on 2026-09-06, and this page reads them as they stand:
 
@@ -178,6 +178,28 @@ printf '%s' "$PUSHOVER_USER_KEY" | gcloud secrets versions add pushover-user-key
 
 The project holds six active versions with these two and the Cloud Build connection, read 2026-09-24. A seventh costs $0.06 a month. Without the two secrets the API sends no notice, and it runs as before. Google recommends a pinned version over `latest` for a secret in an environment variable, because Cloud Run reads it at instance start.
 
+### 8.1 The approval email
+
+An approval on the admin screen sends an email through Resend (PR-115, D-1077). The sender is `beta@mail.decktome.com`, and `MAIL_FROM` can name another. Without the key, an approval adds the email to the invite list and sends no email. Do these steps one time:
+
+1. Make an account at `resend.com`.
+2. On the Domains page, add the domain `mail.decktome.com`.
+3. Resend shows an MX record and a TXT record named `send`, and a TXT record named `resend._domainkey`.
+4. In the DNS of `decktome.com` at GoDaddy, add each record with its type, name, and value from Resend.
+5. Enter each name without `.decktome.com`, for example `send.mail`. Give the MX record the priority `10`.
+6. On Resend, push Verify DNS Records, and wait for the state Verified.
+7. Make an API key with the permission "Sending access", and limit it to `mail.decktome.com`.
+8. Put the key in `RESEND_API_KEY` of the shell, never in a file (D-639).
+
+Resend shows the key one time. Then run these two commands:
+
+```
+gcloud secrets create resend-api-key --replication-policy=automatic
+printf '%s' "$RESEND_API_KEY" | gcloud secrets versions add resend-api-key --data-file=-
+```
+
+Section 9 gives the API access to the secret, and section 4 of `docs/deploy-and-rollback.md` mounts it.
+
 ## 9. Create the service accounts
 
 Three service accounts keep the permissions apart.
@@ -202,6 +224,7 @@ gcloud secrets add-iam-policy-binding pushover-app-token --member=serviceAccount
 gcloud secrets add-iam-policy-binding pushover-user-key --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
 gcloud secrets add-iam-policy-binding pushover-app-token --member=serviceAccount:SA_WORKER --role=roles/secretmanager.secretAccessor
 gcloud secrets add-iam-policy-binding pushover-user-key --member=serviceAccount:SA_WORKER --role=roles/secretmanager.secretAccessor
+gcloud secrets add-iam-policy-binding resend-api-key --member=serviceAccount:SA_API --role=roles/secretmanager.secretAccessor
 ```
 
 The worker reads the Pushover pair too. A failed job and a card snapshot older than 30 hours send the owner a notice (REV-011, D-911).
@@ -397,6 +420,17 @@ curl -s -X POST -H "Content-Type: application/json" \
 
 CAUTION: when step 5 fails, remove the trigger at once with section 8.5 of `docs/deploy-and-rollback.md`. Each sign-up fails while a broken trigger stays.
 
+### 15.2 Open the admin screen
+
+The admin screen lists each request for beta access (D-1076). It opens to an account with the custom claim `admin: true`.
+
+1. Sign in to the app one time with your own account.
+2. Run `make grant-admin EMAIL=you@example.com PROJECT_ID=PROJECT_ID` with your own email.
+3. Sign out of the app, and sign in again. The claim works after the next sign-in.
+4. Open the account menu, and push Access requests. The page `/admin` opens.
+
+The command uses the credentials of `gcloud auth application-default login`, and it costs nothing. `REMOVE=1` takes the claim off.
+
 ## 16. Cost estimate for five users and three decks a week each
 
 ### 16.1 The load
@@ -487,6 +521,9 @@ Every fact of this page carries a date. The repo facts read the code and the doc
 | Cloud Run request timeout, default 300 and maximum 3,600 seconds | https://docs.cloud.google.com/run/docs/configuring/request-timeout |
 | Cloud Run secrets as environment variables and the pinned version advice | https://docs.cloud.google.com/run/docs/configuring/services/secrets |
 | The Pushover message endpoint, the limits of 1024 and 250 characters, and 10,000 free messages a month, read 2026-09-24 | https://pushover.net/api |
+| Resend: the advice of a subdomain for the sender, read 2026-10-03 | https://resend.com/docs/dashboard/domains/introduction |
+| Resend at GoDaddy: the MX record and the TXT record `send`, the TXT record `resend._domainkey`, the name without the domain, and the priority `10`, read 2026-10-03 | https://resend.com/docs/knowledge-base/godaddy |
+| Resend: the permission `sending_access` with a limit to one domain, and a key that shows one time, read 2026-10-03 | https://resend.com/docs/api-reference/api-keys/create-api-key and https://resend.com/docs/dashboard/api-keys/introduction |
 | Cloud Run jobs on a schedule, the invoker role, and the run URI | https://docs.cloud.google.com/run/docs/execute/jobs-on-schedule |
 | The `gcloud run jobs create` flags | https://docs.cloud.google.com/sdk/gcloud/reference/run/jobs/create |
 | The `gcloud firestore databases create` flags | https://docs.cloud.google.com/sdk/gcloud/reference/firestore/databases/create |

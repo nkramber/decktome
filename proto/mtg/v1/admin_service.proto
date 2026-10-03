@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package mtg.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1";
+
+// AdminService is the admin screen of the owner (D-1076). Each call needs
+// a sign-in, and the token must carry the custom claim admin: true.
+// Every other caller gets PermissionDenied.
+service AdminService {
+  rpc ListAccessRequests(ListAccessRequestsRequest) returns (ListAccessRequestsResponse) {}
+  // ApproveAccessRequest puts the email on the invite list (D-420),
+  // marks the request approved, and sends the approval email (D-1077).
+  rpc ApproveAccessRequest(ApproveAccessRequestRequest) returns (ApproveAccessRequestResponse) {}
+  // DismissAccessRequest marks the request dismissed. The email stays
+  // off the invite list.
+  rpc DismissAccessRequest(DismissAccessRequestRequest) returns (DismissAccessRequestResponse) {}
+}
+
+enum AccessStatus {
+  ACCESS_STATUS_UNSPECIFIED = 0;
+  ACCESS_STATUS_PENDING = 1;
+  ACCESS_STATUS_APPROVED = 2;
+  ACCESS_STATUS_DISMISSED = 3;
+}
+
+// AccessRequest is one stored request for beta access.
+message AccessRequest {
+  string email = 1;
+  string note = 2;
+  AccessStatus status = 3;
+  // count is the number of requests of this email.
+  int64 count = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message ListAccessRequestsRequest {
+  // status filters the list. UNSPECIFIED reads the pending requests.
+  AccessStatus status = 1;
+}
+
+message ListAccessRequestsResponse {
+  // requests holds the newest request first.
+  repeated AccessRequest requests = 1;
+}
+
+message ApproveAccessRequestRequest {
+  string email = 1;
+}
+
+message ApproveAccessRequestResponse {
+  // email_sent is false when the server has no mail key or the send
+  // failed. The approval stays, and the owner can write to the person.
+  bool email_sent = 1;
+}
+
+message DismissAccessRequestRequest {
+  string email = 1;
+}
+
+message DismissAccessRequestResponse {}
