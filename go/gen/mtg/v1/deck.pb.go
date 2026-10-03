@@ -264,8 +264,7 @@ type Deck struct {
 	// and the three strongest reasons in words (PR-14B, D-413 to D-417).
 	// Unset on a deck built before PR-14B, and when no model is loaded.
 	Quality *DeckQuality `protobuf:"bytes,24,opt,name=quality,proto3" json:"quality,omitempty"`
-	// shared says a share link exists for this deck (D-315). The token
-	// itself is never stored, so a new link replaces the old one.
+	// shared says a share link exists for this deck (D-315).
 	Shared bool `protobuf:"varint,25,opt,name=shared,proto3" json:"shared,omitempty"`
 	// build is what the build of this deck cost and how it went (D-602).
 	// The owner reads almost every deck through a repair turn, and no
@@ -293,7 +292,12 @@ type Deck struct {
 	RerunCase RerunCase `protobuf:"varint,30,opt,name=rerun_case,json=rerunCase,proto3,enum=mtg.v1.RerunCase" json:"rerun_case,omitempty"`
 	// stale_reason says why the rerun is a patch or a rebuild, in the words
 	// the banner shows (D-1008).
-	StaleReason   string `protobuf:"bytes,31,opt,name=stale_reason,json=staleReason,proto3" json:"stale_reason,omitempty"`
+	StaleReason string `protobuf:"bytes,31,opt,name=stale_reason,json=staleReason,proto3" json:"stale_reason,omitempty"`
+	// share_token is the token of the link, so the share dialog shows the
+	// link again (D-1061). Empty with no link, and empty on a deck shared
+	// before D-1061, which needs one new link. The public copy of a deck
+	// and the snapshot of a verdict never carry it.
+	ShareToken    string `protobuf:"bytes,32,opt,name=share_token,json=shareToken,proto3" json:"share_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -534,6 +538,13 @@ func (x *Deck) GetRerunCase() RerunCase {
 func (x *Deck) GetStaleReason() string {
 	if x != nil {
 		return x.StaleReason
+	}
+	return ""
+}
+
+func (x *Deck) GetShareToken() string {
+	if x != nil {
+		return x.ShareToken
 	}
 	return ""
 }
@@ -1121,9 +1132,10 @@ func (x *ComboHit) GetMassLandDenial() bool {
 // DeckCard is one card choice with its reason.
 // SharedDeck is the public read of a deck through its share link
 // (D-315, guardrail 13). It holds what a reader of the link needs and no
-// user field: no session, no collection, no owned mark, no owned
-// printing, and no price of the owner's copies. A test reads this
-// message and SharedCard from the proto text and proves it.
+// user field: no session, no collection, no owned mark, no owned count,
+// and no price of the owner's copies. A test reads this message and
+// SharedCard from the proto text and proves it. The art is the one
+// exception: each card shows the printing of the deck view (D-1062).
 type SharedDeck struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	Name               string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -1248,13 +1260,23 @@ func (x *SharedDeck) GetCommanders() []*SharedCard {
 // so the page needs no second call (D-315). The card carries its
 // default paper printing with the artist (D-6) and the public price.
 type SharedCard struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OracleId      string                 `protobuf:"bytes,1,opt,name=oracle_id,json=oracleId,proto3" json:"oracle_id,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	Count         int32                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
-	Role          CardRole               `protobuf:"varint,4,opt,name=role,proto3,enum=mtg.v1.CardRole" json:"role,omitempty"`
-	Reason        string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
-	Card          *Card                  `protobuf:"bytes,6,opt,name=card,proto3" json:"card,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	OracleId string                 `protobuf:"bytes,1,opt,name=oracle_id,json=oracleId,proto3" json:"oracle_id,omitempty"`
+	Name     string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Count    int32                  `protobuf:"varint,3,opt,name=count,proto3" json:"count,omitempty"`
+	Role     CardRole               `protobuf:"varint,4,opt,name=role,proto3,enum=mtg.v1.CardRole" json:"role,omitempty"`
+	Reason   string                 `protobuf:"bytes,5,opt,name=reason,proto3" json:"reason,omitempty"`
+	Card     *Card                  `protobuf:"bytes,6,opt,name=card,proto3" json:"card,omitempty"`
+	// price_usd is the price of the cheapest playable paper printing
+	// (D-1057), the price a reader of the link pays. Zero means no price
+	// (D-1060). The page always shows it, because a link can not prove
+	// who owns a card (D-1063).
+	PriceUsd float64 `protobuf:"fixed64,7,opt,name=price_usd,json=priceUsd,proto3" json:"price_usd,omitempty"`
+	// printing is the printing whose art the deck view shows: the owned
+	// printing when the owner holds one (D-299, D-1062). It carries the
+	// image and the artist, and no price. Unset when the deck view shows
+	// the default printing.
+	Printing      *Printing `protobuf:"bytes,8,opt,name=printing,proto3" json:"printing,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1327,6 +1349,20 @@ func (x *SharedCard) GetReason() string {
 func (x *SharedCard) GetCard() *Card {
 	if x != nil {
 		return x.Card
+	}
+	return nil
+}
+
+func (x *SharedCard) GetPriceUsd() float64 {
+	if x != nil {
+		return x.PriceUsd
+	}
+	return 0
+}
+
+func (x *SharedCard) GetPrinting() *Printing {
+	if x != nil {
+		return x.Printing
 	}
 	return nil
 }
@@ -1726,7 +1762,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa9\t\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xca\t\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1766,7 +1802,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x11bracket_estimated\x18\x1d \x01(\bR\x10bracketEstimated\x120\n" +
 	"\n" +
 	"rerun_case\x18\x1e \x01(\x0e2\x11.mtg.v1.RerunCaseR\trerunCase\x12!\n" +
-	"\fstale_reason\x18\x1f \x01(\tR\vstaleReasonJ\x04\b\n" +
+	"\fstale_reason\x18\x1f \x01(\tR\vstaleReason\x12\x1f\n" +
+	"\vshare_token\x18  \x01(\tR\n" +
+	"shareTokenJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +
@@ -1829,7 +1867,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
 	"commanders\x18\n" +
 	" \x03(\v2\x12.mtg.v1.SharedCardR\n" +
-	"commanders\"\xb3\x01\n" +
+	"commanders\"\xfe\x01\n" +
 	"\n" +
 	"SharedCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
@@ -1837,7 +1875,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x05count\x18\x03 \x01(\x05R\x05count\x12$\n" +
 	"\x04role\x18\x04 \x01(\x0e2\x10.mtg.v1.CardRoleR\x04role\x12\x16\n" +
 	"\x06reason\x18\x05 \x01(\tR\x06reason\x12 \n" +
-	"\x04card\x18\x06 \x01(\v2\f.mtg.v1.CardR\x04card\"\xd2\x02\n" +
+	"\x04card\x18\x06 \x01(\v2\f.mtg.v1.CardR\x04card\x12\x1b\n" +
+	"\tprice_usd\x18\a \x01(\x01R\bpriceUsd\x12,\n" +
+	"\bprinting\x18\b \x01(\v2\x10.mtg.v1.PrintingR\bprinting\"\xd2\x02\n" +
 	"\bDeckCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
@@ -1960,18 +2000,19 @@ var file_mtg_v1_deck_proto_depIdxs = []int32{
 	12, // 21: mtg.v1.SharedDeck.commanders:type_name -> mtg.v1.SharedCard
 	1,  // 22: mtg.v1.SharedCard.role:type_name -> mtg.v1.CardRole
 	20, // 23: mtg.v1.SharedCard.card:type_name -> mtg.v1.Card
-	1,  // 24: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
-	21, // 25: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
-	15, // 26: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
-	22, // 27: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
-	23, // 28: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
-	2,  // 29: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
-	24, // 30: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
-	31, // [31:31] is the sub-list for method output_type
-	31, // [31:31] is the sub-list for method input_type
-	31, // [31:31] is the sub-list for extension type_name
-	31, // [31:31] is the sub-list for extension extendee
-	0,  // [0:31] is the sub-list for field type_name
+	21, // 24: mtg.v1.SharedCard.printing:type_name -> mtg.v1.Printing
+	1,  // 25: mtg.v1.DeckCard.role:type_name -> mtg.v1.CardRole
+	21, // 26: mtg.v1.DeckCard.owned_printing:type_name -> mtg.v1.Printing
+	15, // 27: mtg.v1.ValidationResult.findings:type_name -> mtg.v1.Finding
+	22, // 28: mtg.v1.ValidationResult.pool_rule:type_name -> mtg.v1.PoolRule
+	23, // 29: mtg.v1.ValidationResult.format:type_name -> mtg.v1.FormatId
+	2,  // 30: mtg.v1.Finding.severity:type_name -> mtg.v1.Severity
+	24, // 31: mtg.v1.BuildMetrics.usage:type_name -> mtg.v1.Usage
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_mtg_v1_deck_proto_init() }

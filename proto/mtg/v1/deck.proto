@@ -76,8 +76,7 @@ message Deck {
   // and the three strongest reasons in words (PR-14B, D-413 to D-417).
   // Unset on a deck built before PR-14B, and when no model is loaded.
   DeckQuality quality = 24;
-  // shared says a share link exists for this deck (D-315). The token
-  // itself is never stored, so a new link replaces the old one.
+  // shared says a share link exists for this deck (D-315).
   bool shared = 25;
   // build is what the build of this deck cost and how it went (D-602).
   // The owner reads almost every deck through a repair turn, and no
@@ -106,6 +105,11 @@ message Deck {
   // stale_reason says why the rerun is a patch or a rebuild, in the words
   // the banner shows (D-1008).
   string stale_reason = 31;
+  // share_token is the token of the link, so the share dialog shows the
+  // link again (D-1061). Empty with no link, and empty on a deck shared
+  // before D-1061, which needs one new link. The public copy of a deck
+  // and the snapshot of a verdict never carry it.
+  string share_token = 32;
 }
 
 // RerunCase is the rerun of a stale deck (D-1008). A patch replaces the
@@ -217,9 +221,10 @@ message ComboHit {
 // DeckCard is one card choice with its reason.
 // SharedDeck is the public read of a deck through its share link
 // (D-315, guardrail 13). It holds what a reader of the link needs and no
-// user field: no session, no collection, no owned mark, no owned
-// printing, and no price of the owner's copies. A test reads this
-// message and SharedCard from the proto text and proves it.
+// user field: no session, no collection, no owned mark, no owned count,
+// and no price of the owner's copies. A test reads this message and
+// SharedCard from the proto text and proves it. The art is the one
+// exception: each card shows the printing of the deck view (D-1062).
 message SharedDeck {
   string name = 1;
   Format format = 2;
@@ -247,6 +252,16 @@ message SharedCard {
   CardRole role = 4;
   string reason = 5;
   Card card = 6;
+  // price_usd is the price of the cheapest playable paper printing
+  // (D-1057), the price a reader of the link pays. Zero means no price
+  // (D-1060). The page always shows it, because a link can not prove
+  // who owns a card (D-1063).
+  double price_usd = 7;
+  // printing is the printing whose art the deck view shows: the owned
+  // printing when the owner holds one (D-299, D-1062). It carries the
+  // image and the artist, and no price. Unset when the deck view shows
+  // the default printing.
+  Printing printing = 8;
 }
 
 message DeckCard {

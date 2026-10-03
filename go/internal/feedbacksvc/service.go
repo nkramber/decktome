@@ -12,6 +12,8 @@ import (
 
 	"connectrpc.com/connect"
 
+	"google.golang.org/protobuf/proto"
+
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
 	"github.com/nkramber/decktome/go/internal/auth"
@@ -168,6 +170,12 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	item.QuestionText, item.AnswerText = questionContext(sess, item.QuestionID)
 	// The object the verdict names, as it stood at this moment (D-635).
 	// A reader deletes a session or a deck, and the verdict outlives it.
+	// The snapshot holds no share token, so no copy of a verdict opens
+	// the link (D-1061).
+	if deck.GetShareToken() != "" {
+		deck = proto.CloneOf(deck)
+		deck.ShareToken = ""
+	}
 	item.Session, item.Deck = sess, deck
 	item.Prompts = Prompts()
 	item.CreatedAt = s.now()

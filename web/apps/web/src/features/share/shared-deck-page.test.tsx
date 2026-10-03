@@ -43,10 +43,11 @@ const shared = {
       card: { oracleId: "o-cmd", name: "Ezuri, Renegade Leader", typeLine: "Legendary Creature — Elf Warrior", cardTypes: ["Creature"], colorIdentity: [], colors: [], faces: [], defaultPrinting: { artist: "Eric Deschamps", imageUris: img("ezuri") } },
     },
     {
-      oracleId: "o-elf", name: "Llanowar Elves", count: 1, role: CardRole.RAMP, reason: "Turn-one mana.",
+      oracleId: "o-elf", name: "Llanowar Elves", count: 1, role: CardRole.RAMP, reason: "Turn-one mana.", priceUsd: 0.25,
+      printing: { artist: "LOTR Artist", imageUris: img("elf-ltr") },
       card: { oracleId: "o-elf", name: "Llanowar Elves", typeLine: "Creature — Elf Druid", cardTypes: ["Creature"], colorIdentity: [], colors: [], faces: [], defaultPrinting: { artist: "Anson Maddocks", imageUris: img("elf") } },
     },
-    { oracleId: "o-forest", name: "Forest", count: 1, role: CardRole.LAND, reason: "" },
+    { oracleId: "o-forest", name: "Forest", count: 1, role: CardRole.LAND, reason: "", priceUsd: 0 },
   ],
   sideboard: [],
   commanders: [],
@@ -73,13 +74,62 @@ describe("SharedDeckPage", () => {
     const ramp = screen.getByRole("region", { name: "Ramp (1)" });
     expect(within(ramp).getByText("Turn-one mana.")).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Lands (1)" })).toHaveTextContent("No card data for this entry.");
-    // No owned mark, no price, no owner, no chat.
+    // No owned mark, no owner, no chat.
     expect(screen.queryByTestId("owned-mark")).not.toBeInTheDocument();
     expect(screen.queryByTestId("buy-mark")).not.toBeInTheDocument();
     expect(screen.queryByText(/nate@example.com/)).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
     // REV-028: the terms of TopDeck.gg ask for a visible credit (D-417).
     expect(screen.getByRole("link", { name: "Tournament data by TopDeck.gg" })).toHaveAttribute("href", "https://topdeck.gg");
+  });
+
+  // D-1063: a link can not prove who owns a card, so each tile shows the
+  // price of the cheapest printing, and a card with none says so.
+  it("shows the price of every card", async () => {
+    await renderAt(`/d/${token}`);
+    const ramp = await screen.findByRole("region", { name: "Ramp (1)" });
+    expect(within(ramp).getByTestId("card-price")).toHaveTextContent("$0.25");
+    const lands = screen.getByRole("region", { name: "Lands (1)" });
+    expect(within(lands).getByTestId("card-price")).toHaveTextContent("Price unknown");
+  });
+
+  // D-1062: the page shows the art of the deck view, the owned printing.
+  it("shows the art of the printing the deck view shows", async () => {
+    await renderAt(`/d/${token}`);
+    const ramp = await screen.findByRole("region", { name: "Ramp (1)" });
+    expect(within(ramp).getByAltText("Llanowar Elves (card)")).toHaveAttribute("src", img("elf-ltr").normal);
+    const commander = screen.getByRole("region", { name: "Commander (1)" });
+    expect(within(commander).getByAltText("Ezuri, Renegade Leader (card)")).toHaveAttribute("src", img("ezuri").normal);
+  });
+
+  // D-1064: the four stats and the sample hand of the deck view.
+  it("shows the stats and the sample hand", async () => {
+    const user = userEvent.setup();
+    await renderAt(`/d/${token}`);
+    await screen.findByRole("heading", { name: "Elf Ball" });
+    for (const caption of ["Mana curve, lands excluded", "Mana sources, cards that make each of the deck's colors", "Card types", "Average mana value, lands excluded"]) {
+      expect(screen.getByRole("table", { name: caption })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("heading", { name: "Sample hand" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Draw seven" }));
+    // The library holds the main deck alone: the commander stays out.
+    expect(screen.getAllByTestId("hand-card")).toHaveLength(2);
+  });
+
+  // D-1064: the filters and the sort of the deck view, with no owned filter.
+  it("filters and sorts the cards, with no owned filter", async () => {
+    const user = userEvent.setup();
+    await renderAt(`/d/${token}`);
+    await screen.findByRole("heading", { name: "Elf Ball" });
+    expect(screen.queryByRole("combobox", { name: "Owned" })).not.toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Role" }), String(CardRole.RAMP));
+    expect(screen.getByTestId("filter-count")).toHaveTextContent("Showing 1 of 2 cards.");
+    expect(screen.queryByRole("region", { name: "Lands (1)" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Commander (1)" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "price");
+    const list = screen.getByRole("region", { name: "Cards by price (2)" });
+    expect(within(list).getAllByTestId("card-price").map((p) => p.textContent)).toEqual(["$0.25", "Price unknown"]);
   });
 
   it("exports the deck list through the public call", async () => {

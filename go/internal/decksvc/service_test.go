@@ -246,7 +246,7 @@ type fakeDecks struct {
 	shares map[string]string
 }
 
-func (f *fakeDecks) Share(_ context.Context, uid, id, hash string) error {
+func (f *fakeDecks) Share(_ context.Context, uid, id, token, hash string) error {
 	if f.err != nil {
 		return f.err
 	}
@@ -264,6 +264,7 @@ func (f *fakeDecks) Share(_ context.Context, uid, id, hash string) error {
 	}
 	f.shares[hash] = uid + "/" + id
 	d.Shared = true
+	d.ShareToken = token
 	return nil
 }
 
@@ -281,6 +282,7 @@ func (f *fakeDecks) Revoke(_ context.Context, uid, id string) error {
 		}
 	}
 	d.Shared = false
+	d.ShareToken = ""
 	return nil
 }
 

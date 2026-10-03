@@ -111,9 +111,11 @@ export function FaceImage({ face, size = "normal" }: { face: Face; size?: "norma
 // CardTile shows one deck entry: every face with its art and attribution,
 // the count, and the owned mark or the price. The image carries the rules text.
 // hideOwnership is for a commander entry built from the card data: the
-// deck carries no owned mark for it, so the tile shows none. onOpen makes
+// deck carries no owned mark for it, so the tile shows none. The public
+// page of a share link shows no owned mark either (D-315). onOpen makes
 // the name a button that opens the card detail (PR-20). showPrice adds
 // the price beside the owned mark, for a list sorted by price (D-1051).
+// With hideOwnership, showPrice shows the price alone (D-1063).
 // feedbackDeckId
 // puts the thumbs at the foot (PR-27, D-559): a phone shows them always,
 // and a pointer shows them on hover and on focus, and after a verdict.
@@ -179,6 +181,11 @@ export function CardTile({
           )}
         </figure>
       ))}
+      {hideOwnership && showPrice && (
+        <p className="text-xs tabular-nums text-muted-foreground" data-testid="card-price">
+          {priceText(cardPrice(entry))}
+        </p>
+      )}
       {!hideOwnership && (
       <p className="text-xs">
         {entry.owned ? (

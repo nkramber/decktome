@@ -19,9 +19,9 @@ import (
 )
 
 // The share link (D-315). A token is 32 random bytes in URL-safe base64,
-// 43 characters, shown once. The store keeps the hex SHA-256 of it, so a
-// stolen store gives no link. A public read hashes the token it got and
-// looks the hash up.
+// 43 characters. The share document is keyed by the hex SHA-256 of it,
+// and a public read hashes the token it got and looks the hash up. The
+// deck holds the token too, so its owner copies the link again (D-1061).
 
 // tokenBytes is the size of a token before encoding.
 const tokenBytes = 32
@@ -47,7 +47,7 @@ func hashToken(token string) string {
 var errNoToken = errors.New("no share token was given")
 
 // ShareDeck makes a share link for one of the caller's decks and answers
-// the token once (D-315). A deck with a link gets a new one.
+// the token (D-315). A deck with a link gets a new one.
 func (s *Server) ShareDeck(ctx context.Context, req *connect.Request[mtgv1.ShareDeckRequest]) (*connect.Response[mtgv1.ShareDeckResponse], error) {
 	uid, id, err := s.deckRef(ctx, req.Msg.GetDeckId())
 	if err != nil {
@@ -57,7 +57,7 @@ func (s *Server) ShareDeck(ctx context.Context, req *connect.Request[mtgv1.Share
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	if err := s.decks.Share(ctx, uid, id, hash); err != nil {
+	if err := s.decks.Share(ctx, uid, id, token, hash); err != nil {
 		return nil, storeError(err)
 	}
 	return connect.NewResponse(&mtgv1.ShareDeckResponse{Token: token}), nil
@@ -159,8 +159,8 @@ func storeError(err error) error {
 }
 
 // sharedDeck is the public copy of a deck: the name, the format, the
-// power, the summary, and the cards by role with their card data, and no
-// user field (guardrail 13).
+// power, the summary, and the cards by role with their card data, price,
+// and art, and no user field (guardrail 13, D-1062, D-1063).
 func sharedDeck(d *mtgv1.Deck, cards export.Lookup) *mtgv1.SharedDeck {
 	return &mtgv1.SharedDeck{
 		Name:               d.GetName(),
@@ -178,19 +178,21 @@ func sharedDeck(d *mtgv1.Deck, cards export.Lookup) *mtgv1.SharedDeck {
 
 // sharedCommanders is one shared card for each commander id, in the order
 // of the ids (REV-021). The name comes from the card index, else from the
-// commanders the deck stored, else from its cards.
+// commanders the deck stored, else from its cards. The price and the art
+// come from the stored commander, else from the card entry.
 func sharedCommanders(d *mtgv1.Deck, cards export.Lookup) []*mtgv1.SharedCard {
-	names := map[string]string{}
+	stored := map[string]*mtgv1.DeckCard{}
 	for _, dc := range append(append([]*mtgv1.DeckCard(nil), d.GetCards()...), d.GetCommanders()...) {
-		names[dc.GetOracleId()] = dc.GetName()
+		stored[dc.GetOracleId()] = dc
 	}
 	list := make([]*mtgv1.DeckCard, 0, len(d.GetCommanderOracleIds()))
 	for _, id := range d.GetCommanderOracleIds() {
-		name := names[id]
+		dc := stored[id]
+		name := dc.GetName()
 		if c, ok := cards.ByOracleID(id); ok && c != nil {
 			name = c.GetName()
 		}
-		list = append(list, &mtgv1.DeckCard{OracleId: id, Name: name, Count: 1})
+		list = append(list, &mtgv1.DeckCard{OracleId: id, Name: name, Count: 1, PriceUsd: dc.GetPriceUsd(), OwnedPrinting: dc.GetOwnedPrinting()})
 	}
 	return sharedCards(list, cards)
 }
@@ -198,7 +200,7 @@ func sharedCommanders(d *mtgv1.Deck, cards export.Lookup) []*mtgv1.SharedCard {
 func sharedCards(list []*mtgv1.DeckCard, cards export.Lookup) []*mtgv1.SharedCard {
 	out := make([]*mtgv1.SharedCard, 0, len(list))
 	for _, dc := range list {
-		sc := &mtgv1.SharedCard{OracleId: dc.GetOracleId(), Name: dc.GetName(), Count: dc.GetCount(), Role: dc.GetRole(), Reason: dc.GetReason()}
+		sc := &mtgv1.SharedCard{OracleId: dc.GetOracleId(), Name: dc.GetName(), Count: dc.GetCount(), Role: dc.GetRole(), Reason: dc.GetReason(), PriceUsd: dc.GetPriceUsd(), Printing: artOf(dc.GetOwnedPrinting())}
 		if c, ok := cards.ByOracleID(dc.GetOracleId()); ok && c != nil {
 			// The index card is shared, so the copy is a clone.
 			sc.Card = proto.Clone(c).(*mtgv1.Card) //nolint:errcheck,forcetypeassert // Clone of a Card is a Card
@@ -208,11 +210,25 @@ func sharedCards(list []*mtgv1.DeckCard, cards export.Lookup) []*mtgv1.SharedCar
 	return out
 }
 
+// artOf is the printing whose art the deck view shows, for the shared
+// page (D-299, D-1062). The owner's price of that copy stays out of it:
+// the page shows the cheapest printing (D-1063). A printing with no image
+// shows nothing new, so it reads as none.
+func artOf(p *mtgv1.Printing) *mtgv1.Printing {
+	if p.GetImageUris() == nil {
+		return nil
+	}
+	out := proto.Clone(p).(*mtgv1.Printing) //nolint:errcheck,forcetypeassert // Clone of a Printing is a Printing
+	out.PriceUsd = 0
+	return out
+}
+
 // publicDeck is a copy of a deck with every user field cleared, for the
-// public export: no session, no owned mark, no owned printing.
+// public export: no session, no link, no owned mark, no owned printing.
 func publicDeck(d *mtgv1.Deck) *mtgv1.Deck {
 	out := proto.Clone(d).(*mtgv1.Deck) //nolint:errcheck,forcetypeassert // Clone of a Deck is a Deck
 	out.SessionId = ""
+	out.ShareToken = ""
 	out.Favorite = false
 	out.RevisedFromDeckId = ""
 	out.Validation = nil

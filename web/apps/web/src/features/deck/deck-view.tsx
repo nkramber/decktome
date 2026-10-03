@@ -2,7 +2,7 @@ import { type Card, Color } from "@mtg/api-client/mtg/v1/card_pb";
 import { CardRole, type Deck, type DeckCard, Severity } from "@mtg/api-client/mtg/v1/deck_pb";
 import { FeedbackKind } from "@mtg/api-client/mtg/v1/feedback_service_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
 import { Button } from "../../components/ui/button";
 import { Select } from "../../components/ui/select";
@@ -52,7 +52,7 @@ import { ArtCredit, DataCredit } from "../credit/data-credit";
 // The five colors of the game and colorless carry fixed tokens (D-311).
 const manaSwatch: Record<string, string> = { W: "bg-mana-w", U: "bg-mana-u", B: "bg-mana-b", R: "bg-mana-r", G: "bg-mana-g", C: "bg-mana-c" };
 
-const sortLabels: Record<SortKey, string> = { role: "By role", "mana-value": "Mana value", name: "Name", price: "Price" };
+export const sortLabels: Record<SortKey, string> = { role: "By role", "mana-value": "Mana value", name: "Name", price: "Price" };
 
 export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const diff = base && deck.revisedFromDeckId && base.id === deck.revisedFromDeckId ? diffDecks(base, deck) : undefined;
@@ -80,7 +80,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   // every commander carries the fact.
   const commanderOwnership = commanderCount > 0 && deck.commanders.length === commanderCount;
   // The filters and the sort narrow every zone the same way (PR-20).
-  const filterActive = Object.values(filters).some((v) => v !== undefined && v !== "");
+  const filterActive = isFiltered(filters);
   const show = (entries: DeckCard[]) => sortEntries(filterEntries(entries, byId, filters), byId, sort);
   const visibleMain = show(main);
   const visibleSide = show(deck.sideboard);
@@ -88,12 +88,6 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const countOf = (entries: DeckCard[]) => entries.reduce((n, c) => n + c.count, 0);
   const groups = sort === "role" ? groupByRole(visibleMain) : [{ role: CardRole.UNSPECIFIED, cards: visibleMain, count: countOf(visibleMain) }];
   const rolesInDeck = roleOrder.filter((r) => main.some((c) => c.role === r));
-  const curve = manaCurve(deck.cards, byId);
-  const sources = colorSources(deck.cards, byId);
-  const types = typeCounts(deck.cards, byId);
-  const typeRows = mainTypes.filter((t) => (types.get(t) ?? 0) > 0);
-  const typesMax = Math.max(1, ...typeRows.map((t) => types.get(t) ?? 0));
-  const avgManaValue = averageManaValue(deck.cards, byId);
   // The cards to buy, the dearest first, for the buy-cost table. A
   // commander the user named and does not own is on it too, as the buy
   // cost counts it (D-1031). Its mark counts only when the deck carries
@@ -107,11 +101,6 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   // those cards beside it (D-1060).
   const unpriced = toBuy.filter((c) => c.priceUsd <= 0).length;
   const unpricedText = `${unpriced} ${unpriced === 1 ? "card" : "cards"} with price unknown`;
-  // The table shows the colors the deck pays for, and colorless for a
-  // colorless deck. A mono-green deck full of rocks that make any color
-  // is not a five-color deck. The commander's identity counts too.
-  const colorsOfDeck = deckColors(deck.cards, byId, deck.commanderOracleIds);
-  const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
   // The count is the main deck plus the command zone, so a Commander
   // deck reads 100 (D-454).
   const total = deckSize(countOf(main), commanderCount);
@@ -121,8 +110,6 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   // A not_owned block in owned-only still shows (D-300).
   const findings = (validation?.findings ?? []).filter((f) => !(f.code === "not_owned" && f.severity !== Severity.BLOCK));
   const legalityAsOf = deck.legalityAsOf || validation?.legalityAsOf || "an unknown date";
-  const curveMax = Math.max(1, ...curve);
-  const sourcesMax = Math.max(1, ...sourceRows.map((c) => sources.get(c.color) ?? 0));
   // The deck owns the color of its own page (D-327).
   // The commanders name the identity. A deck with none, a 60-card deck,
   // reads its own cards, and this view holds only its own cards.
@@ -130,20 +117,11 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   const commanderArt = commanderCard?.faces?.[0]?.imageUris?.artCrop ?? commanderCard?.defaultPrinting?.imageUris?.artCrop ?? "";
   const fromCommanders = identityOfCommanders(deck.commanderOracleIds, byId);
   const identity = fromCommanders.length > 0 ? fromCommanders : identityOfCards(byId);
-  const bar = (n: number, max: number, tone: string) => (
-    <span className="flex items-center gap-3">
-      <span className="block h-2 max-w-64 grow rounded-full bg-muted" aria-hidden="true">
-        <span className={`block h-2 rounded-full transition-[width] duration-500 ${tone}`} style={{ width: `${(n / max) * 100}%` }} />
-      </span>
-      <span className="w-6 text-right tabular-nums">{n}</span>
-    </span>
-  );
   const counts = powerCounts(deck);
   // A list the reader imported takes no verdict, and a revision of it
   // does (D-853).
   const feedbackId = deck.imported ? undefined : deck.id;
   const importNote = importPowerNote(deck);
-  const captionClass = "mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase";
 
   return (
     <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5">
@@ -257,145 +235,50 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
       </div>
 
       {cards.data && (
-        <div className="@container shadow-card rounded-panel border border-border bg-card p-5 backdrop-blur-sm print:hidden">
-          <div className="grid items-start gap-8 @2xl:grid-cols-2">
-            <table className="w-full text-sm">
-              <caption className={captionClass}>Mana curve, lands excluded</caption>
-              <thead className="sr-only">
-                <tr>
-                  <th scope="col">Mana value</th>
-                  <th scope="col">Cards</th>
+        <DeckStatsPanel cards={deck.cards} byId={byId} commanderOracleIds={deck.commanderOracleIds}>
+          <table className="w-full text-sm @2xl:col-span-2">
+            <caption className={captionClass}>Cards to buy, the dearest first</caption>
+            <thead className="text-left text-xs text-muted-foreground">
+              <tr>
+                <th scope="col" className="py-1 pr-3 font-normal">
+                  Card
+                </th>
+                <th scope="col" className="py-1 pr-3 text-right font-normal">
+                  Copies
+                </th>
+                <th scope="col" className="py-1 text-right font-normal">
+                  Price
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {toBuy.slice(0, 5).map((c) => (
+                <tr key={c.oracleId || c.name}>
+                  <td className="py-1 pr-3">{c.name}</td>
+                  <td className="py-1 pr-3 text-right tabular-nums">{c.count}</td>
+                  <td className="py-1 text-right tabular-nums">{priceText(c.priceUsd)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {curveSteps.map((step, i) => (
-                  <tr key={step}>
-                    <th scope="row" className="w-8 py-1 pr-3 text-left font-normal tabular-nums text-muted-foreground">
-                      {step}
-                    </th>
-                    <td className="py-1">{bar(curve[i], curveMax, "bg-accent")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <table className="w-full text-sm">
-              <caption className={captionClass}>Mana sources, cards that make each of the deck's colors</caption>
-              <thead className="sr-only">
+              ))}
+              {toBuy.length === 0 && (
                 <tr>
-                  <th scope="col">Color</th>
-                  <th scope="col">Sources</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sourceRows.map((c) => (
-                  <tr key={c.letter}>
-                    <th scope="row" className="py-1 pr-3 text-left font-normal whitespace-nowrap">
-                      <span className="flex items-center gap-2">
-                        <span className={`inline-block size-3 rounded-full ring-1 ring-black/25 ${manaSwatch[c.letter] ?? "bg-mana-c"}`} aria-hidden="true" />
-                        <span className="text-muted-foreground">{c.name}</span>
-                      </span>
-                    </th>
-                    <td className="py-1">{bar(sources.get(c.color) ?? 0, sourcesMax, manaSwatch[c.letter] ?? "bg-mana-c")}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <table className="w-full text-sm">
-              <caption className={captionClass}>Card types, a card counts once per type</caption>
-              <thead className="sr-only">
-                <tr>
-                  <th scope="col">Type</th>
-                  <th scope="col">Cards</th>
-                </tr>
-              </thead>
-              <tbody>
-                {typeRows.map((t) => (
-                  <tr key={t}>
-                    <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
-                      {t}
-                    </th>
-                    <td className="py-1">{bar(types.get(t) ?? 0, typesMax, "bg-primary")}</td>
-                  </tr>
-                ))}
-                {typeRows.length === 0 && (
-                  <tr>
-                    <th scope="row" className="py-1 text-left font-normal text-muted-foreground">
-                      No card data
-                    </th>
-                    <td />
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            <table className="w-full text-sm">
-              <caption className={captionClass}>Average mana value, lands excluded</caption>
-              <thead className="sr-only">
-                <tr>
-                  <th scope="col">Measure</th>
-                  <th scope="col">Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
-                    Average
-                  </th>
-                  <td className="py-1 text-3xl font-semibold tabular-nums" data-testid="avg-mana-value">
-                    {avgManaValue.toFixed(2)}
+                  <td className="py-1 text-muted-foreground" colSpan={3}>
+                    Nothing to buy.
                   </td>
                 </tr>
-                <tr>
-                  <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
-                    Nonland cards
-                  </th>
-                  <td className="py-1 tabular-nums">{curve.reduce((n, c) => n + c, 0)}</td>
-                </tr>
-              </tbody>
-            </table>
-            <table className="w-full text-sm @2xl:col-span-2">
-              <caption className={captionClass}>Cards to buy, the dearest first</caption>
-              <thead className="text-left text-xs text-muted-foreground">
-                <tr>
-                  <th scope="col" className="py-1 pr-3 font-normal">
-                    Card
-                  </th>
-                  <th scope="col" className="py-1 pr-3 text-right font-normal">
-                    Copies
-                  </th>
-                  <th scope="col" className="py-1 text-right font-normal">
-                    Price
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {toBuy.slice(0, 5).map((c) => (
-                  <tr key={c.oracleId || c.name}>
-                    <td className="py-1 pr-3">{c.name}</td>
-                    <td className="py-1 pr-3 text-right tabular-nums">{c.count}</td>
-                    <td className="py-1 text-right tabular-nums">{priceText(c.priceUsd)}</td>
-                  </tr>
-                ))}
-                {toBuy.length === 0 && (
-                  <tr>
-                    <td className="py-1 text-muted-foreground" colSpan={3}>
-                      Nothing to buy.
-                    </td>
-                  </tr>
-                )}
-                <tr className="border-t border-border font-medium">
-                  <th scope="row" className="py-1 pr-3 text-left">
-                    Total
-                  </th>
-                  <td className="py-1 pr-3 text-right tabular-nums">{toBuy.length > 5 ? `${toBuy.length} cards` : ""}</td>
-                  <td className="py-1 text-right tabular-nums">
-                    {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "$0.00"}
-                    {unpriced > 0 && ` + ${unpriced} unknown`}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
+              )}
+              <tr className="border-t border-border font-medium">
+                <th scope="row" className="py-1 pr-3 text-left">
+                  Total
+                </th>
+                <td className="py-1 pr-3 text-right tabular-nums">{toBuy.length > 5 ? `${toBuy.length} cards` : ""}</td>
+                <td className="py-1 text-right tabular-nums">
+                  {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "$0.00"}
+                  {unpriced > 0 && ` + ${unpriced} unknown`}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </DeckStatsPanel>
       )}
 
       <div className="print:hidden">
@@ -408,78 +291,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
 
       <DataCredit />
 
-      <section aria-label="Filters and sort" className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-card p-3 text-sm print:hidden">
-        <label htmlFor={`filter-role-${deck.id}`} className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Role</span>
-          <Select id={`filter-role-${deck.id}`} value={filters.role ?? ""} onChange={(e) => setFilters({ ...filters, role: e.target.value === "" ? undefined : (Number(e.target.value) as CardRole) })}>
-            <option value="">Every role</option>
-            {rolesInDeck.map((r) => (
-              <option key={r} value={r}>
-                {roleLabel(r)}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label htmlFor={`filter-color-${deck.id}`} className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Color</span>
-          <Select id={`filter-color-${deck.id}`} value={filters.color ?? ""} onChange={(e) => setFilters({ ...filters, color: e.target.value === "" ? undefined : (Number(e.target.value) as Color) })}>
-            <option value="">Every color</option>
-            {colorLetters.map((c) => (
-              <option key={c.letter} value={c.color}>
-                {c.name}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label htmlFor={`filter-mana-value-${deck.id}`} className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Mana value</span>
-          <Select id={`filter-mana-value-${deck.id}`} value={filters.manaValue ?? ""} onChange={(e) => setFilters({ ...filters, manaValue: e.target.value === "" ? undefined : Number(e.target.value) })}>
-            <option value="">Any</option>
-            {curveSteps.map((step, i) => (
-              <option key={step} value={i}>
-                {step}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label htmlFor={`filter-type-${deck.id}`} className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Type</span>
-          <Select id={`filter-type-${deck.id}`} value={filters.type ?? ""} onChange={(e) => setFilters({ ...filters, type: e.target.value === "" ? undefined : e.target.value })}>
-            <option value="">Every type</option>
-            {mainTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </Select>
-        </label>
-        <label htmlFor={`filter-owned-${deck.id}`} className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Owned</span>
-          <Select id={`filter-owned-${deck.id}`} value={filters.owned ?? ""} onChange={(e) => setFilters({ ...filters, owned: e.target.value === "" ? undefined : (e.target.value as Filters["owned"]) })}>
-            <option value="">Owned and to buy</option>
-            <option value="owned">Owned</option>
-            <option value="to-buy">To buy</option>
-          </Select>
-        </label>
-        <label htmlFor={`sort-key-${deck.id}`} className="flex flex-col gap-1">
-          <span className="text-xs text-muted-foreground">Sort</span>
-          <Select id={`sort-key-${deck.id}`} value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-            {(Object.keys(sortLabels) as SortKey[]).map((k) => (
-              <option key={k} value={k}>
-                {sortLabels[k]}
-              </option>
-            ))}
-          </Select>
-        </label>
-        {filterActive && (
-          <Button variant="ghost" size="sm" onClick={() => setFilters({})}>
-            Clear filters
-          </Button>
-        )}
-        <p className="basis-full text-xs text-muted-foreground" data-testid="filter-count">
-          {filterActive ? `Showing ${countOf(visibleMain)} of ${countOf(main)} cards.` : `${countOf(main)} cards in the main deck.`}
-        </p>
-      </section>
+      <FilterBar idSuffix={deck.id} filters={filters} onFilters={setFilters} sort={sort} onSort={setSort} roles={rolesInDeck} showOwned shown={countOf(visibleMain)} total={countOf(main)} />
 
       {commanderEntries.length > 0 && !filterActive && (
         <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership={!commanderOwnership} showPrice={sort === "price"} onOpen={setDetail} feedbackDeckId={feedbackId} />
@@ -503,6 +315,247 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
 
       <CardDetail entry={detail ?? undefined} card={detail ? byId.get(detail.oracleId) : undefined} deckId={deck.id} open={detail !== null} onOpenChange={(open) => !open && setDetail(null)} />
     </article>
+  );
+}
+
+const captionClass = "mb-3 border-b border-border pb-2 text-left text-sm font-semibold tracking-wide uppercase";
+
+function bar(n: number, max: number, tone: string) {
+  return (
+    <span className="flex items-center gap-3">
+      <span className="block h-2 max-w-64 grow rounded-full bg-muted" aria-hidden="true">
+        <span className={`block h-2 rounded-full transition-[width] duration-500 ${tone}`} style={{ width: `${(n / max) * 100}%` }} />
+      </span>
+      <span className="w-6 text-right tabular-nums">{n}</span>
+    </span>
+  );
+}
+
+// DeckStatsPanel holds the four stats of a deck, each a text table: the
+// mana curve, the mana sources, the card types, and the average mana
+// value. The deck view adds the cards to buy as children, and the public
+// page of a share link shows the four alone (D-1064).
+export function DeckStatsPanel({ cards, byId, commanderOracleIds, children }: { cards: DeckCard[]; byId: Map<string, Card>; commanderOracleIds: string[]; children?: ReactNode }) {
+  const curve = manaCurve(cards, byId);
+  const sources = colorSources(cards, byId);
+  const types = typeCounts(cards, byId);
+  const typeRows = mainTypes.filter((t) => (types.get(t) ?? 0) > 0);
+  const typesMax = Math.max(1, ...typeRows.map((t) => types.get(t) ?? 0));
+  const avgManaValue = averageManaValue(cards, byId);
+  // The table shows the colors the deck pays for, and colorless for a
+  // colorless deck. A mono-green deck full of rocks that make any color
+  // is not a five-color deck. The commander's identity counts too.
+  const colorsOfDeck = deckColors(cards, byId, commanderOracleIds);
+  const sourceRows = colorLetters.filter((c) => (colorsOfDeck.size === 0 ? c.color === Color.C : colorsOfDeck.has(c.color)));
+  const curveMax = Math.max(1, ...curve);
+  const sourcesMax = Math.max(1, ...sourceRows.map((c) => sources.get(c.color) ?? 0));
+  return (
+    <div className="@container shadow-card rounded-panel border border-border bg-card p-5 backdrop-blur-sm print:hidden">
+      <div className="grid items-start gap-8 @2xl:grid-cols-2">
+        <table className="w-full text-sm">
+          <caption className={captionClass}>Mana curve, lands excluded</caption>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Mana value</th>
+              <th scope="col">Cards</th>
+            </tr>
+          </thead>
+          <tbody>
+            {curveSteps.map((step, i) => (
+              <tr key={step}>
+                <th scope="row" className="w-8 py-1 pr-3 text-left font-normal tabular-nums text-muted-foreground">
+                  {step}
+                </th>
+                <td className="py-1">{bar(curve[i], curveMax, "bg-accent")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <table className="w-full text-sm">
+          <caption className={captionClass}>Mana sources, cards that make each of the deck's colors</caption>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Color</th>
+              <th scope="col">Sources</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sourceRows.map((c) => (
+              <tr key={c.letter}>
+                <th scope="row" className="py-1 pr-3 text-left font-normal whitespace-nowrap">
+                  <span className="flex items-center gap-2">
+                    <span className={`inline-block size-3 rounded-full ring-1 ring-black/25 ${manaSwatch[c.letter] ?? "bg-mana-c"}`} aria-hidden="true" />
+                    <span className="text-muted-foreground">{c.name}</span>
+                  </span>
+                </th>
+                <td className="py-1">{bar(sources.get(c.color) ?? 0, sourcesMax, manaSwatch[c.letter] ?? "bg-mana-c")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <table className="w-full text-sm">
+          <caption className={captionClass}>Card types</caption>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Type</th>
+              <th scope="col">Cards</th>
+            </tr>
+          </thead>
+          <tbody>
+            {typeRows.map((t) => (
+              <tr key={t}>
+                <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
+                  {t}
+                </th>
+                <td className="py-1">{bar(types.get(t) ?? 0, typesMax, "bg-primary")}</td>
+              </tr>
+            ))}
+            {typeRows.length === 0 && (
+              <tr>
+                <th scope="row" className="py-1 text-left font-normal text-muted-foreground">
+                  No card data
+                </th>
+                <td />
+              </tr>
+            )}
+          </tbody>
+        </table>
+        <table className="w-full text-sm">
+          <caption className={captionClass}>Average mana value, lands excluded</caption>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Measure</th>
+              <th scope="col">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
+                Average
+              </th>
+              <td className="py-1 text-3xl font-semibold tabular-nums" data-testid="avg-mana-value">
+                {avgManaValue.toFixed(2)}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row" className="py-1 pr-3 text-left font-normal text-muted-foreground">
+                Nonland cards
+              </th>
+              <td className="py-1 tabular-nums">{curve.reduce((n, c) => n + c, 0)}</td>
+            </tr>
+          </tbody>
+        </table>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// isFiltered says a filter narrows the list.
+export function isFiltered(filters: Filters): boolean {
+  return Object.values(filters).some((v) => v !== undefined && v !== "");
+}
+
+// FilterBar narrows and sorts the card list (PR-20). The owned filter
+// needs the owner's collection, so the public page of a share link has
+// none (D-1064). idSuffix keeps the control ids apart on one page.
+export function FilterBar({
+  idSuffix,
+  filters,
+  onFilters,
+  sort,
+  onSort,
+  roles,
+  showOwned = false,
+  shown,
+  total,
+}: {
+  idSuffix: string;
+  filters: Filters;
+  onFilters: (f: Filters) => void;
+  sort: SortKey;
+  onSort: (k: SortKey) => void;
+  roles: CardRole[];
+  showOwned?: boolean;
+  shown: number;
+  total: number;
+}) {
+  const filterActive = isFiltered(filters);
+  return (
+    <section aria-label="Filters and sort" className="flex flex-wrap items-end gap-3 rounded-card border border-border bg-card p-3 text-sm print:hidden">
+      <label htmlFor={`filter-role-${idSuffix}`} className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Role</span>
+        <Select id={`filter-role-${idSuffix}`} value={filters.role ?? ""} onChange={(e) => onFilters({ ...filters, role: e.target.value === "" ? undefined : (Number(e.target.value) as CardRole) })}>
+          <option value="">Every role</option>
+          {roles.map((r) => (
+            <option key={r} value={r}>
+              {roleLabel(r)}
+            </option>
+          ))}
+        </Select>
+      </label>
+      <label htmlFor={`filter-color-${idSuffix}`} className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Color</span>
+        <Select id={`filter-color-${idSuffix}`} value={filters.color ?? ""} onChange={(e) => onFilters({ ...filters, color: e.target.value === "" ? undefined : (Number(e.target.value) as Color) })}>
+          <option value="">Every color</option>
+          {colorLetters.map((c) => (
+            <option key={c.letter} value={c.color}>
+              {c.name}
+            </option>
+          ))}
+        </Select>
+      </label>
+      <label htmlFor={`filter-mana-value-${idSuffix}`} className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Mana value</span>
+        <Select id={`filter-mana-value-${idSuffix}`} value={filters.manaValue ?? ""} onChange={(e) => onFilters({ ...filters, manaValue: e.target.value === "" ? undefined : Number(e.target.value) })}>
+          <option value="">Any</option>
+          {curveSteps.map((step, i) => (
+            <option key={step} value={i}>
+              {step}
+            </option>
+          ))}
+        </Select>
+      </label>
+      <label htmlFor={`filter-type-${idSuffix}`} className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Type</span>
+        <Select id={`filter-type-${idSuffix}`} value={filters.type ?? ""} onChange={(e) => onFilters({ ...filters, type: e.target.value === "" ? undefined : e.target.value })}>
+          <option value="">Every type</option>
+          {mainTypes.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </Select>
+      </label>
+      {showOwned && (
+        <label htmlFor={`filter-owned-${idSuffix}`} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">Owned</span>
+          <Select id={`filter-owned-${idSuffix}`} value={filters.owned ?? ""} onChange={(e) => onFilters({ ...filters, owned: e.target.value === "" ? undefined : (e.target.value as Filters["owned"]) })}>
+            <option value="">Owned and to buy</option>
+            <option value="owned">Owned</option>
+            <option value="to-buy">To buy</option>
+          </Select>
+        </label>
+      )}
+      <label htmlFor={`sort-key-${idSuffix}`} className="flex flex-col gap-1">
+        <span className="text-xs text-muted-foreground">Sort</span>
+        <Select id={`sort-key-${idSuffix}`} value={sort} onChange={(e) => onSort(e.target.value as SortKey)}>
+          {(Object.keys(sortLabels) as SortKey[]).map((k) => (
+            <option key={k} value={k}>
+              {sortLabels[k]}
+            </option>
+          ))}
+        </Select>
+      </label>
+      {filterActive && (
+        <Button variant="ghost" size="sm" onClick={() => onFilters({})}>
+          Clear filters
+        </Button>
+      )}
+      <p className="basis-full text-xs text-muted-foreground" data-testid="filter-count">
+        {filterActive ? `Showing ${shown} of ${total} cards.` : `${total} cards in the main deck.`}
+      </p>
+    </section>
   );
 }
 

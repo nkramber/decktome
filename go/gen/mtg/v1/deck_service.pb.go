@@ -128,7 +128,7 @@ func (x *ShareDeckRequest) GetDeckId() string {
 
 type ShareDeckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// token is the secret of the link, shown once. The page is /d/<token>.
+	// token is the secret of the link. The page is /d/<token>.
 	Token         string `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
