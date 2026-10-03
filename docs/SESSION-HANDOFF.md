@@ -8,34 +8,37 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-02g)
 
-**Branch `feat/request-beta-access`: PR-115, a request for beta access, an admin screen, and a "Leave feedback" button (D-1072 to D-1078).** No pull request exists yet.
+**Branch `feat/request-beta-access`: PR-115, a request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).** The pull request is #272.
 
 Author provider: Claude Code
 
 **The base.** `main` is `a97cf82`, from #271. Cloud Build `deploy-web` `8232db62` built it with SUCCESS at 04:25 UTC on 2026-10-03. `deploy-api` did not run.
 
-**The live check of PR-114 (D-1072).** The cold start showed "Updating", then a reload with no error, so F-206 closes. The share dialog passed. The chat view put the first question at the top, and the "Back to top" button covered the question text.
+**The live check of PR-114 (D-1072).** The cold start showed "Updating", then a reload with no error, so F-206 closes. The share dialog passed. The "Back to top" button covered the first question, and F-207 records it.
 
-**The code, done and tested, in commit `78a19f0`.**
+**The code.**
 
-- A phone leaves the band of the "Back to top" button above the first question (D-1072).
 - `InviteService.RequestAccess` stores one record for each email in `access_requests`, and it sends a Pushover notice (D-1075).
 - `AdminService` lists, approves, and dismisses a request. Each call needs the custom claim `admin: true` (D-1076).
 - An approval adds the email to `config/allowlist`, and Resend sends the approval email (D-1077).
-- `make grant-admin EMAIL=... PROJECT_ID=...` sets the claim.
+- `make grant-admin EMAIL=... PROJECT_ID=...` sets the claim. The account menu of an admin opens `/admin`.
 - The sign-in page has the request form, and the refusal line offers it (D-1074).
-- The account menu opens `/admin` for the admin.
-- A row under the top bar holds the "Leave feedback" button (D-1078). A note is the feedback kind `general` with a screen. It moves no counter, and the triage calls no judge for it. `make feedback-list VERDICT=none` reads the notes.
+- A row under the top bar holds the "Leave feedback" button (D-1078). `make feedback-list VERDICT=none` reads the notes.
+- On a phone, the anchor of the first question also leaves the band of the "Back to top" button (F-207).
 
-**The checks.** The Go tests of each changed package pass. `make store-check` passes on the emulator. The web suite reads 524 of 524, and lint and the type check are clean. `make verify` did not run yet.
+**The documents.** The roadmap holds the PR-115 entry and sequence step 110. Section 8.1 of `docs/setup-gcp.md` holds the Resend account, the GoDaddy records, and the secret. Section 15.2 holds `make grant-admin`. `docs/deploy-and-rollback.md` mounts the secret.
+
+**The checks.** `make verify` reads "every check passed", with 524 of 524 web tests, under Node 22. `make store-check` passes on the emulator.
+
+**The review.** Gitar: waits for the first review of this head. Codex: waits for the Gitar pass (D-823).
 
 **The open work.**
 
-1. Add the PR-115 entry to `docs/design-roadmap.md`. `make ref-check` fails on PR-115 until then.
-2. Mark F-206 closed, and add a finding for the overlap of the "Back to top" button.
-3. Write the owner steps: the Resend account, its DNS records at GoDaddy, the secret `resend-api-key`, and `make grant-admin`. Put them in `docs/setup-gcp.md` and `docs/deploy-and-rollback.md`.
-4. Run `make verify`. Open the pull request with the sections of `.github/pull_request_template.md`.
-5. Do the Gitar pass and the Codex review.
+1. Do the Gitar pass, then the Codex review.
+2. The owner confirms the merge, then the author session turns on auto-merge (D-828).
+3. After the deploy, the owner does section 8.1 of `docs/setup-gcp.md`, then mounts the secret.
+4. The owner runs `make grant-admin` with section 15.2, and signs in again.
+5. The live check: a request, its notice, an approval, the email, a note, and the first question on the phone.
 
 ## How to resume
 
@@ -108,7 +111,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-115: a request for beta access, an admin screen, and a "Leave feedback" button** (D-1072 to D-1078). The resume section holds the open work.
+0. **PR-115: a request for beta access, an admin screen, and a "Leave feedback" button** (D-1072 to D-1078). The resume section holds the open work. The approval email waits for the Resend steps of the owner.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -132,12 +135,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-02d: four results of the live check, PR-112
-
-**The deploy of `d38bca5` read SUCCESS for both builds.** The owner checked the eight changes of PR-111 on the iPhone, and five passed at once.
-
-**The owner chose one pull request and the whole app for the price.** The owner replaced D-360, and asked for LP/SP condition or better. No source that the session read confirms the condition of the Scryfall price.
-
 ### 2026-10-02e: the share page, the cold start, and the chat, PR-113
 
 **The deploy of `7b5cebf` read SUCCESS for both builds.** The owner checked PR-112 on the iPhone. The cold start showed the splash, then an error, and the logs showed no data call after it.
@@ -150,6 +147,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner sent two changes.** The owner removed the revoke and the new link from the share dialog, so the deploy of this pull request tests F-206. The owner sent a screenshot of the wanted chat view.
 
+### 2026-10-02g: a request for beta access, PR-115
+
+**The deploy of `a97cf82` read SUCCESS for `deploy-web`.** The owner checked PR-114 on the iPhone. The cold start reloaded with no error, and F-206 closed.
+
+**The owner named two parts for one pull request.** The owner chose the sign-in page, Firestore with a Pushover notice, an admin screen with a custom claim, and Resend. The owner added the feedback row.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02e, the records of 2026-08-31 to 2026-10-02c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02f, the records of 2026-08-31 to 2026-10-02d, and 104 more sections, word for word. Read it for the detail behind a decision.
