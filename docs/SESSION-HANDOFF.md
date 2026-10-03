@@ -16,7 +16,7 @@ Author provider: Claude Code
 
 **The live check of PR-114 (D-1072).** The cold start showed "Updating", then a reload with no error, so F-206 closes. The share dialog passed. The chat view put the first question at the top, and the "Back to top" button covered the question text.
 
-**The code, done and tested, not yet committed before this checkpoint.**
+**The code, done and tested, in commit `78a19f0`.**
 
 - A phone leaves the band of the "Back to top" button above the first question (D-1072).
 - `InviteService.RequestAccess` stores one record for each email in `access_requests`, and it sends a Pushover notice (D-1075).
@@ -34,7 +34,7 @@ Author provider: Claude Code
 1. Add the PR-115 entry to `docs/design-roadmap.md`. `make ref-check` fails on PR-115 until then.
 2. Mark F-206 closed, and add a finding for the overlap of the "Back to top" button.
 3. Write the owner steps: the Resend account, its DNS records at GoDaddy, the secret `resend-api-key`, and `make grant-admin`. Put them in `docs/setup-gcp.md` and `docs/deploy-and-rollback.md`.
-4. Run `make verify`, open the pull request, and fill the body from the draft rows.
+4. Run `make verify`. Open the pull request with the sections of `.github/pull_request_template.md`.
 5. Do the Gitar pass and the Codex review.
 
 ## How to resume
