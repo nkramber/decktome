@@ -302,9 +302,13 @@ type Deck struct {
 	// deck, best first (D-1091). The new-cards pass of the snapshot job
 	// writes it, and its next pass replaces it. UpdateDeck clears it when
 	// the user dismisses the panel (D-1092).
-	NewOracleIds  []string `protobuf:"bytes,33,rep,name=new_oracle_ids,json=newOracleIds,proto3" json:"new_oracle_ids,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	NewOracleIds []string `protobuf:"bytes,33,rep,name=new_oracle_ids,json=newOracleIds,proto3" json:"new_oracle_ids,omitempty"`
+	// new_cards_version names the snapshot version of the new-cards marker
+	// whose pass last wrote new_oracle_ids. A rerun of the same marker
+	// skips the deck, so a dismiss stays and no second push goes (D-1092).
+	NewCardsVersion string `protobuf:"bytes,34,opt,name=new_cards_version,json=newCardsVersion,proto3" json:"new_cards_version,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Deck) Reset() {
@@ -559,6 +563,13 @@ func (x *Deck) GetNewOracleIds() []string {
 		return x.NewOracleIds
 	}
 	return nil
+}
+
+func (x *Deck) GetNewCardsVersion() string {
+	if x != nil {
+		return x.NewCardsVersion
+	}
+	return ""
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The
@@ -1774,7 +1785,8 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf0\t\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9c\n" +
+	"\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1817,7 +1829,8 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\fstale_reason\x18\x1f \x01(\tR\vstaleReason\x12\x1f\n" +
 	"\vshare_token\x18  \x01(\tR\n" +
 	"shareToken\x12$\n" +
-	"\x0enew_oracle_ids\x18! \x03(\tR\fnewOracleIdsJ\x04\b\n" +
+	"\x0enew_oracle_ids\x18! \x03(\tR\fnewOracleIds\x12*\n" +
+	"\x11new_cards_version\x18\" \x01(\tR\x0fnewCardsVersionJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +

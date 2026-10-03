@@ -19,7 +19,8 @@ type oneDeck struct{ deck *mtgv1.Deck }
 
 func (o *oneDeck) Scan(_ context.Context, fn func(uid string, d *mtgv1.Deck) error) error {
 	return fn("u1", &mtgv1.Deck{Id: o.deck.GetId(), Format: o.deck.GetFormat(), SessionId: o.deck.GetSessionId(),
-		CommanderOracleIds: o.deck.GetCommanderOracleIds(), NewOracleIds: o.deck.GetNewOracleIds()})
+		CommanderOracleIds: o.deck.GetCommanderOracleIds(), NewOracleIds: o.deck.GetNewOracleIds(),
+		NewCardsVersion: o.deck.GetNewCardsVersion()})
 }
 
 func (o *oneDeck) Mark(_ context.Context, _, _ string, fn func(d *mtgv1.Deck) bool) (bool, error) {

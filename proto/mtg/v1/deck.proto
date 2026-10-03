@@ -115,6 +115,10 @@ message Deck {
   // writes it, and its next pass replaces it. UpdateDeck clears it when
   // the user dismisses the panel (D-1092).
   repeated string new_oracle_ids = 33;
+  // new_cards_version names the snapshot version of the new-cards marker
+  // whose pass last wrote new_oracle_ids. A rerun of the same marker
+  // skips the deck, so a dismiss stays and no second push goes (D-1092).
+  string new_cards_version = 34;
 }
 
 // RerunCase is the rerun of a stale deck (D-1008). A patch replaces the

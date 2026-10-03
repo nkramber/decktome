@@ -8,6 +8,7 @@ package newcards
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -41,6 +42,9 @@ type Fitter interface {
 type Input struct {
 	// Index is the newest snapshot.
 	Index *cards.Index
+	// Version names the snapshot version of the new-cards marker. A deck
+	// that a pass of this version wrote is not written again (D-1092).
+	Version string
 	// New are the oracle ids of the new cards (cards.NewlyLegal).
 	New []string
 	// KeyOf gives the Scryfall key of a format, or "" for a format with
@@ -66,10 +70,15 @@ type Result struct {
 
 // Pass reads every stored deck and writes the new cards that fit it. A
 // deck that takes no card loses the cards of the last pass (D-1092). A
-// deck whose cards do not change is not written and not hit, so a pass
-// that runs again after a failure sends no second push.
+// deck that a pass of the same version wrote is not written and not hit,
+// so a pass that runs again after a failure sends no second push, and a
+// dismiss stays. A deck whose cards do not change takes the version and
+// no push.
 func Pass(ctx context.Context, store Store, in Input, log *slog.Logger) (Result, error) {
 	var res Result
+	if in.Version == "" {
+		return res, errors.New("newcards: a pass needs the version of its marker")
+	}
 	fresh := make([]*mtgv1.Card, 0, len(in.New))
 	for _, id := range in.New {
 		if c, ok := in.Index.ByOracleID(id); ok {
@@ -99,19 +108,20 @@ func Pass(ctx context.Context, store Store, in Input, log *slog.Logger) (Result,
 		if len(picks) > 0 {
 			res.Fit++
 		}
-		if slices.Equal(picks, d.GetNewOracleIds()) {
+		if !needsWrite(d, in.Version, picks) {
 			return nil
 		}
 		var hit *mtgv1.Deck
 		changed, err := store.Mark(ctx, uid, d.GetId(), func(cur *mtgv1.Deck) bool {
 			hit = nil
-			if slices.Equal(picks, cur.GetNewOracleIds()) {
+			if !needsWrite(cur, in.Version, picks) {
 				return false
 			}
-			cur.NewOracleIds = picks
-			if len(picks) > 0 {
+			if len(picks) > 0 && !slices.Equal(picks, cur.GetNewOracleIds()) {
 				hit = cur
 			}
+			cur.NewOracleIds = picks
+			cur.NewCardsVersion = in.Version
 			return true
 		})
 		if err != nil {
@@ -130,6 +140,16 @@ func Pass(ctx context.Context, store Store, in Input, log *slog.Logger) (Result,
 		return nil
 	})
 	return res, err
+}
+
+// needsWrite reports whether a pass of version writes picks to a deck. A
+// pass of the same version wrote the deck before, and a deck with no
+// cards that takes none needs no write.
+func needsWrite(d *mtgv1.Deck, version string, picks []string) bool {
+	if d.GetNewCardsVersion() == version {
+		return false
+	}
+	return len(picks) > 0 || len(d.GetNewOracleIds()) > 0
 }
 
 // deckTheme reads the theme of the chat of the deck, and the theme of its

@@ -23,19 +23,18 @@ Author provider: Claude Code
 - `go/internal/newcards`: the pass, and the pick of each deck.
 - `go/internal/push`: `Notifier.NewCards` and `NewCardsMessage`.
 - `go/cmd/worker`: the refresh writes the marker, and the new pass runs after the stale pass.
-- The deck proto holds `new_oracle_ids`, and `UpdateDeck` takes `dismiss_new_cards`. The list of decks carries the field.
+- The deck proto holds `new_oracle_ids` and `new_cards_version`, and `UpdateDeck` takes `dismiss_new_cards`. A rerun of a marker skips each deck that holds its version (D-1092). The list of decks carries the field.
 - The web app: the panel "New cards for this deck", and the mark "New cards" in the list.
 
 **The checks.** `make verify` passed each step before the image builds, with 544 of 544 web tests. Its first image build failed on the network inside Docker, and the two builds then passed alone. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
 
-**The review.** The automatic Gitar review of `8beceaf` started at 21:14:24 UTC. The session stopped at the context checkpoint of D-946 while it ran. No Codex review yet.
+**The review.** The Gitar review of `8beceaf` approved with one finding. After a failed pass and a dismiss, a rerun wrote the cards again and sent a second push. The finding holds. The fix stores the version of the marker on each deck that a pass writes, and a rerun of that marker skips the deck. The tests of `go/internal/newcards` read the sequence of the finding. The CI emulator lane of `8beceaf` passed. No Codex review yet.
 
 **The open work.**
 
-1. Read the Gitar review of `8beceaf` and answer each finding. Then run the Codex review, and ask the owner to confirm the merge.
-2. Read the CI emulator lane of #278. It runs on a fresh emulator.
-3. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
-4. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
+1. Read the Gitar review of the fix commit, and answer each finding. Then run the Codex review, and ask the owner to confirm the merge.
+2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
+3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 
 ## How to resume
 

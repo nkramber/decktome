@@ -136,8 +136,8 @@ func (f fakeFit) DeckTheme(*cards.Index, []*mtgv1.Card) string { return f.deckTh
 
 // TestPass is D-1091 and D-1092: a deck takes the cards of the theme of
 // its chat, a deck with no chat takes the theme of its cards, a rerun
-// writes and pushes nothing, and a pass with no fit clears the last
-// cards with no push.
+// writes and pushes nothing, a rerun after a dismiss keeps the dismiss,
+// and a pass with no fit clears the last cards with no push.
 func TestPass(t *testing.T) {
 	ctx := context.Background()
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
@@ -154,7 +154,7 @@ func TestPass(t *testing.T) {
 	store.put("u2", stale)
 	themes := map[string]string{"u1/s1": "a"}
 	in := Input{
-		Index: idx, New: []string{"a", "b", "missing"}, KeyOf: cmdKey, Fit: fakeFit{deckTheme: "deck"}, Floor: 0.32,
+		Index: idx, Version: "v1", New: []string{"a", "b", "missing"}, KeyOf: cmdKey, Fit: fakeFit{deckTheme: "deck"}, Floor: 0.32,
 		ThemeOf: func(_ context.Context, uid, sid string) (string, error) {
 			return themes[uid+"/"+sid], nil
 		},
@@ -184,7 +184,28 @@ func TestPass(t *testing.T) {
 		t.Errorf("a rerun wrote %d decks and hit %d users, want none", again.Written, len(again.Hit))
 	}
 
-	in.New = nil
+	// The pass of v1 failed after it marked u1/chat, and the user then
+	// dismissed the panel. The rerun of v1 keeps the dismiss.
+	store.decks["u1/chat"].NewOracleIds = nil
+	rerun, err := Pass(ctx, store, in, log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if rerun.Written != 0 || len(rerun.Hit) != 0 || len(store.decks["u1/chat"].GetNewOracleIds()) != 0 {
+		t.Errorf("a rerun after a dismiss = %+v, cards %v, want no write and no push", rerun, store.decks["u1/chat"].GetNewOracleIds())
+	}
+
+	// A new marker with the same cards writes its version and sends no push.
+	in.Version = "v2"
+	same, err := Pass(ctx, store, in, log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if same.Written != 3 || len(same.Hit["u1"]) != 1 || len(same.Hit["u2"]) != 0 {
+		t.Errorf("a new marker with the same cards = %+v, want three writes and one push for the dismissed deck", same)
+	}
+
+	in.Version, in.New = "v3", nil
 	cleared, err := Pass(ctx, store, in, log)
 	if err != nil {
 		t.Fatal(err)
@@ -195,7 +216,12 @@ func TestPass(t *testing.T) {
 
 	boom := errors.New("read failed")
 	in.ThemeOf = func(context.Context, string, string) (string, error) { return "", boom }
+	in.Version = "v4"
 	if _, err := Pass(ctx, store, in, log); !errors.Is(err, boom) {
 		t.Errorf("a failed theme read = %v, want the error", err)
+	}
+	in.Version = ""
+	if _, err := Pass(ctx, store, in, log); err == nil {
+		t.Error("a pass with no version ran, want an error")
 	}
 }

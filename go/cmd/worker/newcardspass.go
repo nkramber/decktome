@@ -95,7 +95,7 @@ func newCardsPass(ctx context.Context, store cards.Store, load loadIndex, open o
 	}
 	defer closeStore()
 	res, err := newcards.Pass(ctx, deckStore, newcards.Input{
-		Index: idx, New: rec.Cards, KeyOf: keyOf, ThemeOf: theme, Fit: fit, Floor: candidates.FitFloor,
+		Index: idx, Version: marked, New: rec.Cards, KeyOf: keyOf, ThemeOf: theme, Fit: fit, Floor: candidates.FitFloor,
 	}, logger)
 	// The cards of the hit decks are stored, so a later pass does not hit
 	// them again. Their push goes out now, also after a failed pass.

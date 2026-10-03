@@ -136,7 +136,7 @@ func (r *Repo) Rewrite(ctx context.Context, uid string, d *mtgv1.Deck) error {
 		}
 		next := proto.CloneOf(d)
 		next.Name, next.Favorite, next.Shared, next.ShareToken = cur.GetName(), cur.GetFavorite(), cur.GetShared(), cur.GetShareToken()
-		next.NewOracleIds = cur.GetNewOracleIds()
+		next.NewOracleIds, next.NewCardsVersion = cur.GetNewOracleIds(), cur.GetNewCardsVersion()
 		updated, err := restore(next, sd)
 		if err != nil {
 			return err

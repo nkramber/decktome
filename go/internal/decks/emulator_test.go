@@ -146,7 +146,7 @@ func TestEmulatorUpdateDeck(t *testing.T) {
 	id := repo.NewID(uid)
 	created := time.Now().UTC().Truncate(time.Second)
 	d := sampleDeck(id, created)
-	d.NewOracleIds = []string{"new-1"}
+	d.NewOracleIds, d.NewCardsVersion = []string{"new-1"}, "v1"
 	if err := repo.Put(ctx, uid, d); err != nil {
 		t.Fatalf("put: %v", err)
 	}
@@ -217,8 +217,8 @@ func TestEmulatorUpdateDeck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}
-	if len(dismissed.GetNewOracleIds()) != 0 || dismissed.GetName() != name {
-		t.Errorf("after the dismiss: new cards %v name %q", dismissed.GetNewOracleIds(), dismissed.GetName())
+	if len(dismissed.GetNewOracleIds()) != 0 || dismissed.GetName() != name || dismissed.GetNewCardsVersion() != "v1" {
+		t.Errorf("after the dismiss: new cards %v name %q version %q", dismissed.GetNewOracleIds(), dismissed.GetName(), dismissed.GetNewCardsVersion())
 	}
 
 	if _, err := repo.Update(ctx, uid, "no-such-deck", &name, nil, false); !errors.Is(err, ErrNotFound) {
@@ -390,7 +390,7 @@ func TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck(t *testing.T) {
 	uid := "u-rewrite-" + repo.NewID("seed")
 	id := repo.NewID(uid)
 	first := sampleDeck(id, time.Now().UTC())
-	first.NewOracleIds = []string{"new-1"}
+	first.NewOracleIds, first.NewCardsVersion = []string{"new-1"}, "v1"
 	if err := repo.Put(ctx, uid, first); err != nil {
 		t.Fatalf("put: %v", err)
 	}
@@ -412,8 +412,8 @@ func TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck(t *testing.T) {
 	if err != nil || d.GetSummary() != "a new read" || d.GetName() != name || !d.GetShared() || d.GetShareToken() != "t-rw-one" {
 		t.Fatalf("after the rewrite: summary %q, name %q, shared %v, token %q, err %v", d.GetSummary(), d.GetName(), d.GetShared(), d.GetShareToken(), err)
 	}
-	if got := d.GetNewOracleIds(); len(got) != 1 || got[0] != "new-1" {
-		t.Errorf("a rewrite dropped the new cards of the snapshot job: %v (D-1091)", got)
+	if got := d.GetNewOracleIds(); len(got) != 1 || got[0] != "new-1" || d.GetNewCardsVersion() != "v1" {
+		t.Errorf("a rewrite dropped the new cards of the snapshot job: %v, version %q (D-1091, D-1092)", got, d.GetNewCardsVersion())
 	}
 	if _, _, err := repo.LookupShare(ctx, "h-rw-one"); err != nil {
 		t.Errorf("a rewrite dropped the link: %v", err)
