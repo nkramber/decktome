@@ -19,9 +19,10 @@ import { type Browser, type BrowserContext, type Page, devices, expect, test } f
 //
 // Writes: the sweep never clicks a thumb or "Report a problem", because
 // each one writes a reader verdict (D-635). It opens each rename and
-// delete dialog and cancels it. It makes one share link, reads it
-// signed out, and revokes it. LIVE_SWEEP_DELETE=1 deletes the new deck
-// at the end.
+// delete dialog and cancels it. It reads the stored share link, or makes
+// one when the deck has none, and reads it signed out. The app has no
+// revoke (D-1069), so the link stays live until its deck ends.
+// LIVE_SWEEP_DELETE=1 deletes the new deck at the end.
 
 const env = (name: string): string => {
   const value = process.env[name] ?? "";
