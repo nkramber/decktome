@@ -25,7 +25,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed at `1e00529`, and so did `make ste-check` and `make ref-check`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** The first Gitar review of #277 found two items, and both had full merit. The share page did not show the Archidekt link of D-1101, and a list edited after the read kept its link. The correction commit fixes both, with a test of each. The Codex review waits. The state is pending the auto-merge (D-828).
+**The review.** The first Gitar review found two items, and the correction commit fixes both. Codex reviewed effective head `a5583dfed06afdab3e0e7358132faa1889cd8505`. The verdict is Changes required, with open findings P2-1 and P2-2.
 
 **The open work.**
 
