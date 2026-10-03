@@ -3161,7 +3161,7 @@ Gate:
 The live check after the deploy: when a ban of 2026-10-12 makes a deck of the owner stale, the phone shows the push. A tap opens the deck or the list. No deck of `decktome-prod` was stale on 2026-10-01 (D-1023), so the check waits for a real ban. UNVERIFIED: no real ban reached a deck before the merge.
 > *In plain English:* when a ban makes one of your decks illegal, your phone tells you, if notifications are on. One push covers all your decks, and a tap opens the deck or your deck list.
 
-**PR-119: The push of new cards that fit a deck, the third event of PR-26 (D-1090 to D-1092).** 🔧 planned. The mark changes when the pull request opens (D-822).
+**PR-119: The push of new cards that fit a deck, the third event of PR-26 (D-1090 to D-1092).** ✅ merged as #278. The mark comes before any review (D-822).
 
 - **The event (D-1090).** A new set releases, and its cards become legal. The snapshot job finds them, and it gives each saved deck up to three cards that fit it (`go/internal/newcards`).
 - **A new card (D-1091).** `cards.NewlyLegal` reads the legalities of the previous and the new snapshot. A card is new when it was legal in no format before, and it is legal in a format of the app now. On 2026-10-03 the Scryfall API read the 75 first printings of Star Trek as `not_legal` in each format. The Reality Fracture cards read `legal` since 2026-10-02. So a card becomes new at its release, not at its preview. A reprint and an unban are not new.

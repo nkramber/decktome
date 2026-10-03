@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03d)
 
-**Branch `feat/push-third-event`: PR-119, the push of new cards that fit a deck, the third event of PR-26 (D-1090 to D-1092).** The pull request is not open yet.
+**Branch `feat/push-third-event`: PR-119, the push of new cards that fit a deck, the third event of PR-26 (D-1090 to D-1092).** The pull request is #278.
 
 Author provider: Claude Code
 
@@ -32,7 +32,7 @@ Author provider: Claude Code
 
 **The open work.**
 
-1. Open the pull request, then the Gitar pass, the Codex review, and the owner confirmation of the merge.
+1. The Gitar pass, the Codex review, and the owner confirmation of the merge.
 2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
 3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 
