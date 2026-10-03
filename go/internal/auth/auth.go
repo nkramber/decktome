@@ -60,6 +60,13 @@ type Closed interface {
 	Closed(ctx context.Context, uid string) (bool, error)
 }
 
+// Visits records each verified call of a user, so every user who signs
+// in has a record (D-1092). It answers no error, and it never fails the
+// call.
+type Visits interface {
+	Seen(ctx context.Context, uid, email string)
+}
+
 // ErrNotConfigured is what RejectAll answers: the server has no verifier.
 var ErrNotConfigured = errors.New("token verification is not configured on this server")
 
@@ -185,11 +192,18 @@ func WithClosed(c Closed) Option {
 	return func(i *interceptor) { i.closed = c }
 }
 
+// WithVisits records each call of a user with a proved email, after
+// every check admits it (D-1092).
+func WithVisits(v Visits) Option {
+	return func(i *interceptor) { i.visits = v }
+}
+
 type interceptor struct {
 	verify   Verifier
 	fallback string
 	allow    Allowlist
 	closed   Closed
+	visits   Visits
 	// public names the procedures that need no sign-in, the shared deck
 	// reads of D-315. Such a call carries no user in its context.
 	public map[string]bool
@@ -319,6 +333,9 @@ func (i *interceptor) resolve(ctx context.Context, procedure, authorization stri
 			err.Meta().Set(RefusalHeader, RefusalClosed)
 			return nil, err
 		}
+	}
+	if i.visits != nil && id.EmailVerified {
+		i.visits.Seen(ctx, id.UID, id.Email)
 	}
 	return WithAdmin(WithEmail(WithUserID(ctx, id.UID), id.Email), id.Admin), nil
 }

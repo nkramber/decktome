@@ -15,6 +15,39 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03c, PR-118
+
+**Branch `feat/push-next-event`: PR-118, the push of a legality change, the second event of PR-26 (D-1087 to D-1089).** The pull request is #275.
+
+Author provider: Claude Code
+
+**The base.** `main` is `e0b6f34`, from #274. The owner reported that the live check of PR-117 passed on 2026-10-03, with no change. So PR-117 needs no more work.
+
+**The owner choices.** The legality event comes first, because the stale pass of I-1 sets the `stale` flag now (D-1087). One toggle covers both events. Each user gets one push after each pass, and a push goes out for a new stale deck or a new illegal card (D-1088). The session granted `roles/firebasecloudmessaging.admin` to `mtg-worker` on `decktome-prod`, and read the policy back (D-1089).
+
+**The code.**
+
+- `go/internal/stale`: `Pass` returns the hit decks of each user in `Result.Hit`. `NewCard` names a new illegal card.
+- `go/internal/push`: `Notifier.DecksStale` and `StaleMessage`. One deck opens that deck, and more decks open `/decks`.
+- `go/cmd/worker`: the stale pass sends the push of its hits, also after a failure. The job builds the sender only as a Cloud Run job.
+- The web app: the deck list marks a stale deck with "No longer legal". The menu item reads "Notify me about my decks".
+
+**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. The Go tests of the stale pass, the push, and the worker pass.
+
+**The review.** Gitar approved `61a474f` with no finding and no thread, and the answer to its CI note is on the pull request. Codex reviewed effective head `61a474f2ac7a5850582b8b0137c808cd268609d5`. The verdict is Ready for owner merge, pending the auto-merge. No finding remains open.
+
+**The open work.**
+
+1. The owner confirmation of the merge, then the auto-merge.
+2. After the deploy, read the log of the snapshot job for the line "stale pass ended" with "users hit".
+3. After the ban announcement of 2026-10-12, a stale deck of the owner must send the push. The live rerun of I-1 can use the same deck (D-1023).
+
+### 2026-10-03: the live check of PR-115, PR-116
+
+**The deploy of `18b7756` read SUCCESS for both builds.** The owner did the Resend steps and mounted the secret. The first check showed no "Access requests" item, because nobody ran `make grant-admin` before. The owner ran it, and then the approval and the email passed.
+
+**The owner asked for five changes and a new proof email.** The Firebase template permits no change of the message of that email, so the API sends it through Resend (D-1081). The owner chose this pull request, a sign-in by the link for 3 days, and the plan for iOS (D-1082, D-1083). The owner chose a grant by the session (D-1084).
+
 ## The resume section of 2026-10-03b, PR-117
 
 **Branch `fix/phone-live-check-7`: PR-117, the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** The pull request is #274.

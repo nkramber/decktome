@@ -6,32 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03c)
+## RESUME HERE (2026-10-03d)
 
-**Branch `feat/push-next-event`: PR-118, the push of a legality change, the second event of PR-26 (D-1087 to D-1089).** The pull request is #275.
+**Branch `feat/user-record-at-sign-in`: PR-119, a user record for each user who signs in (F-210, D-1092 to D-1094).** The pull request is #276.
 
 Author provider: Claude Code
 
-**The base.** `main` is `e0b6f34`, from #274. The owner reported that the live check of PR-117 passed on 2026-10-03, with no change. So PR-117 needs no more work.
+**The base.** `main` is `e135aab`, from #275. The session worked in the worktree `../decktome-user-record`. The main checkout holds the branch `feat/push-third-event` of another session, with two decisions not committed. That session wrote the next two decision ids, so this pull request starts at D-1092.
 
-**The owner choices.** The legality event comes first, because the stale pass of I-1 sets the `stale` flag now (D-1087). One toggle covers both events. Each user gets one push after each pass, and a push goes out for a new stale deck or a new illegal card (D-1088). The session granted `roles/firebasecloudmessaging.admin` to `mtg-worker` on `decktome-prod`, and read the policy back (D-1089).
+**The fault (F-210).** The owner asked why an invited user had no record. The logs of `mtg-api` showed the sign-up, the proof of the email, and two page reads at 19:25 UTC on 2026-10-03. The user made nothing, and only a creation wrote the record.
+
+**The owner choices.** The first verified call writes the record, and no backfill reads Firebase Auth (D-1092). `last_seen_at` is the newest activity, at most once in five minutes. `last_creation_at` is the newest deck or chat (D-1093). A schema 1 record moves at the next visit (D-1094).
 
 **The code.**
 
-- `go/internal/stale`: `Pass` returns the hit decks of each user in `Result.Hit`. `NewCard` names a new illegal card.
-- `go/internal/push`: `Notifier.DecksStale` and `StaleMessage`. One deck opens that deck, and more decks open `/decks`.
-- `go/cmd/worker`: the stale pass sends the push of its hits, also after a failure. The job builds the sender only as a Cloud Run job.
-- The web app: the deck list marks a stale deck with "No longer legal". The menu item reads "Notify me about my decks".
+- `go/internal/users`: `Repo.Touch`, the `Visits` cache, the field `last_creation_at`, and schema 2. `Touch` and `Seed` do the copy of D-1094.
+- `go/cmd/users-backfill`: the seed writes the newest deck or chat as `last_creation_at`.
+- `go/internal/auth`: `WithVisits`. The interceptor records a call after every check admits it, and only with a proved email.
+- `go/cmd/api`: the API wires `WithVisits` with `Repo.Touch`.
 
-**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. The Go tests of the stale pass, the push, and the worker pass.
+**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `make store-check` passes against the emulator. A mutation of each new rule failed a test.
 
-**The review.** Gitar approved `61a474f` with no finding and no thread, and the answer to its CI note is on the pull request. Codex reviewed effective head `61a474f2ac7a5850582b8b0137c808cd268609d5`. The verdict is Ready for owner merge, pending the auto-merge. No finding remains open.
+**The review.** Gitar confirmed the three fixes on `6ac5e7a` and completed a current pass of `99dd96f`. Codex reviewed effective head `99dd96fd5b0eaa1d477500f2c02886d60e8ec2ee`. P2-1 is fixed by the transaction in `Note`, and both regression tests pass. The verdict is Ready for owner merge. The existing record is `docs/reviews/pr-276.md`.
 
 **The open work.**
 
-1. The owner confirmation of the merge, then the auto-merge.
-2. After the deploy, read the log of the snapshot job for the line "stale pass ended" with "users hit".
-3. After the ban announcement of 2026-10-12, a stale deck of the owner must send the push. The live rerun of I-1 can use the same deck (D-1023).
+1. Get the owner confirmation and turn on the auto-merge.
+2. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 
 ## How to resume
 
@@ -104,7 +105,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-118: the push of a legality change** (D-1087 to D-1089). The resume section holds the open work.
+0. **PR-119: a user record for each user who signs in** (F-210, D-1092 to D-1094). The resume section holds the open work.
+0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -128,12 +130,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03: the live check of PR-115, PR-116
-
-**The deploy of `18b7756` read SUCCESS for both builds.** The owner did the Resend steps and mounted the secret. The first check showed no "Access requests" item, because nobody ran `make grant-admin` before. The owner ran it, and then the approval and the email passed.
-
-**The owner asked for five changes and a new proof email.** The Firebase template permits no change of the message of that email, so the API sends it through Resend (D-1081). The owner chose this pull request, a sign-in by the link for 3 days, and the plan for iOS (D-1082, D-1083). The owner chose a grant by the session (D-1084).
-
 ### 2026-10-03b: the live check of PR-116, PR-117
 
 **The deploy of `11fc024` read SUCCESS for both builds.** The owner checked the proof email on a desktop and on the iPhone, and each part passed. The five changes of D-1079 passed too.
@@ -146,6 +142,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
 
+### 2026-10-03d: a user record for each user who signs in, PR-119
+
+**The owner asked why an invited user had no user record.** The logs showed a sign-in and two page reads, and no creation. Only a creation wrote the record.
+
+**The owner chose a write at each verified call, and two times.** `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat (D-1092 to D-1094).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03b, the records of 2026-08-31 to 2026-10-02g, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03c, the records of 2026-08-31 to 2026-10-03, and 104 more sections, word for word. Read it for the detail behind a decision.
