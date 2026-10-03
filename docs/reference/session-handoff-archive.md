@@ -15,6 +15,34 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03e, the spend cap of $2
+
+**Branch `ops/spend-cap-two-dollars`: the per-user spend cap moves from $5 to $2 a month (D-1109).** The pull request is #279.
+
+Author provider: Claude Code
+
+**The base.** `main` is `fbbcd60`, from #276. The session worked in the worktree `../decktome-cap`. The main checkout holds the branch `feat/push-third-event` of #278. The open pull requests #277 and #278 hold decision ids below 1109, so this pull request takes D-1109.
+
+**The owner request.** The owner asked for a cap of $2 a month on all usage of each user. The owner's account keeps no limit.
+
+**The live change.** The live service read `SPEND_CAP_USD=5`. The override of D-576 already turned the cap off for the owner's account. On 2026-10-03 the session set `SPEND_CAP_USD=2` on `mtg-api`. Revision `mtg-api-00113-fmw` serves all traffic, on the same image `fbbcd60`. Its startup log reads a cap of 2 and one override. The deploy of `cloudbuild/api.yaml` keeps each environment variable, so a later merge keeps the cap.
+
+**The code.** `go/cmd/api/main.go` moves the default from $5 to $2, so a service with no value reads the same cap. The test of `spendCap` pins the value 2. `docs/setup-gcp.md` reads the new cap.
+
+**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `TestSpendCap` pins the default of 2.
+
+**The review.** Gitar reviewed effective head `6e352bc` and closed its archive-index finding on `35ece27`. The review record approves effective head `6e352bc`.
+
+**The open work.**
+
+1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
+
+### 2026-10-03c: the push of a legality change, PR-118
+
+**The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
+
+**The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
+
 ## The resume section of 2026-10-03d, PR-119
 
 **Branch `feat/user-record-at-sign-in`: PR-119, a user record for each user who signs in (F-210, D-1092 to D-1094).** The pull request is #276.

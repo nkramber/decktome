@@ -305,7 +305,7 @@ func TestSpendCap(t *testing.T) {
 		want    float64
 		wantErr bool
 	}{
-		{name: "unset on Cloud Run takes the default", cloud: true, want: defaultSpendCapUSD},
+		{name: "unset on Cloud Run takes the $2 default of D-1109", cloud: true, want: 2},
 		{name: "unset locally is off", want: 0},
 		{name: "zero is off", raw: "0", cloud: true, want: 0},
 		{name: "a number", raw: "7.5", cloud: true, want: 7.5},

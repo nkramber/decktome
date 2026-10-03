@@ -6,13 +6,13 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03e)
+## RESUME HERE (2026-10-03f)
 
 **Branch `feat/push-third-event`: PR-120, the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).** The pull request is #278.
 
 Author provider: Claude Code
 
-**The base.** `main` is `fbbcd60`, from #276. The branch merged it on 2026-10-03. #276 took PR-119 and D-1092, so this item is PR-120, and its panel decision is D-1095. This session did not read the deploy of `fbbcd60`. Before the merge, `main` was `e135aab`, from #275. Cloud Build `4dffc8c5` of `deploy-api` and `afd93b41` of `deploy-web` built `e135aab`, and both read SUCCESS. `/version.json` and `/readyz` name `e135aab`. The run `mtg-snapshot-p2t6g` of 20:00 UTC ran `worker:e135aab`, and it logged "cards refresh: snapshot current".
+**The base.** `main` is `a083208`, from #279. The branch merged `fbbcd60` of #276 and then `a083208` on 2026-10-03. #276 took PR-119 and D-1092, so this item is PR-120, and its panel decision is D-1095. This session did not read the deploy of `fbbcd60`. Before the merge, `main` was `e135aab`, from #275. Cloud Build `4dffc8c5` of `deploy-api` and `afd93b41` of `deploy-web` built `e135aab`, and both read SUCCESS. `/version.json` and `/readyz` name `e135aab`. The run `mtg-snapshot-p2t6g` of 20:00 UTC ran `worker:e135aab`, and it logged "cards refresh: snapshot current".
 
 **The owner choices.** The new-cards event comes before the email digest (D-1090). The pass reads the theme of the chat, and the cards of the deck when the chat holds none. The push uses the toggle of D-1005, and a tap opens the deck with a panel (D-1091). A dismiss or the next pass clears the panel (D-1095).
 
@@ -32,7 +32,7 @@ Author provider: Claude Code
 
 **The open work.**
 
-1. The owner confirms the merge. Then the author session turns on the auto-merge, and the pull request is pending the auto-merge.
+1. The owner confirmed the merge on 2026-10-03. The first auto-merge met a conflict with #279, so the branch merged `a083208`. The pull request is pending the auto-merge.
 2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
 3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 
@@ -94,8 +94,8 @@ Twenty-two things a fresh session gets wrong without this file.
 - The harvest of 2026-09-29 read that newest verdict, a test of the owner (D-994). Its watermark is 2026-09-24 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-10-03 UTC: Cloud Build `4dffc8c5` of `deploy-api` built `e135aab`, from #275, and read SUCCESS. `/readyz` names `e135aab`. The job `mtg-snapshot` runs `worker:e135aab`.
-- The deployed web app, read 2026-10-03: build `afd93b41` of `deploy-web` built `e135aab`, from #275, and read SUCCESS. `/version.json` names `e135aab`.
+- The deployed API, read 2026-10-03 UTC: The service serves revision `mtg-api-00113-fmw`, on the image `api:fbbcd60` from #276, with the secret `resend-api-key`. That revision reads `SPEND_CAP_USD=2` and one override (D-1109). On 2026-10-01 the jobs `mtg-meta` and `mtg-snapshot` ran `worker:07203ba`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed web app, read 2026-10-03: build `321c7e5b` of `deploy-web` built `18b7756`, from #272, and ended SUCCESS at 05:45:45 UTC. `/version.json` names `18b7756`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
@@ -109,7 +109,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **PR-120: the push of new cards that fit a deck** (D-1090, D-1091, D-1095). The resume section holds the open work.
-0. **The check of PR-119** (F-210, D-1092). After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
@@ -134,19 +134,17 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03c: the push of a legality change, PR-118
-
-**The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
-
-**The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
-
 ### 2026-10-03d: a user record for each user who signs in, PR-119
 
 **The owner asked why an invited user had no user record.** The logs showed a sign-in and two page reads, and no creation. Only a creation wrote the record.
 
 **The owner chose a write at each verified call, and two times.** `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat (D-1092 to D-1094).
 
-### 2026-10-03e: the push of new cards, PR-120
+### 2026-10-03e: the spend cap of $2, D-1109
+
+**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
+
+### 2026-10-03f: the push of new cards, PR-120
 
 **The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
 
@@ -154,4 +152,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03d, the records of 2026-08-31 to 2026-10-03b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03e, the records of 2026-08-31 to 2026-10-03c, and 104 more sections, word for word. Read it for the detail behind a decision.

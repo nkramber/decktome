@@ -34,7 +34,7 @@ PR-22 added four things on 2026-09-06, and this page reads them as they stand:
 - The Firebase web configuration through four build variables: `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`, and `VITE_FIREBASE_APP_ID`. Unset, the app talks to the emulator project. PR-26 added a fifth, `VITE_FIREBASE_MESSAGING_SENDER_ID`, the project number. Unset, the app shows no push toggle (D-1005).
 - The invite list (D-314, D-420). On Cloud Run the API reads `config/allowlist` before every signed-in request, with a cache of one minute. It refuses an email off the list with one sentence. It also refuses an email on the list with no proof from its holder (D-903). `make allow EMAIL=... PROJECT_ID=...` writes the list, and `make disallow` takes an email off. `make mark-verified PROJECT_ID=...` lists each account with no proof.
 - The web push of PR-26 (D-1005). The devices of a user sit under `users/<uid>/push_devices`, at most 10. The top-level `push_owners/<id>` names the one owner of each Firebase Installation ID. On Cloud Run the API sends through Cloud Messaging, and local mode sends nothing. PR-108 adds `users/<uid>/sessions/<id>/private/presence`, which records whether the page of a session went to the background (D-1033).
-- The spend cap (D-421). One Firestore document per user and month, `users/<uid>/usage/<YYYY-MM>`, sums the cost of every turn and of each deck import (PR-70). On Cloud Run the cap is $5 a month, and `SPEND_CAP_USD` moves it. A turn at the cap gets a refusal that names the day the cap resets.
+- The spend cap (D-421). One Firestore document per user and month, `users/<uid>/usage/<YYYY-MM>`, sums the cost of every turn and of each deck import (PR-70). On Cloud Run the cap is $2 a month (D-1109), and `SPEND_CAP_USD` moves it. A turn at the cap gets a refusal that names the day the cap resets.
 
 ## 2. Before you start
 
@@ -295,7 +295,7 @@ Six notes on the flags:
 - `--set-secrets` pins version `1`. Rotate a key with a new version and a new deploy.
 - The two Pushover secrets are optional. Leave them out of `--set-secrets` when you made no Pushover application, and the API sends no notice.
 - `PROJECT_ID` must be explicit. Cloud Run sets `K_SERVICE` and not the project id.
-- `SPEND_CAP_USD` names the monthly cap per user (D-421). Cloud Run reads $5 with no value, and `0` turns the cap off. A value that is not a number of zero or more stops the start (D-925). With the cap on, a role model with no row in `go/internal/llm/prices.json` stops the start too.
+- `SPEND_CAP_USD` names the monthly cap per user (D-421). Cloud Run reads $2 with no value (D-1109), and `0` turns the cap off. A value that is not a number of zero or more stops the start (D-925). With the cap on, a role model with no row in `go/internal/llm/prices.json` stops the start too.
 - `SPEND_CAP_OVERRIDES` gives a named email its own cap (D-576). It reads a comma-separated list of `email:usd` pairs, and `0` turns the cap off for that email alone. Example: `SPEND_CAP_OVERRIDES=owner@example.com:0`. The API drops an entry that names no number, and the log names it.
 - `ALLOWED_ORIGINS` takes a comma-separated list (`auth.ParseOrigins`). The list holds the two Hosting origins as well as the domain. The web app runs on `PROJECT_ID.web.app` until section 14 connects the domain, and the browser blocks the RPCs without that origin.
 - `^@^` is the alternate delimiter of gcloud. A value with a comma in it needs one, or gcloud reads the comma as the end of the variable.
@@ -471,7 +471,7 @@ The measured run costs of the gates give the price of each step.
 | One build with repairs | Deck gate run 38, 2026-09-29: $1.6749 for 25 decks | About $0.07 a deck |
 | One revision turn | Revise gate run 11, 2026-09-30: $0.5390 for 11 turns | About $0.05 a turn |
 
-One deck with one revision costs about $0.12. The month costs $5 with no revisions, $8 with one revision a deck, and $11 with two. The per-user cap of D-421 bounds the whole at $25 a month for five users.
+One deck with one revision costs about $0.12. The month costs $5 with no revisions, $8 with one revision a deck, and $11 with two. The per-user cap of D-1109 bounds the whole at $10 a month for five users. Two revisions a deck reach that cap.
 
 ### 16.3 Google Cloud
 
@@ -517,7 +517,7 @@ CAUTION: no billing export exists on the project. This table multiplies the usag
 
 **REFUTED 2026-09-09:** the line above once read "Google Cloud, inside the free tiers, $0", and the text said an idle month costs the domain alone. Both were wrong. Two Cloud Run jobs run on a schedule, and they cost money whether or not a reader opens the app.
 
-An idle month costs the domain alone. Three things move the number. A user who revises a deck five times spends five revision turns, which the $5 cap of D-421 stops. The Always Free tier is per billing account, so a second project on the same account shares it. The free trial credit does not change the estimate: the credit pays the first $300 of whatever the meter reads.
+An idle month costs the domain alone. Three things move the number. A user who revises a deck five times spends five revision turns, which the $2 cap of D-1109 bounds. The Always Free tier is per billing account, so a second project on the same account shares it. The free trial credit does not change the estimate: the credit pays the first $300 of whatever the meter reads.
 
 CAUTION: the PR-22 gate records the measured monthly cost at idle. Replace this estimate with that measurement when it exists.
 
