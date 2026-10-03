@@ -6,28 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03b)
+## RESUME HERE (2026-10-03c)
 
-**Branch `fix/phone-live-check-7`: PR-117, the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** The pull request is #274.
+**Branch `feat/push-next-event`: PR-118, the push of a legality change, the second event of PR-26 (D-1087 to D-1089).** The pull request is #275.
 
 Author provider: Claude Code
 
-**The base.** `main` is `11fc024`, from #273. Cloud Build `deploy-api` `cb1370fa` and `deploy-web` `54e2e425` built it with SUCCESS at 07:15 UTC on 2026-10-03. `/version.json` names it. Revision `mtg-api-00110-x9t` logged "the proof email is on" at 07:14:29 UTC.
+**The base.** `main` is `e0b6f34`, from #274. The owner reported that the live check of PR-117 passed on 2026-10-03, with no change. So PR-117 needs no more work.
 
-**The live check of PR-116 (D-1086).** The owner made an account with a new invited email. Its email came from Deck Tome, with the text of D-1081 and a link to `/v/<code>`. The link proved the email on a desktop and on the iPhone. The five changes of D-1079 passed.
+**The owner choices.** The legality event comes first, because the stale pass of I-1 sets the `stale` flag now (D-1087). One toggle covers both events. Each user gets one push after each pass, and a push goes out for a new stale deck or a new illegal card (D-1088). The session granted `roles/firebasecloudmessaging.admin` to `mtg-worker` on `decktome-prod`, and read the policy back (D-1089).
 
-**The fault (F-209).** The owner signed out on the admin page, and then signed in to the new account. The app returned to the admin page, which read "permission_denied". The route guard kept that page in the location state, and the sign-in page returned there.
+**The code.**
 
-**The code (D-1085).** `RequireAuth` keeps no page to return to. `SignInPage` sends each signed-in user to `/`, and `/` goes on to `/session/new`. A web test signs in from `/admin` and reads `/session/new`. The test fails on the code of `11fc024`.
+- `go/internal/stale`: `Pass` returns the hit decks of each user in `Result.Hit`. `NewCard` names a new illegal card.
+- `go/internal/push`: `Notifier.DecksStale` and `StaleMessage`. One deck opens that deck, and more decks open `/decks`.
+- `go/cmd/worker`: the stale pass sends the push of its hits, also after a failure. The job builds the sender only as a Cloud Run job.
+- The web app: the deck list marks a stale deck with "No longer legal". The menu item reads "Notify me about my decks".
 
-**The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22.
+**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. The Go tests of the stale pass, the push, and the worker pass.
 
-**The review.** Gitar approved `054ce89` with no finding and no thread, and the answer to its CI note is on the pull request. CI is green on `054ce89`. Codex reviewed effective head `054ce89` and found no defect. The verdict is Ready for owner merge. No finding remains open.
+**The review.** Gitar approved `61a474f` with no finding and no thread, and the answer to its CI note is on the pull request. Codex reviewed effective head `61a474f2ac7a5850582b8b0137c808cd268609d5`. The verdict is Ready for owner merge, pending the auto-merge. No finding remains open.
 
 **The open work.**
 
 1. The owner confirmation of the merge, then the auto-merge.
-2. After the deploy, sign out on `/admin`, and sign in to a second account. The app must open a new chat.
+2. After the deploy, read the log of the snapshot job for the line "stale pass ended" with "users hit".
+3. After the ban announcement of 2026-10-12, a stale deck of the owner must send the push. The live rerun of I-1 can use the same deck (D-1023).
 
 ## How to resume
 
@@ -100,7 +104,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-117: the live check of PR-116, and a sign-in that lands on the home page** (F-209, D-1085, D-1086). The resume section holds the open work.
+0. **PR-118: the push of a legality change** (D-1087 to D-1089). The resume section holds the open work.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -111,7 +115,7 @@ Twenty-two things a fresh session gets wrong without this file.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. The email digest, the legality event, and the new-cards event wait.
+9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. PR-118 adds the legality event (D-1087). The email digest and the new-cards event wait.
 10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
@@ -123,12 +127,6 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 The repository is public (D-639). The rulesets API answers, and the ruleset of `main` can require each job of `verify` (D-828). `docs/reference/merge-rules.md` holds the rules, and `make ruleset-check` compares them with GitHub.
 
 ## The three most recent sessions
-
-### 2026-10-02g: a request for beta access, PR-115
-
-**The deploy of `a97cf82` read SUCCESS for `deploy-web`.** The owner checked PR-114 on the iPhone. The cold start reloaded with no error, and F-206 closed.
-
-**The owner named two parts for one pull request.** The owner chose the sign-in page, Firestore with a Pushover notice, an admin screen with a custom claim, and Resend. The owner added the feedback row.
 
 ### 2026-10-03: the live check of PR-115, PR-116
 
@@ -142,6 +140,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner found one fault.** A sign-in after a sign-out on the admin page returned to that page. The owner asked for a sign-in that always lands on the home page, and named `/session/new` (D-1085).
 
+### 2026-10-03c: the push of a legality change, PR-118
+
+**The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
+
+**The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03, the records of 2026-08-31 to 2026-10-02f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03b, the records of 2026-08-31 to 2026-10-02g, and 104 more sections, word for word. Read it for the detail behind a decision.

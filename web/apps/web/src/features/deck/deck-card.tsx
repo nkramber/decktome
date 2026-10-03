@@ -61,6 +61,8 @@ export function DeckCard({
           <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
             {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
             {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
+            {/* The push of a legality change opens this list when it names more than one deck (D-1088). */}
+            {deck.stale && <span className="text-danger"> · No longer legal</span>}
           </p>
         </div>
         <div className="flex shrink-0 items-center">

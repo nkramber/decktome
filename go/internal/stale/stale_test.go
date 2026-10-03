@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
 	"testing"
@@ -235,8 +236,11 @@ func TestPass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res != (Result{Read: 2, Stale: 1, Written: 1}) {
+	if res.Read != 2 || res.Stale != 1 || res.Written != 1 {
 		t.Fatalf("first pass = %+v", res)
+	}
+	if hitIDs(res) != "u1:d1" {
+		t.Fatalf("first pass hit %q, want u1:d1", hitIDs(res))
 	}
 	if d := store.decks["d1"]; !d.GetStale() || !slices.Equal(d.GetStaleOracleIds(), []string{"n00"}) {
 		t.Fatalf("d1 = stale %v ids %v", d.GetStale(), d.GetStaleOracleIds())
@@ -246,8 +250,26 @@ func TestPass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Written != 0 || store.writes != 1 {
+	if res.Written != 0 || store.writes != 1 || res.Hit != nil {
 		t.Fatalf("a second pass on the same snapshot must write nothing, %+v, writes %d", res, store.writes)
+	}
+
+	legal["n01"]["commander"] = "banned"
+	res, err = Pass(context.Background(), store, keyOf, legal, log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Written != 1 || hitIDs(res) != "u1:d1" {
+		t.Fatalf("a new ban on a stale deck must hit it again, %+v", res)
+	}
+
+	legal["n01"]["commander"] = "legal"
+	res, err = Pass(context.Background(), store, keyOf, legal, log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Written != 1 || res.Hit != nil || !store.decks["d1"].GetStale() {
+		t.Fatalf("an unban of one card must keep the deck stale and hit nothing, %+v", res)
 	}
 
 	legal["n00"]["commander"] = "legal"
@@ -255,7 +277,35 @@ func TestPass(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Written != 1 || store.decks["d1"].GetStale() {
-		t.Fatalf("an unban must clear the deck, %+v", res)
+	if res.Written != 1 || store.decks["d1"].GetStale() || res.Hit != nil {
+		t.Fatalf("an unban must clear the deck and hit nothing, %+v", res)
+	}
+}
+
+// hitIDs writes the hit decks of a pass as "uid:id" in order.
+func hitIDs(res Result) string {
+	var out []string
+	for _, uid := range slices.Sorted(maps.Keys(res.Hit)) {
+		for _, d := range res.Hit[uid] {
+			out = append(out, uid+":"+d.GetId())
+		}
+	}
+	return strings.Join(out, ",")
+}
+
+func TestNewCard(t *testing.T) {
+	for _, c := range []struct {
+		before, after []string
+		want          bool
+	}{
+		{nil, []string{"a"}, true},
+		{[]string{"a"}, []string{"a", "b"}, true},
+		{[]string{"a", "b"}, []string{"a"}, false},
+		{[]string{"a"}, []string{"a"}, false},
+		{[]string{"a"}, nil, false},
+	} {
+		if got := NewCard(c.before, c.after); got != c.want {
+			t.Errorf("NewCard(%v, %v) = %v, want %v", c.before, c.after, got, c.want)
+		}
 	}
 }

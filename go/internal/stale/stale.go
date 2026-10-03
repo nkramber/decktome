@@ -206,12 +206,28 @@ type Result struct {
 	// Written is each deck whose stored state changed: newly stale, a
 	// new verdict, or cleared after an unban.
 	Written int
+	// Hit holds, for each user, the decks that this pass made stale or
+	// that took a new illegal card. They get the push of D-1088. An
+	// unban hits no deck.
+	Hit map[string][]*mtgv1.Deck
+}
+
+// NewCard says whether after holds an oracle id that before does not.
+func NewCard(before, after []string) bool {
+	for _, id := range after {
+		if !slices.Contains(before, id) {
+			return true
+		}
+	}
+	return false
 }
 
 // Pass reads every stored deck, and marks or clears its stale state
 // against the legalities of one snapshot. keyOf gives the Scryfall key
 // of a format, and "" for a format with no legality check (D-3). The
-// write reads the deck again inside its transaction (Store.Mark).
+// write reads the deck again inside its transaction (Store.Mark). A
+// pass that fails still returns the decks it hit, because their marks
+// are stored and the next pass does not hit them again.
 func Pass(ctx context.Context, store Store, keyOf func(mtgv1.FormatId) string, legal Legalities, log *slog.Logger) (Result, error) {
 	var res Result
 	verdict := func(d *mtgv1.Deck) ([]string, Verdict) {
@@ -227,15 +243,30 @@ func Pass(ctx context.Context, store Store, keyOf func(mtgv1.FormatId) string, l
 		if !Apply(d, ids, v) {
 			return nil
 		}
+		var hit *mtgv1.Deck
 		changed, err := store.Mark(ctx, uid, d.GetId(), func(cur *mtgv1.Deck) bool {
+			before := slices.Clone(cur.GetStaleOracleIds())
 			ids, v := verdict(cur)
-			return Apply(cur, ids, v)
+			hit = nil
+			if !Apply(cur, ids, v) {
+				return false
+			}
+			if NewCard(before, ids) {
+				hit = cur
+			}
+			return true
 		})
 		if err != nil {
 			return fmt.Errorf("deck %s/%s: %w", uid, d.GetId(), err)
 		}
 		if changed {
 			res.Written++
+			if hit != nil {
+				if res.Hit == nil {
+					res.Hit = map[string][]*mtgv1.Deck{}
+				}
+				res.Hit[uid] = append(res.Hit[uid], hit)
+			}
 			log.InfoContext(ctx, "stale pass: deck marked", "deck", d.GetId(), "stale", len(ids) > 0,
 				"cards", len(ids), "case", v.Case.String())
 		}

@@ -35,8 +35,9 @@ self.addEventListener("push", (event) => {
   );
 });
 
-// A tap opens the deck. An open window of the app moves to the deck, and
-// with none open, a new window opens.
+// A tap opens the path of the push: a deck, or the deck list (D-1088).
+// An open window of the app moves to that path, and with none open, a new
+// window opens.
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = new URL((event.notification.data && event.notification.data.url) || "/decks", self.location.origin).href;

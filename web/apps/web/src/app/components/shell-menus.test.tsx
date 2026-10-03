@@ -53,7 +53,7 @@ describe("the admin item of the account menu", () => {
   it("shows no item without the claim", async () => {
     push.pushState.mockResolvedValue("off");
     renderMenu();
-    await screen.findByRole("menuitem", { name: "Notify me when a deck is ready" });
+    await screen.findByRole("menuitem", { name: "Notify me about my decks" });
     expect(screen.queryByRole("menuitem", { name: "Access requests" })).not.toBeInTheDocument();
   });
 });
@@ -64,7 +64,7 @@ describe("the push item of the account menu", () => {
     push.pushState.mockResolvedValue("off");
     push.enablePush.mockResolvedValue("on");
     renderMenu();
-    await userEvent.setup().click(await screen.findByRole("menuitem", { name: "Notify me when a deck is ready" }));
+    await userEvent.setup().click(await screen.findByRole("menuitem", { name: "Notify me about my decks" }));
     expect(push.enablePush).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(notify).toHaveBeenCalledWith("success", "Notifications on", expect.any(String)));
   });
@@ -102,7 +102,7 @@ describe("the push item of the account menu", () => {
     push.pushState.mockResolvedValue("off");
     push.enablePush.mockRejectedValue(new Error("offline"));
     renderMenu();
-    await userEvent.setup().click(await screen.findByRole("menuitem", { name: "Notify me when a deck is ready" }));
+    await userEvent.setup().click(await screen.findByRole("menuitem", { name: "Notify me about my decks" }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith("error", "Notifications could not be turned on", expect.any(String)));
   });
 });

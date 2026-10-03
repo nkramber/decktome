@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-03 correction pass 256 (PR-26, PR-118, D-1087 to D-1089): the stale pass of I-1 sets the `stale` flag, so the legality event no longer waits. The owner chose it as the next event of PR-26. The email digest and the new-cards event wait. Changes: PR-26, PR-118, sequencing step 113.
+
 2026-09-29 correction pass 255 (PR-26, D-1004, D-1005): the owner answered OQ-67. PR-26 builds web push alone, with one event, a finished build. The email digest, the legality event, and the new-cards event wait. Changes: PR-26, sequencing step 99.
 
 2026-09-30 correction pass 254 (PR-105, D-996, D-998 to D-1003): the model roles move to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`. Each move has a gate result that reads PASS. Two prompt fixes cover the misreads of the new models. Changes: PR-105, sequencing step 98.
@@ -1316,6 +1318,8 @@ The free half holds. `src/lib/pwa.test.ts` reads every field an install rests on
 The build: `go/internal/push` keeps the devices under `users/<uid>/push_devices` and sends through Cloud Messaging. `go/internal/pushsvc` serves `PushService`, and the account menu holds the toggle. The API sends the push after it stores the deck, only when the client left the stream. PR-108 adds a page that went to the background (D-1033). The handler joins the worker of PR-25 (`web/apps/web/public/push-handler.js`). D-1005 holds each choice.
 
 The ID belongs to the browser, so `push_owners/<id>` names one owner, and a second account takes the ID from the first. A sign-out ends the registration with Cloud Messaging also when the API call fails (Gitar finding on #258). The audit fix of `brace-expansion` rides in the same pull request (D-1006).
+
+2026-10-03: the legality event follows in PR-118 (D-1087 to D-1089). The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer holds. The email digest and the new-cards event still wait.
 
 Gate of this pull request: the unit tests hold each rule. A build after the client left sends one push, and a build the user reads sends none. A user with no device gets nothing. A gone device leaves the store, and a sign-out removes the device. The emulator tests hold the cap of 10 devices and one owner for each ID.
 
@@ -3132,6 +3136,27 @@ Gate:
 
 > *In plain English:* the email check of the last change passed on a computer and on an iPhone. One fault showed up. After a sign-out on the admin page, the next account to sign in went back to that page and saw an error. Now each sign-in opens a new chat.
 
+**PR-118: The push of a legality change, the second event of PR-26 (D-1087 to D-1089).** ✅ merged as #275. The mark comes before any review (D-822). The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.
+
+- **The event (D-1087).** The stale pass of I-1 marks each deck that a legality change made illegal (`go/internal/stale`). The snapshot job runs the pass, and now it also sends the push.
+- **The trigger (D-1088).** A deck goes into the push when the pass makes it stale, or when a stale deck takes a new illegal card. An unban sends no push.
+- **The grouping (D-1088).** Each user gets one push after each pass. One deck opens that deck and its banner. More decks open `/decks`, and the list marks each stale deck with "No longer legal".
+- **The opt-in (D-1088).** The menu item of D-1005 turns on both events. Its label reads "Notify me about my decks".
+- **The failure path.** A pass that fails still sends the push of each deck that it marked. The store keeps those marks, so a later pass does not hit those decks again.
+- **The grant (D-1089).** The `mtg-worker` account holds `roles/firebasecloudmessaging.admin` since 2026-10-03. The job sends a push only as a Cloud Run job.
+
+Gate:
+- The unit tests of `go/internal/stale` read a hit for a new ban and for one more ban, and no hit for an unban.
+- The tests of `go/internal/push` read one push for each user, with the title and the path for one deck and for more decks.
+- The tests of the worker read the push after a pass, no push for an ended pass, and the push after a failed pass.
+- A web test reads the mark on a stale deck of the list, and no mark on a legal deck.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy: when a ban of 2026-10-12 makes a deck of the owner stale, the phone shows the push. A tap opens the deck or the list. No deck of `decktome-prod` was stale on 2026-10-01 (D-1023), so the check waits for a real ban. UNVERIFIED: no real ban reached a deck before the merge.
+> *In plain English:* when a ban makes one of your decks illegal, your phone tells you, if notifications are on. One push covers all your decks, and a tap opens the deck or your deck list.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3527,7 +3552,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 96. **PR-103** the read of the test verdict of 2026-09-24, and the close of F-49 (F-49, D-994). No paid target ran.
 97. **PR-104** deck gate run 35, the first whole run of generate prompt version 16, and `jsdom` 30.1.1 (F-33, D-995, D-997). It spent $3.1278. Then PR-105, the move of the model roles (D-996).
 98. **PR-105** the move of the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003). It spent about $4.1 at OpenAI and $1.04 at Anthropic.
-99. **PR-26** the web push of a finished build, Stage B of the mobile proposal (D-1004, D-1005). The email digest, the legality event, and the new-cards event wait.
+99. **PR-26** the web push of a finished build, Stage B of the mobile proposal (D-1004, D-1005). PR-118 adds the legality event (D-1087). The email digest and the new-cards event wait.
 100. **I-1** the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1021).
 101. **PR-106** four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).
 102. **PR-107** the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1027 to D-1032).
@@ -3541,6 +3566,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 110. **PR-115** a request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).
 111. **PR-116** the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).
 112. **PR-117** the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).
+113. **PR-118** the push of a legality change, the second event of PR-26 (D-1087 to D-1089).
 
 ## 9. Open questions
 

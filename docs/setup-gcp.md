@@ -235,6 +235,12 @@ The API verifies Firebase ID tokens with Google's public keys, so the check of a
 gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:SA_API --role=roles/firebasecloudmessaging.admin
 ```
 
+The snapshot job sends the push of a legality change (PR-118, D-1088). So the worker needs the same role. The session granted it on `decktome-prod` on 2026-10-03 (D-1089):
+
+```
+gcloud projects add-iam-policy-binding PROJECT_ID --member=serviceAccount:SA_WORKER --role=roles/firebasecloudmessaging.admin
+```
+
 The link that proves an email reads the account, marks the email proved, and signs a custom token (D-1081, D-1082). That needs two roles more. The session granted both on `decktome-prod` on 2026-10-03 (D-1084):
 
 ```

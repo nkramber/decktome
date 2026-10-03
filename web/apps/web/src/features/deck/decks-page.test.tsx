@@ -78,6 +78,14 @@ describe("DecksPage", () => {
     expect(within(card).getByText(/to buy/)).toBeInTheDocument();
   });
 
+  it("marks a deck that a legality change made illegal, and no other deck", async () => {
+    listDecks.mockResolvedValue({ decks: [deck(), deck({ id: "d2", name: "Goblin storm", stale: true })], nextPageToken: "" });
+    await renderAt("/decks");
+    const [legal, stale] = await screen.findAllByRole("listitem");
+    expect(within(stale).getByText(/No longer legal/)).toBeInTheDocument();
+    expect(within(legal).queryByText(/No longer legal/)).not.toBeInTheDocument();
+  });
+
   it("names the deck's color identity for a reader who sees no color", async () => {
     await renderAt("/decks");
     await screen.findByRole("link", { name: "Elf Ball" });

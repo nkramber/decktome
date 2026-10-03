@@ -51,8 +51,9 @@ export function AccountMenuContent({
   );
 }
 
-// PushMenuItem turns on the push of a finished build for this browser
-// (PR-26, D-1005). It reads the state each time the menu opens. A browser
+// PushMenuItem turns on the push of a finished build, and of a legality
+// change that makes a deck illegal, for this browser (PR-26, D-1005,
+// D-1088). It reads the state each time the menu opens. A browser
 // with no push shows no item, and an iPhone shows it in the app on the
 // Home Screen alone.
 // AdminMenuItem opens the admin screen. It shows for a token with the
@@ -101,7 +102,7 @@ function PushMenuItem() {
   const toggle = async () => {
     try {
       const next = on ? await disablePush() : await enablePush();
-      if (next === "on") void notify("success", "Notifications on", "You get a notification when a deck is ready.");
+      if (next === "on") void notify("success", "Notifications on", "You get a notification when a deck is ready, or when a rule change makes a deck illegal.");
       else if (next === "blocked") void notify("error", "Notifications are blocked", "Allow notifications for this site in the browser settings.");
       else if (on) void notify("info", "Notifications off");
     } catch {
@@ -111,7 +112,7 @@ function PushMenuItem() {
   return (
     <DropdownMenuItem onSelect={() => void toggle()}>
       {on ? <BellOffIcon aria-hidden="true" /> : <BellIcon aria-hidden="true" />}
-      {on ? "Stop deck notifications" : "Notify me when a deck is ready"}
+      {on ? "Stop deck notifications" : "Notify me about my decks"}
     </DropdownMenuItem>
   );
 }

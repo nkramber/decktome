@@ -1,6 +1,7 @@
 // Package push keeps the devices that take a web push, and it sends the
-// one event of PR-26: a finished build for a user who left the page
-// (D-1004, D-1005).
+// two events of PR-26. The API sends a finished build for a user who
+// left the page (D-1004, D-1005). The snapshot job sends a legality
+// change that made decks of the user illegal (D-1087, D-1088).
 //
 // A device is one browser install, named by its Firebase Installation
 // ID. The devices of a user sit under users/<uid>/push_devices. A user
@@ -17,6 +18,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/url"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -278,7 +280,8 @@ type Store interface {
 	Remove(ctx context.Context, uid, id string) error
 }
 
-// Notifier tells a user that a deck is ready.
+// Notifier tells a user that a deck is ready, or that decks are no
+// longer legal.
 type Notifier struct {
 	store  Store
 	sender Sender
@@ -297,24 +300,38 @@ func NewNotifier(store Store, sender Sender, log *slog.Logger) *Notifier {
 // the log alone, because the deck is stored and the next visit shows it.
 // A device that Cloud Messaging says is gone leaves the store.
 func (n *Notifier) DeckReady(ctx context.Context, uid string, d *mtgv1.Deck) {
+	n.send(ctx, uid, DeckMessage(d), "deck ready", "deck", d.GetId())
+}
+
+// DecksStale sends one push to each device of the user for all the decks
+// that one stale pass hit (D-1088). A failure goes to the log alone,
+// because the banner of each deck holds the same news.
+func (n *Notifier) DecksStale(ctx context.Context, uid string, decks []*mtgv1.Deck) {
+	if len(decks) == 0 {
+		return
+	}
+	n.send(ctx, uid, StaleMessage(decks), "decks stale", "decks", len(decks))
+}
+
+func (n *Notifier) send(ctx context.Context, uid string, m Message, event string, key string, val any) {
 	ids, err := n.store.IDs(ctx, uid)
 	if err != nil {
-		n.log.ErrorContext(ctx, "push: the devices were not read", "deck", d.GetId(), "err", err)
+		n.log.ErrorContext(ctx, "push: the devices were not read", "event", event, key, val, "err", err)
 		return
 	}
 	if len(ids) == 0 {
 		return
 	}
-	gone, err := n.sender.Send(ctx, ids, DeckMessage(d))
+	gone, err := n.sender.Send(ctx, ids, m)
 	if err != nil {
-		n.log.ErrorContext(ctx, "push: a send failed", "deck", d.GetId(), "devices", len(ids), "err", err)
+		n.log.ErrorContext(ctx, "push: a send failed", "event", event, key, val, "devices", len(ids), "err", err)
 	}
 	for _, id := range gone {
 		if err := n.store.Remove(ctx, uid, id); err != nil {
 			n.log.ErrorContext(ctx, "push: a gone device stayed", "err", err)
 		}
 	}
-	n.log.InfoContext(ctx, "push: deck ready sent", "deck", d.GetId(), "devices", len(ids), "gone", len(gone))
+	n.log.InfoContext(ctx, "push: "+event+" sent", key, val, "devices", len(ids), "gone", len(gone))
 }
 
 // DeckMessage is the push for a stored deck. A tap opens the deck.
@@ -326,6 +343,21 @@ func DeckMessage(d *mtgv1.Deck) Message {
 	title := "Your deck is ready!"
 	if d.GetRevisedFromDeckId() != "" {
 		title = "Your revised deck is ready!"
+	}
+	return Message{Title: title, URL: "/decks/" + url.PathEscape(d.GetId())}
+}
+
+// StaleMessage is the push for the decks that a legality change made
+// illegal. One deck opens that deck and its banner. More decks open the
+// list, which marks each stale deck (D-1088).
+func StaleMessage(decks []*mtgv1.Deck) Message {
+	if len(decks) > 1 {
+		return Message{Title: fmt.Sprintf("%d of your decks are no longer legal.", len(decks)), URL: "/decks"}
+	}
+	d := decks[0]
+	title := "One of your decks is no longer legal."
+	if name := strings.TrimSpace(d.GetName()); name != "" {
+		title = `Your deck "` + name + `" is no longer legal.`
 	}
 	return Message{Title: title, URL: "/decks/" + url.PathEscape(d.GetId())}
 }
