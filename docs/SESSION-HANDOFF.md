@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03)
 
-**Branch `fix/phone-live-check-6`: PR-116, the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).** The pull request number comes when it opens.
+**Branch `fix/phone-live-check-6`: PR-116, the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).** The pull request is #273.
 
 Author provider: Claude Code
 
