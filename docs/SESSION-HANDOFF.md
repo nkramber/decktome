@@ -20,15 +20,18 @@ Author provider: Claude Code
 
 **The code.**
 
-- `go/internal/users`: `Repo.Touch`, the `Visits` cache, the field `last_creation_at`, and schema 2. `Note` and `Seed` do the copy of D-1094.
+- `go/internal/users`: `Repo.Touch`, the `Visits` cache, the field `last_creation_at`, and schema 2. `Touch` and `Seed` do the copy of D-1094.
+- `go/cmd/users-backfill`: the seed writes the newest deck or chat as `last_creation_at`.
 - `go/internal/auth`: `WithVisits`. The interceptor records a call after every check admits it, and only with a proved email.
 - `go/cmd/api`: the API wires `WithVisits` with `Repo.Touch`.
 
 **The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `make store-check` passes against the emulator. A mutation of each new rule failed a test.
 
+**The review.** Gitar found three issues on `fdf7734`: no log of a failed write, many writes for one page, and no seed of `last_creation_at`. The branch fixes all three.
+
 **The open work.**
 
-1. The Gitar pass and the Codex review.
+1. Get the Gitar pass of the fixes, then the Codex review.
 2. The owner confirmation of the merge, then the auto-merge.
 3. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 

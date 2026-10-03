@@ -21,6 +21,7 @@ package users
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -213,11 +214,14 @@ func (r *Repo) Touch(ctx context.Context, uid, email string, at time.Time) error
 
 // upgrade adds to data the move of a version 1 record to version 2: the
 // last_seen_at of version 1 is the newest creation (D-1094). A record of
-// version 2, or one with no last_seen_at, needs nothing.
-func upgrade(cur Record, data map[string]any) {
+// version 2, or one with no last_seen_at, needs nothing. It returns the
+// last_creation_at that the record holds after the write.
+func upgrade(cur Record, data map[string]any) time.Time {
 	if cur.Schema < 2 && cur.LastCreationAt.IsZero() && !cur.LastSeenAt.IsZero() {
 		data["last_creation_at"] = cur.LastSeenAt
+		return cur.LastSeenAt
 	}
+	return cur.LastCreationAt
 }
 
 // Get reads one record. A user with no record reads the zero value and
@@ -239,8 +243,9 @@ func (r *Repo) Get(ctx context.Context, uid string) (Record, error) {
 
 // Seed writes the counts a backfill measured, and it never lowers a
 // count that is already higher: a creation between the read and the
-// write must survive it (D-638).
-func (r *Repo) Seed(ctx context.Context, uid, email string, counts map[Counter]int64, createdAt, lastSeen time.Time) error {
+// write must survive it (D-638). lastCreation is the newest deck or chat
+// the backfill found, and it never moves last_creation_at back (D-1093).
+func (r *Repo) Seed(ctx context.Context, uid, email string, counts map[Counter]int64, createdAt, lastSeen, lastCreation time.Time) error {
 	if uid == "" {
 		return errors.New("users: a record needs a user")
 	}
@@ -262,7 +267,10 @@ func (r *Repo) Seed(ctx context.Context, uid, email string, counts map[Counter]i
 			}
 		}
 		data := map[string]any{"schema": int64(schemaVersion)}
-		upgrade(cur, data)
+		creation := upgrade(cur, data)
+		if !lastCreation.IsZero() && lastCreation.After(creation) {
+			data["last_creation_at"] = lastCreation.UTC()
+		}
 		if email != "" {
 			data["email"] = email
 		}
@@ -400,21 +408,28 @@ const visitTimeout = 2 * time.Second
 type Visits struct {
 	touch func(ctx context.Context, uid, email string, at time.Time) error
 	now   func() time.Time
+	log   *slog.Logger
 	mu    sync.Mutex
 	seen  map[string]time.Time
 }
 
-// NewVisits wraps a write of one visit, such as Repo.Touch.
-func NewVisits(touch func(ctx context.Context, uid, email string, at time.Time) error, now func() time.Time) *Visits {
+// NewVisits wraps a write of one visit, such as Repo.Touch. A nil log
+// writes nothing.
+func NewVisits(touch func(ctx context.Context, uid, email string, at time.Time) error, now func() time.Time, log *slog.Logger) *Visits {
 	if now == nil {
 		now = time.Now
 	}
-	return &Visits{touch: touch, now: now, seen: map[string]time.Time{}}
+	if log == nil {
+		log = slog.New(slog.DiscardHandler)
+	}
+	return &Visits{touch: touch, now: now, log: log, seen: map[string]time.Time{}}
 }
 
 // Seen records one verified call of uid. It answers no error: a record
-// that does not write must never fail the call it records. A failed
-// write keeps nothing, so the next call tries again.
+// that does not write must never fail the call it records. The first
+// call claims the slot of the user, so the calls of one page that arrive
+// together write once. A failed write gives the slot back and logs the
+// uid, never the email, so the next call tries again.
 func (v *Visits) Seen(ctx context.Context, uid, email string) {
 	if uid == "" {
 		return
@@ -422,16 +437,24 @@ func (v *Visits) Seen(ctx context.Context, uid, email string) {
 	at := v.now()
 	v.mu.Lock()
 	last, ok := v.seen[uid]
-	v.mu.Unlock()
 	if ok && at.Sub(last) < VisitTTL {
+		v.mu.Unlock()
 		return
 	}
+	v.seen[uid] = at
+	v.mu.Unlock()
 	ctx, cancel := context.WithTimeout(ctx, visitTimeout)
 	defer cancel()
 	if err := v.touch(ctx, uid, email, at); err != nil {
-		return
+		v.log.Warn("user visit not recorded", "uid", uid, "err", err)
+		v.mu.Lock()
+		if v.seen[uid].Equal(at) {
+			if ok {
+				v.seen[uid] = last
+			} else {
+				delete(v.seen, uid)
+			}
+		}
+		v.mu.Unlock()
 	}
-	v.mu.Lock()
-	v.seen[uid] = at
-	v.mu.Unlock()
 }

@@ -127,7 +127,7 @@ func TestSeedNeverLowersACount(t *testing.T) {
 	// The backfill counted 1, and the record already holds 3.
 	err := r.Seed(ctx, uid, "reader@example.com", map[Counter]int64{
 		DecksCreated: 1, CollectionsUpload: 5, DecksImported: 3,
-	}, at.Add(-time.Hour), at)
+	}, at.Add(-time.Hour), at, time.Time{})
 	if err != nil {
 		t.Fatalf("Seed: %v", err)
 	}
@@ -295,5 +295,45 @@ func TestTouchMovesARecordOfVersionOne(t *testing.T) {
 	}
 	if rec.Schema != schemaVersion || rec.DecksCreated != 3 || !rec.CreatedAt.Equal(made) {
 		t.Errorf("schema %d, decks %d, created %v", rec.Schema, rec.DecksCreated, rec.CreatedAt)
+	}
+}
+
+// TestSeedSetsTheNewestDeckOrChat is D-1093 in the backfill: a seed
+// writes the newest deck or chat it found, and never moves it back.
+func TestSeedSetsTheNewestDeckOrChat(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	made := time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC)
+	upload := made.Add(time.Hour)
+
+	fresh := uniqueUID()
+	if err := r.Seed(ctx, fresh, "", map[Counter]int64{DecksCreated: 2, CollectionsUpload: 1}, made, upload, made); err != nil {
+		t.Fatalf("Seed: %v", err)
+	}
+	rec, err := r.Get(ctx, fresh)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !rec.LastCreationAt.Equal(made) || !rec.LastSeenAt.Equal(upload) {
+		t.Errorf("last_creation_at %v and last_seen_at %v, want %v and %v", rec.LastCreationAt, rec.LastSeenAt, made, upload)
+	}
+
+	// A record of version 1 holds a newer creation than the backfill
+	// found, so the copy of D-1094 wins.
+	old := uniqueUID()
+	newer := made.Add(48 * time.Hour)
+	if _, err := r.doc(old).Set(ctx, map[string]any{
+		"schema": int64(1), "created_at": made, "last_seen_at": newer,
+	}); err != nil {
+		t.Fatalf("seed a version 1 record: %v", err)
+	}
+	if err := r.Seed(ctx, old, "", map[Counter]int64{DecksCreated: 1}, made, made, made); err != nil {
+		t.Fatalf("Seed: %v", err)
+	}
+	if rec, err = r.Get(ctx, old); err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !rec.LastCreationAt.Equal(newer) {
+		t.Errorf("last_creation_at = %v, want the copied %v", rec.LastCreationAt, newer)
 	}
 }
