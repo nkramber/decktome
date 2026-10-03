@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03d)
 
-**Branch `feat/archidekt-url-import`: PR-120, a deck import from a link (D-1100 to D-1105).** No pull request is open yet.
+**Branch `feat/archidekt-url-import`: PR-120, a deck import from a link (D-1100 to D-1105).** The pull request is #277.
 
 Author provider: Claude Code
 
@@ -23,17 +23,15 @@ Author provider: Claude Code
 - `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
 - The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt".
 
-**The checks.** The Go tests of each changed package pass, and so do `make lint-go`, `make lint-web`, and the web tests of the deck and feedback folders. A live read of three real Archidekt decks parsed with no bad line. `make verify` did not run yet.
+**The checks.** `make verify` passed at `1e00529`, and so did `make ste-check` and `make ref-check`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** No pull request and no review yet. The session stopped at the context checkpoint of D-946.
+**The review.** The Gitar pass and the Codex review of #277 wait. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
-1. Run `make ste-check`, `make ref-check`, and `make verify`, and fix each finding.
-2. Open the pull request. Replace `#PRNUM` in the PR-120 entry of the roadmap, and name the number here.
-3. Do the Gitar pass, then `make codex-review`, then the owner confirmation of the merge.
-4. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run.
-5. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+1. Do the Gitar pass, then `make codex-review`, then the owner confirmation of the merge.
+2. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run.
+3. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
 

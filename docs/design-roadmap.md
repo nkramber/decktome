@@ -3159,7 +3159,7 @@ Gate:
 The live check after the deploy: when a ban of 2026-10-12 makes a deck of the owner stale, the phone shows the push. A tap opens the deck or the list. No deck of `decktome-prod` was stale on 2026-10-01 (D-1023), so the check waits for a real ban. UNVERIFIED: no real ban reached a deck before the merge.
 > *In plain English:* when a ban makes one of your decks illegal, your phone tells you, if notifications are on. One push covers all your decks, and a tap opens the deck or your deck list.
 
-**PR-120: A deck import from a link (D-1100 to D-1105).** ✅ merged as #PRNUM. The mark comes before any review (D-822). The owner asked for a workshop of an Archidekt and a Moxfield link on 2026-10-03, and then chose this scope. `docs/reference/deck-links-2026-10-03.md` holds each source fact.
+**PR-120: A deck import from a link (D-1100 to D-1105).** ✅ merged as #277. The mark comes before any review (D-822). The owner asked for a workshop of an Archidekt and a Moxfield link on 2026-10-03, and then chose this scope. `docs/reference/deck-links-2026-10-03.md` holds each source fact.
 
 - **The field (D-1103).** The import dialog gets a field "Deck link" and a button "Read". The field names no site, as D-889 asks.
 - **Archidekt (D-1100).** `FetchDeckList` reads a public deck through `go/internal/archidekt` and answers its list as Arena text. The form shows the list, and the user selects Import as for a pasted list.
