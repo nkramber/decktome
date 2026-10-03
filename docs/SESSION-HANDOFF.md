@@ -28,11 +28,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed" on the merge of `fbbcd60`, with 544 of 544 web tests under Node 22. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
 
-**The review.** The Gitar review of `8beceaf` approved with one finding. After a failed pass and a dismiss, a rerun wrote the cards again and sent a second push. The finding holds. The fix stores the version of the marker on each deck that a pass writes, and a rerun of that marker skips the deck. The tests of `go/internal/newcards` read the sequence of the finding. The CI emulator lane of `8beceaf` passed. The Gitar review of the fix `efaa62d` approved, and it closed the finding. The merge of `main` and the new numbers wait for their Gitar pass. No Codex review yet.
+**The review.** Gitar approved the current head `1ccaf42` with no open finding. The prior finding on a dismiss and a retry is closed. The Codex review found P2-1: a later marker can strand an earlier failed marker. The verdict is Changes required. The record is `docs/reviews/pr-278.md`.
 
 **The open work.**
 
-1. Read the Gitar review of the merge commit, and answer each finding. Then run the Codex review, and ask the owner to confirm the merge.
+1. Fix P2-1. Process pending markers in order, and add a test for an earlier failed marker and a later completed marker. Then get a new Gitar review and a Codex review.
 2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
 3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 
