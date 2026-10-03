@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03c)
 
-**Branch `feat/push-next-event`: PR-118, the push of a legality change, the second event of PR-26 (D-1087 to D-1089).** The pull request is #PRNUM.
+**Branch `feat/push-next-event`: PR-118, the push of a legality change, the second event of PR-26 (D-1087 to D-1089).** The pull request is #275.
 
 Author provider: Claude Code
 

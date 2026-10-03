@@ -3136,7 +3136,7 @@ Gate:
 
 > *In plain English:* the email check of the last change passed on a computer and on an iPhone. One fault showed up. After a sign-out on the admin page, the next account to sign in went back to that page and saw an error. Now each sign-in opens a new chat.
 
-**PR-118: The push of a legality change, the second event of PR-26 (D-1087 to D-1089).** 🔧 in progress. The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.
+**PR-118: The push of a legality change, the second event of PR-26 (D-1087 to D-1089).** ✅ merged as #275. The mark comes before any review (D-822). The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.
 
 - **The event (D-1087).** The stale pass of I-1 marks each deck that a legality change made illegal (`go/internal/stale`). The snapshot job runs the pass, and now it also sends the push.
 - **The trigger (D-1088).** A deck goes into the push when the pass makes it stale, or when a stale deck takes a new illegal card. An unban sends no push.
