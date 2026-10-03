@@ -26,13 +26,13 @@ Author provider: Claude Code
 - The deck proto holds `new_oracle_ids` and `new_cards_version`, and `UpdateDeck` takes `dismiss_new_cards`. A rerun of a marker skips each deck that holds its version (D-1095). The list of decks carries the field.
 - The web app: the panel "New cards for this deck", and the mark "New cards" in the list.
 
-**The checks.** `make verify` reads "every check passed" on the merge of `fbbcd60`, with 544 of 544 web tests under Node 22. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
+**The checks.** `make verify` reads "every check passed" on `c3f5878`, with 544 of 544 web tests under Node 22. Each CI check of `c3f5878` passed. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
 
-**The review.** Gitar approved `c3f5878` with no open finding. The earlier retry finding is closed. The repeat Codex review fixed P2-1. A later marker had left an earlier failed marker pending. `make verify` passed. The record is `docs/reviews/pr-278.md`, and its verdict is Ready for owner merge.
+**The review.** Gitar approved `c3f5878` and the record commit `8082202`, with two findings closed and no open thread. The Codex review of `1ccaf42` found P2-1: a later marker had left an earlier failed marker pending. The author fixed it in `82b9089` and `c3f5878`, and the repeat Codex review confirmed the fix. `make verify` passed. The record is `docs/reviews/pr-278.md`, and its verdict is Ready for owner merge.
 
 **The open work.**
 
-1. The owner must confirm the merge. Then the author session can turn on auto-merge.
+1. The owner confirms the merge. Then the author session turns on the auto-merge, and the pull request is pending the auto-merge.
 2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
 3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 
