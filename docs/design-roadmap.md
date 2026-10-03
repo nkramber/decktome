@@ -3164,7 +3164,7 @@ The live check after the deploy: when a ban of 2026-10-12 makes a deck of the ow
 
 - **The write (D-1092).** The interceptor of `go/internal/auth` calls `users.Repo.Touch` after every check admits a call with a proved email. `Touch` makes the record with zero counts, or it moves `last_seen_at`.
 - **The two times (D-1093).** `last_seen_at` is the newest activity. One server writes it at most once in five minutes for each user. `last_creation_at` is the newest deck build, deck revision, deck import, or chat start.
-- **The schema (D-1094).** The record is schema 2. The first `Touch` of a schema 1 record copies its `last_seen_at` to `last_creation_at`. `make users-backfill` does the same copy, and it writes a newer deck or chat that it finds.
+- **The schema (D-1094).** The record is schema 2. The first `Touch` of a schema 1 record copies its `last_seen_at` to `last_creation_at`. `Note` and `make users-backfill` do the same copy. The backfill also writes a newer deck or chat that it finds.
 - **The failure path.** A write of a visit has a limit of 2 seconds. A failed write never fails the call. It logs the uid and the error, and the next call tries again.
 - **One write for each page.** The first call claims the write for the user. The calls of the same page then find the claim and do not write.
 
@@ -3174,6 +3174,7 @@ Gate:
 - A failed write keeps no cache, and its log holds the uid and no email.
 - The emulator tests of `go/internal/users` read a new record with zero counts, the two times of D-1093, and the copy of D-1094.
 - An emulator test reads the seed of the newest deck or chat.
+- An emulator test reads that a creation which commits late never moves a time back.
 - `make verify` passes.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).

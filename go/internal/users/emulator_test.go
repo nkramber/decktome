@@ -337,3 +337,65 @@ func TestSeedSetsTheNewestDeckOrChat(t *testing.T) {
 		t.Errorf("last_creation_at = %v, want the copied %v", rec.LastCreationAt, newer)
 	}
 }
+
+// TestALateNoteNeverMovesATimeBack is P2-1 of the review of #276: two
+// creations can commit in the other order of their times, and each time
+// keeps the newest one (D-1093).
+func TestALateNoteNeverMovesATimeBack(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := uniqueUID()
+	newer := time.Date(2026, 10, 3, 20, 0, 0, 0, time.UTC)
+	older := newer.Add(-time.Minute)
+
+	if err := r.Note(ctx, uid, "", SessionsStarted, newer); err != nil {
+		t.Fatalf("newer note: %v", err)
+	}
+	for _, c := range []Counter{DecksCreated, CollectionsUpload} {
+		if err := r.Note(ctx, uid, "", c, older); err != nil {
+			t.Fatalf("older note %s: %v", c, err)
+		}
+	}
+	rec, err := r.Get(ctx, uid)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !rec.LastSeenAt.Equal(newer) || !rec.LastCreationAt.Equal(newer) {
+		t.Errorf("last_seen_at %v and last_creation_at %v, want both %v", rec.LastSeenAt, rec.LastCreationAt, newer)
+	}
+	if !rec.CreatedAt.Equal(newer) {
+		t.Errorf("created_at = %v, want the first write %v", rec.CreatedAt, newer)
+	}
+	if rec.SessionsStarted != 1 || rec.DecksCreated != 1 || rec.CollectionsUpload != 1 {
+		t.Errorf("counts %d/%d/%d, want 1/1/1", rec.SessionsStarted, rec.DecksCreated, rec.CollectionsUpload)
+	}
+}
+
+// TestNoteMovesARecordOfVersionOne is D-1094 on the creation path: an
+// upload on a version 1 record keeps the old newest creation.
+func TestNoteMovesARecordOfVersionOne(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := uniqueUID()
+	made := time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC)
+	upload := time.Date(2026, 10, 3, 19, 25, 0, 0, time.UTC)
+
+	if _, err := r.doc(uid).Set(ctx, map[string]any{
+		"schema": int64(1), "created_at": made, "last_seen_at": made,
+	}); err != nil {
+		t.Fatalf("seed a version 1 record: %v", err)
+	}
+	if err := r.Note(ctx, uid, "", CollectionsUpload, upload); err != nil {
+		t.Fatalf("note: %v", err)
+	}
+	rec, err := r.Get(ctx, uid)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !rec.LastCreationAt.Equal(made) || !rec.LastSeenAt.Equal(upload) {
+		t.Errorf("last_creation_at %v and last_seen_at %v, want %v and %v", rec.LastCreationAt, rec.LastSeenAt, made, upload)
+	}
+	if rec.Schema != schemaVersion || rec.CollectionsUpload != 1 {
+		t.Errorf("schema %d, uploads %d", rec.Schema, rec.CollectionsUpload)
+	}
+}

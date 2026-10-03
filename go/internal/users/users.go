@@ -117,9 +117,9 @@ func (r *Repo) doc(uid string) *firestore.DocumentRef {
 // the time, and sets the creation date on the first write alone. A deck
 // or a chat also moves last_creation_at (D-1093).
 //
-// It makes the document with Create first and ignores an answer that
-// says the document exists. Create writes CreatedAt exactly once, and no
-// transaction and no read stand between the caller and the write.
+// A transaction reads the record first, so a time never moves back: two
+// creations can commit in the other order of their times. A record of
+// version 1 gets the copy of D-1094.
 func (r *Repo) Note(ctx context.Context, uid, email string, c Counter, at time.Time) error {
 	if uid == "" {
 		return errors.New("users: a record needs a user")
@@ -128,39 +128,54 @@ func (r *Repo) Note(ctx context.Context, uid, email string, c Counter, at time.T
 		return ErrBadCounter
 	}
 	at = at.UTC()
-	first := map[string]any{
-		"schema":       int64(schemaVersion),
-		"created_at":   at,
-		"last_seen_at": at,
-	}
-	for name := range counters {
-		first[string(name)] = int64(0)
-	}
-	if creations[c] {
-		first["last_creation_at"] = at
-	}
-	if email != "" {
-		first["email"] = email
-	}
-	// A document that exists keeps its creation date, and this answer is
-	// the ordinary one after the first call.
-	if _, err := r.doc(uid).Create(ctx, first); err != nil && status.Code(err) != codes.AlreadyExists {
-		return err
-	}
-	update := map[string]any{
-		"schema":       int64(schemaVersion),
-		"last_seen_at": at,
-		string(c):      firestore.Increment(int64(1)),
-	}
-	if creations[c] {
-		update["last_creation_at"] = at
-	}
-	// An empty email never writes over an address the record holds.
-	if email != "" {
-		update["email"] = email
-	}
-	_, err := r.doc(uid).Set(ctx, update, firestore.MergeAll)
-	return err
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		ref := r.doc(uid)
+		snap, err := tx.Get(ref)
+		if status.Code(err) == codes.NotFound {
+			first := map[string]any{
+				"schema":       int64(schemaVersion),
+				"created_at":   at,
+				"last_seen_at": at,
+			}
+			for name := range counters {
+				first[string(name)] = int64(0)
+			}
+			first[string(c)] = int64(1)
+			if creations[c] {
+				first["last_creation_at"] = at
+			}
+			if email != "" {
+				first["email"] = email
+			}
+			return tx.Create(ref, first)
+		}
+		if err != nil {
+			return err
+		}
+		var cur Record
+		if err := snap.DataTo(&cur); err != nil {
+			return err
+		}
+		update := map[string]any{
+			"schema":  int64(schemaVersion),
+			string(c): firestore.Increment(int64(1)),
+		}
+		creation := upgrade(cur, update)
+		if at.After(cur.LastSeenAt) {
+			update["last_seen_at"] = at
+		}
+		if creations[c] && at.After(creation) {
+			update["last_creation_at"] = at
+		}
+		if cur.CreatedAt.IsZero() {
+			update["created_at"] = at
+		}
+		// An empty email never writes over an address the record holds.
+		if email != "" {
+			update["email"] = email
+		}
+		return tx.Set(ref, update, firestore.MergeAll)
+	})
 }
 
 // Touch records one verified call of uid at the given time (D-1092). It
