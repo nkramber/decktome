@@ -35,7 +35,7 @@ Author provider: Claude Code
 
 **The Gitar finding on `7ab9a34`.** The budget check skipped an unpriced card when the priced cards came under the budget. The fix warns for each unpriced card to buy, and `TestAnUnpricedCardIsNotFree` reads both cases. The test fails on the old code.
 
-**The open work.** The Codex review is complete. The review metadata commit must reach the pull request branch.
+**The open work.** None. The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828).
 
 After the deploy, the owner checks on the iPhone, and the cold start comes first.
 
