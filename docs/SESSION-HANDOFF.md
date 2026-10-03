@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03b)
 
-**Branch `fix/phone-live-check-7`: PR-117, the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** The pull request is #PRNUM.
+**Branch `fix/phone-live-check-7`: PR-117, the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** The pull request is #274.
 
 Author provider: Claude Code
 

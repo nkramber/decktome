@@ -3119,7 +3119,7 @@ Gate:
 
 > *In plain English:* the email that confirms a new account now comes from Deck Tome, with a short link that opens. On a computer, the link also signs the person in. On an iPhone, the person goes back to the home screen app, and the app continues by itself. The sign-in page and the feedback button got five small fixes from the phone check.
 
-**PR-117: The live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** ✅ merged as #PRNUM. The mark comes before any review (D-822). The live check of PR-116 ran on `11fc024`. The proof email, its link on a desktop and on the iPhone, and the five changes of D-1079 passed (D-1086).
+**PR-117: The live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** ✅ merged as #274. The mark comes before any review (D-822). The live check of PR-116 ran on `11fc024`. The proof email, its link on a desktop and on the iPhone, and the five changes of D-1079 passed (D-1086).
 
 - **The fault (F-209).** The route guard kept the wanted page in the location state, and the sign-in page returned there. A sign-out on the admin page thus sent the next account, with no admin claim, to the admin page.
 - **The fix (D-1085).** `RequireAuth` keeps no page to return to. `SignInPage` sends each signed-in user to `/`, and `/` goes on to `/session/new` (D-334).
