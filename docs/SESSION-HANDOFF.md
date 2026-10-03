@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03d)
 
-**Branch `feat/user-record-at-sign-in`: PR-119, a user record for each user who signs in (F-210, D-1092 to D-1094).** The pull request is #PRNUM.
+**Branch `feat/user-record-at-sign-in`: PR-119, a user record for each user who signs in (F-210, D-1092 to D-1094).** The pull request is #276.
 
 Author provider: Claude Code
 
