@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-02f)
 
-**Branch `fix/phone-live-check-5`: PR-114, the results of the live check of PR-113 (F-206, D-1069 to D-1071).** The pull request is not open yet.
+**Branch `fix/phone-live-check-5`: PR-114, the results of the live check of PR-113 (F-206, D-1069 to D-1071).** The pull request is #271.
 
 Author provider: Claude Code
 

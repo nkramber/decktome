@@ -3060,7 +3060,7 @@ The live check after the deploy runs on the iPhone of the owner. The first launc
 
 > *In plain English:* a shared deck now shows its charts, a sample hand, filters, prices, and the same card art as your own view. The share dialog shows your link again. A chat that asks you questions keeps your last message in view above them. An app update no longer ends on an error page.
 
-**PR-114: The results of the live check of PR-113 (F-206, D-1069 to D-1071).** 🔧 open. The live check of PR-113 ran on `c19aa26` (D-1070).
+**PR-114: The results of the live check of PR-113 (F-206, D-1069 to D-1071).** ✅ merged as #271. The mark comes before any review (D-822). The live check of PR-113 ran on `c19aa26` (D-1070).
 
 - **The share dialog (D-1069).** A deck with a stored link shows the link and the copy button alone. A shared deck with no stored token shows the dialog of an unshared deck. The web app has no revoke, and the API keeps `RevokeShare`.
 - **The questions (D-1071).** `useStickToBottom` puts the first question at the top when the turn ends with open questions. A docked thread box goes to its end.
