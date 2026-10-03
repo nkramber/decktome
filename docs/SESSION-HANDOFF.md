@@ -35,9 +35,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 506 of 506 web tests, under Node 22. `make lint` passes after the last edit of the skill.
 
-**The review.** Not started.
+**The review.** Gitar approved `b86717d` with no finding and no thread. The session answered its CI note and its risk line on the revoke (D-1069). The Codex review comes next.
 
-**The open work.** The Gitar pass and the Codex review.
+**The open work.** The Codex review, the confirmation of the owner, and the auto-merge (D-828).
 
 ## How to resume
 
@@ -110,6 +110,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
+0. **The next pull request: a "request beta access" flow on the home page** (owner request after #271). The invite list of D-990 refuses an account that it does not name. The session asks the owner for the shape before any code.
 0. **The cold start after the deploy of PR-114** (F-206, D-1070). The owner opens the installed app on the iPhone first. A reload after "Updating", with no error, closes F-206.
 0. **The live check of PR-114** (D-1069, D-1071). The owner checks the share dialog and the chat view of a turn that asks.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
