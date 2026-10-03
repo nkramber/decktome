@@ -22,12 +22,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `TestSpendCap` pins the default of 2.
 
-**The review.** The Gitar pass and the Codex review wait for the push.
+**The review.** Gitar reviewed effective head `6e352bc` and closed its archive-index finding on `35ece27`. The review record approves effective head `6e352bc`.
 
 **The open work.**
 
-1. Get a current Gitar pass and the Codex review.
-2. Get the owner confirmation and turn on the auto-merge.
+1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
 
 ## How to resume
 
