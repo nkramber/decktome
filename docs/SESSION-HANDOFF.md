@@ -18,7 +18,7 @@ Author provider: Claude Code
 
 **The code.**
 
-- `go/internal/cards`: `NewlyLegal`, `CompareVersions`, and the marker `new_cards.json`.
+- `go/internal/cards`: `NewlyLegal`, `CompareVersions`, the marker `new_cards.json`, and `PendingNewCards`.
 - `go/internal/candidates`: `ThemeScores`, `DeckTheme`, and `FitFloor`.
 - `go/internal/newcards`: the pass, and the pick of each deck.
 - `go/internal/push`: `Notifier.NewCards` and `NewCardsMessage`.
@@ -28,11 +28,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed" on the merge of `fbbcd60`, with 544 of 544 web tests under Node 22. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
 
-**The review.** Gitar approved the current head `1ccaf42` with no open finding. The prior finding on a dismiss and a retry is closed. The Codex review found P2-1: a later marker can strand an earlier failed marker. The verdict is Changes required. The record is `docs/reviews/pr-278.md`.
+**The review.** Gitar approved the current head `1ccaf42` with no open finding. The prior finding on a dismiss and a retry is closed. The Codex review found P2-1: a later marker can strand an earlier failed marker. The verdict is Changes required. The record is `docs/reviews/pr-278.md`. The fix runs each pending marker, oldest first, and `docs/reviews/pr-278-response.md` holds the answer.
 
 **The open work.**
 
-1. Fix P2-1. Process pending markers in order, and add a test for an earlier failed marker and a later completed marker. Then get a new Gitar review and a Codex review.
+1. Read the Gitar review of the fix of P2-1, and answer each finding. Then run the Codex review again, and ask the owner to confirm the merge.
 2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
 3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 

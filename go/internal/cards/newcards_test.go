@@ -63,15 +63,15 @@ func TestCompareVersions(t *testing.T) {
 	}
 }
 
-// TestNewCardsMarker writes and reads the marker, and LatestNewCards
-// finds the newest version that carries one.
+// TestNewCardsMarker writes and reads the marker, and PendingNewCards
+// finds each marker with no ended pass, oldest first.
 func TestNewCardsMarker(t *testing.T) {
 	ctx := context.Background()
 	store := DirStore{Root: t.TempDir()}
 	writeSnapshot(t, store, "20260823T090000", "")
 	writeSnapshot(t, store, "20260824T090000", "")
-	if _, _, ok, err := LatestNewCards(ctx, store); err != nil || ok {
-		t.Fatalf("no marker yet: ok=%v err=%v", ok, err)
+	if pending, err := PendingNewCards(ctx, store); err != nil || len(pending) != 0 {
+		t.Fatalf("no marker yet: %+v err=%v", pending, err)
 	}
 	old := NewCardsRecord{SnapshotAsOf: "2026-08-23T09:00:00Z", Cards: []string{"a"}}
 	if err := WriteNewCards(ctx, store, "20260823T090000", old); err != nil {
@@ -81,18 +81,23 @@ func TestNewCardsMarker(t *testing.T) {
 	if err := WriteNewCards(ctx, store, "20260824T090000", rec); err != nil {
 		t.Fatal(err)
 	}
-	version, got, ok, err := LatestNewCards(ctx, store)
-	if err != nil || !ok {
-		t.Fatalf("LatestNewCards: ok=%v err=%v", ok, err)
+	pending, err := PendingNewCards(ctx, store)
+	if err != nil || len(pending) != 2 {
+		t.Fatalf("PendingNewCards = %+v err=%v, want two markers", pending, err)
 	}
-	if version != "20260824T090000" || !slices.Equal(got.Cards, rec.Cards) || got.Pass != "" {
-		t.Fatalf("LatestNewCards = %s %+v", version, got)
+	if pending[0].Version != "20260823T090000" || pending[1].Version != "20260824T090000" || !slices.Equal(pending[1].Record.Cards, rec.Cards) {
+		t.Fatalf("PendingNewCards = %+v, want the oldest first", pending)
 	}
+	version, got := pending[1].Version, pending[1].Record
 	got.Pass, got.Decks = "2026-08-24T10:00:00Z", 3
 	if err := WriteNewCards(ctx, store, version, got); err != nil {
 		t.Fatal(err)
 	}
 	if again, ok, err := ReadNewCards(ctx, store, version); err != nil || !ok || again.Pass == "" || again.Decks != 3 {
 		t.Fatalf("ReadNewCards = %+v ok=%v err=%v", again, ok, err)
+	}
+	// The newer marker ended, and the older one still waits for its pass.
+	if pending, err = PendingNewCards(ctx, store); err != nil || len(pending) != 1 || pending[0].Version != "20260823T090000" {
+		t.Fatalf("after the newer pass: %+v err=%v, want the older marker alone", pending, err)
 	}
 }

@@ -115,21 +115,30 @@ func ReadNewCards(ctx context.Context, s Store, version string) (NewCardsRecord,
 	return rec, true, nil
 }
 
-// LatestNewCards returns the newest version that carries a new-cards
-// marker, and its marker, or false when no version carries one.
-func LatestNewCards(ctx context.Context, s Store) (string, NewCardsRecord, bool, error) {
+// PendingMarker is a new-cards marker with no ended pass, and its version.
+type PendingMarker struct {
+	Version string
+	Record  NewCardsRecord
+}
+
+// PendingNewCards returns each new-cards marker with no ended pass,
+// oldest first. A newer marker holds only the cards that are new since
+// the version before it, so an older marker that a stopped pass left
+// must still run (D-1091).
+func PendingNewCards(ctx context.Context, s Store) ([]PendingMarker, error) {
 	versions, err := s.ListVersions(ctx)
 	if err != nil {
-		return "", NewCardsRecord{}, false, err
+		return nil, err
 	}
-	for i := len(versions) - 1; i >= 0; i-- {
-		rec, ok, err := ReadNewCards(ctx, s, versions[i])
+	var out []PendingMarker
+	for _, v := range versions {
+		rec, ok, err := ReadNewCards(ctx, s, v)
 		if err != nil {
-			return "", NewCardsRecord{}, false, err
+			return nil, err
 		}
-		if ok {
-			return versions[i], rec, true, nil
+		if ok && rec.Pass == "" {
+			out = append(out, PendingMarker{Version: v, Record: rec})
 		}
 	}
-	return "", NewCardsRecord{}, false, nil
+	return out, nil
 }

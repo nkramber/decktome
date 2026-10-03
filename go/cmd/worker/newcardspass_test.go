@@ -105,3 +105,66 @@ func TestNewCardsPassNoMarker(t *testing.T) {
 		t.Fatalf("no marker = %v, want nil", err)
 	}
 }
+
+// TestNewCardsPassOlderMarker runs a marker that a stopped pass left,
+// also after a newer marker ended, and runs pending markers oldest first.
+// A newer marker holds only the cards new since the version before it.
+func TestNewCardsPassOlderMarker(t *testing.T) {
+	ctx := context.Background()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	store := cards.DirStore{Root: t.TempDir()}
+	for _, v := range []string{"20261113T090000", "20261113T100000", "20261113T110000"} {
+		putVersion(t, store, v)
+	}
+	write := func(version string, rec cards.NewCardsRecord) {
+		t.Helper()
+		if err := cards.WriteNewCards(ctx, store, version, rec); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("20261113T090000", cards.NewCardsRecord{SnapshotAsOf: "2026-11-13T09:00:00Z", Cards: []string{"old"}})
+	write("20261113T100000", cards.NewCardsRecord{SnapshotAsOf: "2026-11-13T10:00:00Z", Cards: []string{"late"}, Pass: "2026-11-13T10:05:00Z"})
+	legal := map[string]mtgv1.LegalityStatus{"commander": mtgv1.LegalityStatus_LEGALITY_STATUS_LEGAL}
+	idx := cards.NewIndex([]*mtgv1.Card{
+		{OracleId: "cmd", Name: "Commander", Legalities: legal},
+		{OracleId: "old", Name: "Old Card", Legalities: legal},
+		{OracleId: "late", Name: "Late Card", Legalities: legal},
+		{OracleId: "next", Name: "Next Card", Legalities: legal},
+	}, nil, nil, time.Now())
+	load := func(context.Context, string) (*cards.Index, error) { return idx, nil }
+	deck := &mtgv1.Deck{Id: "d1", SessionId: "s1", CommanderOracleIds: []string{"cmd"},
+		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}}
+	var sent []string
+	open := func(context.Context) (newcards.Store, themeOf, notifyStale, func(), error) {
+		theme := func(context.Context, string, string) (string, error) { return "dinosaurs", nil }
+		return &oneDeck{deck: deck}, theme, recordPush(&sent), func() {}, nil
+	}
+	now := func() time.Time { return time.Date(2026, 11, 13, 11, 0, 0, 0, time.UTC) }
+
+	if err := newCardsPass(ctx, store, load, open, allFit{}, log, now); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(deck.GetNewOracleIds(), []string{"old"}) || len(sent) != 1 {
+		t.Errorf("after an ended newer marker: deck %v, pushes %v, want [old] and one push", deck.GetNewOracleIds(), sent)
+	}
+	if rec, ok, err := cards.ReadNewCards(ctx, store, "20261113T090000"); err != nil || !ok || rec.Pass == "" {
+		t.Fatalf("older marker = %+v ok=%v err=%v, want an ended pass", rec, ok, err)
+	}
+
+	// Two pending markers run in order on a new deck, so the newer cards
+	// replace the older ones (D-1095).
+	deck = &mtgv1.Deck{Id: "d2", SessionId: "s2", CommanderOracleIds: []string{"cmd"},
+		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}}
+	write("20261113T090000", cards.NewCardsRecord{SnapshotAsOf: "2026-11-13T09:00:00Z", Cards: []string{"late"}})
+	write("20261113T110000", cards.NewCardsRecord{SnapshotAsOf: "2026-11-13T11:00:00Z", Cards: []string{"next"}})
+	if err := newCardsPass(ctx, store, load, open, allFit{}, log, now); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(deck.GetNewOracleIds(), []string{"next"}) || deck.GetNewCardsVersion() != "20261113T110000" || len(sent) != 3 {
+		t.Errorf("two pending markers: deck %v version %q, pushes %v, want [next] from the newer marker and two more pushes",
+			deck.GetNewOracleIds(), deck.GetNewCardsVersion(), sent)
+	}
+	if pending, err := cards.PendingNewCards(ctx, store); err != nil || len(pending) != 0 {
+		t.Errorf("pending after the run = %+v err=%v, want none", pending, err)
+	}
+}
