@@ -146,13 +146,14 @@ func TestEmulatorUpdateDeck(t *testing.T) {
 	id := repo.NewID(uid)
 	created := time.Now().UTC().Truncate(time.Second)
 	d := sampleDeck(id, created)
+	d.NewOracleIds = []string{"new-1"}
 	if err := repo.Put(ctx, uid, d); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 
 	name := "Karlov, renamed"
 	yes := true
-	got, err := repo.Update(ctx, uid, id, &name, &yes)
+	got, err := repo.Update(ctx, uid, id, &name, &yes, false)
 	if err != nil {
 		t.Fatalf("update: %v", err)
 	}
@@ -189,7 +190,7 @@ func TestEmulatorUpdateDeck(t *testing.T) {
 
 	// One field alone leaves the other as it is.
 	no := false
-	if _, err := repo.Update(ctx, uid, id, nil, &no); err != nil {
+	if _, err := repo.Update(ctx, uid, id, nil, &no, false); err != nil {
 		t.Fatalf("update mark: %v", err)
 	}
 	after, err := repo.Get(ctx, uid, id)
@@ -200,7 +201,27 @@ func TestEmulatorUpdateDeck(t *testing.T) {
 		t.Errorf("after the mark write: name %q favorite %v", after.GetName(), after.GetFavorite())
 	}
 
-	if _, err := repo.Update(ctx, uid, "no-such-deck", &name, nil); !errors.Is(err, ErrNotFound) {
+	// The dismiss clears the new cards alone (D-1092). The list carries
+	// them, so it marks the deck (D-1091).
+	if len(after.GetNewOracleIds()) != 1 {
+		t.Fatalf("new cards before the dismiss = %v", after.GetNewOracleIds())
+	}
+	listed, err := repo.List(ctx, uid, Filter{}, 10)
+	if err != nil || len(listed) != 1 || len(listed[0].GetNewOracleIds()) != 1 {
+		t.Fatalf("the list view lost the new cards: %v err %v", listed, err)
+	}
+	if _, err := repo.Update(ctx, uid, id, nil, nil, true); err != nil {
+		t.Fatalf("dismiss: %v", err)
+	}
+	dismissed, err := repo.Get(ctx, uid, id)
+	if err != nil {
+		t.Fatalf("get: %v", err)
+	}
+	if len(dismissed.GetNewOracleIds()) != 0 || dismissed.GetName() != name {
+		t.Errorf("after the dismiss: new cards %v name %q", dismissed.GetNewOracleIds(), dismissed.GetName())
+	}
+
+	if _, err := repo.Update(ctx, uid, "no-such-deck", &name, nil, false); !errors.Is(err, ErrNotFound) {
 		t.Errorf("update of an unknown deck = %v, want ErrNotFound", err)
 	}
 }
@@ -319,7 +340,7 @@ func TestEmulatorShareRevokeLookup(t *testing.T) {
 	}
 	// A rename keeps the link.
 	name := "renamed"
-	if _, err := repo.Update(ctx, uid, id, &name, nil); err != nil {
+	if _, err := repo.Update(ctx, uid, id, &name, nil, false); err != nil {
 		t.Fatalf("update: %v", err)
 	}
 	if _, _, err := repo.LookupShare(ctx, "h-one"); err != nil {
@@ -368,14 +389,16 @@ func TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck(t *testing.T) {
 
 	uid := "u-rewrite-" + repo.NewID("seed")
 	id := repo.NewID(uid)
-	if err := repo.Put(ctx, uid, sampleDeck(id, time.Now().UTC())); err != nil {
+	first := sampleDeck(id, time.Now().UTC())
+	first.NewOracleIds = []string{"new-1"}
+	if err := repo.Put(ctx, uid, first); err != nil {
 		t.Fatalf("put: %v", err)
 	}
 	if err := repo.Share(ctx, uid, id, "t-rw-one", "h-rw-one"); err != nil {
 		t.Fatalf("share: %v", err)
 	}
 	name := "renamed"
-	if _, err := repo.Update(ctx, uid, id, &name, nil); err != nil {
+	if _, err := repo.Update(ctx, uid, id, &name, nil, false); err != nil {
 		t.Fatalf("update: %v", err)
 	}
 	// The read started before the rename, so it carries the old name and
@@ -388,6 +411,9 @@ func TestEmulatorShareSurvivesARewriteAndEndsWithTheDeck(t *testing.T) {
 	d, err := repo.Get(ctx, uid, id)
 	if err != nil || d.GetSummary() != "a new read" || d.GetName() != name || !d.GetShared() || d.GetShareToken() != "t-rw-one" {
 		t.Fatalf("after the rewrite: summary %q, name %q, shared %v, token %q, err %v", d.GetSummary(), d.GetName(), d.GetShared(), d.GetShareToken(), err)
+	}
+	if got := d.GetNewOracleIds(); len(got) != 1 || got[0] != "new-1" {
+		t.Errorf("a rewrite dropped the new cards of the snapshot job: %v (D-1091)", got)
 	}
 	if _, _, err := repo.LookupShare(ctx, "h-rw-one"); err != nil {
 		t.Errorf("a rewrite dropped the link: %v", err)

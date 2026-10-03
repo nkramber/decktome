@@ -110,6 +110,11 @@ message Deck {
   // before D-1061, which needs one new link. The public copy of a deck
   // and the snapshot of a verdict never carry it.
   string share_token = 32;
+  // new_oracle_ids names up to three new cards of a new set that fit the
+  // deck, best first (D-1091). The new-cards pass of the snapshot job
+  // writes it, and its next pass replaces it. UpdateDeck clears it when
+  // the user dismisses the panel (D-1092).
+  repeated string new_oracle_ids = 33;
 }
 
 // RerunCase is the rerun of a stale deck (D-1008). A patch replaces the

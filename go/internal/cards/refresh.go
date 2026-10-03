@@ -276,12 +276,18 @@ func LegalityDiff(ctx context.Context, store Store, oldVersion, newVersion strin
 	if err != nil {
 		return 0, err
 	}
+	return countChanged(before, after), nil
+}
+
+// countChanged counts the cards of both versions whose legality changed
+// in a format of the app.
+func countChanged(before, after map[string]map[string]string) (changed int) {
 	for id, a := range after {
 		if b, ok := before[id]; ok && !sameLegalities(a, b) {
 			changed++
 		}
 	}
-	return changed, nil
+	return changed
 }
 
 // LoadLegalities reads the legality of each card of one stored version:

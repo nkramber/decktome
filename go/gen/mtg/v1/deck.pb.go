@@ -297,7 +297,12 @@ type Deck struct {
 	// link again (D-1061). Empty with no link, and empty on a deck shared
 	// before D-1061, which needs one new link. The public copy of a deck
 	// and the snapshot of a verdict never carry it.
-	ShareToken    string `protobuf:"bytes,32,opt,name=share_token,json=shareToken,proto3" json:"share_token,omitempty"`
+	ShareToken string `protobuf:"bytes,32,opt,name=share_token,json=shareToken,proto3" json:"share_token,omitempty"`
+	// new_oracle_ids names up to three new cards of a new set that fit the
+	// deck, best first (D-1091). The new-cards pass of the snapshot job
+	// writes it, and its next pass replaces it. UpdateDeck clears it when
+	// the user dismisses the panel (D-1092).
+	NewOracleIds  []string `protobuf:"bytes,33,rep,name=new_oracle_ids,json=newOracleIds,proto3" json:"new_oracle_ids,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -547,6 +552,13 @@ func (x *Deck) GetShareToken() string {
 		return x.ShareToken
 	}
 	return ""
+}
+
+func (x *Deck) GetNewOracleIds() []string {
+	if x != nil {
+		return x.NewOracleIds
+	}
+	return nil
 }
 
 // DeckQuality is the grade of the deck quality model (PR-14B). The
@@ -1762,7 +1774,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xca\t\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xf0\t\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1804,7 +1816,8 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"rerun_case\x18\x1e \x01(\x0e2\x11.mtg.v1.RerunCaseR\trerunCase\x12!\n" +
 	"\fstale_reason\x18\x1f \x01(\tR\vstaleReason\x12\x1f\n" +
 	"\vshare_token\x18  \x01(\tR\n" +
-	"shareTokenJ\x04\b\n" +
+	"shareToken\x12$\n" +
+	"\x0enew_oracle_ids\x18! \x03(\tR\fnewOracleIdsJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +

@@ -224,13 +224,15 @@ func artOf(p *mtgv1.Printing) *mtgv1.Printing {
 }
 
 // publicDeck is a copy of a deck with every user field cleared, for the
-// public export: no session, no link, no owned mark, no owned printing.
+// public export: no session, no link, no owned mark, no owned printing,
+// and no new cards of the owner (D-1091).
 func publicDeck(d *mtgv1.Deck) *mtgv1.Deck {
 	out := proto.Clone(d).(*mtgv1.Deck) //nolint:errcheck,forcetypeassert // Clone of a Deck is a Deck
 	out.SessionId = ""
 	out.ShareToken = ""
 	out.Favorite = false
 	out.RevisedFromDeckId = ""
+	out.NewOracleIds = nil
 	out.Validation = nil
 	for _, list := range [][]*mtgv1.DeckCard{out.Cards, out.Sideboard, out.Upgrades, out.Commanders} {
 		for _, dc := range list {

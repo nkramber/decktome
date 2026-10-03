@@ -336,7 +336,7 @@ func (f *fakeDecks) listOrder() []string {
 	return ids
 }
 
-func (f *fakeDecks) Update(_ context.Context, _, id string, name *string, favorite *bool) (*mtgv1.Deck, error) {
+func (f *fakeDecks) Update(_ context.Context, _, id string, name *string, favorite *bool, dismissNewCards bool) (*mtgv1.Deck, error) {
 	f.updates++
 	if f.err != nil {
 		return nil, f.err
@@ -351,6 +351,9 @@ func (f *fakeDecks) Update(_ context.Context, _, id string, name *string, favori
 	}
 	if favorite != nil {
 		out.Favorite = *favorite
+	}
+	if dismissNewCards {
+		out.NewOracleIds = nil
 	}
 	f.decks[id] = out
 	return out, nil
@@ -708,6 +711,18 @@ func TestUpdateDeck(t *testing.T) {
 		}
 		if res.Msg.GetDeck().GetFavorite() {
 			t.Error("favorite = true, want the mark cleared")
+		}
+	})
+
+	// D-1092: the dismiss clears the panel of new cards alone.
+	t.Run("dismisses the new cards", func(t *testing.T) {
+		src := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": {Id: "d1", Name: "a deck", NewOracleIds: []string{"n1"}}}}
+		res, err := update(src, &mtgv1.UpdateDeckRequest{DeckId: "d1", DismissNewCards: true})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := res.Msg.GetDeck(); len(got.GetNewOracleIds()) != 0 || got.GetName() != "a deck" {
+			t.Errorf("deck = %v, want no new cards and the name unchanged", got)
 		}
 	})
 

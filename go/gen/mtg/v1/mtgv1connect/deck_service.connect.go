@@ -66,8 +66,9 @@ type DeckServiceClient interface {
 	// ExportDeck renders one of the caller's decks as text (D-15, D-307
 	// to D-309).
 	ExportDeck(context.Context, *connect.Request[v1.ExportDeckRequest]) (*connect.Response[v1.ExportDeckResponse], error)
-	// UpdateDeck writes the two fields a user owns: the name and the
-	// favorite mark (PR-17). It changes nothing the agent built.
+	// UpdateDeck writes the fields a user owns: the name, the favorite
+	// mark (PR-17), and the dismiss of the new cards (D-1092). It changes
+	// nothing the agent built.
 	UpdateDeck(context.Context, *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error)
 	// DeleteDeck removes a deck for good, with the chat that built it and
 	// every deck of that chat (PR-17, D-456). It refuses while a build of
@@ -236,8 +237,9 @@ type DeckServiceHandler interface {
 	// ExportDeck renders one of the caller's decks as text (D-15, D-307
 	// to D-309).
 	ExportDeck(context.Context, *connect.Request[v1.ExportDeckRequest]) (*connect.Response[v1.ExportDeckResponse], error)
-	// UpdateDeck writes the two fields a user owns: the name and the
-	// favorite mark (PR-17). It changes nothing the agent built.
+	// UpdateDeck writes the fields a user owns: the name, the favorite
+	// mark (PR-17), and the dismiss of the new cards (D-1092). It changes
+	// nothing the agent built.
 	UpdateDeck(context.Context, *connect.Request[v1.UpdateDeckRequest]) (*connect.Response[v1.UpdateDeckResponse], error)
 	// DeleteDeck removes a deck for good, with the chat that built it and
 	// every deck of that chat (PR-17, D-456). It refuses while a build of
