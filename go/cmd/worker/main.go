@@ -34,6 +34,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/cards"
 	"github.com/nkramber/decktome/go/internal/gcpenv"
 	"github.com/nkramber/decktome/go/internal/notify"
+	"github.com/nkramber/decktome/go/internal/push"
 	"github.com/nkramber/decktome/go/internal/scryfall"
 )
 
@@ -159,7 +160,15 @@ func run(ctx context.Context, once bool, logger *slog.Logger, alert func(notify.
 		defer func() { _ = storageClient.Close() }()
 	}
 	client := scryfall.New(nil, os.Getenv("SCRYFALL_BASE_URL"), logger)
-	decksOf := firestoreDecks(project)
+	var sender push.Sender
+	if gcpenv.OnCloudRunJob() {
+		fcm, err := push.NewFCM(ctx, project)
+		if err != nil {
+			return fmt.Errorf("push init: %w", err)
+		}
+		sender = fcm
+	}
+	decksOf := firestoreDecks(project, sender, logger)
 	calendar, err := cards.Announcements()
 	if err != nil {
 		return fmt.Errorf("announcement calendar: %w", err)

@@ -42,9 +42,9 @@ func ProjectID() (string, error) {
 // K_SERVICE.
 func OnCloudRun() bool { return os.Getenv("K_SERVICE") != "" }
 
-// onCloudRunJob reports whether the process runs as a Cloud Run job,
+// OnCloudRunJob reports whether the process runs as a Cloud Run job,
 // which sets CLOUD_RUN_JOB and not K_SERVICE (F-180).
-func onCloudRunJob() bool { return os.Getenv("CLOUD_RUN_JOB") != "" }
+func OnCloudRunJob() bool { return os.Getenv("CLOUD_RUN_JOB") != "" }
 
 // SnapshotStore picks the snapshot backend. CARDS_SNAPSHOT_DIR selects a
 // local directory (offline mode, tests). Default: the GCS bucket, which
@@ -90,7 +90,7 @@ func EnvOr(key, fallback string) string {
 // Elsewhere the slog defaults stay, so a local log stays plain.
 func NewLogger(w io.Writer) *slog.Logger {
 	opts := &slog.HandlerOptions{}
-	if OnCloudRun() || onCloudRunJob() {
+	if OnCloudRun() || OnCloudRunJob() {
 		opts.ReplaceAttr = cloudLoggingAttr
 	}
 	return slog.New(slog.NewJSONHandler(w, opts))

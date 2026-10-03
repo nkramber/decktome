@@ -105,3 +105,39 @@ func TestDeckReadySurvivesFailures(t *testing.T) {
 		t.Errorf("removed = %v, want u1/a", st.removed)
 	}
 }
+
+func TestStaleMessage(t *testing.T) {
+	m := StaleMessage([]*mtgv1.Deck{{Id: "d 1", Name: "Karlov's \"lifegain\""}})
+	if m.Title != `Your deck "Karlov's "lifegain"" is no longer legal.` || m.Body != "" || m.URL != "/decks/d%201" {
+		t.Errorf("one deck = %+v", m)
+	}
+	m = StaleMessage([]*mtgv1.Deck{{Id: "d2", Name: "  "}})
+	if m.Title != "One of your decks is no longer legal." || m.URL != "/decks/d2" {
+		t.Errorf("no name = %+v", m)
+	}
+	m = StaleMessage([]*mtgv1.Deck{{Id: "d1"}, {Id: "d2"}, {Id: "d3"}})
+	if m.Title != "3 of your decks are no longer legal." || m.URL != "/decks" {
+		t.Errorf("three decks = %+v", m)
+	}
+}
+
+// TestDecksStaleSendsOnePushForEachUser: the decks of one pass go out as
+// one push to each device, a gone device leaves the store, and no deck
+// sends nothing (D-1088).
+func TestDecksStaleSendsOnePushForEachUser(t *testing.T) {
+	st := &fakeStore{ids: map[string][]string{"u1": {"a", "b"}}}
+	se := &fakeSender{gone: []string{"a"}}
+	n := NewNotifier(st, se, nil)
+	n.DecksStale(t.Context(), "u1", []*mtgv1.Deck{{Id: "d1"}, {Id: "d2"}})
+	if len(se.calls) != 1 || !slices.Equal(se.calls[0], []string{"a", "b"}) || se.msgs[0].URL != "/decks" {
+		t.Fatalf("sends = %v %+v, want one send of /decks to a and b", se.calls, se.msgs)
+	}
+	if !slices.Equal(st.removed, []string{"u1/a"}) {
+		t.Errorf("removed = %v, want u1/a", st.removed)
+	}
+	n.DecksStale(t.Context(), "u1", nil)
+	n.DecksStale(t.Context(), "u2", []*mtgv1.Deck{{Id: "d9"}})
+	if len(se.calls) != 1 {
+		t.Errorf("no deck, or no device, must send nothing: %v", se.calls)
+	}
+}

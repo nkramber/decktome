@@ -15,6 +15,35 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03b, PR-117
+
+**Branch `fix/phone-live-check-7`: PR-117, the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** The pull request is #274.
+
+Author provider: Claude Code
+
+**The base.** `main` is `11fc024`, from #273. Cloud Build `deploy-api` `cb1370fa` and `deploy-web` `54e2e425` built it with SUCCESS at 07:15 UTC on 2026-10-03. `/version.json` names it. Revision `mtg-api-00110-x9t` logged "the proof email is on" at 07:14:29 UTC.
+
+**The live check of PR-116 (D-1086).** The owner made an account with a new invited email. Its email came from Deck Tome, with the text of D-1081 and a link to `/v/<code>`. The link proved the email on a desktop and on the iPhone. The five changes of D-1079 passed.
+
+**The fault (F-209).** The owner signed out on the admin page, and then signed in to the new account. The app returned to the admin page, which read "permission_denied". The route guard kept that page in the location state, and the sign-in page returned there.
+
+**The code (D-1085).** `RequireAuth` keeps no page to return to. `SignInPage` sends each signed-in user to `/`, and `/` goes on to `/session/new`. A web test signs in from `/admin` and reads `/session/new`. The test fails on the code of `11fc024`.
+
+**The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22.
+
+**The review.** Gitar approved `054ce89` with no finding and no thread, and the answer to its CI note is on the pull request. CI is green on `054ce89`. Codex reviewed effective head `054ce89` and found no defect. The verdict is Ready for owner merge. No finding remains open.
+
+**The open work.**
+
+1. The owner confirmation of the merge, then the auto-merge.
+2. After the deploy, sign out on `/admin`, and sign in to a second account. The app must open a new chat.
+
+### 2026-10-02g: a request for beta access, PR-115
+
+**The deploy of `a97cf82` read SUCCESS for `deploy-web`.** The owner checked PR-114 on the iPhone. The cold start reloaded with no error, and F-206 closed.
+
+**The owner named two parts for one pull request.** The owner chose the sign-in page, Firestore with a Pushover notice, an admin screen with a custom claim, and Resend. The owner added the feedback row.
+
 ## The resume section of 2026-10-03, PR-116
 
 **Branch `fix/phone-live-check-6`: PR-116, the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).** The pull request is #273.
