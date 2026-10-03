@@ -28,7 +28,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed" on `c3f5878`, with 544 of 544 web tests under Node 22. Each CI check of `c3f5878` passed. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
 
-**The review.** Gitar approved `c3f5878` and the record commit `8082202`, with two findings closed and no open thread. The Codex review of `1ccaf42` found P2-1: a later marker had left an earlier failed marker pending. The author fixed it in `82b9089` and `c3f5878`, and the repeat Codex review confirmed the fix. `make verify` passed. The record is `docs/reviews/pr-278.md`, and its verdict is Ready for owner merge.
+**The review.** Gitar approved effective head `7938370`, and both finding threads are closed. The earlier Codex review found P2-1: a later marker had left an earlier failed marker pending. The author fixed it in `82b9089` and `c3f5878`. The repeat review confirmed the fix. `make verify` passed on `7938370`. The record is `docs/reviews/pr-278.md`, and its verdict is Ready for owner merge.
 
 **The open work.**
 
