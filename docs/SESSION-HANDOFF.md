@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03e)
 
-**Branch `feat/archidekt-url-import`: PR-121, a deck import from a link (D-1100 to D-1108).** The pull request is #277. It was PR-120 until #278 took that name, and the owner then chose PR-121 (D-1108).
+**Branch `feat/archidekt-url-import`: PR-121, a deck import from a link (D-1100 to D-1108).** The pull request is #277. The owner renamed it, because #278 took its old name (D-1108). #277 merges after #278.
 
 Author provider: Claude Code
 
@@ -30,9 +30,11 @@ Author provider: Claude Code
 
 **The open work.**
 
-1. Do the Gitar pass, then the repeat Codex review, then the owner confirmation of the merge.
-2. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
-3. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+1. Do the Gitar pass, then the repeat Codex review.
+2. Wait for the merge of #278. `make ref-check` fails here until then, because only #278 defines the old name of this item (D-1108). Then merge `main`, run `make verify`, and do the Gitar pass again.
+3. Get the owner confirmation of the merge.
+4. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
+5. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
 
