@@ -74,7 +74,9 @@ func run() error {
 		}
 		seen++
 		counts := map[users.Counter]int64{}
-		var oldest, newest time.Time
+		// creation is the newest deck or chat, the last_creation_at of
+		// D-1093. An upload and a verdict move newest alone.
+		var oldest, newest, creation time.Time
 
 		for kind, counter := range map[string]users.Counter{
 			"decks":       users.DecksCreated,
@@ -100,6 +102,9 @@ func run() error {
 			counts[counter] = n
 			oldest = earlier(oldest, first)
 			newest = later(newest, last)
+			if kind != "collections" {
+				creation = later(creation, last)
+			}
 		}
 
 		up, down, first, last, err := verdicts(ctx, ref.Collection("feedback"))
@@ -118,7 +123,7 @@ func run() error {
 		}
 		// The email is not here to read: it lives in Firebase Auth and on
 		// the record a later turn writes. The backfill leaves it alone.
-		if err := repo.Seed(ctx, ref.ID, "", counts, oldest, newest); err != nil {
+		if err := repo.Seed(ctx, ref.ID, "", counts, oldest, newest, creation); err != nil {
 			return fmt.Errorf("seed %s: %w", ref.ID, err)
 		}
 	}

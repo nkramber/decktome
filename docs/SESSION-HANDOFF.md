@@ -6,15 +6,15 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03d)
+## RESUME HERE (2026-10-03e)
 
-**Branch `feat/archidekt-url-import`: PR-120, a deck import from a link (D-1100 to D-1105).** The pull request is #277.
+**Branch `feat/archidekt-url-import`: PR-121, a deck import from a link (D-1100 to D-1108).** The pull request is #277. It was PR-120 until #278 took that name, and the owner then chose PR-121 (D-1108).
 
 Author provider: Claude Code
 
-**The base.** `main` is `e135aab`, from #275. PR-118 merged, and its checks after the deploy wait (the next steps).
+**The base.** `main` is `fbbcd60`, from #276. The branch merged `main` after #276. The main checkout holds the branch `feat/push-third-event` of #278.
 
-**The owner choices.** The owner asked for a workshop of an Archidekt and a Moxfield link. An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104).
+**The owner choices.** The owner asked for a workshop of an Archidekt and a Moxfield link. An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). After the first Codex review, the owner chose a cap of 10 reads a minute on each API instance (D-1106). The server records each read, and an import keeps a link only after a read of the same deck and text (D-1107).
 
 **The code.**
 
@@ -22,15 +22,16 @@ Author provider: Claude Code
 - `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
 - `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
 - The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
+- `go/internal/deckreads` records each read for one hour: the deck id and a hash of the text. `ImportDeck` refuses a link with no such read.
 
-**The checks.** `make verify` passed at `1e00529`, and so did `make ste-check` and `make ref-check`. A live read of three real Archidekt decks parsed with no bad line.
+**The checks.** The checks of the correction run next.
 
-**The review.** The first Gitar review found two items, and the correction commit fixes both. Codex reviewed effective head `a5583dfed06afdab3e0e7358132faa1889cd8505`. The verdict is Changes required, with open findings P2-1 and P2-2.
+**The review.** The first Gitar review found two items, and both had full merit. `a5583df` fixed both, and Gitar then approved `a5583df`. The first Codex review of `a5583df` asked for changes: P2-1, the cap of each instance, and P2-2, a link with no read. `docs/reviews/pr-277-response.md` answers both. The repeat review waits. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
-1. Do the Gitar pass, then `make codex-review`, then the owner confirmation of the merge.
-2. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run.
+1. Do the Gitar pass, then the repeat Codex review, then the owner confirmation of the merge.
+2. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
 3. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
@@ -104,8 +105,9 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-118: the push of a legality change** (D-1087 to D-1089). It merged as #275. After the deploy, read the log of the snapshot job for the line "stale pass ended" with "users hit".
-0. **PR-120: a deck import from a link** (D-1100 to D-1105). The resume section holds the open work.
+0. **The check of PR-119** (F-210, D-1092 to D-1094). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+0. **PR-121: a deck import from a link** (D-1100 to D-1108). The resume section holds the open work.
+0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -129,23 +131,25 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03b: the live check of PR-116, PR-117
-
-**The deploy of `11fc024` read SUCCESS for both builds.** The owner checked the proof email on a desktop and on the iPhone, and each part passed. The five changes of D-1079 passed too.
-
-**The owner found one fault.** A sign-in after a sign-out on the admin page returned to that page. The owner asked for a sign-in that always lands on the home page, and named `/session/new` (D-1085).
-
 ### 2026-10-03c: the push of a legality change, PR-118
 
 **The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
 
 **The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
 
-### 2026-10-03d: a deck import from a link, PR-120
+### 2026-10-03d: a user record for each user who signs in, PR-119
+
+**The owner asked why an invited user had no user record.** The logs showed a sign-in and two page reads, and no creation. Only a creation wrote the record.
+
+**The owner chose a write at each verified call, and two times.** `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat (D-1092 to D-1094).
+
+### 2026-10-03e: a deck import from a link, PR-121
 
 **The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites on 2026-10-03 (`docs/reference/deck-links-2026-10-03.md`). Archidekt answered, and Moxfield answered 403 again. The owner amended D-845 for Archidekt, and kept D-493 and D-889.
 
 **The owner asked for a headless browser or a false agent for Moxfield.** The session declined, because of D-502 and the block of Moxfield. The owner chose the steps, the access request, and a bookmarklet test (D-1102).
+
+**The owner renamed the item PR-121, and answered the first Codex review.** The cap counts on each instance (D-1106), and an import keeps a link only after a read (D-1107).
 
 ## The archive
 

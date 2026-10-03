@@ -864,7 +864,7 @@ export const AgentService: GenService<{
   },
   /**
    * FetchDeckList reads a public deck by its URL and answers its list as
-   * text, which the import form shows before ImportDeck (PR-120, D-1100).
+   * text, which the import form shows before ImportDeck (PR-121, D-1100).
    * A site that the app can not read gets the steps of an export
    * (D-1103). It stores nothing.
    *

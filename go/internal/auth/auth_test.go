@@ -512,3 +512,40 @@ func TestAClosedAccountIsRefused(t *testing.T) {
 		t.Errorf("a mark that can not be read: %v", err)
 	}
 }
+
+type fakeVisits struct{ seen []string }
+
+func (f *fakeVisits) Seen(_ context.Context, uid, email string) {
+	f.seen = append(f.seen, uid+" "+email)
+}
+
+// TestAVerifiedCallIsRecorded is D-1092: each admitted call of a user
+// with a proved email reaches the record, so a user who signs in and
+// makes nothing has one. A refused call and an unproved email never do.
+func TestAVerifiedCallIsRecorded(t *testing.T) {
+	listed := WithAllowlist(fakeList{emails: map[string]bool{"ann@example.com": true}})
+	call := func(t *testing.T, token string, opts ...Option) []string {
+		t.Helper()
+		v := &fakeVisits{}
+		health, _ := newServer(t, append(opts, WithVisits(v))...)
+		req := connect.NewRequest(&mtgv1.CheckRequest{})
+		req.Header().Set("Authorization", "Bearer "+token)
+		_, _ = health.Check(context.Background(), req)
+		return v.seen
+	}
+	if got := call(t, "good", listed); len(got) != 1 || got[0] != "u-42 ann@example.com" {
+		t.Errorf("a verified call recorded %q, want one visit of u-42", got)
+	}
+	if got := call(t, "unproved", listed, WithUnproved(mtgv1connect.HealthServiceCheckProcedure)); len(got) != 0 {
+		t.Errorf("an unproved email recorded %q", got)
+	}
+	if got := call(t, "good", WithAllowlist(fakeList{})); len(got) != 0 {
+		t.Errorf("an email off the list recorded %q", got)
+	}
+	if got := call(t, "good", listed, WithClosed(fakeClosed{closed: map[string]bool{"u-42": true}})); len(got) != 0 {
+		t.Errorf("a closed account recorded %q", got)
+	}
+	if got := call(t, "nope", listed); len(got) != 0 {
+		t.Errorf("a bad token recorded %q", got)
+	}
+}

@@ -15,6 +15,40 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03d, PR-119
+
+**Branch `feat/user-record-at-sign-in`: PR-119, a user record for each user who signs in (F-210, D-1092 to D-1094).** The pull request is #276.
+
+Author provider: Claude Code
+
+**The base.** `main` is `e135aab`, from #275. The session worked in the worktree `../decktome-user-record`. The main checkout holds the branch `feat/push-third-event` of another session, with two decisions not committed. That session wrote the next two decision ids, so this pull request starts at D-1092.
+
+**The fault (F-210).** The owner asked why an invited user had no record. The logs of `mtg-api` showed the sign-up, the proof of the email, and two page reads at 19:25 UTC on 2026-10-03. The user made nothing, and only a creation wrote the record.
+
+**The owner choices.** The first verified call writes the record, and no backfill reads Firebase Auth (D-1092). `last_seen_at` is the newest activity, at most once in five minutes. `last_creation_at` is the newest deck or chat (D-1093). A schema 1 record moves at the next visit (D-1094).
+
+**The code.**
+
+- `go/internal/users`: `Repo.Touch`, the `Visits` cache, the field `last_creation_at`, and schema 2. `Touch` and `Seed` do the copy of D-1094.
+- `go/cmd/users-backfill`: the seed writes the newest deck or chat as `last_creation_at`.
+- `go/internal/auth`: `WithVisits`. The interceptor records a call after every check admits it, and only with a proved email.
+- `go/cmd/api`: the API wires `WithVisits` with `Repo.Touch`.
+
+**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `make store-check` passes against the emulator. A mutation of each new rule failed a test.
+
+**The review.** Gitar confirmed the three fixes on `6ac5e7a` and completed a current pass of `99dd96f`. Codex reviewed effective head `99dd96fd5b0eaa1d477500f2c02886d60e8ec2ee`. P2-1 is fixed by the transaction in `Note`, and both regression tests pass. The verdict is Ready for owner merge. The existing record is `docs/reviews/pr-276.md`.
+
+**The open work.**
+
+1. Get the owner confirmation and turn on the auto-merge.
+2. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+
+### 2026-10-03b: the live check of PR-116, PR-117
+
+**The deploy of `11fc024` read SUCCESS for both builds.** The owner checked the proof email on a desktop and on the iPhone, and each part passed. The five changes of D-1079 passed too.
+
+**The owner found one fault.** A sign-in after a sign-out on the admin page returned to that page. The owner asked for a sign-in that always lands on the home page, and named `/session/new` (D-1085).
+
 ## The resume section of 2026-10-03c, PR-118
 
 **Branch `feat/push-next-event`: PR-118, the push of a legality change, the second event of PR-26 (D-1087 to D-1089).** The pull request is #275.

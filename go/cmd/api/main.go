@@ -173,6 +173,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// (D-941). The mark is read once a minute for each user.
 	closedUsers := users.NewClosedCache(users.NewRepo(fs).Deactivated, nil)
 	authOpts.opts = append(authOpts.opts, auth.WithClosed(closedUsers))
+	// Every verified call writes the user record at most once in five
+	// minutes, so a user who signs in and makes nothing has one too
+	// (D-1092, D-1093).
+	authOpts.opts = append(authOpts.opts, auth.WithVisits(users.NewVisits(users.NewRepo(fs).Touch, nil, logger)))
 	// The interceptor puts the user id in the context.
 	userFn := auth.UserID
 	// The repo reads the index for the summary of a collection stored

@@ -1,6 +1,6 @@
 # Deck links: Archidekt and Moxfield, read 2026-10-03
 
-This note holds each fact that PR-120 rests on (D-1100 to D-1105). A session read each fact on 2026-10-03 from the owner's Mac, unless the row says otherwise. Each probe sent a named agent and no browser header.
+This note holds each fact that PR-121 rests on (D-1100 to D-1108). A session read each fact on 2026-10-03 from the owner's Mac, unless the row says otherwise. Each probe sent a named agent and no browser header.
 
 ## Archidekt
 

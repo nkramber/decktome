@@ -23,7 +23,7 @@ import { useSubmitFeedback } from "../feedback/use-feedback";
 // Archidekt exports, or a pasted Arena list (D-845). The app stores it as
 // a deck it built, so the deck page shows it and the chat revises it.
 //
-// A deck link fills the list (PR-120, D-1100). The server reads a site
+// A deck link fills the list (PR-121, D-1100). The server reads a site
 // it can read and answers the text, so the reader sees the list before
 // the import. Any other site answers the steps of an export: the exact
 // steps of a known site, or the general steps (D-1103). A site with no

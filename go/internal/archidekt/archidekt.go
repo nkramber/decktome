@@ -1,5 +1,5 @@
 // Package archidekt reads one public Archidekt deck by the URL that a user
-// pasted, and writes its list as text that the deck import reads (PR-120,
+// pasted, and writes its list as text that the deck import reads (PR-121,
 // D-1100).
 //
 // The read API needs no login. Archidekt staff call it open for reads, and

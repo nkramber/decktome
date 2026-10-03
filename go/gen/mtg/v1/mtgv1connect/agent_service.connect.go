@@ -77,7 +77,7 @@ type AgentServiceClient interface {
 	// that the revise turn reads (PR-70, D-845, D-851).
 	ImportDeck(context.Context, *connect.Request[v1.ImportDeckRequest]) (*connect.Response[v1.ImportDeckResponse], error)
 	// FetchDeckList reads a public deck by its URL and answers its list as
-	// text, which the import form shows before ImportDeck (PR-120, D-1100).
+	// text, which the import form shows before ImportDeck (PR-121, D-1100).
 	// A site that the app can not read gets the steps of an export
 	// (D-1103). It stores nothing.
 	FetchDeckList(context.Context, *connect.Request[v1.FetchDeckListRequest]) (*connect.Response[v1.FetchDeckListResponse], error)
@@ -234,7 +234,7 @@ type AgentServiceHandler interface {
 	// that the revise turn reads (PR-70, D-845, D-851).
 	ImportDeck(context.Context, *connect.Request[v1.ImportDeckRequest]) (*connect.Response[v1.ImportDeckResponse], error)
 	// FetchDeckList reads a public deck by its URL and answers its list as
-	// text, which the import form shows before ImportDeck (PR-120, D-1100).
+	// text, which the import form shows before ImportDeck (PR-121, D-1100).
 	// A site that the app can not read gets the steps of an export
 	// (D-1103). It stores nothing.
 	FetchDeckList(context.Context, *connect.Request[v1.FetchDeckListRequest]) (*connect.Response[v1.FetchDeckListResponse], error)
