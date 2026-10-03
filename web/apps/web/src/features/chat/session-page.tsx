@@ -380,7 +380,9 @@ export function ChatPanel({
   }
   const prevOpenCount = useRef(initial.openQuestions.length);
   useEffect(() => {
-    if (openCount > prevOpenCount.current) questionsForm.current?.focus();
+    // The scroll belongs to the chat hook, which shows the reader's
+    // message above the questions (D-1066).
+    if (openCount > prevOpenCount.current) questionsForm.current?.focus({ preventScroll: true });
     prevOpenCount.current = openCount;
   }, [openCount]);
 
@@ -410,11 +412,14 @@ export function ChatPanel({
 
   // The chat stays at its foot while the reader is there, and a send
   // takes it there (D-1056). The foot sits under the message box, so the
-  // view holds the newest output, the questions, and the submit button.
+  // view holds the newest output and the submit button. A turn that ends
+  // with questions shows the reader's latest message at the top, and the
+  // questions under it (D-1066).
   const foot = useRef<HTMLDivElement>(null);
+  const mine = useRef<HTMLLIElement>(null);
   const last = state.thread[state.thread.length - 1];
   const lastLength = last && "text" in last ? last.text.length : 0;
-  const pin = useStickToBottom(threadScroll, foot, `${state.thread.length}:${lastLength}:${openCount}:${state.busy}`);
+  const pin = useStickToBottom(threadScroll, foot, `${state.thread.length}:${lastLength}:${openCount}:${state.busy}`, mine, openCount > 0 && !state.busy);
 
   // Every open question needs an answer before the submit, and one send
   // carries them all (D-282). Each answer text has the same cap as a message.
@@ -520,7 +525,7 @@ export function ChatPanel({
   const thread = (
     <ol className="flex flex-col gap-5" aria-label="Conversation">
       {shown.map((item) => (
-        <li key={item.id}>
+        <li key={item.id} ref={item.id === lastMineId ? mine : undefined}>
           <ThreadLine item={item} sessionId={state.sessionId} />
         </li>
       ))}
