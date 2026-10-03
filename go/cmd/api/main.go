@@ -687,7 +687,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 	} else {
 		opts = append(opts, agentsvc.WithPrices(prices))
 	}
-	// The per-user monthly spend cap (D-421). Cloud Run gets the $5
+	// The per-user monthly spend cap (D-421, D-1109). Cloud Run gets the $2
 	// default, and local mode gets a cap only when SPEND_CAP_USD names one.
 	capUSD, err := spendCap(gcpenv.OnCloudRun(), os.Getenv)
 	if err != nil {
@@ -708,8 +708,8 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 	return agentsvc.New(cat, client, sessions.NewRepo(fs), userFn, opts...)
 }
 
-// defaultSpendCapUSD is the cap of D-421.
-const defaultSpendCapUSD = 5
+// defaultSpendCapUSD is the cap of D-1109.
+const defaultSpendCapUSD = 2
 
 // spendCap reads SPEND_CAP_USD. Unset, Cloud Run gets the default and
 // local mode gets no cap. Zero turns the cap off anywhere. A value that

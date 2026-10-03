@@ -6,13 +6,13 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03e)
+## RESUME HERE (2026-10-03g)
 
-**Branch `feat/archidekt-url-import`: PR-121, a deck import from a link (D-1100 to D-1108).** The pull request is #277. The owner renamed it, because #278 took its old name (D-1108). #277 merges after #278.
+**Branch `feat/archidekt-url-import`: PR-121, a deck import from a link (D-1100 to D-1108).** The pull request is #277. The owner renamed it, because #278 took its old name (D-1108).
 
 Author provider: Claude Code
 
-**The base.** `main` is `fbbcd60`, from #276. The branch merged `main` after #276. The main checkout holds the branch `feat/push-third-event` of #278.
+**The base.** `main` is `d0b8498`, from #278. The branch merged `main` after #278. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
 
 **The owner choices.** The owner asked for a workshop of an Archidekt and a Moxfield link. An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). After the first Codex review, the owner chose a cap of 10 reads a minute on each API instance (D-1106). The server records each read, and an import keeps a link only after a read of the same deck and text (D-1107).
 
@@ -24,16 +24,15 @@ Author provider: Claude Code
 - The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
 - `go/internal/deckreads` records each read for one hour: the deck id and a hash of the text. `ImportDeck` refuses a link with no such read.
 
-**The checks.** `make verify` passes on the correction of the first Codex review. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
+**The checks.** `make verify` passes after the merge of #278. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** The first Gitar review found two items, and `a5583df` fixed both. The first Codex review of `a5583df` asked for changes: P2-1, the cap of each instance, and P2-2, a link with no read. `docs/reviews/pr-277-response.md` answers both. Gitar then approved `b6906dd` with no new item. The repeat Codex review of `b6906dd` reads `Blocked`, with no open finding: only `verify:shell` fails, on the old name of D-1108. The state is pending the merge of #278.
+**The review.** Gitar found two items, and `a5583df` fixed both. The first Codex review asked for changes: P2-1, the cap of each instance, and P2-2, a link with no read. `docs/reviews/pr-277-response.md` answers both. The repeat Codex review of `b6906dd` read `Blocked` only for the old name of D-1108. The merge of #278 ends that block. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
-1. Wait for the merge of #278. `make ref-check` fails here until then, because only #278 defines the old name of this item (D-1108). Then merge `main`, run `make verify`, push, do the Gitar pass, and run `make codex-review PR=277` again.
-2. Get the owner confirmation of the merge.
-3. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
-4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+1. Do the Gitar pass and the Codex review of the merge, then get the owner confirmation of the merge.
+2. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
+3. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
 
@@ -80,6 +79,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 - Comprehensive Rules: the current file is 2026-08-19 (D-272). The rule citations in the corpus match the 2026-08-07 text. The session of 2026-09-12 read rules 709.4c, 710.2, 712.8a, 712.12, 715.2, and 722.2a in that file for PR-44.
 - Ban-list snapshot: 2026-08-24. Next announcement 2026-10-12, in `internal/cards/announcement_dates.json`. A test fails when that file holds no future date. This is by design.
+- The Scryfall API, read 2026-10-03: Reality Fracture released 2026-10-02 with 268 first printings. Star Trek releases 2026-11-13, and its 75 first printings read `not_legal` in each format.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
@@ -92,7 +92,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The harvest of 2026-09-29 read that newest verdict, a test of the owner (D-994). Its watermark is 2026-09-24 20:45 UTC.
 - The harvest of 2026-09-24 at 15:28 UTC read 5 verdicts, all of one user. Two carry the snapshot of D-635, of 2026-09-09 and of 2026-09-24. `docs/reference/f49-harvest-2026-09-23.md` holds the first harvest. A collection group query over it needs an index for its shape, and the store holds "verdict ascending, created_at descending" alone.
 - The deployed schedules, read 2026-09-09 and again on 2026-09-11: `mtg-snapshot-schedule` at `0 * * * *` (D-634) and `mtg-meta-schedule` at `0 6 * * *`. Both read ENABLED. The API service holds minScale 0, so it scales to zero. No billing export exists, so no command reads the billed spend.
-- The deployed API, read 2026-10-03 UTC: Cloud Build `34195b09` of `deploy-api` built `18b7756`, from #272, and ended SUCCESS at 05:45:01 UTC. The service serves revision `mtg-api-00109-4pt`, with the secret `resend-api-key`. On 2026-10-01 the jobs `mtg-meta` and `mtg-snapshot` ran `worker:07203ba`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
+- The deployed API, read 2026-10-03 UTC: The service serves revision `mtg-api-00113-fmw`, on the image `api:fbbcd60` from #276, with the secret `resend-api-key`. That revision reads `SPEND_CAP_USD=2` and one override (D-1109). On 2026-10-01 the jobs `mtg-meta` and `mtg-snapshot` ran `worker:07203ba`. The task timeout of `mtg-meta` reads 14,400 seconds since 22:21 UTC on 2026-09-27 (D-982). The service holds no minimum instance. The 40 index loads of 2026-09-23 to 2026-09-26 took 10 to 21 seconds (F-176).
 - The deployed web app, read 2026-10-03: build `321c7e5b` of `deploy-web` built `18b7756`, from #272, and ended SUCCESS at 05:45:45 UTC. `/version.json` names `18b7756`.
 - The Cloud Build quota, read 2026-09-25 in the Service Usage API: the regional default pool of `us-central1` runs 10 build CPUs at a time. The quotas page of 2026-09-24 says that no request raises it (D-948).
 - The Firestore backup, read 2026-09-25: a daily schedule of 10 days, and two READY backups. Point-in-time recovery reads disabled (D-936).
@@ -106,8 +106,9 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The check of PR-119** (F-210, D-1092 to D-1094). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job: an hour with no new version logs "snapshot current". Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 0. **PR-121: a deck import from a link** (D-1100 to D-1108). The resume section holds the open work.
+0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
@@ -119,7 +120,7 @@ Twenty-two things a fresh session gets wrong without this file.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
 7. **The owner parked PR-35 and dropped PR-30** (D-655, D-656). M-9, F-97, and F-99 found no case for either one.
 8. **PR-36, the reader's verdict as a quality signal** (D-651). It waits for verdicts.
-9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. PR-118 adds the legality event (D-1087). The email digest and the new-cards event wait.
+9. **PR-26: the web push of a finished build** (D-1004, D-1005). This pull request is #258. PR-118 adds the legality event (D-1087). PR-120 adds the new-cards event (D-1090). The email digest waits.
 10. **PR-42 is merged as #148** (D-671). Question gate run 49 missed no conversation, so it ran no rerun. Any miss still fails the run, and each miss joins the finding register.
 
 CAUTION: a command such as `make revise-gate 2>&1 | tee log` hides the exit code of make, because the shell of a session sets no pipefail. Read the verdict line of the document. Each recipe of `Makefile` sets pipefail itself (D-782).
@@ -132,19 +133,17 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03c: the push of a legality change, PR-118
+### 2026-10-03e: the spend cap of $2, D-1109
 
-**The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
+**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
 
-**The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
+### 2026-10-03f: the push of new cards, PR-120
 
-### 2026-10-03d: a user record for each user who signs in, PR-119
+**The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
 
-**The owner asked why an invited user had no user record.** The logs showed a sign-in and two page reads, and no creation. Only a creation wrote the record.
+**The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
 
-**The owner chose a write at each verified call, and two times.** `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat (D-1092 to D-1094).
-
-### 2026-10-03e: a deck import from a link, PR-121
+### 2026-10-03g: a deck import from a link, PR-121
 
 **The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites on 2026-10-03 (`docs/reference/deck-links-2026-10-03.md`). Archidekt answered, and Moxfield answered 403 again. The owner amended D-845 for Archidekt, and kept D-493 and D-889.
 
@@ -154,4 +153,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03c, the records of 2026-08-31 to 2026-10-03, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03e, the records of 2026-08-31 to 2026-10-03c, and 104 more sections, word for word. Read it for the detail behind a decision.

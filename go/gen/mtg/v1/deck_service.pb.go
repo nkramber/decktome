@@ -806,9 +806,12 @@ type UpdateDeckRequest struct {
 	// string is an invalid argument.
 	Name *string `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
 	// favorite sets or clears the star. Unset leaves the mark as it is.
-	Favorite      *bool `protobuf:"varint,3,opt,name=favorite,proto3,oneof" json:"favorite,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Favorite *bool `protobuf:"varint,3,opt,name=favorite,proto3,oneof" json:"favorite,omitempty"`
+	// dismiss_new_cards clears the panel of new cards (D-1095). False
+	// leaves it as it is.
+	DismissNewCards bool `protobuf:"varint,4,opt,name=dismiss_new_cards,json=dismissNewCards,proto3" json:"dismiss_new_cards,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdateDeckRequest) Reset() {
@@ -858,6 +861,13 @@ func (x *UpdateDeckRequest) GetName() string {
 func (x *UpdateDeckRequest) GetFavorite() bool {
 	if x != nil && x.Favorite != nil {
 		return *x.Favorite
+	}
+	return false
+}
+
+func (x *UpdateDeckRequest) GetDismissNewCards() bool {
+	if x != nil {
+		return x.DismissNewCards
 	}
 	return false
 }
@@ -1139,11 +1149,12 @@ const file_mtg_v1_deck_service_proto_rawDesc = "" +
 	"\t_favorite\"_\n" +
 	"\x11ListDecksResponse\x12\"\n" +
 	"\x05decks\x18\x01 \x03(\v2\f.mtg.v1.DeckR\x05decks\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"|\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"\xa8\x01\n" +
 	"\x11UpdateDeckRequest\x12\x17\n" +
 	"\adeck_id\x18\x01 \x01(\tR\x06deckId\x12\x17\n" +
 	"\x04name\x18\x02 \x01(\tH\x00R\x04name\x88\x01\x01\x12\x1f\n" +
-	"\bfavorite\x18\x03 \x01(\bH\x01R\bfavorite\x88\x01\x01B\a\n" +
+	"\bfavorite\x18\x03 \x01(\bH\x01R\bfavorite\x88\x01\x01\x12*\n" +
+	"\x11dismiss_new_cards\x18\x04 \x01(\bR\x0fdismissNewCardsB\a\n" +
 	"\x05_nameB\v\n" +
 	"\t_favorite\"6\n" +
 	"\x12UpdateDeckResponse\x12 \n" +

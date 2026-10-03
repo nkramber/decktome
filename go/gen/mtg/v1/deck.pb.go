@@ -298,9 +298,18 @@ type Deck struct {
 	// before D-1061, which needs one new link. The public copy of a deck
 	// and the snapshot of a verdict never carry it.
 	ShareToken string `protobuf:"bytes,32,opt,name=share_token,json=shareToken,proto3" json:"share_token,omitempty"`
+	// new_oracle_ids names up to three new cards of a new set that fit the
+	// deck, best first (D-1091). The new-cards pass of the snapshot job
+	// writes it, and its next pass replaces it. UpdateDeck clears it when
+	// the user dismisses the panel (D-1095).
+	NewOracleIds []string `protobuf:"bytes,33,rep,name=new_oracle_ids,json=newOracleIds,proto3" json:"new_oracle_ids,omitempty"`
+	// new_cards_version names the snapshot version of the new-cards marker
+	// whose pass last wrote new_oracle_ids. A rerun of the same marker
+	// skips the deck, so a dismiss stays and no second push goes (D-1095).
+	NewCardsVersion string `protobuf:"bytes,34,opt,name=new_cards_version,json=newCardsVersion,proto3" json:"new_cards_version,omitempty"`
 	// source_url is the Archidekt deck that an import read, or empty. The
 	// deck page and the public copy link to it (D-1101).
-	SourceUrl     string `protobuf:"bytes,33,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	SourceUrl     string `protobuf:"bytes,35,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -548,6 +557,20 @@ func (x *Deck) GetStaleReason() string {
 func (x *Deck) GetShareToken() string {
 	if x != nil {
 		return x.ShareToken
+	}
+	return ""
+}
+
+func (x *Deck) GetNewOracleIds() []string {
+	if x != nil {
+		return x.NewOracleIds
+	}
+	return nil
+}
+
+func (x *Deck) GetNewCardsVersion() string {
+	if x != nil {
+		return x.NewCardsVersion
 	}
 	return ""
 }
@@ -1782,7 +1805,8 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xe9\t\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbb\n" +
+	"\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12&\n" +
@@ -1824,9 +1848,11 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"rerun_case\x18\x1e \x01(\x0e2\x11.mtg.v1.RerunCaseR\trerunCase\x12!\n" +
 	"\fstale_reason\x18\x1f \x01(\tR\vstaleReason\x12\x1f\n" +
 	"\vshare_token\x18  \x01(\tR\n" +
-	"shareToken\x12\x1d\n" +
+	"shareToken\x12$\n" +
+	"\x0enew_oracle_ids\x18! \x03(\tR\fnewOracleIds\x12*\n" +
+	"\x11new_cards_version\x18\" \x01(\tR\x0fnewCardsVersion\x12\x1d\n" +
 	"\n" +
-	"source_url\x18! \x01(\tR\tsourceUrlJ\x04\b\n" +
+	"source_url\x18# \x01(\tR\tsourceUrlJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +

@@ -6,8 +6,9 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-10-03 correction pass 258 (PR-70, PR-121, D-1100 to D-1108): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-121, sequencing step 115.
+2026-10-03 correction pass 259 (PR-70, PR-121, D-1100 to D-1108): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-121, sequencing step 115.
 
+2026-10-03 correction pass 258 (PR-26, PR-120, D-1090, D-1091, D-1095): the owner chose the new-cards event as the third event of PR-26, before the email digest. The digest holds the new cards of each deck, so this event comes first. Changes: PR-26, PR-120, sequencing steps 99 and 115.
 2026-10-03 correction pass 257 (PR-119, F-210, D-1092 to D-1094): an invited user who signed in and made nothing had no user record. The first verified call writes it now. `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat. Changes: the `users` record row, F-210, PR-119, sequencing step 114.
 
 2026-10-03 correction pass 256 (PR-26, PR-118, D-1087 to D-1089): the stale pass of I-1 sets the `stale` flag, so the legality event no longer waits. The owner chose it as the next event of PR-26. The email digest and the new-cards event wait. Changes: PR-26, PR-118, sequencing step 113.
@@ -1325,6 +1326,8 @@ The build: `go/internal/push` keeps the devices under `users/<uid>/push_devices`
 The ID belongs to the browser, so `push_owners/<id>` names one owner, and a second account takes the ID from the first. A sign-out ends the registration with Cloud Messaging also when the API call fails (Gitar finding on #258). The audit fix of `brace-expansion` rides in the same pull request (D-1006).
 
 2026-10-03: the legality event follows in PR-118 (D-1087 to D-1089). The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer holds. The email digest and the new-cards event still wait.
+
+2026-10-03: the new-cards event follows in PR-120 (D-1090, D-1091, D-1095). The email digest still waits.
 
 Gate of this pull request: the unit tests hold each rule. A build after the client left sends one push, and a build the user reads sends none. A user with no device gets nothing. A gone device leaves the store, and a sign-out removes the device. The emulator tests hold the cap of 10 devices and one owner for each ID.
 
@@ -3184,6 +3187,37 @@ Gate:
 The live check after the deploy: a verified user with no record opens the app, and `users/<uid>` then exists. The sandbox of a session refuses each read under `users/` (D-756), so the owner reads the record.
 > *In plain English:* each person who signs in now gets a user record, also when they make nothing. The record also shows when they last used the app and when they last made a deck or a chat.
 
+**PR-120: The push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).** ✅ merged as #278. The mark comes before any review (D-822).
+
+- **The event (D-1090).** A new set releases, and its cards become legal. The snapshot job finds them, and it gives each saved deck up to three cards that fit it (`go/internal/newcards`).
+- **A new card (D-1091).** `cards.NewlyLegal` reads the legalities of the previous and the new snapshot. A card is new when it was legal in no format before, and it is legal in a format of the app now. On 2026-10-03 the Scryfall API read the 75 first printings of Star Trek as `not_legal` in each format. The Reality Fracture cards read `legal` since 2026-10-02. So a card becomes new at its release, not at its preview. A reprint and an unban are not new.
+- **The marker.** The refresh writes `new_cards.json` into the new version. The pass writes its end into the marker, so a pass that fails or stops runs again on the next run of the job. This is the rule of the stale pass. A newer marker holds only the cards that are new since the version before it. So one pass joins the cards of each marker with no ended pass, under the newest version, and each user gets one push. A deck that a pass of the same or a newer version wrote stays as it is. A deck takes only the cards newer than its own version, and the cards it still shows, so a dismiss stays. Each deck that a pass writes keeps the version of the marker in `new_cards_version`. A rerun of the same marker skips that deck, so a dismiss stays and no second push goes (D-1095).
+- **The fit (D-1091).** The pass reads the theme of the chat of the deck, through the theme table of the builder. A deck whose chat is gone, or holds no theme, takes the theme row that most of its cards fit (`candidates.DeckTheme`). A card fits at `candidates.FitFloor` or more, a share of 0.32: one subtype, one card type, or one tag of the theme. The card is legal in the format of the deck, the deck does not hold it, and it sits inside the colors of the deck.
+- **The push (D-1091).** Each user gets one push after each pass. One deck opens that deck, and more decks open `/decks`. The list marks each such deck with "New cards". The menu item of D-1005 turns on this event too.
+- **The panel (D-1095).** The deck page shows "New cards for this deck" with a Revise button and a Dismiss button. The Revise button sends one message to the chat of the deck, and the revise turn costs money only on the tap. `UpdateDeck` clears the panel on a dismiss, and the next pass replaces it.
+- **The memory.** The pass loads the whole index of the newest version, and the stale pass does not. On 2026-10-03 a load of the local snapshot of 2026-09-04 measured 255 MB live and 379 MB from the system. The job has 1 GiB. The pass loads it only when a marker waits, about once for each set.
+
+Gate:
+- The unit tests of `go/internal/cards` read a release as new, and a preview, a reprint, and an unban as not new.
+- The tests of `go/internal/candidates` read a fit for a card of the theme, and no fit for an empty theme.
+- The tests of `go/internal/candidates` read the theme of a deck from its cards.
+- The tests of `go/internal/newcards` read each rule of the pick, and the theme of the cards of a deck.
+- The tests of `go/internal/newcards` read no second push on a rerun, and the clear of a deck with no fit.
+- The tests of `go/internal/newcards` read no write and no push on a rerun after a dismiss.
+- The tests of the worker read one push after a pass, and nothing for an ended pass or no marker.
+- The tests of the worker read an older pending marker after a newer marker ended.
+- The tests of the worker read two pending markers in one pass with one push.
+- The tests of `go/internal/newcards` read a joined pass: a deck of a newer marker stays, and a dismissed deck takes only the newer cards.
+- The tests of the deck service and the web read the dismiss, the panel, the Revise message, and the mark of the list.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The replay of 2026-10-03 cost nothing. It joined the 268 first printings of Reality Fracture from the Scryfall API to the local snapshot of 2026-09-04. It ran the pick for ten commanders with a theme each. Gishath took two new Dinosaurs, Lathril took three Elves, and Karlov took two lifegain cards at a full score. Urza took none, because no new card fit his colors. The theme "the best possible deck" took none.
+
+UNVERIFIED: the tag file of that snapshot holds no tag of a new card, so no tag signal fired in the replay. The tag file of a release day can also lack the new cards. The live check after the deploy waits for Star Trek on 2026-11-13 (Scryfall, read 2026-10-03).
+> *In plain English:* when a new set comes out, the app looks for new cards that fit each of your decks. Your phone tells you, and the deck shows the cards with a button to revise the deck. A dismiss hides the panel.
+
 **PR-121: A deck import from a link (D-1100 to D-1108).** ✅ merged as #277. The mark comes before any review (D-822). The owner asked for a workshop of an Archidekt and a Moxfield link on 2026-10-03, and then chose this scope. `docs/reference/deck-links-2026-10-03.md` holds each source fact.
 
 - **The field (D-1103).** The import dialog gets a field "Deck link" and a button "Read". The field names no site, as D-889 asks.
@@ -3606,7 +3640,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 96. **PR-103** the read of the test verdict of 2026-09-24, and the close of F-49 (F-49, D-994). No paid target ran.
 97. **PR-104** deck gate run 35, the first whole run of generate prompt version 16, and `jsdom` 30.1.1 (F-33, D-995, D-997). It spent $3.1278. Then PR-105, the move of the model roles (D-996).
 98. **PR-105** the move of the model roles to `gpt-6-luna`, `gpt-6.1-sol`, and `claude-sonnet-5-5`, with a gate run for each move (D-996, D-998 to D-1003). It spent about $4.1 at OpenAI and $1.04 at Anthropic.
-99. **PR-26** the web push of a finished build, Stage B of the mobile proposal (D-1004, D-1005). PR-118 adds the legality event (D-1087). The email digest and the new-cards event wait.
+99. **PR-26** the web push of a finished build, Stage B of the mobile proposal (D-1004, D-1005). PR-118 adds the legality event (D-1087). PR-120 adds the new-cards event (D-1090). The email digest waits.
 100. **I-1** the ban-list watch, the stale flag, the banner, and the scoped rerun (D-29, D-1008, D-1018 to D-1021).
 101. **PR-106** four screen fixes after I-1 (F-186, F-187, F-189, F-193, D-1012).
 102. **PR-107** the owned pool and its gap question, the commander pick row, and the toast of a phone (F-188, F-191, F-194, D-1027 to D-1032).
@@ -3622,6 +3656,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 112. **PR-117** the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).
 113. **PR-118** the push of a legality change, the second event of PR-26 (D-1087 to D-1089).
 114. **PR-119** a user record for each user who signs in (F-210, D-1092 to D-1094).
+115. **PR-120** the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).
 116. **PR-121** a deck import from a link (D-1100 to D-1108).
 
 ## 9. Open questions

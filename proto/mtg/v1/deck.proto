@@ -110,9 +110,18 @@ message Deck {
   // before D-1061, which needs one new link. The public copy of a deck
   // and the snapshot of a verdict never carry it.
   string share_token = 32;
+  // new_oracle_ids names up to three new cards of a new set that fit the
+  // deck, best first (D-1091). The new-cards pass of the snapshot job
+  // writes it, and its next pass replaces it. UpdateDeck clears it when
+  // the user dismisses the panel (D-1095).
+  repeated string new_oracle_ids = 33;
+  // new_cards_version names the snapshot version of the new-cards marker
+  // whose pass last wrote new_oracle_ids. A rerun of the same marker
+  // skips the deck, so a dismiss stays and no second push goes (D-1095).
+  string new_cards_version = 34;
   // source_url is the Archidekt deck that an import read, or empty. The
   // deck page and the public copy link to it (D-1101).
-  string source_url = 33;
+  string source_url = 35;
 }
 
 // RerunCase is the rerun of a stale deck (D-1008). A patch replaces the

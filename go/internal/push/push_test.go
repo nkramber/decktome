@@ -141,3 +141,36 @@ func TestDecksStaleSendsOnePushForEachUser(t *testing.T) {
 		t.Errorf("no deck, or no device, must send nothing: %v", se.calls)
 	}
 }
+
+// TestNewCardsMessage is D-1091: one deck opens that deck, and more decks
+// open the list.
+func TestNewCardsMessage(t *testing.T) {
+	m := NewCardsMessage([]*mtgv1.Deck{{Id: "d 1", Name: "Dinosaurs"}})
+	if m.Title != `New cards fit your deck "Dinosaurs".` || m.Body != "" || m.URL != "/decks/d%201" {
+		t.Errorf("one deck = %+v", m)
+	}
+	m = NewCardsMessage([]*mtgv1.Deck{{Id: "d2"}})
+	if m.Title != "New cards fit one of your decks." || m.URL != "/decks/d2" {
+		t.Errorf("no name = %+v", m)
+	}
+	m = NewCardsMessage([]*mtgv1.Deck{{Id: "d1"}, {Id: "d2"}})
+	if m.Title != "New cards fit 2 of your decks." || m.URL != "/decks" {
+		t.Errorf("two decks = %+v", m)
+	}
+}
+
+// TestNewCardsSendsOnePushForEachUser: the decks of one pass go out as one
+// push, and no deck sends nothing (D-1091).
+func TestNewCardsSendsOnePushForEachUser(t *testing.T) {
+	st := &fakeStore{ids: map[string][]string{"u1": {"a"}}}
+	se := &fakeSender{}
+	n := NewNotifier(st, se, nil)
+	n.NewCards(t.Context(), "u1", []*mtgv1.Deck{{Id: "d1"}})
+	if len(se.calls) != 1 || se.msgs[0].URL != "/decks/d1" {
+		t.Fatalf("sends = %v %+v, want one send of /decks/d1", se.calls, se.msgs)
+	}
+	n.NewCards(t.Context(), "u1", nil)
+	if len(se.calls) != 1 {
+		t.Errorf("no deck sent %d pushes, want none", len(se.calls)-1)
+	}
+}

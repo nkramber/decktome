@@ -24,7 +24,7 @@ import (
 
 func sharedDeckFixture() *mtgv1.Deck {
 	return &mtgv1.Deck{
-		Id: "d1", Name: "Elf test", SessionId: "s-secret", Favorite: true,
+		Id: "d1", Name: "Elf test", SessionId: "s-secret", Favorite: true, NewOracleIds: []string{"o-new"}, NewCardsVersion: "v1",
 		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}, Summary: "A small deck.",
 		LegalityAsOf: "2026-09-03", CardCount: 5, SourceUrl: "https://archidekt.com/decks/42",
 		Cards: []*mtgv1.DeckCard{
@@ -162,7 +162,7 @@ func TestSharedDeckHoldsNoUserField(t *testing.T) {
 	}
 	// The public export clears every user field of the deck copy.
 	d := publicDeck(sharedDeckFixture())
-	if d.SessionId != "" || d.Favorite || d.Validation != nil || d.Cards[0].Owned || d.Cards[0].OwnedCount != 0 || d.Cards[0].OwnedPrinting != nil {
+	if d.SessionId != "" || d.Favorite || len(d.NewOracleIds) != 0 || d.NewCardsVersion != "" || d.Validation != nil || d.Cards[0].Owned || d.Cards[0].OwnedCount != 0 || d.Cards[0].OwnedPrinting != nil {
 		t.Errorf("publicDeck kept a user field: %+v", d)
 	}
 }

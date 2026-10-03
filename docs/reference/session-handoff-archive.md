@@ -15,6 +15,70 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03f, PR-120
+
+**Branch `feat/push-third-event`: PR-120, the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).** The pull request is #278.
+
+Author provider: Claude Code
+
+**The base.** `main` is `a083208`, from #279. The branch merged `fbbcd60` of #276 and then `a083208` on 2026-10-03. #276 took PR-119 and D-1092, so this item is PR-120, and its panel decision is D-1095. This session did not read the deploy of `fbbcd60`. Before the merge, `main` was `e135aab`, from #275. Cloud Build `4dffc8c5` of `deploy-api` and `afd93b41` of `deploy-web` built `e135aab`, and both read SUCCESS. `/version.json` and `/readyz` name `e135aab`. The run `mtg-snapshot-p2t6g` of 20:00 UTC ran `worker:e135aab`, and it logged "cards refresh: snapshot current".
+
+**The owner choices.** The new-cards event comes before the email digest (D-1090). The pass reads the theme of the chat, and the cards of the deck when the chat holds none. The push uses the toggle of D-1005, and a tap opens the deck with a panel (D-1091). A dismiss or the next pass clears the panel (D-1095).
+
+**The code.**
+
+- `go/internal/cards`: `NewlyLegal`, `CompareVersions`, the marker `new_cards.json`, and `PendingNewCards`.
+- `go/internal/candidates`: `ThemeScores`, `DeckTheme`, and `FitFloor`.
+- `go/internal/newcards`: the pass, and the pick of each deck.
+- `go/internal/push`: `Notifier.NewCards` and `NewCardsMessage`.
+- `go/cmd/worker`: the refresh writes the marker, and the new pass runs after the stale pass.
+- The deck proto holds `new_oracle_ids` and `new_cards_version`, and `UpdateDeck` takes `dismiss_new_cards`. A rerun of a marker skips each deck that holds its version (D-1095). The list of decks carries the field.
+- The web app: the panel "New cards for this deck", and the mark "New cards" in the list.
+
+**The checks.** `make verify` reads "every check passed" on `c3f5878`, with 544 of 544 web tests under Node 22. Each CI check of `c3f5878` passed. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
+
+**The review.** Gitar approved effective head `7938370`, and both finding threads are closed. The earlier Codex review found P2-1: a later marker had left an earlier failed marker pending. The author fixed it in `82b9089` and `c3f5878`. The repeat review confirmed the fix. `make verify` passed on `7938370`. The record is `docs/reviews/pr-278.md`, and its verdict is Ready for owner merge.
+
+**The open work.**
+
+1. The owner confirmed the merge on 2026-10-03. The first auto-merge met a conflict with #279, so the branch merged `a083208`. The pull request is pending the auto-merge.
+2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
+3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
+
+### 2026-10-03d: a user record for each user who signs in, PR-119
+
+**The owner asked why an invited user had no user record.** The logs showed a sign-in and two page reads, and no creation. Only a creation wrote the record.
+
+**The owner chose a write at each verified call, and two times.** `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat (D-1092 to D-1094).
+
+## The resume section of 2026-10-03e, the spend cap of $2
+
+**Branch `ops/spend-cap-two-dollars`: the per-user spend cap moves from $5 to $2 a month (D-1109).** The pull request is #279.
+
+Author provider: Claude Code
+
+**The base.** `main` is `fbbcd60`, from #276. The session worked in the worktree `../decktome-cap`. The main checkout holds the branch `feat/push-third-event` of #278. The open pull requests #277 and #278 hold decision ids below 1109, so this pull request takes D-1109.
+
+**The owner request.** The owner asked for a cap of $2 a month on all usage of each user. The owner's account keeps no limit.
+
+**The live change.** The live service read `SPEND_CAP_USD=5`. The override of D-576 already turned the cap off for the owner's account. On 2026-10-03 the session set `SPEND_CAP_USD=2` on `mtg-api`. Revision `mtg-api-00113-fmw` serves all traffic, on the same image `fbbcd60`. Its startup log reads a cap of 2 and one override. The deploy of `cloudbuild/api.yaml` keeps each environment variable, so a later merge keeps the cap.
+
+**The code.** `go/cmd/api/main.go` moves the default from $5 to $2, so a service with no value reads the same cap. The test of `spendCap` pins the value 2. `docs/setup-gcp.md` reads the new cap.
+
+**The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `TestSpendCap` pins the default of 2.
+
+**The review.** Gitar reviewed effective head `6e352bc` and closed its archive-index finding on `35ece27`. The review record approves effective head `6e352bc`.
+
+**The open work.**
+
+1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
+
+### 2026-10-03c: the push of a legality change, PR-118
+
+**The owner reported that the live check of PR-117 passed on 2026-10-03, with no change.** So no pull request recorded it.
+
+**The owner chose the next event of PR-26.** The stale pass of I-1 sets the `stale` flag now, so the reason of D-1004 no longer held. The owner chose the legality event, one toggle, one push for each user, and a push for each new ban (D-1087, D-1088). The session made the grant of D-1089.
+
 ## The resume section of 2026-10-03d, PR-119
 
 **Branch `feat/user-record-at-sign-in`: PR-119, a user record for each user who signs in (F-210, D-1092 to D-1094).** The pull request is #276.
