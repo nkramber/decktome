@@ -26,15 +26,14 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on the correction of the first Codex review. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** The first Gitar review found two items, and both had full merit. `a5583df` fixed both, and Gitar then approved `a5583df`. The repeat Codex review at `b6906dd` closed P2-1 under D-1106 and fixed P2-2 in `8ec32db`. The verdict is Blocked until #278 merges and `verify:shell` passes. The record is `docs/reviews/pr-277.md`.
+**The review.** The first Gitar review found two items, and `a5583df` fixed both. The first Codex review of `a5583df` asked for changes: P2-1, the cap of each instance, and P2-2, a link with no read. `docs/reviews/pr-277-response.md` answers both. Gitar then approved `b6906dd` with no new item. The repeat Codex review of `b6906dd` reads `Blocked`, with no open finding: only `verify:shell` fails, on the old name of D-1108. The state is pending the merge of #278.
 
 **The open work.**
 
-1. Do the Gitar pass, then the repeat Codex review.
-2. Wait for the merge of #278. `make ref-check` fails here until then, because only #278 defines the old name of this item (D-1108). Then merge `main`, run `make verify`, and do the Gitar pass again.
-3. Get the owner confirmation of the merge.
-4. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
-5. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+1. Wait for the merge of #278. `make ref-check` fails here until then, because only #278 defines the old name of this item (D-1108). Then merge `main`, run `make verify`, push, do the Gitar pass, and run `make codex-review PR=277` again.
+2. Get the owner confirmation of the merge.
+3. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
+4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
 
