@@ -26,15 +26,16 @@ Author provider: Claude Code
 - The deck proto holds `new_oracle_ids`, and `UpdateDeck` takes `dismiss_new_cards`. The list of decks carries the field.
 - The web app: the panel "New cards for this deck", and the mark "New cards" in the list.
 
-**The checks.** The Go tests and the web tests pass. `make verify` waits.
+**The checks.** `make verify` passed each step before the image builds, with 544 of 544 web tests. Its first image build failed on the network inside Docker, and the two builds then passed alone. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
 
-**The review.** No Gitar pass and no Codex review yet.
+**The review.** The automatic Gitar review of `8beceaf` started at 21:14:24 UTC. The session stopped at the context checkpoint of D-946 while it ran. No Codex review yet.
 
 **The open work.**
 
-1. The Gitar pass, the Codex review, and the owner confirmation of the merge.
-2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
-3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
+1. Read the Gitar review of `8beceaf` and answer each finding. Then run the Codex review, and ask the owner to confirm the merge.
+2. Read the CI emulator lane of #278. It runs on a fresh emulator.
+3. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
+4. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 
 ## How to resume
 
