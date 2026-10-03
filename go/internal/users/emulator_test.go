@@ -70,6 +70,9 @@ func TestNoteCountsAndKeepsTheFirstDate(t *testing.T) {
 	if !rec.LastSeenAt.Equal(later) {
 		t.Errorf("last_seen_at = %v, want the newest creation %v", rec.LastSeenAt, later)
 	}
+	if !rec.LastCreationAt.Equal(later) {
+		t.Errorf("last_creation_at = %v, want the newest deck or chat %v", rec.LastCreationAt, later)
+	}
 	if rec.Email != "reader@example.com" {
 		t.Errorf("email = %q", rec.Email)
 	}
@@ -188,5 +191,109 @@ func TestDeactivateKeepsTheRecordAndTheFirstTime(t *testing.T) {
 	}
 	if closed, err := r.Deactivated(ctx, "u-no-record-"+uid); err != nil || closed {
 		t.Errorf("a uid with no record reads closed %v, %v", closed, err)
+	}
+}
+
+// TestTouchMakesTheRecordOfAUserWhoMadeNothing is D-1092: a verified
+// call alone writes the record, with zero counts and no creation.
+func TestTouchMakesTheRecordOfAUserWhoMadeNothing(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := uniqueUID()
+	first := time.Date(2026, 10, 3, 19, 25, 0, 0, time.UTC)
+	later := first.Add(VisitTTL)
+
+	if err := r.Touch(ctx, uid, "reader@example.com", first); err != nil {
+		t.Fatalf("first touch: %v", err)
+	}
+	if err := r.Touch(ctx, uid, "", later); err != nil {
+		t.Fatalf("second touch: %v", err)
+	}
+	// A late write of an earlier call never moves the time back.
+	if err := r.Touch(ctx, uid, "", first); err != nil {
+		t.Fatalf("late touch: %v", err)
+	}
+	rec, err := r.Get(ctx, uid)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !rec.CreatedAt.Equal(first) || !rec.LastSeenAt.Equal(later) {
+		t.Errorf("created_at %v and last_seen_at %v, want %v and %v", rec.CreatedAt, rec.LastSeenAt, first, later)
+	}
+	if !rec.LastCreationAt.IsZero() {
+		t.Errorf("last_creation_at = %v, and a call made nothing", rec.LastCreationAt)
+	}
+	if rec.Email != "reader@example.com" || rec.Schema != schemaVersion {
+		t.Errorf("email %q and schema %d", rec.Email, rec.Schema)
+	}
+	if rec.DecksCreated != 0 || rec.SessionsStarted != 0 {
+		t.Errorf("counts %d/%d, want zero", rec.DecksCreated, rec.SessionsStarted)
+	}
+}
+
+// TestAnUploadOrAVerdictMovesOnlyTheLastSeenTime is D-1093: the decks
+// and the chats move last_creation_at, and every creation moves
+// last_seen_at.
+func TestAnUploadOrAVerdictMovesOnlyTheLastSeenTime(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := uniqueUID()
+	deck := time.Date(2026, 10, 3, 10, 0, 0, 0, time.UTC)
+
+	if err := r.Note(ctx, uid, "reader@example.com", DecksImported, deck); err != nil {
+		t.Fatalf("import: %v", err)
+	}
+	for i, c := range []Counter{CollectionsUpload, FeedbackUp, FeedbackDown} {
+		if err := r.Note(ctx, uid, "reader@example.com", c, deck.Add(time.Duration(i+1)*time.Hour)); err != nil {
+			t.Fatalf("note %s: %v", c, err)
+		}
+	}
+	rec, err := r.Get(ctx, uid)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !rec.LastCreationAt.Equal(deck) {
+		t.Errorf("last_creation_at = %v, want the import %v", rec.LastCreationAt, deck)
+	}
+	if want := deck.Add(3 * time.Hour); !rec.LastSeenAt.Equal(want) {
+		t.Errorf("last_seen_at = %v, want the newest verdict %v", rec.LastSeenAt, want)
+	}
+}
+
+// TestTouchMovesARecordOfVersionOne is D-1094: in version 1,
+// last_seen_at held the newest creation, so the first call copies it to
+// last_creation_at before it moves last_seen_at.
+func TestTouchMovesARecordOfVersionOne(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := uniqueUID()
+	made := time.Date(2026, 9, 20, 10, 0, 0, 0, time.UTC)
+	visit := time.Date(2026, 10, 3, 19, 25, 0, 0, time.UTC)
+
+	if _, err := r.doc(uid).Set(ctx, map[string]any{
+		"schema": int64(1), "email": "reader@example.com",
+		"created_at": made, "last_seen_at": made,
+		string(DecksCreated): int64(3),
+	}); err != nil {
+		t.Fatalf("seed a version 1 record: %v", err)
+	}
+	if err := r.Touch(ctx, uid, "reader@example.com", visit); err != nil {
+		t.Fatalf("touch: %v", err)
+	}
+	if err := r.Touch(ctx, uid, "reader@example.com", visit.Add(VisitTTL)); err != nil {
+		t.Fatalf("second touch: %v", err)
+	}
+	rec, err := r.Get(ctx, uid)
+	if err != nil {
+		t.Fatalf("Get: %v", err)
+	}
+	if !rec.LastCreationAt.Equal(made) {
+		t.Errorf("last_creation_at = %v, want the version 1 last_seen_at %v", rec.LastCreationAt, made)
+	}
+	if want := visit.Add(VisitTTL); !rec.LastSeenAt.Equal(want) {
+		t.Errorf("last_seen_at = %v, want %v", rec.LastSeenAt, want)
+	}
+	if rec.Schema != schemaVersion || rec.DecksCreated != 3 || !rec.CreatedAt.Equal(made) {
+		t.Errorf("schema %d, decks %d, created %v", rec.Schema, rec.DecksCreated, rec.CreatedAt)
 	}
 }

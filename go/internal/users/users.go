@@ -10,6 +10,9 @@
 // deletes a deck, and the count of decks they ever made does not fall.
 // Count the children when the current number is the question.
 //
+// The first verified call of a user writes the record, so a user who
+// signs in and makes nothing has one too (D-1092).
+//
 // The server writes this record and the client never does. The email
 // comes from the verified token (D-596), and the Firestore rules deny
 // every client read.
@@ -26,8 +29,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// schemaVersion names the shape of the stored document.
-const schemaVersion = 1
+// schemaVersion names the shape of the stored document. Version 2 moves
+// last_seen_at on any activity and keeps the newest creation in
+// last_creation_at (D-1093). In version 1, last_seen_at was the newest
+// creation.
+const schemaVersion = 2
 
 // Counter names one field a creation raises.
 type Counter string
@@ -53,6 +59,13 @@ var counters = map[Counter]bool{
 	DecksImported: true,
 }
 
+// creations lists the counters that move last_creation_at: the decks and
+// the chats (D-1093). An upload and a verdict move last_seen_at alone.
+var creations = map[Counter]bool{
+	DecksCreated: true, DeckRevisions: true, DecksImported: true,
+	SessionsStarted: true,
+}
+
 // ErrBadCounter reports a field that names no counter.
 var ErrBadCounter = errors.New("users: that field is no counter")
 
@@ -66,9 +79,12 @@ type Record struct {
 	// CreatedAt is the first time the app saw the user, and one write
 	// sets it for good.
 	CreatedAt time.Time `firestore:"created_at"`
-	// LastSeenAt is the newest creation the user made. A read of a page
-	// does not move it, so it reads as the last time they did something.
+	// LastSeenAt is the newest activity of the user: a verified call or a
+	// creation (D-1093). A call moves it at most once in VisitTTL.
 	LastSeenAt time.Time `firestore:"last_seen_at"`
+	// LastCreationAt is the newest deck or chat the user made (D-1093). A
+	// user who made none has the zero time.
+	LastCreationAt time.Time `firestore:"last_creation_at"`
 
 	DecksCreated      int64 `firestore:"total_decks_created"`
 	DeckRevisions     int64 `firestore:"total_deck_revisions"`
@@ -97,7 +113,8 @@ func (r *Repo) doc(uid string) *firestore.DocumentRef {
 }
 
 // Note records one creation: it raises the counter, writes the email and
-// the time, and sets the creation date on the first write alone.
+// the time, and sets the creation date on the first write alone. A deck
+// or a chat also moves last_creation_at (D-1093).
 //
 // It makes the document with Create first and ignores an answer that
 // says the document exists. Create writes CreatedAt exactly once, and no
@@ -118,6 +135,9 @@ func (r *Repo) Note(ctx context.Context, uid, email string, c Counter, at time.T
 	for name := range counters {
 		first[string(name)] = int64(0)
 	}
+	if creations[c] {
+		first["last_creation_at"] = at
+	}
 	if email != "" {
 		first["email"] = email
 	}
@@ -131,6 +151,9 @@ func (r *Repo) Note(ctx context.Context, uid, email string, c Counter, at time.T
 		"last_seen_at": at,
 		string(c):      firestore.Increment(int64(1)),
 	}
+	if creations[c] {
+		update["last_creation_at"] = at
+	}
 	// An empty email never writes over an address the record holds.
 	if email != "" {
 		update["email"] = email
@@ -139,8 +162,66 @@ func (r *Repo) Note(ctx context.Context, uid, email string, c Counter, at time.T
 	return err
 }
 
+// Touch records one verified call of uid at the given time (D-1092). It
+// makes the record with zero counts when none exists, and it never moves
+// last_seen_at back. A record of version 1 first gets its last_seen_at
+// as last_creation_at, because that field held the newest creation then
+// (D-1094).
+func (r *Repo) Touch(ctx context.Context, uid, email string, at time.Time) error {
+	if uid == "" {
+		return errors.New("users: a record needs a user")
+	}
+	at = at.UTC()
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		ref := r.doc(uid)
+		snap, err := tx.Get(ref)
+		if status.Code(err) == codes.NotFound {
+			first := map[string]any{
+				"schema":       int64(schemaVersion),
+				"created_at":   at,
+				"last_seen_at": at,
+			}
+			for name := range counters {
+				first[string(name)] = int64(0)
+			}
+			if email != "" {
+				first["email"] = email
+			}
+			return tx.Create(ref, first)
+		}
+		if err != nil {
+			return err
+		}
+		var cur Record
+		if err := snap.DataTo(&cur); err != nil {
+			return err
+		}
+		data := map[string]any{"schema": int64(schemaVersion)}
+		upgrade(cur, data)
+		if at.After(cur.LastSeenAt) {
+			data["last_seen_at"] = at
+		}
+		if cur.CreatedAt.IsZero() {
+			data["created_at"] = at
+		}
+		if email != "" {
+			data["email"] = email
+		}
+		return tx.Set(ref, data, firestore.MergeAll)
+	})
+}
+
+// upgrade adds to data the move of a version 1 record to version 2: the
+// last_seen_at of version 1 is the newest creation (D-1094). A record of
+// version 2, or one with no last_seen_at, needs nothing.
+func upgrade(cur Record, data map[string]any) {
+	if cur.Schema < 2 && cur.LastCreationAt.IsZero() && !cur.LastSeenAt.IsZero() {
+		data["last_creation_at"] = cur.LastSeenAt
+	}
+}
+
 // Get reads one record. A user with no record reads the zero value and
-// no error, because a user who has made nothing has no document.
+// no error. A user who has made no verified call since D-1092 has none.
 func (r *Repo) Get(ctx context.Context, uid string) (Record, error) {
 	snap, err := r.doc(uid).Get(ctx)
 	if status.Code(err) == codes.NotFound {
@@ -181,6 +262,7 @@ func (r *Repo) Seed(ctx context.Context, uid, email string, counts map[Counter]i
 			}
 		}
 		data := map[string]any{"schema": int64(schemaVersion)}
+		upgrade(cur, data)
 		if email != "" {
 			data["email"] = email
 		}
@@ -303,4 +385,53 @@ func (c *ClosedCache) Closed(ctx context.Context, uid string) (bool, error) {
 	c.seen[uid] = closedRead{closed: closed, at: c.now()}
 	c.mu.Unlock()
 	return closed, nil
+}
+
+// VisitTTL is the shortest time between two writes of one user's
+// last_seen_at by one server (D-1093).
+const VisitTTL = 5 * time.Minute
+
+// visitTimeout bounds one write, because the write runs inside the
+// request it records.
+const visitTimeout = 2 * time.Second
+
+// Visits records the verified calls of each user through Repo.Touch, at
+// most once in VisitTTL for each user (D-1092, D-1093).
+type Visits struct {
+	touch func(ctx context.Context, uid, email string, at time.Time) error
+	now   func() time.Time
+	mu    sync.Mutex
+	seen  map[string]time.Time
+}
+
+// NewVisits wraps a write of one visit, such as Repo.Touch.
+func NewVisits(touch func(ctx context.Context, uid, email string, at time.Time) error, now func() time.Time) *Visits {
+	if now == nil {
+		now = time.Now
+	}
+	return &Visits{touch: touch, now: now, seen: map[string]time.Time{}}
+}
+
+// Seen records one verified call of uid. It answers no error: a record
+// that does not write must never fail the call it records. A failed
+// write keeps nothing, so the next call tries again.
+func (v *Visits) Seen(ctx context.Context, uid, email string) {
+	if uid == "" {
+		return
+	}
+	at := v.now()
+	v.mu.Lock()
+	last, ok := v.seen[uid]
+	v.mu.Unlock()
+	if ok && at.Sub(last) < VisitTTL {
+		return
+	}
+	ctx, cancel := context.WithTimeout(ctx, visitTimeout)
+	defer cancel()
+	if err := v.touch(ctx, uid, email, at); err != nil {
+		return
+	}
+	v.mu.Lock()
+	v.seen[uid] = at
+	v.mu.Unlock()
 }
