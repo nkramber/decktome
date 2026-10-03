@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes on the correction of the first Codex review. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** The first Gitar review found two items, and both had full merit. `a5583df` fixed both, and Gitar then approved `a5583df`. The first Codex review of `a5583df` asked for changes: P2-1, the cap of each instance, and P2-2, a link with no read. `docs/reviews/pr-277-response.md` answers both. The repeat review waits. The state is pending the auto-merge (D-828).
+**The review.** The first Gitar review found two items, and both had full merit. `a5583df` fixed both, and Gitar then approved `a5583df`. The repeat Codex review at `b6906dd` closed P2-1 under D-1106 and fixed P2-2 in `8ec32db`. The verdict is Blocked until #278 merges and `verify:shell` passes. The record is `docs/reviews/pr-277.md`.
 
 **The open work.**
 
