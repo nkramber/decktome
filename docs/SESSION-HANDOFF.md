@@ -6,37 +6,28 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03)
+## RESUME HERE (2026-10-03b)
 
-**Branch `fix/phone-live-check-6`: PR-116, the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).** The pull request is #273.
+**Branch `fix/phone-live-check-7`: PR-117, the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** The pull request is #PRNUM.
 
 Author provider: Claude Code
 
-**The base.** `main` is `18b7756`, from #272. Cloud Build `deploy-api` `34195b09` and `deploy-web` `321c7e5b` built it with SUCCESS at 05:45 UTC on 2026-10-03. `/version.json` names it. The owner mounted `resend-api-key`, and revision `mtg-api-00109-4pt` logged "the approval email is on" at 05:52:23 UTC.
+**The base.** `main` is `11fc024`, from #273. Cloud Build `deploy-api` `cb1370fa` and `deploy-web` `54e2e425` built it with SUCCESS at 07:15 UTC on 2026-10-03. `/version.json` names it. Revision `mtg-api-00110-x9t` logged "the proof email is on" at 07:14:29 UTC.
 
-**The live check of PR-115.** The request, its Pushover notice, the note, and the first question passed on the iPhone. The owner ran `make grant-admin`, and then the approval and its email passed. The owner asked for five changes (D-1079) and a new email that proves an address (D-1080 to D-1083).
+**The live check of PR-116 (D-1086).** The owner made an account with a new invited email. Its email came from Deck Tome, with the text of D-1081 and a link to `/v/<code>`. The link proved the email on a desktop and on the iPhone. The five changes of D-1079 passed.
 
-**The code.**
+**The fault (F-209).** The owner signed out on the admin page, and then signed in to the new account. The app returned to the admin page, which read "permission_denied". The route guard kept that page in the location state, and the sign-in page returned there.
 
-- The "Leave feedback" button sits at the center. On a phone, the note dialog sits at the top, above the keyboard.
-- After a request, the link reads "Return to login page". The sign-in links read "Create account" and "Request beta access", in one column.
-- The approval email has no footer line. Each email of the API carries an HTML part with real links (D-1080).
-- `ProofService.SendLink` sends the text of the owner with the link `https://decktome.com/v/<code>` (D-1081). `proof_links` keeps a hash of the code.
-- `ProofService.OpenLink` proves the email and answers a custom token, one time, for 3 days (D-1082). The page `/v/:code` signs in with it.
-- iOS opens the link in Safari, and the page names the home screen app. The proof screen reads the account again when it becomes visible (D-1083).
-- With no Resend key, or with a failed send, the web app sends the email of Firebase.
+**The code (D-1085).** `RequireAuth` keeps no page to return to. `SignInPage` sends each signed-in user to `/`, and `/` goes on to `/session/new`. A web test signs in from `/admin` and reads `/session/new`. The test fails on the code of `11fc024`.
 
-**The grants.** The session granted `roles/firebaseauth.admin` and `roles/iam.serviceAccountTokenCreator` to `mtg-api` on 2026-10-03 (D-1084).
+**The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22.
 
-**The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22. `make store-check` passes on the emulator, with the new `prooflink` store.
-
-**The review.** Gitar approved `e763450` with no finding and no thread. The Codex review says Ready for owner merge at `e763450`. No finding stays open.
+**The review.** The Gitar pass and the Codex review follow the push.
 
 **The open work.**
 
-1. The owner confirmation of the merge, then auto-merge.
-2. After the deploy, make an account with a new invited email. Open its link on a desktop and on the iPhone.
-3. Read the sender, the text, and the link of that email.
+1. The owner confirmation of the merge, then the auto-merge.
+2. After the deploy, sign out on `/admin`, and sign in to a second account. The app must open a new chat.
 
 ## How to resume
 
@@ -109,7 +100,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-116: the live check of PR-115, and an email of Deck Tome that proves an address** (F-208, D-1079 to D-1084). The resume section holds the open work.
+0. **PR-117: the live check of PR-116, and a sign-in that lands on the home page** (F-209, D-1085, D-1086). The resume section holds the open work.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -133,12 +124,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-02f: the results of the live check, PR-114
-
-**The deploy of `c19aa26` read SUCCESS for both builds.** The owner checked PR-113 on the iPhone. The first launch showed the old error once, and the other checks passed.
-
-**The owner sent two changes.** The owner removed the revoke and the new link from the share dialog, so the deploy of this pull request tests F-206. The owner sent a screenshot of the wanted chat view.
-
 ### 2026-10-02g: a request for beta access, PR-115
 
 **The deploy of `a97cf82` read SUCCESS for `deploy-web`.** The owner checked PR-114 on the iPhone. The cold start reloaded with no error, and F-206 closed.
@@ -151,6 +136,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for five changes and a new proof email.** The Firebase template permits no change of the message of that email, so the API sends it through Resend (D-1081). The owner chose this pull request, a sign-in by the link for 3 days, and the plan for iOS (D-1082, D-1083). The owner chose a grant by the session (D-1084).
 
+### 2026-10-03b: the live check of PR-116, PR-117
+
+**The deploy of `11fc024` read SUCCESS for both builds.** The owner checked the proof email on a desktop and on the iPhone, and each part passed. The five changes of D-1079 passed too.
+
+**The owner found one fault.** A sign-in after a sign-out on the admin page returned to that page. The owner asked for a sign-in that always lands on the home page, and named `/session/new` (D-1085).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02g, the records of 2026-08-31 to 2026-10-02e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03, the records of 2026-08-31 to 2026-10-02f, and 104 more sections, word for word. Read it for the detail behind a decision.

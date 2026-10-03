@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03, PR-116
+
+**Branch `fix/phone-live-check-6`: PR-116, the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).** The pull request is #273.
+
+Author provider: Claude Code
+
+**The base.** `main` is `18b7756`, from #272. Cloud Build `deploy-api` `34195b09` and `deploy-web` `321c7e5b` built it with SUCCESS at 05:45 UTC on 2026-10-03. `/version.json` names it. The owner mounted `resend-api-key`, and revision `mtg-api-00109-4pt` logged "the approval email is on" at 05:52:23 UTC.
+
+**The live check of PR-115.** The request, its Pushover notice, the note, and the first question passed on the iPhone. The owner ran `make grant-admin`, and then the approval and its email passed. The owner asked for five changes (D-1079) and a new email that proves an address (D-1080 to D-1083).
+
+**The code.**
+
+- The "Leave feedback" button sits at the center. On a phone, the note dialog sits at the top, above the keyboard.
+- After a request, the link reads "Return to login page". The sign-in links read "Create account" and "Request beta access", in one column.
+- The approval email has no footer line. Each email of the API carries an HTML part with real links (D-1080).
+- `ProofService.SendLink` sends the text of the owner with the link `https://decktome.com/v/<code>` (D-1081). `proof_links` keeps a hash of the code.
+- `ProofService.OpenLink` proves the email and answers a custom token, one time, for 3 days (D-1082). The page `/v/:code` signs in with it.
+- iOS opens the link in Safari, and the page names the home screen app. The proof screen reads the account again when it becomes visible (D-1083).
+- With no Resend key, or with a failed send, the web app sends the email of Firebase.
+
+**The grants.** The session granted `roles/firebaseauth.admin` and `roles/iam.serviceAccountTokenCreator` to `mtg-api` on 2026-10-03 (D-1084).
+
+**The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22. `make store-check` passes on the emulator, with the new `prooflink` store.
+
+**The review.** Gitar approved `e763450` with no finding and no thread. The Codex review says Ready for owner merge at `e763450`. No finding stays open.
+
+**The open work.**
+
+1. The owner confirmation of the merge, then auto-merge.
+2. After the deploy, make an account with a new invited email. Open its link on a desktop and on the iPhone.
+3. Read the sender, the text, and the link of that email.
+
+### 2026-10-02f: the results of the live check, PR-114
+
+**The deploy of `c19aa26` read SUCCESS for both builds.** The owner checked PR-113 on the iPhone. The first launch showed the old error once, and the other checks passed.
+
+**The owner sent two changes.** The owner removed the revoke and the new link from the share dialog, so the deploy of this pull request tests F-206. The owner sent a screenshot of the wanted chat view.
+
 ## The resume section of 2026-10-02g, PR-115
 
 **Branch `feat/request-beta-access`: PR-115, a request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).** The pull request is #272.

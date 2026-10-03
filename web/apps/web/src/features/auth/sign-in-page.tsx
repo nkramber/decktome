@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { type Location, Navigate, useLocation } from "react-router";
+import { Navigate } from "react-router";
 
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
@@ -34,12 +34,10 @@ async function inviteAllows(email: string): Promise<boolean> {
 }
 
 // One form for sign-in and sign-up (D-275). The emulator accepts any email
-// and any password of six or more characters. A visit the route guard
-// redirected goes back to the page it wanted after the sign-in.
+// and any password of six or more characters. Each sign-in lands on the
+// home page, and never on the page of the last account (D-1085).
 export function SignInPage() {
   const { user, ready, error: authError } = useAuth();
-  const location = useLocation();
-  const from = (location.state as { from?: Location } | null)?.from?.pathname ?? "/session/new";
   const [mode, setMode] = useState<"sign-in" | "sign-up" | "request">("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +48,7 @@ export function SignInPage() {
 
   if (!ready) return null;
   if (user) {
-    return <Navigate to={from} replace />;
+    return <Navigate to="/" replace />;
   }
 
   async function onSubmit(e: FormEvent) {

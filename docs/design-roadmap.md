@@ -605,6 +605,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-205 | **A card with no USD price has no second price source.** The snapshot of 2026-09-25 holds 219 playable paper cards with no USD price. Of these, 32 have a Cardmarket EUR price (D-1060). | ❓ PR-112 shows "Price unknown" for such a card. A second source, such as MTGJSON or eBay, waits for the owner (D-1060). |
 | F-208 | **The email that proves an address has a long link that did not open on an iPhone.** Firebase sent it from its own domain, with its own text. Its template permits no change of the message (D-1081). | ✅ PR-116 (#273): the API sends the email through Resend, with a link of 33 characters. |
 | F-207 | **On a phone, the "Back to top" button covers the first question.** PR-114 put the first question at the top of the view (D-1071). The fixed button under the header then sat on the question text (D-1072). | ✅ PR-115: on a phone, the anchor also leaves the band of the button, 52 pixels. |
+| F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
 | F-6 | **No Cloud Tasks emulator.** Local mode can not run real Cloud Tasks. | ✅ PR-0c (#3): a `Dispatcher` interface with a local in-process implementation. |
@@ -3118,6 +3119,19 @@ Gate:
 
 > *In plain English:* the email that confirms a new account now comes from Deck Tome, with a short link that opens. On a computer, the link also signs the person in. On an iPhone, the person goes back to the home screen app, and the app continues by itself. The sign-in page and the feedback button got five small fixes from the phone check.
 
+**PR-117: The live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).** ✅ merged as #PRNUM. The mark comes before any review (D-822). The live check of PR-116 ran on `11fc024`. The proof email, its link on a desktop and on the iPhone, and the five changes of D-1079 passed (D-1086).
+
+- **The fault (F-209).** The route guard kept the wanted page in the location state, and the sign-in page returned there. A sign-out on the admin page thus sent the next account, with no admin claim, to the admin page.
+- **The fix (D-1085).** `RequireAuth` keeps no page to return to. `SignInPage` sends each signed-in user to `/`, and `/` goes on to `/session/new` (D-334).
+
+Gate:
+- A web test signs in from `/admin` and reads `/session/new`. The test fails on the code of `11fc024`.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* the email check of the last change passed on a computer and on an iPhone. One fault showed up. After a sign-out on the admin page, the next account to sign in went back to that page and saw an error. Now each sign-in opens a new chat.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3526,6 +3540,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 109. **PR-114** the results of the live check of PR-113 (F-206, D-1069 to D-1071).
 110. **PR-115** a request for beta access, an admin screen, and a "Leave feedback" button (F-206, F-207, D-1072 to D-1078).
 111. **PR-116** the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).
+112. **PR-117** the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).
 
 ## 9. Open questions
 

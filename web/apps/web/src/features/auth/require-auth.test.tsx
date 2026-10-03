@@ -1,4 +1,4 @@
-import { act, screen } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { onAuthStateChanged, signOut, type User } from "firebase/auth";
 import { axe } from "jest-axe";
@@ -53,13 +53,12 @@ describe("route guard", () => {
     expect(router.state.location.pathname).toBe("/session/new");
   });
 
-  it("returns to the page the guard redirected after the sign-in", async () => {
-    const { router } = await renderAt("/session/abc123");
+  it("lands each sign-in on the home page, never on the page the guard redirected (D-1085)", async () => {
+    const { router } = await renderAt("/admin");
     await screen.findByRole("heading", { level: 1, name: "Sign in" });
     expect(router.state.location.pathname).toBe("/sign-in");
     await act(async () => emit(fakeUser));
-    expect(await screen.findByTestId("session-id")).toHaveTextContent("Session id: abc123");
-    expect(router.state.location.pathname).toBe("/session/abc123");
+    await waitFor(() => expect(router.state.location.pathname).toBe("/session/new"));
   });
 
   it("shows the loading line on / and under the guard until auth is ready", async () => {
