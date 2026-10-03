@@ -27,13 +27,12 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. `make store-check` passes against the emulator. A mutation of each new rule failed a test.
 
-**The review.** Gitar confirmed the three fixes on `6ac5e7a`. Codex reviewed effective head `6ac5e7ae3e394f6666b8ad6fb27df5982567a991` and found P2-1: concurrent creation writes can move the timestamps backwards. The verdict is Changes required. `Note` is a transaction now, and `docs/reviews/pr-276-response.md` holds the answer. The two regression tests fail on `6ac5e7a`.
+**The review.** Gitar confirmed the three fixes on `6ac5e7a` and completed a current pass of `99dd96f`. Codex reviewed effective head `99dd96fd5b0eaa1d477500f2c02886d60e8ec2ee`. P2-1 is fixed by the transaction in `Note`, and both regression tests pass. The verdict is Ready for owner merge. The existing record is `docs/reviews/pr-276.md`.
 
 **The open work.**
 
-1. Get a current Gitar pass of the answer to P2-1, then a repeat Codex review.
-2. After approval, get the owner confirmation and turn on the auto-merge.
-3. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+1. Get the owner confirmation and turn on the auto-merge.
+2. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 
 ## How to resume
 
