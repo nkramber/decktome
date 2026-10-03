@@ -28,6 +28,7 @@ import { type Draft, draftAnswered, emptyDraft, QuestionCard } from "./question-
 import { useBuildWatch } from "./use-build-watch";
 import { clearRunningBuild, noteRunningBuild } from "./running-build";
 import { usePageHidden } from "./use-page-hidden";
+import { useStickToBottom } from "./use-stick-to-bottom";
 import {
   buildPhases,
   byteLength,
@@ -195,18 +196,6 @@ export function pruneDrafts(drafts: Record<string, Draft>, open: { id: string }[
   const ids = new Set(open.map((q) => q.id));
   return Object.fromEntries(Object.entries(drafts).filter(([id]) => ids.has(id)));
 }
-
-// The reader's own last message is the top of what they need to read
-// (D-360). Everything the turn produced lands under it: the agent's
-// prose, the questions it asked, and the button that sends the answers.
-// The scroll therefore puts that message at the top of the frame rather
-// than chasing the foot of the thread. A turn whose output fits shows
-// the message and the submit together, and one that does not keeps the
-// message, which is the half the reader needs.
-//
-// The sentinel below still serves a thread with no message of the user
-// in it yet.
-const nearBottomPx = 240;
 
 // wheelFactor slows the thread against the wheel (D-370). One notch of a
 // mouse wheel moves a browser about 100 px, which is a large step in a
@@ -419,37 +408,13 @@ export function ChatPanel({
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  // New output scrolls into view. The sentinel sits under the thread.
-  const end = useRef<HTMLDivElement>(null);
-  const lastSubmission = useRef<HTMLLIElement>(null);
+  // The chat stays at its foot while the reader is there, and a send
+  // takes it there (D-1056). The foot sits under the message box, so the
+  // view holds the newest output, the questions, and the submit button.
+  const foot = useRef<HTMLDivElement>(null);
   const last = state.thread[state.thread.length - 1];
   const lastLength = last && "text" in last ? last.text.length : 0;
-  useEffect(() => {
-    const mine = lastSubmission.current;
-    if (mine) {
-      // scrollIntoView scrolls every scrollable ancestor, and an
-      // overflow-hidden box still scrolls when code asks it to. On a deck
-      // screen that pushed the whole chat column off the top of the
-      // frame. Inside its own box the thread scrolls itself, and nothing
-      // above it moves (D-370).
-      const box = threadScroll.current;
-      if (box?.contains(mine)) {
-        box.scrollTop += mine.getBoundingClientRect().top - box.getBoundingClientRect().top;
-        return;
-      }
-      mine.scrollIntoView?.({ block: "start" });
-      return;
-    }
-    const el = end.current;
-    if (!el) return;
-    const box = threadScroll.current;
-    if (box?.contains(el)) {
-      box.scrollTop = box.scrollHeight;
-      return;
-    }
-    if (el.getBoundingClientRect().top - window.innerHeight > nearBottomPx) return;
-    el.scrollIntoView?.({ block: "nearest" });
-  }, [state.thread.length, lastLength, openCount, state.busy]);
+  const pin = useStickToBottom(threadScroll, foot, `${state.thread.length}:${lastLength}:${openCount}:${state.busy}`);
 
   // Every open question needs an answer before the submit, and one send
   // carries them all (D-282). Each answer text has the same cap as a message.
@@ -467,6 +432,7 @@ export function ChatPanel({
     });
     const sent = drafts;
     setDrafts({});
+    pin();
     void send({ message: "", answers }).then((r) => {
       // A failed or stopped send gives the drafts of the restored
       // questions back, so the user does not answer twice.
@@ -478,6 +444,7 @@ export function ChatPanel({
     const text = message.trim();
     if (!text || tooLong || state.busy) return;
     setMessage("");
+    pin();
     const { ok } = await send({ message: text, answers: [] });
     // A failed send gives the draft back, so the user does not retype it.
     if (!ok) setMessage((m) => m || text);
@@ -537,7 +504,7 @@ export function ChatPanel({
   // the history, so it shows the question only after it is answered.
   const openIds = new Set(state.openQuestions.map((q) => q.id));
   const shown = state.thread.filter((item) => item.kind !== "question" || !openIds.has(item.question.id));
-  // The reader's last message, which the scroll holds at the top (D-360).
+  // The reader's last message. The items after it are the turn that answered it.
   const lastMineId = shown.reduce((id, item) => (item.kind === "user" ? item.id : id), -1);
   // A screen reader hears each reply when the turn ends. The list of the
   // conversation is not a live region, because a reopened chat would read
@@ -553,7 +520,7 @@ export function ChatPanel({
   const thread = (
     <ol className="flex flex-col gap-5" aria-label="Conversation">
       {shown.map((item) => (
-        <li key={item.id} ref={item.id === lastMineId ? lastSubmission : undefined} className="scroll-mt-4">
+        <li key={item.id}>
           <ThreadLine item={item} sessionId={state.sessionId} />
         </li>
       ))}
@@ -772,13 +739,13 @@ export function ChatPanel({
           <div id="chat-body" className={cn("min-h-0 grow flex-col gap-2 lg:flex", chatOpen ? "flex" : "hidden")}>
             <div ref={threadScroll} className="min-h-0 grow overflow-y-auto overscroll-contain">
               {thread}
-              <div ref={end} />
             </div>
             {working}
             {recovery}
             {leaveWarning}
             {questions}
             {composer}
+            <div ref={foot} />
             {idLine}
           </div>
         </aside>
@@ -795,7 +762,10 @@ export function ChatPanel({
           <StaleBanner
             deck={builtDeck}
             busy={state.busy}
-            onRerun={() => void send({ message: "", answers: [], rerunDeckId: builtDeck.id })}
+            onRerun={() => {
+              pin();
+              void send({ message: "", answers: [], rerunDeckId: builtDeck.id });
+            }}
           />
           <section aria-label="Deck">
             <DeckView deck={builtDeck} base={deckOverride ? baseOverride : state.baseDeck} />
@@ -858,11 +828,11 @@ export function ChatPanel({
             {questions}
             {working}
             {recovery}
-            <div ref={end} />
           </div>
         )}
 
         {composer}
+        <div ref={foot} />
         {/* The unfinished chats sit under the message box, and only when
             there is one (D-438). */}
         {beforeFirstMessage && <UnfinishedChats />}

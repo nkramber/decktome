@@ -121,7 +121,7 @@ describe("CardDetail", () => {
     expect(rows[0]).toHaveTextContent("Marvel Super Heroes Commander");
     expect(rows[0]).toHaveTextContent("$2.50");
     expect(rows[2]).toHaveTextContent("(digital)");
-    expect(rows[2]).toHaveTextContent("no price");
+    expect(rows[2]).toHaveTextContent("Price unknown");
     expect(screen.getByText("Prices of 2026-09-03.")).toBeInTheDocument();
   });
 

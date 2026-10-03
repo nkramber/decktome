@@ -95,6 +95,8 @@ func (b *Builder) repairInput(req Request, returned *mtgv1.Deck, misses []Miss, 
 		}
 		fmt.Fprintf(&s, "\n## Budget\n\nThe deck must cost $%.2f or less, counting %s. Each shortlist line ends with the price of one copy.\n",
 			req.BudgetUSD, what)
+		// A card with no price is not free (D-1060).
+		s.WriteString("A line that ends with \"price unknown\" names a card with no known price. Count such a card as over the budget.\n")
 		if req.OracleCounts != nil && !req.BudgetWholeDeck {
 			s.WriteString("A copy the user already owns costs nothing, so prefer the cards marked owned.\n")
 		}
@@ -310,7 +312,11 @@ func (b *Builder) shortlist(req Request) string {
 		// The model cannot budget what it cannot see, so every line
 		// carries a price when a budget applies (D-244).
 		if req.BudgetUSD > 0 {
-			fmt.Fprintf(&s, " | $%.2f", c.GetPriceUsd())
+			if p := c.GetPriceUsd(); p > 0 {
+				fmt.Fprintf(&s, " | $%.2f", p)
+			} else {
+				s.WriteString(" | price unknown")
+			}
 		}
 		if precon[c.GetOracleId()] {
 			s.WriteString(" | precon")

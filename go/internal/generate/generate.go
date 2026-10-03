@@ -554,12 +554,24 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	// warns and never blocks (D-236). It does buy the repair turn (D-244).
 	if req.BudgetUSD > 0 {
 		cost, what := BuyCostWith(deck, b.cards, req.OracleCounts), "the cards you must buy"
+		// An unpriced card adds nothing to the sum, so it counts as over
+		// the budget, and the warning names it (D-1060). A whole-deck cap
+		// counts the owned copies too (D-238).
+		n, where := UnpricedToBuy(deck, b.cards, req.OracleCounts), "to buy"
 		if req.BudgetWholeDeck {
 			cost, what = DeckCostWith(deck, b.cards), "the whole deck"
+			n, where = UnpricedInDeck(deck, b.cards), "in the deck"
 		}
-		if cost > req.BudgetUSD {
-			addFinding(deck, CodeOverBudget, mtgv1.Severity_SEVERITY_WARN,
-				fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f", what, cost, req.BudgetUSD))
+		if cost > req.BudgetUSD || n > 0 {
+			msg := fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f", what, cost, req.BudgetUSD)
+			if n > 0 {
+				verb := "have"
+				if n == 1 {
+					verb = "has"
+				}
+				msg += fmt.Sprintf(", and %s %s %s no known price", plural(n, "card"), where, verb)
+			}
+			addFinding(deck, CodeOverBudget, mtgv1.Severity_SEVERITY_WARN, msg)
 		}
 	}
 	// A card the user said to keep must be in the deck. A deck without

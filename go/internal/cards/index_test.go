@@ -159,3 +159,59 @@ func TestIndexKeepsPrintings(t *testing.T) {
 		t.Error("an unknown id answered true")
 	}
 }
+
+// TestCardPriceIsCheapestPlayablePrinting is D-1057: the card price is the
+// cheapest priced paper printing. A digital printing, a printing no
+// tournament allows, and an unpriced printing never set it. A card whose
+// printings hold no such price has no price, and a card with no printing
+// in the file keeps its own.
+func TestCardPriceIsCheapestPlayablePrinting(t *testing.T) {
+	bolt := &mtgv1.Card{
+		OracleId: "o-bolt", Name: "Lightning Bolt", PriceUsd: 9.5,
+		DefaultPrinting: &mtgv1.Printing{ScryfallId: "p-2x2", SetCode: "2x2"},
+	}
+	unpriced := &mtgv1.Card{
+		OracleId: "o-none", Name: "Unpriced Card", PriceUsd: 4,
+		DefaultPrinting: &mtgv1.Printing{ScryfallId: "p-none", SetCode: "abc"},
+	}
+	// The Oracle row priced a printing that no tournament allows.
+	memorabilia := &mtgv1.Card{
+		OracleId: "o-ce", Name: "Collector Card", PriceUsd: 300, PriceAsOf: "2026-10-01",
+		DefaultPrinting: &mtgv1.Printing{ScryfallId: "p-ced", SetCode: "ced"},
+	}
+	unprinted := &mtgv1.Card{OracleId: "o-alone", Name: "Lone Card", PriceUsd: 2}
+	idx := NewIndex([]*mtgv1.Card{bolt, unpriced, memorabilia, unprinted}, []Printing{
+		{ScryfallID: "p-2x2", OracleID: "o-bolt", SetCode: "2x2", PriceUSD: 9.5},
+		{ScryfallID: "p-m10", OracleID: "o-bolt", SetCode: "m10", PriceUSD: 1.75},
+		{ScryfallID: "p-foil", OracleID: "o-bolt", SetCode: "sld", PriceUSD: 3, PriceFinish: "usd_foil"},
+		{ScryfallID: "p-mtgo", OracleID: "o-bolt", SetCode: "me4", Digital: true, PriceUSD: 0.5},
+		{ScryfallID: "p-wc", OracleID: "o-bolt", SetCode: "wc97", NotForPlay: true, PriceUSD: 0.75},
+		{ScryfallID: "p-free", OracleID: "o-bolt", SetCode: "lea"},
+		{ScryfallID: "p-none", OracleID: "o-none", SetCode: "abc"},
+		{ScryfallID: "p-ced", OracleID: "o-ce", SetCode: "ced", NotForPlay: true, PriceUSD: 300},
+		{ScryfallID: "p-dig", OracleID: "o-ce", SetCode: "vma", Digital: true, PriceUSD: 1},
+		{ScryfallID: "p-4ed", OracleID: "o-ce", SetCode: "4ed"},
+	}, nil, time.Date(2026, 10, 2, 0, 0, 0, 0, time.UTC))
+
+	got, _ := idx.ByOracleID("o-bolt")
+	if got.GetPriceUsd() != 1.75 {
+		t.Errorf("price = %v, want 1.75, the cheapest playable paper printing", got.GetPriceUsd())
+	}
+	if got.GetPriceAsOf() != "2026-10-02" {
+		t.Errorf("price date = %q, want the snapshot date", got.GetPriceAsOf())
+	}
+	// The default printing does not move with the price.
+	if got.GetDefaultPrinting().GetSetCode() != "2x2" {
+		t.Errorf("default printing = %q, want 2x2", got.GetDefaultPrinting().GetSetCode())
+	}
+	if none, _ := idx.ByOracleID("o-none"); none.GetPriceUsd() != 0 {
+		t.Errorf("price = %v, want 0 when no printing has a price", none.GetPriceUsd())
+	}
+	ce, _ := idx.ByOracleID("o-ce")
+	if ce.GetPriceUsd() != 0 || ce.GetPriceAsOf() != "" {
+		t.Errorf("price = %v of %q, want no price when only digital and memorabilia printings have one", ce.GetPriceUsd(), ce.GetPriceAsOf())
+	}
+	if alone, _ := idx.ByOracleID("o-alone"); alone.GetPriceUsd() != 2 {
+		t.Errorf("price = %v, want its own price for a card with no printing in the file", alone.GetPriceUsd())
+	}
+}

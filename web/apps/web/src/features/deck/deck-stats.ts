@@ -148,8 +148,14 @@ export function severityLabel(s: Severity): string {
   }
 }
 
-export function priceText(usd: number): string {
-  return usd > 0 ? `$${usd.toFixed(2)}` : "no price";
+export { priceText } from "../../lib/price";
+
+// cardPrice is the price of the printing a card stands for. An owned card
+// costs what the printing the reader owns costs (D-1058). A card to buy
+// costs its cheapest paper printing, which the server sets (D-1057).
+export function cardPrice(c: DeckCard): number {
+  const own = c.owned ? (c.ownedPrinting?.priceUsd ?? 0) : 0;
+  return own > 0 ? own : c.priceUsd;
 }
 
 // DeckDiff is what changed between a deck and the one it revised
@@ -280,7 +286,7 @@ export function sortEntries(entries: DeckCard[], byId: Map<string, Card>, key: S
       case "name":
         return byName(a, b);
       case "price":
-        return b.priceUsd - a.priceUsd || byName(a, b);
+        return cardPrice(b) - cardPrice(a) || byName(a, b);
       case "mana-value": {
         const ma = byId.get(a.oracleId)?.manaValue ?? Number.POSITIVE_INFINITY;
         const mb = byId.get(b.oracleId)?.manaValue ?? Number.POSITIVE_INFINITY;

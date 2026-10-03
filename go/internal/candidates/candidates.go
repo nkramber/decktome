@@ -713,7 +713,9 @@ func landRank(req Request, c *mtgv1.Card, colorSet map[mtgv1.Color]bool, owned i
 		return colors
 	}
 	class := profile.LandClassOf(c, colorSet)
-	if owned == 0 && req.BudgetUSD > 0 && c.GetPriceUsd() > req.BudgetUSD {
+	// A card with no price has no known cost, so a budget never reads it
+	// as free (D-1060).
+	if owned == 0 && req.BudgetUSD > 0 && (c.GetPriceUsd() <= 0 || c.GetPriceUsd() > req.BudgetUSD) {
 		class = overBudgetClass
 	}
 	// Three places a class for the colors, and two a place for ownership.

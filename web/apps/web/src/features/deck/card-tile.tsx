@@ -5,7 +5,7 @@ import { useState } from "react";
 
 import { Thumbs } from "../feedback/thumbs";
 import { ZoomFace } from "./card-zoom";
-import { priceText } from "./deck-stats";
+import { cardPrice, priceText } from "./deck-stats";
 
 // The full card image carries the artist and the copyright line, and no
 // CSS crops it. The Scryfall guidelines ask for a separate line only
@@ -188,7 +188,7 @@ export function CardTile({
             </span>
             {showPrice && (
               <span className="ml-2 tabular-nums text-muted-foreground" data-testid="card-price">
-                {priceText(entry.priceUsd)}
+                {priceText(cardPrice(entry))}
               </span>
             )}
           </>

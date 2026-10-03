@@ -323,6 +323,7 @@ func TestGetCollectionFillsTheDisplayFields(t *testing.T) {
 			ImageUris: &mtgv1.ImageUris{Normal: "https://img/lea-161.jpg"}},
 		{ScryfallID: "p-2", OracleID: "o-bolt", Name: c.Name, SetCode: "m10", CollectorNumber: "146", Layout: "normal",
 			ImageUris: &mtgv1.ImageUris{Normal: "https://img/m10-146.jpg"}},
+		{ScryfallID: "p-3", OracleID: "o-bolt", Name: c.Name, SetCode: "2x2", CollectorNumber: "117", Layout: "normal", PriceUSD: 1.25},
 	}
 	repo := newFakeRepo()
 	repo.stored["col-1"] = &mtgv1.Collection{
@@ -353,7 +354,8 @@ func TestGetCollectionFillsTheDisplayFields(t *testing.T) {
 	if got[0].GetPriceUsd() != 42.5 {
 		t.Errorf("price of the Alpha printing = %v, want 42.5", got[0].GetPriceUsd())
 	}
-	// A printing with no price falls back to the card price (D-231).
+	// A printing with no price falls back to the card price, which is the
+	// cheapest paper printing (D-231, D-1057).
 	if got[1].GetPriceUsd() != 1.25 {
 		t.Errorf("price of the unpriced printing = %v, want the card price 1.25", got[1].GetPriceUsd())
 	}

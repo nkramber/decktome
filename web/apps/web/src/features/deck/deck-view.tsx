@@ -103,6 +103,10 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
     ...[...deck.cards, ...deck.sideboard].filter((c) => !c.owned && !commanders.has(c.oracleId)),
   ]
     .sort((a, b) => b.priceUsd * b.count - a.priceUsd * a.count || a.name.localeCompare(b.name));
+  // The buy cost adds nothing for a card with no price, so the page names
+  // those cards beside it (D-1060).
+  const unpriced = toBuy.filter((c) => c.priceUsd <= 0).length;
+  const unpricedText = `${unpriced} ${unpriced === 1 ? "card" : "cards"} with price unknown`;
   // The table shows the colors the deck pays for, and colorless for a
   // colorless deck. A mono-green deck full of rocks that make any color
   // is not a five-color deck. The commander's identity counts too.
@@ -177,7 +181,12 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           )}
         </div>
         <p className="text-sm" data-testid="buy-cost">
-          To buy: {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "nothing. Every card is owned, or no price is known."}
+          To buy:{" "}
+          {deck.buyCostUsd > 0
+            ? `${priceText(deck.buyCostUsd)}${unpriced > 0 ? `, plus ${unpricedText}` : ""}`
+            : unpriced > 0
+              ? unpricedText
+              : "nothing. Every card is owned, or no price is known."}
         </p>
         {/* The power counts sit beside the bracket, so the reader reads
             the power of the deck and its rules bracket together (D-774).
@@ -378,7 +387,10 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
                     Total
                   </th>
                   <td className="py-1 pr-3 text-right tabular-nums">{toBuy.length > 5 ? `${toBuy.length} cards` : ""}</td>
-                  <td className="py-1 text-right tabular-nums">{deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "$0.00"}</td>
+                  <td className="py-1 text-right tabular-nums">
+                    {deck.buyCostUsd > 0 ? priceText(deck.buyCostUsd) : "$0.00"}
+                    {unpriced > 0 && ` + ${unpriced} unknown`}
+                  </td>
                 </tr>
               </tbody>
             </table>

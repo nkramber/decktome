@@ -278,6 +278,96 @@ func TestBudgetReachesThePrompt(t *testing.T) {
 	}
 }
 
+// TestAnUnpricedCardIsNotFree is D-1060. A card with no price reads
+// "price unknown" on its shortlist line, and the budget warning names it.
+// The line read "$0.00" before, which the model can read as free.
+func TestAnUnpricedCardIsNotFree(t *testing.T) {
+	pool := NewPool([]*mtgv1.Card{
+		{OracleId: "o-dear", Name: "Dear Card", PriceUsd: 53.68},
+		{OracleId: "o-none", Name: "Unpriced Card"},
+	}, nil)
+	b := &Builder{}
+	req := testRequest()
+	req.Pool, req.BudgetUSD = pool, 100
+	in := b.input(req, nil, nil)
+	for _, want := range []string{"price unknown", "Count such a card as over the budget"} {
+		if !strings.Contains(in, want) {
+			t.Errorf("the prompt does not carry %q", want)
+		}
+	}
+	if strings.Contains(in, "$0.00") {
+		t.Error("an unpriced card reads $0.00 on its shortlist line")
+	}
+
+	both := deckOut{Summary: "s", Cards: []Entry{
+		{Name: "Dear Card", Count: 1, Role: "synergy"},
+		{Name: "Unpriced Card", Count: 1, Role: "synergy"},
+	}}
+	bb, _, _ := testBuilder(t, step(t, both), step(t, both))
+	req.BudgetUSD = 10
+	got, err := bb.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	var msg string
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeOverBudget {
+			msg = f.GetMessage()
+		}
+	}
+	if !strings.Contains(msg, "cost about $53.68, and the budget is $10.00, and 1 card to buy has no known price") {
+		t.Errorf("over-budget message = %q, want it to name the unpriced card", msg)
+	}
+
+	// The priced cards come under the budget, and the unpriced card still
+	// counts as over it.
+	bu, _, _ := testBuilder(t, step(t, both), step(t, both))
+	req.BudgetUSD = 100
+	got, err = bu.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	msg = ""
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeOverBudget {
+			msg = f.GetMessage()
+		}
+	}
+	if !strings.Contains(msg, "cost about $53.68, and the budget is $100.00, and 1 card to buy has no known price") {
+		t.Errorf("under-budget message = %q, want the unpriced card to count as over the budget", msg)
+	}
+
+	// The reader owns the unpriced card. A cap on the cards to buy does not
+	// count it, and a whole-deck cap does (D-238).
+	owned := NewPool([]*mtgv1.Card{
+		{OracleId: "o-dear", Name: "Dear Card", PriceUsd: 53.68},
+		{OracleId: "o-none", Name: "Unpriced Card"},
+	}, map[string]int32{"o-none": 1})
+	for _, tc := range []struct {
+		whole bool
+		want  string
+	}{
+		{false, ""},
+		{true, "the whole deck cost about $53.68, and the budget is $100.00, and 1 card in the deck has no known price"},
+	} {
+		bw, _, _ := testBuilder(t, step(t, both), step(t, both))
+		req.Pool, req.BudgetWholeDeck = owned, tc.whole
+		got, err = bw.Build(context.Background(), req, nil)
+		if err != nil {
+			t.Fatalf("whole deck %v: build: %v", tc.whole, err)
+		}
+		msg = ""
+		for _, f := range got.Deck.GetValidation().GetFindings() {
+			if f.GetCode() == CodeOverBudget {
+				msg = f.GetMessage()
+			}
+		}
+		if (tc.want == "" && msg != "") || !strings.Contains(msg, tc.want) {
+			t.Errorf("whole deck %v: over-budget message = %q, want %q", tc.whole, msg, tc.want)
+		}
+	}
+}
+
 // TestOverBudgetBuysTheRepairTurn is D-244. The finding stays a warning,
 // because a price is an estimate and not a rule, and the model still gets
 // one chance to come under the cap.

@@ -67,7 +67,12 @@ package generate
 // of deck colors. Deck gate runs 19 to 31 read 0 to 9 nonbasic lands on
 // one owned two-color prompt, because no line named fixing lands (F-33,
 // D-799).
-const PromptVersion = 16
+//
+// Version 17: a shortlist line under a budget reads "price unknown" for a
+// card with no price, and the budget block counts such a card as over the
+// budget. The line read "$0.00", which the model can read as free
+// (D-1060).
+const PromptVersion = 17
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.

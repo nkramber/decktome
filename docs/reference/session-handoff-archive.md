@@ -15,6 +15,41 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-02c, PR-111
+
+**Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** The pull request is #268. Gitar and Codex approved it, and it is pending the auto-merge.
+
+Author provider: Claude Code
+
+**The base.** `main` is `b07a5db`, from #267. Cloud Build `deploy-api` `0abefd15` and `deploy-web` `40d0b108` built it with SUCCESS on 2026-10-02 at about 19:09 UTC.
+
+**The live check of PR-110 passed.** The owner sent the F-196 prompt on the iPhone in session `6OqYbUEPlvXNqyFDcist`. F-196 to F-200 passed. The stored session asked the commander question, and it asked no gap question about a theme.
+
+**The code, done and tested.** Each change has its test:
+
+- The cold start draws after the update check, under a splash (F-201, D-1046).
+- The commander row has new words and "Suggest three" (D-1047).
+- A card whose halves share one front shows one face (F-202, D-1048).
+- A tap on the card art opens the large image on a touch screen (D-1049).
+- A phone shows "Back to top" after 300 pixels (D-1050).
+- A list sorted by price shows each price (D-1051).
+- A test reads the owned count of the named sets (D-1052).
+- The deck actions take two rows on a phone (D-1053).
+
+**The checks.** The Go tests of `questions` and `candidates` pass. The web typecheck and lint pass. `make verify` on `dbc2c2d` reads "every check passed", with 490 of 490 web tests, under Node 22.
+
+**The checkpoint (D-946).** The first session passed 300K tokens after the code and the roadmap rows. A second clean session ran `make verify` and opened the pull request.
+
+**The review.** Gitar approved effective head `4f13cd5`, with no code finding or open thread. The Codex review record approves the same head. No finding stays open.
+
+**The open work.** The owner confirms the merge. After the deploy, the owner checks the eight changes on the iPhone.
+
+### 2026-10-02: the live check of PR-108, PR-109
+
+**The deploy of #265 read SUCCESS.** The owner started the iPhone check, and sent a screenshot of a blank band at the open questions (F-195).
+
+**The owner said that the band was new.** A probe of `07203ba` read the same fault, so it dates from #228. The owner chose one run of the whole check after this deploy (D-1037).
+
 ## The resume section of 2026-10-02b, PR-110
 
 **Branch `fix/phone-live-check-2`: PR-110, five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).** The pull request is #267.

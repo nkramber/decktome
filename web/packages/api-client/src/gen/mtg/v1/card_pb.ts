@@ -142,10 +142,10 @@ export type Card = Message<"mtg.v1.Card"> & {
   defaultPrinting?: Printing | undefined;
 
   /**
-   * price_usd is the display price. Today: the Scryfall usd price of the
-   * default printing on the snapshot day. Target (D-17, D-26, I-2): the
-   * lowest NM market estimate across legal printings and finishes, as a
-   * 7-day median with outliers dropped. Zero means no price. Advisory only.
+   * price_usd is the display price. Today: the lowest Scryfall usd price
+   * of a paper printing that a player can play, on the snapshot day
+   * (D-1057). Target (D-17, D-26, I-2): that price as a 7-day median with
+   * outliers dropped. Zero means no price. Advisory only.
    *
    * @generated from field: double price_usd = 20;
    */

@@ -6,34 +6,38 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-02c)
+## RESUME HERE (2026-10-02d)
 
-**Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** The pull request is #268. Gitar and Codex approved it, and it is pending the auto-merge.
+**Branch `fix/phone-live-check-4`: PR-112, four results of the live check of PR-111 (F-201, F-203, F-204, F-205, D-1055 to D-1060).** The pull request is #269.
 
 Author provider: Claude Code
 
-**The base.** `main` is `b07a5db`, from #267. Cloud Build `deploy-api` `0abefd15` and `deploy-web` `40d0b108` built it with SUCCESS on 2026-10-02 at about 19:09 UTC.
+**The base.** `main` is `d38bca5`, from #268. Cloud Build `deploy-api` `9eee92e9` and `deploy-web` `5c081ee3` built it with SUCCESS on 2026-10-02 at about 20:38 UTC.
 
-**The live check of PR-110 passed.** The owner sent the F-196 prompt on the iPhone in session `6OqYbUEPlvXNqyFDcist`. F-196 to F-200 passed. The stored session asked the commander question, and it asked no gap question about a theme.
+**The live check of PR-111.** The owner checked the eight changes on the iPhone (D-1055). Changes 2, 3, 4, 7, and 8 passed. "Back to top" passed, and the owner asked for no glow. The price sort failed, because it showed the price of the default printing. The cold start showed the old shell and a reload. That first launch ran the old release `b07a5db`, which has no splash, so the check proved nothing about D-1046.
 
 **The code, done and tested.** Each change has its test:
 
-- The cold start draws after the update check, under a splash (F-201, D-1046).
-- The commander row has new words and "Suggest three" (D-1047).
-- A card whose halves share one front shows one face (F-202, D-1048).
-- A tap on the card art opens the large image on a touch screen (D-1049).
-- A phone shows "Back to top" after 300 pixels (D-1050).
-- A list sorted by price shows each price (D-1051).
-- A test reads the owned count of the named sets (D-1052).
-- The deck actions take two rows on a phone (D-1053).
+- The chat stays at its foot after a send, and while the reader stays there (D-1056). `use-stick-to-bottom.test.tsx` reads six cases.
+- The card price is the price of the cheapest playable paper printing (D-1057). Two tests of `cards` read the rule and the printing mark.
+- An owned card shows and sorts on the price of the owned printing (F-203, D-1058). A test of the deck view reads it.
+- "Back to top" has no shadow (D-1059).
 
-**The checks.** The Go tests of `questions` and `candidates` pass. The web typecheck and lint pass. `make verify` on `dbc2c2d` reads "every check passed", with 490 of 490 web tests, under Node 22.
+**The open fact.** No source confirms the condition of the Scryfall price (F-204). The pages of TCGplayer refused the session with HTTP 403.
 
-**The checkpoint (D-946).** The first session passed 300K tokens after the code and the roadmap rows. A second clean session ran `make verify` and opened the pull request.
+**The risk.** A budget request now sees lower prices, because the builder reads the cheapest printing. No paid deck gate run measured this change.
 
-**The review.** Gitar approved effective head `4f13cd5`, with no code finding or open thread. The Codex review record approves the same head. No finding stays open.
+**The checks.** `make verify` on the tree of the P2-2 fix reads "every check passed", with 495 of 495 web tests, under Node 22.
 
-**The open work.** The owner confirms the merge. After the deploy, the owner checks the eight changes on the iPhone.
+**The review.** Gitar approved `62f5627`, and both Gitar threads are resolved. Codex marks P2-1 fixed in `ba42d54` and P2-2 fixed in `62f5627`. The review record says `Ready for owner merge` for effective head `62f562706ff686e96978b36e35cbc959e652d00f`.
+
+**The checkpoint (D-946).** The first session passed 300K tokens after the code of D-1060, in commit `7ab9a34`. A second clean session added the D-1060 bullet to the roadmap entry. It also added F-205, the ❓ finding for a second price source.
+
+**The Gitar finding on `7ab9a34`.** The budget check skipped an unpriced card when the priced cards came under the budget. The fix warns for each unpriced card to buy, and `TestAnUnpricedCardIsNotFree` reads both cases. The test fails on the old code.
+
+**The open work.** None. The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828).
+
+After the deploy, the owner checks on the iPhone, and the cold start comes first.
 
 ## How to resume
 
@@ -106,7 +110,15 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The live check of PR-111** (D-1045 to D-1054). After the deploy, the owner checks the eight changes on the iPhone.
+0. **The live check of PR-112** (D-1055 to D-1060). After the deploy, the owner checks on the iPhone. The cold start comes first, because only the first launch after a deploy tests D-1046.
+0. **The share page, the next pull request** (owner, 2026-10-02). Start it after the live check of PR-112.
+   - The shared page shows the mana curve, the mana sources, the card types, the average mana value, and the sample hand.
+   - It has the filters of role, color, mana value, and type, and the sort, but no owned filter.
+   - It always shows the price (D-1057, D-1060), because a link can not prove ownership.
+   - It shows the art of the deck view, the owned printing (D-299). The owner accepts that this reveals the owned printing. The deck of session 2I0xZcfjoqBR0b1IH2IQ shows only LOTR or Hobbit art.
+   - The deck stores the token, so the dialog can copy the old link above "This deck has a link". An old link needs one new link.
+   - Remove "The link, shown once" and "A new link replaces the old one". The caption "Card types" drops its clause.
+   - Record each owner answer as a D- row in that pull request.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
@@ -130,12 +142,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-02: the live check of PR-108, PR-109
-
-**The deploy of #265 read SUCCESS.** The owner started the iPhone check, and sent a screenshot of a blank band at the open questions (F-195).
-
-**The owner said that the band was new.** A probe of `07203ba` read the same fault, so it dates from #228. The owner chose one run of the whole check after this deploy (D-1037).
-
 ### 2026-10-02b: five faults of the live check, PR-110
 
 **The deploy check read `deploy-web` SUCCESS for `e872724`.** `deploy-api` did not run for a merge of web files alone. The owner ran the iPhone check, and the header and the push passed.
@@ -148,6 +154,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner sent eight changes and chose one pull request.** The owner chose a splash for the cold start, and named the owned count a requirement. The session passed 300K tokens after the code.
 
+### 2026-10-02d: four results of the live check, PR-112
+
+**The deploy of `d38bca5` read SUCCESS for both builds.** The owner checked the eight changes of PR-111 on the iPhone, and five passed at once.
+
+**The owner chose one pull request and the whole app for the price.** The owner replaced D-360, and asked for LP/SP condition or better. No source that the session read confirms the condition of the Scryfall price.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02b, the records of 2026-08-31 to 2026-10-01b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-02c, the records of 2026-08-31 to 2026-10-02, and 104 more sections, word for word. Read it for the detail behind a decision.

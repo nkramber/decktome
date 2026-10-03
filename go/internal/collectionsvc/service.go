@@ -280,8 +280,8 @@ func (s *Server) decorate(entries []*mtgv1.CollectionEntry) {
 		e.Colors = c.GetColors()
 		e.CardTypes = c.GetCardTypes()
 		// The reader owns one printing, and its price is the one that
-		// counts. The card price is the default printing's (D-231), so
-		// it stands in only when the printing is unknown.
+		// counts. The card price is the cheapest playable printing's
+		// (D-1057), so it stands in only when the printing has no price.
 		e.PriceUsd = c.GetPriceUsd()
 		if p, ok := idx.Printing(e.GetScryfallId()); ok {
 			if p.GetPriceUsd() > 0 {

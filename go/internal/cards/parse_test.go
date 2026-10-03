@@ -154,3 +154,24 @@ func TestUSDPriceFallsBackToFoil(t *testing.T) {
 		t.Errorf("parseCard price = %v, %v", c.GetPriceUsd(), err)
 	}
 }
+
+// TestParsePrintingMarksNotForPlay is D-1057: a memorabilia set, a gold
+// border, and an oversized card mark a printing that no tournament allows.
+func TestParsePrintingMarksNotForPlay(t *testing.T) {
+	for _, tc := range []struct {
+		line string
+		want bool
+	}{
+		{`{"id":"p1","set":"wc97","set_type":"memorabilia","border_color":"gold"}`, true},
+		{`{"id":"p2","set":"30a","set_type":"memorabilia","border_color":"black"}`, true},
+		{`{"id":"p3","set":"pxyz","set_type":"promo","border_color":"gold"}`, true},
+		{`{"id":"p4","set":"oc13","set_type":"commander","oversized":true}`, true},
+		{`{"id":"p5","set":"m10","set_type":"core","border_color":"black"}`, false},
+		{`{"id":"p6","set":"m10"}`, false},
+	} {
+		p, err := parsePrinting([]byte(tc.line))
+		if err != nil || p.NotForPlay != tc.want {
+			t.Errorf("parsePrinting(%s).NotForPlay = %v, %v; want %v", tc.line, p.NotForPlay, err, tc.want)
+		}
+	}
+}
