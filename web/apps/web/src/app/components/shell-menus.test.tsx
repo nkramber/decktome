@@ -11,11 +11,23 @@ const push = vi.hoisted(() => ({
 vi.mock("../../features/push/push", () => push);
 const notify = vi.hoisted(() => vi.fn());
 vi.mock("./notify", () => ({ notify }));
+const claims = vi.hoisted(() => ({ admin: false }));
+vi.mock("../../lib/firebase", () => ({ isAdmin: () => Promise.resolve(claims.admin) }));
+vi.mock("../../features/auth/auth-context", () => ({ useAuth: () => ({ user: null, ready: true, error: "" }) }));
+
+import { MemoryRouter, Route, Routes } from "react-router";
 
 import { AccountMenuContent } from "./shell-menus";
 
 function renderMenu() {
-  return render(<AccountMenuContent trigger={<button type="button">Account</button>} email="reader@example.com" onSignOut={() => {}} open onOpenChange={() => {}} />);
+  return render(
+    <MemoryRouter initialEntries={["/decks"]}>
+      <Routes>
+        <Route path="/decks" element={<AccountMenuContent trigger={<button type="button">Account</button>} email="reader@example.com" onSignOut={() => {}} open onOpenChange={() => {}} />} />
+        <Route path="/admin" element={<h1>Admin</h1>} />
+      </Routes>
+    </MemoryRouter>,
+  );
 }
 
 beforeEach(() => {
@@ -24,6 +36,26 @@ beforeEach(() => {
   push.enablePush.mockReset();
   push.disablePush.mockReset();
   notify.mockReset();
+  claims.admin = false;
+});
+
+// D-1076: the admin screen opens from the account menu, for a token with
+// the admin claim alone.
+describe("the admin item of the account menu", () => {
+  it("opens the admin screen for the admin", async () => {
+    push.pushState.mockResolvedValue("off");
+    claims.admin = true;
+    renderMenu();
+    await userEvent.setup().click(await screen.findByRole("menuitem", { name: "Access requests" }));
+    expect(await screen.findByRole("heading", { name: "Admin" })).toBeInTheDocument();
+  });
+
+  it("shows no item without the claim", async () => {
+    push.pushState.mockResolvedValue("off");
+    renderMenu();
+    await screen.findByRole("menuitem", { name: "Notify me when a deck is ready" });
+    expect(screen.queryByRole("menuitem", { name: "Access requests" })).not.toBeInTheDocument();
+  });
 });
 
 // The push toggle of PR-26 (D-1005).

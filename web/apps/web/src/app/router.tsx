@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { createBrowserRouter, createMemoryRouter, Outlet, type RouteObject } from "react-router";
 
 import { LoadingSession, RequireAuth, RootRedirect } from "../features/auth/require-auth";
-import { collectionChunk, decksChunk, deckScreenChunk, inviteGateChunk, sessionChunk, sharedDeckChunk, signInChunk } from "./chunks";
+import { adminChunk, collectionChunk, decksChunk, deckScreenChunk, inviteGateChunk, sessionChunk, sharedDeckChunk, signInChunk } from "./chunks";
 import { PageFallback } from "./components/page-fallback";
 import type { Deferred } from "./deferred";
 import { Layout } from "./layout";
@@ -70,6 +70,9 @@ export function appRoutes(extra: RouteObject[] = []): RouteObject[] {
                 { path: "/session/:id", element: page(sessionChunk) },
                 { path: "/decks", element: page(decksChunk) },
                 { path: "/decks/:id", element: page(deckScreenChunk) },
+                // The API refuses each admin call without the admin claim
+                // (D-1076).
+                { path: "/admin", element: page(adminChunk) },
               ],
             },
             // extra is the test seam. It stays outside the gate, so a

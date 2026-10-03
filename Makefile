@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -527,6 +527,12 @@ disallow: ## Take one email off the invite list: make disallow EMAIL=... PROJECT
 	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "disallow: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/allow -email "$(EMAIL)" -remove
 
+grant-admin: ## Open the admin screen to one account (D-1076): make grant-admin EMAIL=... PROJECT_ID=... [REMOVE=1]
+	@[ -n "$(EMAIL)" ] || { echo "grant-admin: set EMAIL=..."; exit 1; }
+	@[ -n "$(PROJECT_ID)" ] || { echo "grant-admin: set PROJECT_ID=... to the deployed project"; exit 1; }
+	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "grant-admin: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
+	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/grant-admin -email "$(EMAIL)" $(if $(filter 1,$(REMOVE)),-remove,)
+
 deactivate-user: ## Close one account and keep its records (D-941): make deactivate-user USER_UID=... PROJECT_ID=... [CONFIRM=1]
 	@[ -n "$(USER_UID)" ] || { echo "deactivate-user: set USER_UID=..."; exit 1; }
 	@[ -n "$(PROJECT_ID)" ] || { echo "deactivate-user: set PROJECT_ID=... to the deployed project"; exit 1; }
@@ -541,7 +547,7 @@ mark-verified: ## List accounts whose email is not proved, or mark named ones: m
 	@[ "$(origin PROJECT_ID)" = "command line" ] || { echo "mark-verified: name PROJECT_ID=... on the command line. A shell export can name another project (REV-090)."; exit 1; }
 	@PROJECT_ID=$(PROJECT_ID) $(GO) run ./cmd/mark-verified -uid "$(UIDS)" $(if $(filter 1,$(APPLY)),-apply,)
 
-feedback-list: ## Read the newest verdicts of every user: make feedback-list [VERDICT=down] [LIMIT=50]
+feedback-list: ## Read the newest verdicts of every user: make feedback-list [VERDICT=down|up|none] [LIMIT=50]
 	@PROJECT_ID=$${FEEDBACK_PROJECT:-decktome-prod} $(GO) run ./cmd/feedback -verdict "$${VERDICT-down}" -limit $${LIMIT:-50}
 
 feedback-harvest: ## Write every verdict since the last harvest to .local/feedback/ (D-879): make feedback-harvest [SINCE=2026-09-01] [HARVEST_ARGS=-dry]
@@ -580,10 +586,10 @@ read-session: ## Read one chat session of the deployed project for debugging: ma
 	@[ -n "$(SESSION)" ] || { echo "read-session: set SESSION=... to the session id"; exit 1; }
 	@scripts/read-session.sh "$(SESSION)" $(UID)
 
-store-check: ## Run the session, deck, collection, usage, allowlist, feedback, user, and push stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
+store-check: ## Run the session, deck, collection, usage, allowlist, access, feedback, user, and push stores against the local Firestore emulator (needs `firebase emulators:start --only firestore`)
 	@nc -z 127.0.0.1 8281 2>/dev/null || \
 		{ echo "no Firestore emulator on :8281. Start one: firebase emulators:start --only firestore --project mtg-local"; exit 1; }
-	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/feedback ./internal/users ./internal/decks ./internal/collections ./internal/push -count=1
+	@FIRESTORE_EMULATOR_HOST=127.0.0.1:8281 $(GO) test ./internal/sessions ./internal/usage ./internal/allowlist ./internal/access ./internal/feedback ./internal/users ./internal/decks ./internal/collections ./internal/push -count=1
 
 gcs-check: ## Run TestLiveFakeGCS against a fake-gcs-server seeded from the trimmed snapshot, as the CI step does (free, D-658)
 	@scripts/gcs-check.sh

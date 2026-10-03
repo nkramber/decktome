@@ -1,5 +1,6 @@
 import { createClient, type Interceptor } from "@connectrpc/connect";
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { AdminService } from "@mtg/api-client/mtg/v1/admin_service_pb";
 import { AgentService } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { CardService } from "@mtg/api-client/mtg/v1/card_service_pb";
 import { CollectionService } from "@mtg/api-client/mtg/v1/collection_service_pb";
@@ -48,3 +49,5 @@ export const pushClient = createClient(PushService, transport);
 // The invite check runs before an account exists, so it carries no token
 // (D-592). The bearer interceptor adds none when nobody is signed in.
 export const inviteClient = createClient(InviteService, transport);
+// The admin screen needs the admin claim on the token (D-1076).
+export const adminClient = createClient(AdminService, transport);

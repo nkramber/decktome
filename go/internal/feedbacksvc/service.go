@@ -118,7 +118,7 @@ func Prompts() map[string]int64 {
 var (
 	errNoUser          = errors.New("no user in the request context")
 	errNoFeedback      = errors.New("feedback is required")
-	errBadKind         = errors.New("kind: name a question, a summary, a card, a deck, a chat, or an import")
+	errBadKind         = errors.New("kind: name a question, a summary, a card, a deck, a chat, an import, or a general note")
 	errBadVerdict      = errors.New("verdict: name up or down")
 	errLongText        = fmt.Errorf("text: the text takes at most %d bytes", MaxTextBytes)
 	errUpWithReason    = errors.New("a thumbs up carries no reason and no text")
@@ -131,7 +131,15 @@ var (
 	errImportedDeck    = errors.New("deck_id: a list you imported takes no verdict, and a revision of it does")
 	errImportUp        = errors.New("an import report is a thumbs down alone")
 	errFileNotImport   = errors.New("import_page: only an import report takes a file")
+	errNoteVerdict     = errors.New("a general note takes no verdict")
+	errNoteText        = errors.New("text: write the note")
+	errNoteScreen      = errors.New("screen: name a screen of the top bar")
+	errScreenNotNote   = errors.New("screen: only a general note names a screen")
 )
+
+// Screens are the screens of the top bar that a general note can name
+// (D-1078).
+var Screens = map[string]bool{"build": true, "chat": true, "decks": true, "deck": true, "collection": true, "admin": true, "other": true}
 
 func invalid(err error) error { return connect.NewError(connect.CodeInvalidArgument, err) }
 
@@ -151,7 +159,12 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	}
 	var sess *mtgv1.Session
 	var deck *mtgv1.Deck
-	if item.Kind == feedback.KindName(mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT) {
+	general := fb.GetKind() == mtgv1.FeedbackKind_FEEDBACK_KIND_GENERAL
+	if general {
+		if sess, deck, err = s.checkNote(ctx, uid, item); err != nil {
+			return nil, err
+		}
+	} else if item.Kind == feedback.KindName(mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT) {
 		// The server reads the file again, so the fault it keeps is its
 		// own and not the client's word (D-596, D-884). The file itself is
 		// never stored (D-885).
@@ -183,11 +196,15 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	counter := users.FeedbackUp
-	if item.Verdict == "down" {
-		counter = users.FeedbackDown
+	// A general note is no verdict, so it moves no counter of the user
+	// record (D-852, D-1078).
+	if !general {
+		counter := users.FeedbackUp
+		if item.Verdict == "down" {
+			counter = users.FeedbackDown
+		}
+		users.NoteQuietly(ctx, s.users, uid, auth.Email(ctx), counter, s.now())
 	}
-	users.NoteQuietly(ctx, s.users, uid, auth.Email(ctx), counter, s.now())
 	if s.notifier != nil && s.pings.Allow(uid) {
 		s.notifier.Notify(noticeOf(id, auth.Email(ctx), item))
 	}
@@ -200,8 +217,11 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 // or the harvest.
 func noticeOf(id, email string, item feedback.Item) notify.Notice {
 	thumb := "thumbs up"
-	if item.Verdict == "down" {
+	switch item.Verdict {
+	case "down":
 		thumb = "thumbs down"
+	case "":
+		thumb = "feedback"
 	}
 	var b strings.Builder
 	line := func(label, value string) {
@@ -210,6 +230,7 @@ func noticeOf(id, email string, item feedback.Item) notify.Notice {
 		}
 	}
 	line("user", email)
+	line("screen", item.Screen)
 	line("reasons", strings.Join(item.Reasons, ", "))
 	line("message", firstWords(item.Text, messageWords))
 	if f := item.Import; f != nil {
@@ -250,15 +271,22 @@ func itemOf(fb *mtgv1.Feedback) (feedback.Item, error) {
 		DeckID:     strings.TrimSpace(fb.GetDeckId()),
 		OracleID:   strings.TrimSpace(fb.GetOracleId()),
 		Text:       strings.TrimSpace(fb.GetText()),
+		Screen:     strings.TrimSpace(fb.GetScreen()),
 	}
 	if item.Kind == "" {
 		return item, errBadKind
 	}
-	if item.Verdict == "" {
-		return item, errBadVerdict
-	}
 	if len(item.Text) > MaxTextBytes {
 		return item, errLongText
+	}
+	if kind == mtgv1.FeedbackKind_FEEDBACK_KIND_GENERAL {
+		return noteOf(fb, item)
+	}
+	if item.Screen != "" {
+		return item, errScreenNotNote
+	}
+	if item.Verdict == "" {
+		return item, errBadVerdict
 	}
 	seen := map[string]bool{}
 	for _, key := range fb.GetReasons() {
@@ -304,6 +332,68 @@ func itemOf(fb *mtgv1.Feedback) (feedback.Item, error) {
 		return item, err
 	}
 	return item, nil
+}
+
+// noteOf checks a general note (D-1078). It carries a text, a screen,
+// no verdict, and no reason. It can name the session of a chat screen
+// and the deck of a deck screen, and nothing else.
+func noteOf(fb *mtgv1.Feedback, item feedback.Item) (feedback.Item, error) {
+	switch {
+	case item.Verdict != "":
+		return item, errNoteVerdict
+	case item.Text == "":
+		return item, errNoteText
+	case !Screens[item.Screen]:
+		return item, errNoteScreen
+	case len(fb.GetReasons()) > 0:
+		return item, errors.New("reasons: a general note takes no reason")
+	case fb.GetImportPage() != mtgv1.ImportPage_IMPORT_PAGE_UNSPECIFIED || len(fb.GetImportContent()) > 0:
+		return item, errFileNotImport
+	}
+	for _, f := range []struct {
+		field, id string
+	}{{"session_id", item.SessionID}, {"deck_id", item.DeckID}} {
+		if err := wantID(f.field, f.id, f.id != ""); err != nil {
+			return item, err
+		}
+	}
+	if err := wantID("question_id", item.QuestionID, false); err != nil {
+		return item, err
+	}
+	if err := wantID("oracle_id", item.OracleID, false); err != nil {
+		return item, err
+	}
+	return item, nil
+}
+
+// checkNote reads the session and the deck that a general note names,
+// under the caller, for the snapshot of D-635. An id that is not the
+// caller's reads PermissionDenied, as for a verdict. A note on an
+// imported deck is fine, because a note judges the app and not a build.
+func (s *Server) checkNote(ctx context.Context, uid string, item feedback.Item) (*mtgv1.Session, *mtgv1.Deck, error) {
+	var sess *mtgv1.Session
+	var deck *mtgv1.Deck
+	if item.SessionID != "" {
+		got, err := s.sessions.Get(ctx, uid, item.SessionID)
+		if errors.Is(err, sessions.ErrNotFound) {
+			return nil, nil, connect.NewError(connect.CodePermissionDenied, errNotYourSession)
+		}
+		if err != nil {
+			return nil, nil, connect.NewError(connect.CodeInternal, err)
+		}
+		sess = got
+	}
+	if item.DeckID != "" {
+		got, err := s.decks.Get(ctx, uid, item.DeckID)
+		if errors.Is(err, decks.ErrNotFound) {
+			return nil, nil, connect.NewError(connect.CodePermissionDenied, errNotYourDeck)
+		}
+		if err != nil {
+			return nil, nil, connect.NewError(connect.CodeInternal, err)
+		}
+		deck = got
+	}
+	return sess, deck, nil
 }
 
 // wantID checks one id field: a kind that uses it needs a valid one, and

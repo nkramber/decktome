@@ -45,6 +45,10 @@ const (
 	// session, no deck, and no card. It is a thumbs down alone. The server
 	// reads the file again and names the fault itself (D-596).
 	FeedbackKind_FEEDBACK_KIND_IMPORT FeedbackKind = 6
+	// FEEDBACK_KIND_GENERAL is a note from the "Leave feedback" button of
+	// the top bar (D-1078). It carries no verdict, it needs a text, and it
+	// names the screen. On a deck screen it also names the deck.
+	FeedbackKind_FEEDBACK_KIND_GENERAL FeedbackKind = 7
 )
 
 // Enum value maps for FeedbackKind.
@@ -57,6 +61,7 @@ var (
 		4: "FEEDBACK_KIND_DECK",
 		5: "FEEDBACK_KIND_CHAT",
 		6: "FEEDBACK_KIND_IMPORT",
+		7: "FEEDBACK_KIND_GENERAL",
 	}
 	FeedbackKind_value = map[string]int32{
 		"FEEDBACK_KIND_UNSPECIFIED": 0,
@@ -66,6 +71,7 @@ var (
 		"FEEDBACK_KIND_DECK":        4,
 		"FEEDBACK_KIND_CHAT":        5,
 		"FEEDBACK_KIND_IMPORT":      6,
+		"FEEDBACK_KIND_GENERAL":     7,
 	}
 )
 
@@ -227,6 +233,9 @@ type Feedback struct {
 	// again and keeps the fault, never the whole file (D-885).
 	ImportPage    ImportPage `protobuf:"varint,9,opt,name=import_page,json=importPage,proto3,enum=mtg.v1.ImportPage" json:"import_page,omitempty"`
 	ImportContent []byte     `protobuf:"bytes,10,opt,name=import_content,json=importContent,proto3" json:"import_content,omitempty"`
+	// screen names the screen of a GENERAL note: build, chat, decks, deck,
+	// collection, or another screen of the top bar (D-1078).
+	Screen        string `protobuf:"bytes,11,opt,name=screen,proto3" json:"screen,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -329,6 +338,13 @@ func (x *Feedback) GetImportContent() []byte {
 		return x.ImportContent
 	}
 	return nil
+}
+
+func (x *Feedback) GetScreen() string {
+	if x != nil {
+		return x.Screen
+	}
+	return ""
 }
 
 // ImportFault is what a report of kind IMPORT keeps (D-885). The server
@@ -527,7 +543,7 @@ var File_mtg_v1_feedback_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1dmtg/v1/feedback_service.proto\x12\x06mtg.v1\x1a\x17mtg/v1/collection.proto\"\xe7\x02\n" +
+	"\x1dmtg/v1/feedback_service.proto\x12\x06mtg.v1\x1a\x17mtg/v1/collection.proto\"\xff\x02\n" +
 	"\bFeedback\x12(\n" +
 	"\x04kind\x18\x01 \x01(\x0e2\x14.mtg.v1.FeedbackKindR\x04kind\x121\n" +
 	"\averdict\x18\x02 \x01(\x0e2\x17.mtg.v1.FeedbackVerdictR\averdict\x12\x1d\n" +
@@ -542,7 +558,8 @@ const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\vimport_page\x18\t \x01(\x0e2\x12.mtg.v1.ImportPageR\n" +
 	"importPage\x12%\n" +
 	"\x0eimport_content\x18\n" +
-	" \x01(\fR\rimportContent\"\xee\x01\n" +
+	" \x01(\fR\rimportContent\x12\x16\n" +
+	"\x06screen\x18\v \x01(\tR\x06screen\"\xee\x01\n" +
 	"\vImportFault\x12&\n" +
 	"\x04page\x18\x01 \x01(\x0e2\x12.mtg.v1.ImportPageR\x04page\x12\x14\n" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12\x16\n" +
@@ -556,7 +573,7 @@ const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\bfeedback\x18\x01 \x01(\v2\x10.mtg.v1.FeedbackR\bfeedback\"9\n" +
 	"\x16SubmitFeedbackResponse\x12\x1f\n" +
 	"\vfeedback_id\x18\x01 \x01(\tR\n" +
-	"feedbackId*\xc6\x01\n" +
+	"feedbackId*\xe1\x01\n" +
 	"\fFeedbackKind\x12\x1d\n" +
 	"\x19FEEDBACK_KIND_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16FEEDBACK_KIND_QUESTION\x10\x01\x12\x19\n" +
@@ -564,7 +581,8 @@ const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\x12FEEDBACK_KIND_CARD\x10\x03\x12\x16\n" +
 	"\x12FEEDBACK_KIND_DECK\x10\x04\x12\x16\n" +
 	"\x12FEEDBACK_KIND_CHAT\x10\x05\x12\x18\n" +
-	"\x14FEEDBACK_KIND_IMPORT\x10\x06*[\n" +
+	"\x14FEEDBACK_KIND_IMPORT\x10\x06\x12\x19\n" +
+	"\x15FEEDBACK_KIND_GENERAL\x10\a*[\n" +
 	"\n" +
 	"ImportPage\x12\x1b\n" +
 	"\x17IMPORT_PAGE_UNSPECIFIED\x10\x00\x12\x1a\n" +

@@ -48,6 +48,8 @@ const byKind: Record<FeedbackKind, Reason[]> = {
   // so the form shows no reason to check, and the key is the one the
   // server stores.
   [FeedbackKind.IMPORT]: [{ key: "parse_fault", label: "The app could not read the file." }],
+  // A general note carries no reason, only its text (D-1078).
+  [FeedbackKind.GENERAL]: [],
 };
 
 export function reasonsOf(kind: FeedbackKind): Reason[] {

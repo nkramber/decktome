@@ -6,6 +6,9 @@ import { deferred } from "./deferred";
 // render these, and the idle warm-up below brings them in before the
 // first click asks for one.
 export const accountMenuChunk = deferred(async () => ({ default: (await import("./components/shell-menus")).AccountMenuContent }));
+export const feedbackNoteChunk = deferred<{ open: boolean; onOpenChange: (open: boolean) => void }>(async () => ({
+  default: (await import("../features/feedback/leave-feedback")).FeedbackNoteDialog,
+}));
 export const toasterChunk = deferred(async () => ({ default: (await import("../components/ui/toaster")).Toaster }));
 
 export const signInChunk = deferred(async () => ({ default: (await import("../features/auth/sign-in-page")).SignInPage }));
@@ -19,9 +22,10 @@ export const decksChunk = deferred(async () => ({ default: (await import("../fea
 export const deckScreenChunk = deferred(async () => ({ default: (await import("../features/workspace/deck-screen")).DeckScreen }));
 // The public deck page of a share link (D-315). It pulls in no auth
 // module, so a visitor pays for none.
+export const adminChunk = deferred(async () => ({ default: (await import("../features/admin/admin-page")).AdminPage }));
 export const sharedDeckChunk = deferred(async () => ({ default: (await import("../features/share/shared-deck-page")).SharedDeckPage }));
 
-const all = [accountMenuChunk, toasterChunk, signInChunk, inviteGateChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk, sharedDeckChunk];
+const all = [accountMenuChunk, feedbackNoteChunk, toasterChunk, signInChunk, inviteGateChunk, collectionChunk, sessionChunk, decksChunk, deckScreenChunk, adminChunk, sharedDeckChunk];
 
 // warmChunks brings in every deferred chunk. A menu that mounts on the
 // click costs about 320 ms of that click, measured on 2026-08-30, and a

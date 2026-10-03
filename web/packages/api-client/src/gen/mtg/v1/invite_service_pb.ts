@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/invite_service.proto.
  */
 export const file_mtg_v1_invite_service: GenFile = /*@__PURE__*/
-  fileDesc("ChttdGcvdjEvaW52aXRlX3NlcnZpY2UucHJvdG8SBm10Zy52MSIjChJDaGVja0ludml0ZVJlcXVlc3QSDQoFZW1haWwYASABKAkiJgoTQ2hlY2tJbnZpdGVSZXNwb25zZRIPCgdhbGxvd2VkGAEgASgIMlkKDUludml0ZVNlcnZpY2USSAoLQ2hlY2tJbnZpdGUSGi5tdGcudjEuQ2hlY2tJbnZpdGVSZXF1ZXN0GhsubXRnLnYxLkNoZWNrSW52aXRlUmVzcG9uc2UiAEIyWjBnaXRodWIuY29tL25rcmFtYmVyL2RlY2t0b21lL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw");
+  fileDesc("ChttdGcvdjEvaW52aXRlX3NlcnZpY2UucHJvdG8SBm10Zy52MSIjChJDaGVja0ludml0ZVJlcXVlc3QSDQoFZW1haWwYASABKAkiJgoTQ2hlY2tJbnZpdGVSZXNwb25zZRIPCgdhbGxvd2VkGAEgASgIIjMKFFJlcXVlc3RBY2Nlc3NSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEgwKBG5vdGUYAiABKAkiMAoVUmVxdWVzdEFjY2Vzc1Jlc3BvbnNlEhcKD2FscmVhZHlfaW52aXRlZBgBIAEoCDKpAQoNSW52aXRlU2VydmljZRJICgtDaGVja0ludml0ZRIaLm10Zy52MS5DaGVja0ludml0ZVJlcXVlc3QaGy5tdGcudjEuQ2hlY2tJbnZpdGVSZXNwb25zZSIAEk4KDVJlcXVlc3RBY2Nlc3MSHC5tdGcudjEuUmVxdWVzdEFjY2Vzc1JlcXVlc3QaHS5tdGcudjEuUmVxdWVzdEFjY2Vzc1Jlc3BvbnNlIgBCMlowZ2l0aHViLmNvbS9ua3JhbWJlci9kZWNrdG9tZS9nby9nZW4vbXRnL3YxO210Z3YxYgZwcm90bzM");
 
 /**
  * @generated from message mtg.v1.CheckInviteRequest
@@ -52,6 +52,52 @@ export const CheckInviteResponseSchema: GenMessage<CheckInviteResponse> = /*@__P
   messageDesc(file_mtg_v1_invite_service, 1);
 
 /**
+ * @generated from message mtg.v1.RequestAccessRequest
+ */
+export type RequestAccessRequest = Message<"mtg.v1.RequestAccessRequest"> & {
+  /**
+   * email is the address the person wants to use.
+   *
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * note is optional, at most 500 characters (D-1074).
+   *
+   * @generated from field: string note = 2;
+   */
+  note: string;
+};
+
+/**
+ * Describes the message mtg.v1.RequestAccessRequest.
+ * Use `create(RequestAccessRequestSchema)` to create a new message.
+ */
+export const RequestAccessRequestSchema: GenMessage<RequestAccessRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_invite_service, 2);
+
+/**
+ * @generated from message mtg.v1.RequestAccessResponse
+ */
+export type RequestAccessResponse = Message<"mtg.v1.RequestAccessResponse"> & {
+  /**
+   * already_invited is true when the invite list holds the email. The
+   * server then stores no request, and the person can create an account.
+   *
+   * @generated from field: bool already_invited = 1;
+   */
+  alreadyInvited: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.RequestAccessResponse.
+ * Use `create(RequestAccessResponseSchema)` to create a new message.
+ */
+export const RequestAccessResponseSchema: GenMessage<RequestAccessResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_invite_service, 3);
+
+/**
  * InviteService answers one question before a person has an account:
  * may this email use the app (D-592)? The create-account form asks it
  * first, so an email off the invite list never becomes an account.
@@ -59,6 +105,10 @@ export const CheckInviteResponseSchema: GenMessage<CheckInviteResponse> = /*@__P
  * It is the one procedure that needs no sign-in and reads a person's
  * input, so a limit per client address bounds it (D-315). It answers a
  * bare yes or no, and it never says whether an account exists.
+ *
+ * RequestAccess also needs no sign-in. It stores a request for beta
+ * access, one record for each email, and the same limit per client
+ * address bounds it (D-1075).
  *
  * @generated from service mtg.v1.InviteService
  */
@@ -70,6 +120,14 @@ export const InviteService: GenService<{
     methodKind: "unary";
     input: typeof CheckInviteRequestSchema;
     output: typeof CheckInviteResponseSchema;
+  },
+  /**
+   * @generated from rpc mtg.v1.InviteService.RequestAccess
+   */
+  requestAccess: {
+    methodKind: "unary";
+    input: typeof RequestAccessRequestSchema;
+    output: typeof RequestAccessResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_mtg_v1_invite_service, 0);

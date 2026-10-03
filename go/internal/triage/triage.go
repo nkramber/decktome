@@ -47,6 +47,12 @@ type Route struct {
 // to spend (D-643).
 func RouteOf(rec harvest.Record) Route {
 	r := Route{Record: rec}
+	// A general note judges the app and not a build, so it goes to the
+	// owner, and the triage writes no case from it (D-1078).
+	if rec.Kind == "general" {
+		r.Need, r.Why = NeedNothing, "a general note goes to the owner, and the triage writes no case from it"
+		return r
+	}
 	if rec.Verdict == "up" {
 		r.Keep, r.Need, r.Why = true, NeedNothing, "a thumbs up is a keep case, and a change must not flip it"
 		return r

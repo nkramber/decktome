@@ -82,6 +82,15 @@ func (l *List) Allowed(ctx context.Context, email string) (bool, error) {
 	return l.emails[key], nil
 }
 
+// Forget drops the cached read, so the next Allowed reads the list
+// again. An approval on the admin screen calls it (D-1076). Another
+// instance of the API still serves its own read for up to one TTL.
+func (l *List) Forget() {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.haveOne = false
+}
+
 // Normalize is the key of an email: lower case, trimmed. Two spellings of
 // one address are one invite.
 func Normalize(email string) string { return strings.ToLower(strings.TrimSpace(email)) }

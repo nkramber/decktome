@@ -41,6 +41,10 @@ enum FeedbackKind {
   // session, no deck, and no card. It is a thumbs down alone. The server
   // reads the file again and names the fault itself (D-596).
   FEEDBACK_KIND_IMPORT = 6;
+  // FEEDBACK_KIND_GENERAL is a note from the "Leave feedback" button of
+  // the top bar (D-1078). It carries no verdict, it needs a text, and it
+  // names the screen. On a deck screen it also names the deck.
+  FEEDBACK_KIND_GENERAL = 7;
 }
 
 // ImportPage names the page a file came through, for kind IMPORT.
@@ -87,6 +91,9 @@ message Feedback {
   // again and keeps the fault, never the whole file (D-885).
   ImportPage import_page = 9;
   bytes import_content = 10;
+  // screen names the screen of a GENERAL note: build, chat, decks, deck,
+  // collection, or another screen of the top bar (D-1078).
+  string screen = 11;
 }
 
 // ImportFault is what a report of kind IMPORT keeps (D-885). The server

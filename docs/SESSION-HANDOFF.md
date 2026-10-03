@@ -6,38 +6,36 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-02f)
+## RESUME HERE (2026-10-02g)
 
-**Branch `fix/phone-live-check-5`: PR-114, the results of the live check of PR-113 (F-206, D-1069 to D-1071).** The pull request is #271.
+**Branch `feat/request-beta-access`: PR-115, a request for beta access, an admin screen, and a "Leave feedback" button (D-1072 to D-1078).** No pull request exists yet.
 
 Author provider: Claude Code
 
-**The base.** `main` is `c19aa26`, from #270. Cloud Build `deploy-api` `612c447c` and `deploy-web` `37448759` built it with SUCCESS on 2026-10-03 at about 03:04 UTC.
+**The base.** `main` is `a97cf82`, from #271. Cloud Build `deploy-web` `8232db62` built it with SUCCESS at 04:25 UTC on 2026-10-03. `deploy-api` did not run.
 
-**The live check of PR-113 (D-1070).**
+**The live check of PR-114 (D-1072).** The cold start showed "Updating", then a reload with no error, so F-206 closes. The share dialog passed. The chat view put the first question at the top, and the "Back to top" button covered the question text.
 
-- The first launch showed "Updating", then the MIME error of `invite-gate-HN8YHvkr.js`. The live release does not hold that chunk. The second launch opened normally.
-- The share dialog showed the link again.
-- The shared page passed on all five parts: the stats, the sample hand, the filters, the price, and the art.
-- "Price unknown" passed.
-- The owner sent a screenshot of the wanted chat view, with the first question at the top (D-1071).
+**The code, done and tested, not yet committed before this checkpoint.**
 
-**The code, done and tested.**
+- A phone leaves the band of the "Back to top" button above the first question (D-1072).
+- `InviteService.RequestAccess` stores one record for each email in `access_requests`, and it sends a Pushover notice (D-1075).
+- `AdminService` lists, approves, and dismisses a request. Each call needs the custom claim `admin: true` (D-1076).
+- An approval adds the email to `config/allowlist`, and Resend sends the approval email (D-1077).
+- `make grant-admin EMAIL=... PROJECT_ID=...` sets the claim.
+- The sign-in page has the request form, and the refusal line offers it (D-1074).
+- The account menu opens `/admin` for the admin.
+- A row under the top bar holds the "Leave feedback" button (D-1078). A note is the feedback kind `general` with a screen. It moves no counter, and the triage calls no judge for it. `make feedback-list VERDICT=none` reads the notes.
 
-- A deck with a stored link shows the link and the copy button alone (D-1069). A shared deck with no stored token shows the dialog of an unshared deck.
-- The web app has no revoke. The API keeps `RevokeShare`.
-- A turn that ends with questions puts the first question at the top (D-1071). A docked thread box goes to its end.
-- The live sweep reads the stored link or makes one. A made-up token reads the error state.
+**The checks.** The Go tests of each changed package pass. `make store-check` passes on the emulator. The web suite reads 524 of 524, and lint and the type check are clean. `make verify` did not run yet.
 
-**The test of F-206.** This pull request changes `web/`, so `deploy-web` runs. The phone then runs the shell of `c19aa26`, which holds the reload of F-206.
+**The open work.**
 
-**The risks.** A link now ends only with its deck. The owner said that no production link lacks a stored token. The sandbox refused the session a read of the `shares` collection, so this fact is unverified. The test deck of the live sweep keeps one live link.
-
-**The checks.** `make verify` reads "every check passed", with 506 of 506 web tests, under Node 22. `make lint` passes after the last edit of the skill.
-
-**The review.** Gitar approved the current branch. Its dashboard repeats the risk of a link that stays live, and the session answered it with D-1069. The first Codex review found P2-1 on `b86717d7e73006f59adf1bcc36d610090d592da8`. Commit `f346a58` corrects the skill and the sweep header. The repeat review says Ready for owner merge on effective head `f346a581e91638c85d57911195872e089711f797`. No finding stays open.
-
-**The open work.** The owner confirms the merge, then the author session turns on auto-merge (D-828). After the deploy, the owner opens the installed app first for the cold start of F-206. Then the owner checks the share dialog and the chat on the iPhone.
+1. Add the PR-115 entry to `docs/design-roadmap.md`. `make ref-check` fails on PR-115 until then.
+2. Mark F-206 closed, and add a finding for the overlap of the "Back to top" button.
+3. Write the owner steps: the Resend account, its DNS records at GoDaddy, the secret `resend-api-key`, and `make grant-admin`. Put them in `docs/setup-gcp.md` and `docs/deploy-and-rollback.md`.
+4. Run `make verify`, open the pull request, and fill the body from the draft rows.
+5. Do the Gitar pass and the Codex review.
 
 ## How to resume
 
@@ -110,9 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The next pull request: a "request beta access" flow on the home page** (owner request after #271). The invite list of D-990 refuses an account that it does not name. The session asks the owner for the shape before any code.
-0. **The cold start after the deploy of PR-114** (F-206, D-1070). The owner opens the installed app on the iPhone first. A reload after "Updating", with no error, closes F-206.
-0. **The live check of PR-114** (D-1069, D-1071). The owner checks the share dialog and the chat view of a turn that asks.
+0. **PR-115: a request for beta access, an admin screen, and a "Leave feedback" button** (D-1072 to D-1078). The resume section holds the open work.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.

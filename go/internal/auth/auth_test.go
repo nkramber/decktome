@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -409,6 +410,56 @@ func TestFallbackUserCarriesNoEmail(t *testing.T) {
 	}
 	if got := res.Msg.GetVersion(); got != "" {
 		t.Errorf("email = %q, want empty", got)
+	}
+}
+
+type adminEcho struct {
+	mtgv1connect.UnimplementedHealthServiceHandler
+}
+
+func (adminEcho) Check(ctx context.Context, _ *connect.Request[mtgv1.CheckRequest]) (*connect.Response[mtgv1.CheckResponse], error) {
+	return connect.NewResponse(&mtgv1.CheckResponse{Version: fmt.Sprint(IsAdmin(ctx))}), nil
+}
+
+type adminVerifier struct{ admin bool }
+
+func (a adminVerifier) Verify(context.Context, string) (Identity, error) {
+	return Identity{UID: "u-1", Email: "ann@example.com", EmailVerified: true, Admin: a.admin}, nil
+}
+
+// TestInterceptorCarriesTheAdminClaim is D-1076: the admin screen reads
+// the claim of the token, and a token with no claim and the fallback
+// user of local mode are never the admin.
+func TestInterceptorCarriesTheAdminClaim(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		v     Verifier
+		token bool
+		want  string
+	}{
+		{"claim", adminVerifier{admin: true}, true, "true"},
+		{"no claim", adminVerifier{}, true, "false"},
+		{"fallback", adminVerifier{admin: true}, false, "false"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			ic := connect.WithInterceptors(Interceptor(tc.v, WithFallback("local-dev")))
+			mux := http.NewServeMux()
+			mux.Handle(mtgv1connect.NewHealthServiceHandler(adminEcho{}, ic))
+			srv := httptest.NewServer(mux)
+			t.Cleanup(srv.Close)
+			client := mtgv1connect.NewHealthServiceClient(srv.Client(), srv.URL)
+			req := connect.NewRequest(&mtgv1.CheckRequest{})
+			if tc.token {
+				req.Header().Set("Authorization", "Bearer good")
+			}
+			res, err := client.Check(context.Background(), req)
+			if err != nil {
+				t.Fatalf("check: %v", err)
+			}
+			if got := res.Msg.GetVersion(); got != tc.want {
+				t.Errorf("admin = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
 

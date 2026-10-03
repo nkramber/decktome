@@ -3067,6 +3067,13 @@ The live check after the deploy runs on the iPhone of the owner. The first launc
 - **The live sweep.** The share step reads the stored link or makes one. A made-up token reads the error state.
 - **The test of F-206.** The change of `web/` makes `deploy-web` run, and the phone then runs the shell of `c19aa26` (D-1070).
 
+**PR-115: A request for beta access, an admin screen, and a "Leave feedback" button (D-1072 to D-1078).** 🔧 in progress. The owner put the feedback button in the same pull request (D-1073).
+
+- **The request (D-1074, D-1075).** The sign-in page sends `InviteService.RequestAccess`. One record for each email goes to `access_requests`, and the owner gets a Pushover notice.
+- **The admin screen (D-1076, D-1077).** `/admin` lists the requests. An approval adds the email to the invite list, and Resend sends the approval email.
+- **The note (D-1078).** A row under the top bar holds the "Leave feedback" button. A note is the feedback kind `general`.
+- **The question view (D-1072).** A phone leaves the band of the "Back to top" button above the first question.
+
 Gate:
 - A web test reads the share dialog, the anchor of the chat page, and the docked thread box.
 - `make verify` passes.

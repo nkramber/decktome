@@ -5,6 +5,10 @@ import { type RefObject, useEffect, useState, useSyncExternalStore } from "react
 export const backToTopOffset = 300;
 export const phoneQuery = "(max-width: 640px)";
 
+// backToTopClearPx is the band under the header that the button covers:
+// its gap of 0.5rem and its height of min-h-11 (D-1072).
+export const backToTopClearPx = 8 + 44;
+
 function subscribe(onChange: () => void): () => void {
   if (typeof window === "undefined" || !window.matchMedia) return () => {};
   const list = window.matchMedia(phoneQuery);
@@ -12,7 +16,7 @@ function subscribe(onChange: () => void): () => void {
   return () => list.removeEventListener("change", onChange);
 }
 
-function onPhone(): boolean {
+export function onPhone(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
   return window.matchMedia(phoneQuery).matches;
 }

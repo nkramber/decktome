@@ -132,6 +132,38 @@ func TestDownReadsEveryUser(t *testing.T) {
 	}
 }
 
+// TestNoVerdictReadsTheGeneralNotes is D-1078: a note stores an empty
+// verdict and its screen, and the filter "none" reads the notes alone.
+func TestNoVerdictReadsTheGeneralNotes(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	stamp := time.Now().UTC().Format("150405.000000")
+	at := time.Date(2026, 10, 2, 15, 30, 0, 0, time.UTC)
+	noteUser, downUser := "n1-"+stamp, "n2-"+stamp
+	if _, err := r.Add(ctx, noteUser, Item{Kind: "general", Text: "slow", Screen: "decks", CreatedAt: at}); err != nil {
+		t.Fatalf("Add note: %v", err)
+	}
+	if _, err := r.Add(ctx, downUser, Item{Kind: "chat", Verdict: "down", SessionID: "s1", Reasons: []string{"stuck"}, CreatedAt: at}); err != nil {
+		t.Fatalf("Add down: %v", err)
+	}
+	items, err := r.Down(ctx, NoVerdict, 100)
+	if err != nil {
+		t.Fatalf("Down: %v", err)
+	}
+	found := false
+	for _, it := range items {
+		if it.Verdict != "" {
+			t.Errorf("the notes query answered a %q verdict", it.Verdict)
+		}
+		if it.UID == noteUser {
+			found = it.Screen == "decks" && it.Text == "slow" && it.Kind == "general"
+		}
+	}
+	if !found {
+		t.Error("the notes query missed the note, or lost its screen")
+	}
+}
+
 // TestSinceReadsTenSeededItems is the emulator gate item of PR-28a. Ten
 // verdicts go in, both up and down, and the harvest reads the ones after
 // a watermark, oldest first. The snapshot of D-635 must survive the

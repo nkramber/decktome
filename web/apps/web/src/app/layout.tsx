@@ -11,6 +11,7 @@ import { errorMessage } from "../lib/errors";
 import { useAppStore } from "../lib/store";
 import { scheduleWarm, toasterChunk } from "./chunks";
 import { AccountMenu } from "./components/account-menu";
+import { FeedbackButton } from "./components/feedback-button";
 import { TopNav } from "./components/top-nav";
 
 // The footer holds the one call that pulls the Connect client, and the
@@ -33,19 +34,25 @@ export function Layout() {
 
   // A toast on a phone shows under the header, so the toaster reads the
   // height of the header from --header-height (F-194, D-1030). The
-  // header wraps on a narrow screen, so its height can change.
+  // header wraps on a narrow screen, so its height can change. The
+  // height counts the feedback row under the header too, so a toast and
+  // the "Back to top" button never cover it (D-1078).
   const header = useRef<HTMLElement>(null);
+  const feedbackRow = useRef<HTMLDivElement>(null);
   const main = useRef<HTMLElement>(null);
+  const rowShown = Boolean(user) && (invite === "invited" || invite === "unknown");
   useEffect(() => {
     const el = header.current;
     if (!el) return;
-    const write = () => document.documentElement.style.setProperty("--header-height", `${el.offsetHeight}px`);
+    const row = feedbackRow.current;
+    const write = () => document.documentElement.style.setProperty("--header-height", `${el.offsetHeight + (row?.offsetHeight ?? 0)}px`);
     write();
     if (typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(write);
     observer.observe(el);
+    if (row) observer.observe(row);
     return () => observer.disconnect();
-  }, []);
+  }, [rowShown]);
 
   async function onSignOut() {
     try {
@@ -92,6 +99,13 @@ export function Layout() {
           </div>
         )}
       </header>
+      {/* The "Leave feedback" row sits under the top bar on every screen
+          of a cleared reader, and it never scrolls away (D-1078). */}
+      {rowShown && (
+        <div ref={feedbackRow} className="flex shrink-0 justify-end border-b border-border bg-background px-4 py-1.5 md:px-6 print:hidden">
+          <FeedbackButton />
+        </div>
+      )}
 
       {/* The header and the card-data line hold their place, and the
           page scrolls between them (D-364). A docked chat can then fill
