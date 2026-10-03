@@ -202,6 +202,19 @@ func UnpricedToBuy(deck *mtgv1.Deck, cards rules.CardSource, owned map[string]in
 	return n
 }
 
+// UnpricedInDeck counts every card of the deck that has no price, owned
+// copies included. DeckCostWith adds nothing for them, so a whole-deck
+// cost reads low by an unknown amount (D-238, D-1060).
+func UnpricedInDeck(deck *mtgv1.Deck, cards rules.CardSource) int {
+	n := 0
+	for _, l := range deckLines(deck, cards, nil) {
+		if l.count > 0 && l.price <= 0 {
+			n++
+		}
+	}
+	return n
+}
+
 // DeckCost is what the whole deck is worth, owned copies included. The
 // budget-scope question of D-77 asks the user which of the two they mean.
 // A caller with a card index uses DeckCostWith to count the commanders.

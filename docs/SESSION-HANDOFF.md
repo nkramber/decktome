@@ -27,15 +27,18 @@ Author provider: Claude Code
 
 **The risk.** A budget request now sees lower prices, because the builder reads the cheapest printing. No paid deck gate run measured this change.
 
-**The checks.** `make verify` on the tree of the budget fix reads "every check passed", with 495 of 495 web tests, under Node 22.
+**The checks.** `make verify` on the tree of the P2-2 fix reads "every check passed", with 495 of 495 web tests, under Node 22.
 
-**The review.** Gitar approved `fe25a21`, and both Gitar threads are resolved. The repeat Codex review marks P2-1 fixed in `ba42d54`, and it finds P2-2 open: a whole-deck budget ignores an unpriced owned card. The review record says `Changes required` for effective head `fe25a215dd9c2f1a246839d2b059bc3fa89b71c6`.
+**The review.** Gitar approved `fe25a21`, and both Gitar threads are resolved. The repeat Codex review marks P2-1 fixed in `ba42d54`, and it finds P2-2 open: a whole-deck budget ignores an unpriced owned card. The review record says `Changes required` for effective head `fe25a215dd9c2f1a246839d2b059bc3fa89b71c6`. The next commit counts every unpriced card of the deck for a whole-deck cap, and `docs/reviews/pr-269-response.md` holds the answer.
 
 **The checkpoint (D-946).** The first session passed 300K tokens after the code of D-1060, in commit `7ab9a34`. A second clean session added the D-1060 bullet to the roadmap entry. It also added F-205, the ❓ finding for a second price source.
 
 **The Gitar finding on `7ab9a34`.** The budget check skipped an unpriced card when the priced cards came under the budget. The fix warns for each unpriced card to buy, and `TestAnUnpricedCardIsNotFree` reads both cases. The test fails on the old code.
 
-**The open work.** Correct P2-2, and add a whole-deck regression test. Run `make verify`, push the fix, complete the current Gitar pass, and request another Codex review.
+**The open work.** Do these steps:
+
+1. Do the Gitar pass of the P2-2 commit.
+2. Run `make codex-review PR=269` for round 3.
 
 After the deploy, the owner checks on the iPhone, and the cold start comes first.
 

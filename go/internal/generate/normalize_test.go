@@ -336,6 +336,36 @@ func TestAnUnpricedCardIsNotFree(t *testing.T) {
 	if !strings.Contains(msg, "cost about $53.68, and the budget is $100.00, and 1 card to buy has no known price") {
 		t.Errorf("under-budget message = %q, want the unpriced card to count as over the budget", msg)
 	}
+
+	// The reader owns the unpriced card. A cap on the cards to buy does not
+	// count it, and a whole-deck cap does (D-238).
+	owned := NewPool([]*mtgv1.Card{
+		{OracleId: "o-dear", Name: "Dear Card", PriceUsd: 53.68},
+		{OracleId: "o-none", Name: "Unpriced Card"},
+	}, map[string]int32{"o-none": 1})
+	for _, tc := range []struct {
+		whole bool
+		want  string
+	}{
+		{false, ""},
+		{true, "the whole deck cost about $53.68, and the budget is $100.00, and 1 card in the deck has no known price"},
+	} {
+		bw, _, _ := testBuilder(t, step(t, both), step(t, both))
+		req.Pool, req.BudgetWholeDeck = owned, tc.whole
+		got, err = bw.Build(context.Background(), req, nil)
+		if err != nil {
+			t.Fatalf("whole deck %v: build: %v", tc.whole, err)
+		}
+		msg = ""
+		for _, f := range got.Deck.GetValidation().GetFindings() {
+			if f.GetCode() == CodeOverBudget {
+				msg = f.GetMessage()
+			}
+		}
+		if (tc.want == "" && msg != "") || !strings.Contains(msg, tc.want) {
+			t.Errorf("whole deck %v: over-budget message = %q, want %q", tc.whole, msg, tc.want)
+		}
+	}
 }
 
 // TestOverBudgetBuysTheRepairTurn is D-244. The finding stays a warning,

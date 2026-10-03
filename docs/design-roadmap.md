@@ -3027,7 +3027,7 @@ The live check after the deploy runs on the iPhone of the owner.
 - **The card price (D-1057).** The card index gives each card the price of its cheapest paper printing. `NotForPlay` keeps memorabilia, gold borders, and oversized cards out.
 - **The owned price (F-203, D-1058).** `cardPrice` reads the price of the owned printing for the tile and for the price sort.
 - **Back to top (D-1059).** The button has no shadow.
-- **Price unknown (F-205, D-1060).** A card with no price reads "Price unknown", and never $0. The shortlist line reads "price unknown", and prompt version 17 counts such a card as over the budget. The budget check warns for such a card to buy, also when the priced cards come under the budget.
+- **Price unknown (F-205, D-1060).** A card with no price reads "Price unknown", and never $0. The shortlist line reads "price unknown", and prompt version 17 counts such a card as over the budget. The budget check warns for such a card to buy, also when the priced cards come under the budget. A whole-deck cap also counts an owned card with no price (D-238).
 - **The cold start (F-201).** This pull request changes no code for it. The deploy of this pull request is the first test of D-1046.
 
 Gate:
