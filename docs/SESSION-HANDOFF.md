@@ -35,9 +35,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 506 of 506 web tests, under Node 22. `make lint` passes after the last edit of the skill.
 
-**The review.** Gitar approved the current branch. Its dashboard repeats the risk of a link that stays live, and the owner cites D-1069. The first Codex review found P2-1 on `b86717d7e73006f59adf1bcc36d610090d592da8`. Commit `f346a58` corrects the skill and the sweep header. The repeat review says Ready for owner merge on effective head `f346a581e91638c85d57911195872e089711f797`. No finding stays open.
+**The review.** Gitar approved the current branch. Its dashboard repeats the risk of a link that stays live, and the session answered it with D-1069. The first Codex review found P2-1 on `b86717d7e73006f59adf1bcc36d610090d592da8`. Commit `f346a58` corrects the skill and the sweep header. The repeat review says Ready for owner merge on effective head `f346a581e91638c85d57911195872e089711f797`. No finding stays open.
 
-**The open work.** The owner confirms the merge, then the author session turns on auto-merge (D-828). After deploy, the owner checks the share dialog and chat on the iPhone.
+**The open work.** The owner confirms the merge, then the author session turns on auto-merge (D-828). After the deploy, the owner opens the installed app first for the cold start of F-206. Then the owner checks the share dialog and the chat on the iPhone.
 
 ## How to resume
 
