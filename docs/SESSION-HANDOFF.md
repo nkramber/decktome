@@ -30,11 +30,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 535 of 535 web tests, under Node 22. `make store-check` passes on the emulator, with the new `prooflink` store.
 
-**The review.** Gitar approved `e763450` with no finding and no thread. The session answered its CI note of the first body. The Codex review comes next.
+**The review.** Gitar approved `e763450` with no finding and no thread. The Codex review says Ready for owner merge at `e763450`. No finding stays open.
 
 **The open work.**
 
-1. The Gitar pass, the Codex review, and the confirmation of the owner. The merge is pending the auto-merge.
+1. The owner confirmation of the merge, then auto-merge.
 2. After the deploy, make an account with a new invited email. Open its link on a desktop and on the iPhone.
 3. Read the sender, the text, and the link of that email.
 
