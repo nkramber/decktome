@@ -557,11 +557,12 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 		if req.BudgetWholeDeck {
 			cost, what = DeckCostWith(deck, b.cards), "the whole deck"
 		}
-		if cost > req.BudgetUSD {
+		// An unpriced card adds nothing to the sum, so it counts as over
+		// the budget, and the warning names it (D-1060).
+		n := UnpricedToBuy(deck, b.cards, req.OracleCounts)
+		if cost > req.BudgetUSD || n > 0 {
 			msg := fmt.Sprintf("%s cost about $%.2f, and the budget is $%.2f", what, cost, req.BudgetUSD)
-			// An unpriced card adds nothing to the sum, so the warning
-			// names it and never calls it free (D-1060).
-			if n := UnpricedToBuy(deck, b.cards, req.OracleCounts); n > 0 {
+			if n > 0 {
 				verb := "have"
 				if n == 1 {
 					verb = "has"

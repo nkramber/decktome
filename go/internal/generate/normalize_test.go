@@ -318,6 +318,24 @@ func TestAnUnpricedCardIsNotFree(t *testing.T) {
 	if !strings.Contains(msg, "cost about $53.68, and the budget is $10.00, and 1 card to buy has no known price") {
 		t.Errorf("over-budget message = %q, want it to name the unpriced card", msg)
 	}
+
+	// The priced cards come under the budget, and the unpriced card still
+	// counts as over it.
+	bu, _, _ := testBuilder(t, step(t, both), step(t, both))
+	req.BudgetUSD = 100
+	got, err = bu.Build(context.Background(), req, nil)
+	if err != nil {
+		t.Fatalf("build: %v", err)
+	}
+	msg = ""
+	for _, f := range got.Deck.GetValidation().GetFindings() {
+		if f.GetCode() == CodeOverBudget {
+			msg = f.GetMessage()
+		}
+	}
+	if !strings.Contains(msg, "cost about $53.68, and the budget is $100.00, and 1 card to buy has no known price") {
+		t.Errorf("under-budget message = %q, want the unpriced card to count as over the budget", msg)
+	}
 }
 
 // TestOverBudgetBuysTheRepairTurn is D-244. The finding stays a warning,

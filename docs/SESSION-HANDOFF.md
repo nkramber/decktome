@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-02d)
 
-**Branch `fix/phone-live-check-4`: PR-112, four results of the live check of PR-111 (F-201, F-203, F-204, D-1055 to D-1059).** The pull request is #269.
+**Branch `fix/phone-live-check-4`: PR-112, four results of the live check of PR-111 (F-201, F-203, F-204, F-205, D-1055 to D-1060).** The pull request is #269.
 
 Author provider: Claude Code
 
@@ -27,19 +27,18 @@ Author provider: Claude Code
 
 **The risk.** A budget request now sees lower prices, because the builder reads the cheapest printing. No paid deck gate run measured this change.
 
-**The checks.** `make verify` on `965fe48` reads "every check passed", with 494 of 494 web tests, under Node 22.
+**The checks.** `make verify` on the tree of the budget fix reads "every check passed", with 495 of 495 web tests, under Node 22.
 
 **The review.** Gitar approved `b57de37`. The Codex record required changes: P2-1, the price fallback. Commit `ba42d54` answered it, and `docs/reviews/pr-269-response.md` holds the answer. Gitar then found on `ba42d54` that the cleared price read $0, which the budget reads as free. The owner chose D-1060: "Price unknown", and a budget counts such a card as over the budget.
 
-**The checkpoint (D-946).** This session passed 300K tokens after the code of D-1060. The code and its tests are in the checkpoint commit. The Go tests of `candidates` and `generate` pass, and 419 of 419 web tests of `src/features` pass.
+**The checkpoint (D-946).** The first session passed 300K tokens after the code of D-1060, in commit `7ab9a34`. A second clean session added the D-1060 bullet to the roadmap entry. It also added F-205, the ❓ finding for a second price source.
 
-**The open work.** Do these steps in a new clean session:
+**The Gitar finding on `7ab9a34`.** The budget check skipped an unpriced card when the priced cards came under the budget. The fix warns for each unpriced card to buy, and `TestAnUnpricedCardIsNotFree` reads both cases. The test fails on the old code.
 
-1. Add the D-1060 bullet to the PR-112 entry of `docs/design-roadmap.md`.
-1. Add a finding with ❓ for a second price source.
-2. Run `make verify`, and push one time.
-3. Reply on the Gitar thread "Cleared price reads as $0" with the commit, then resolve it.
-4. Do the Gitar pass, then run `make codex-review PR=269` for round 2.
+**The open work.** Do these steps:
+
+1. Reply on the two Gitar threads with their commits, and resolve the open one.
+2. Do the Gitar pass, then run `make codex-review PR=269` for round 2.
 
 After the deploy, the owner checks on the iPhone, and the cold start comes first.
 
@@ -114,7 +113,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The live check of PR-112** (D-1055 to D-1059). After the deploy, the owner checks on the iPhone. The cold start comes first, because only the first launch after a deploy tests D-1046.
+0. **The live check of PR-112** (D-1055 to D-1060). After the deploy, the owner checks on the iPhone. The cold start comes first, because only the first launch after a deploy tests D-1046.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
 11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
