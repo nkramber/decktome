@@ -39,6 +39,30 @@ describe("startServiceWorker", () => {
     expect(registerSW).toHaveBeenCalledWith(expect.objectContaining({ immediate: true }));
   });
 
+  // F-206. The update check of a cold start can start the install before
+  // workbox listens, and the plugin then never reloads. The new worker
+  // drops the old chunks, and the old shell showed an error.
+  it("reloads when a new worker takes control of a controlled page", () => {
+    const sw = new EventTarget() as ServiceWorkerContainer;
+    Object.defineProperty(sw, "controller", { value: {} });
+    const reload = vi.fn();
+    startServiceWorker(sw, reload);
+    expect(reload).not.toHaveBeenCalled();
+    sw.dispatchEvent(new Event("controllerchange"));
+    expect(reload).toHaveBeenCalledTimes(1);
+    sw.dispatchEvent(new Event("controllerchange"));
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reload a first visit when its first worker takes control", () => {
+    const sw = new EventTarget() as ServiceWorkerContainer;
+    Object.defineProperty(sw, "controller", { value: null });
+    const reload = vi.fn();
+    startServiceWorker(sw, reload);
+    sw.dispatchEvent(new Event("controllerchange"));
+    expect(reload).not.toHaveBeenCalled();
+  });
+
   // REV-048. The browser checks for a new worker on a navigation alone,
   // so an open tab or an installed app kept the old shell (D-621).
   it("checks for a new worker on each interval", () => {

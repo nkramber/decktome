@@ -276,6 +276,26 @@ func TestTheVerdictKeepsTheObjectItNames(t *testing.T) {
 	}
 }
 
+// TestTheSnapshotHoldsNoShareToken is D-1061: the deck holds the token
+// of its link, and the snapshot of a verdict drops it, so no copy of the
+// verdict opens the link. The deck in the store keeps it.
+func TestTheSnapshotHoldsNoShareToken(t *testing.T) {
+	store, s := fixture()
+	stored := s.decks.(fakeDecks)["u1"]["d1"]
+	stored.Shared, stored.ShareToken = true, "a-live-token"
+	fb := &mtgv1.Feedback{Kind: mtgv1.FeedbackKind_FEEDBACK_KIND_DECK, Verdict: mtgv1.FeedbackVerdict_FEEDBACK_VERDICT_UP, DeckId: "d1"}
+	if _, err := submit(s, "u1", fb); err != nil {
+		t.Fatalf("submit: %v", err)
+	}
+	got := store.items[0].Deck
+	if got.GetId() != "d1" || got.GetShareToken() != "" {
+		t.Errorf("the snapshot holds deck %q with token %q, want d1 and no token", got.GetId(), got.GetShareToken())
+	}
+	if stored.ShareToken != "a-live-token" {
+		t.Errorf("the snapshot cleared the token of the stored deck")
+	}
+}
+
 // TestTheSnapshotIsNotTheClientsWord holds the rule of D-596 for the
 // snapshot: the server reads the object it already loaded to check the
 // owner, so a client that names another deck changes nothing.

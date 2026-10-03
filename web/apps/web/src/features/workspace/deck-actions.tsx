@@ -34,15 +34,19 @@ export function DeckActions({ deck }: { deck: Deck }) {
   const [renameOpen, setRenameOpen] = useState(false);
   const [draftName, setDraftName] = useState("");
   const [shareOpen, setShareOpen] = useState(false);
-  // The link shows once, after the share, because the store keeps a
-  // hash of the token and never the token (D-315).
-  const [link, setLink] = useState("");
+  // The deck holds the token of its link, so the dialog shows the link
+  // again (D-1061). A deck shared before D-1061 holds none, and it needs
+  // one new link. made holds the answer of a share or a revoke until the
+  // deck refreshes: a link, "" for none, or null to read the deck.
+  const [made, setMade] = useState<string | null>(null);
+  const stored = deck.shared && deck.shareToken ? `${window.location.origin}/d/${deck.shareToken}` : "";
+  const link = made ?? stored;
   const title = deck.name || "Untitled deck";
 
   async function onShare() {
     try {
       const res = await share.mutateAsync({ deckId: id });
-      setLink(`${window.location.origin}/d/${res.token}`);
+      setMade(`${window.location.origin}/d/${res.token}`);
     } catch (err) {
       await notify("error", "Could not make the link", errorMessage(err));
     }
@@ -60,7 +64,7 @@ export function DeckActions({ deck }: { deck: Deck }) {
   async function onRevoke() {
     try {
       await revokeShare.mutateAsync({ deckId: id });
-      setLink("");
+      setMade("");
       await notify("success", "Link revoked", "The old link opens nothing now.");
     } catch (err) {
       await notify("error", "Could not revoke the link", errorMessage(err));
@@ -159,7 +163,7 @@ export function DeckActions({ deck }: { deck: Deck }) {
           open={shareOpen}
           onOpenChange={(open) => {
             setShareOpen(open);
-            if (!open) setLink("");
+            if (!open) setMade(null);
           }}
         >
           <DialogTrigger asChild>
@@ -172,12 +176,12 @@ export function DeckActions({ deck }: { deck: Deck }) {
             <DialogHeader>
               <DialogTitle>Share the deck</DialogTitle>
               <DialogDescription>
-                Anyone who holds the link reads the deck: the cards, the summary, and nothing about you. A new link replaces the old one.
+                Anyone who holds the link reads the deck: the cards, the summary, and nothing about you.
               </DialogDescription>
             </DialogHeader>
-            {link ? (
+            {link && (
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="share-link">The link, shown once</Label>
+                <Label htmlFor="share-link">The link</Label>
                 <div className="flex gap-2">
                   <Input id="share-link" value={link} readOnly onFocus={(e) => e.currentTarget.select()} />
                   <Button type="button" variant="outline" size="icon" aria-label="Copy the link" onClick={() => void onCopyLink()}>
@@ -185,19 +189,18 @@ export function DeckActions({ deck }: { deck: Deck }) {
                   </Button>
                 </div>
               </div>
-            ) : (
-              <p className="text-sm" data-testid="share-state">
-                {deck.shared ? "This deck has a link. Make a new one to see it, and the old one dies." : "This deck has no link yet."}
-              </p>
             )}
+            <p className="text-sm" data-testid="share-state">
+              {link ? "This deck has a link." : deck.shared && made === null ? "This deck has a link. Make a new one to see it, and the old one dies." : "This deck has no link yet."}
+            </p>
             <DialogFooter>
-              {deck.shared && (
+              {(link || (deck.shared && made === null)) && (
                 <Button type="button" variant="ghost" className="text-danger hover:bg-danger/10" disabled={revokeShare.isPending} onClick={() => void onRevoke()}>
                   Revoke the link
                 </Button>
               )}
               <Button type="button" disabled={share.isPending} onClick={() => void onShare()}>
-                {deck.shared || link ? "Make a new link" : "Make a link"}
+                {link || (deck.shared && made === null) ? "Make a new link" : "Make a link"}
               </Button>
             </DialogFooter>
           </DialogContent>

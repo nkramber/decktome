@@ -65,6 +65,10 @@ func TestShareRevokeAndRead(t *testing.T) {
 	if f.shares[hashToken(token)] != "u1/d1" || f.decks["d1"].Shared != true {
 		t.Fatalf("the store holds %v, and the deck reads shared %v", f.shares, f.decks["d1"].Shared)
 	}
+	// The deck holds the token, so its owner copies the link again (D-1061).
+	if f.decks["d1"].GetShareToken() != token {
+		t.Fatalf("the deck holds token %q, want the link's token", f.decks["d1"].GetShareToken())
+	}
 	// Anyone with the token reads the deck, with no user.
 	visitor := shareServer(t, f, "")
 	got, err := visitor.GetSharedDeck(ctx, connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: token}))
@@ -104,8 +108,8 @@ func TestShareRevokeAndRead(t *testing.T) {
 	if _, err := visitor.GetSharedDeck(ctx, connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: again.Msg.Token})); connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a revoked link answers %v, want NotFound", err)
 	}
-	if f.decks["d1"].Shared {
-		t.Error("the deck still reads shared")
+	if f.decks["d1"].Shared || f.decks["d1"].GetShareToken() != "" {
+		t.Errorf("the deck still reads shared %v, token %q", f.decks["d1"].Shared, f.decks["d1"].GetShareToken())
 	}
 	// A token of the wrong shape, and an unknown one, read NotFound too.
 	for _, bad := range []string{"short", strings.Repeat("a", 43)} {
@@ -206,6 +210,53 @@ func TestTheSharedDeckCarriesItsCommander(t *testing.T) {
 	}
 	if strings.Contains(fmt.Sprint(cmd), "owned") {
 		t.Errorf("the public commander carries an owned field: %v", cmd)
+	}
+}
+
+// TestASharedCardCarriesItsPriceAndItsArt is D-1062 and D-1063: each
+// shared card carries the cheapest-printing price, and the art of the
+// printing the deck view shows. The owner's price of that copy stays out.
+func TestASharedCardCarriesItsPriceAndItsArt(t *testing.T) {
+	art := &mtgv1.ImageUris{Normal: "https://cards.scryfall.io/normal/ltr.jpg"}
+	d := sharedDeckFixture()
+	d.Cards[0].PriceUsd = 0.25
+	d.Cards[0].OwnedPrinting = &mtgv1.Printing{ScryfallId: "p-ltr", SetCode: "ltr", Artist: "LOTR Artist", ImageUris: art, PriceUsd: 40}
+	d.Cards[1].OwnedPrinting = &mtgv1.Printing{ScryfallId: "p-noimage", PriceUsd: 3}
+	d.Format = &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_COMMANDER}
+	d.CommanderOracleIds = []string{"o-cmd"}
+	d.Commanders = []*mtgv1.DeckCard{{OracleId: "o-cmd", Name: "Ezuri", Count: 1, Owned: true, PriceUsd: 1.5,
+		OwnedPrinting: &mtgv1.Printing{ScryfallId: "p-hob", Artist: "Hobbit Artist", ImageUris: art, PriceUsd: 99}}}
+	ctx := context.Background()
+	f := &fakeDecks{decks: map[string]*mtgv1.Deck{"d1": d}}
+	res, err := shareServer(t, f, "u1").ShareDeck(ctx, connect.NewRequest(&mtgv1.ShareDeckRequest{DeckId: "d1"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := shareServer(t, f, "").GetSharedDeck(ctx, connect.NewRequest(&mtgv1.GetSharedDeckRequest{Token: res.Msg.Token}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	elf := got.Msg.GetDeck().GetCards()[0]
+	if elf.GetPriceUsd() != 0.25 {
+		t.Errorf("price = %v, want the cheapest printing 0.25 (D-1063)", elf.GetPriceUsd())
+	}
+	if p := elf.GetPrinting(); p.GetScryfallId() != "p-ltr" || p.GetArtist() != "LOTR Artist" || p.GetImageUris().GetNormal() != art.Normal || p.GetPriceUsd() != 0 {
+		t.Errorf("printing = %v, want the owned art with no price (D-1062)", p)
+	}
+	if p := got.Msg.GetDeck().GetCards()[1].GetPrinting(); p != nil {
+		t.Errorf("a printing with no image reads %v, want none", p)
+	}
+	cmd := got.Msg.GetDeck().GetCommanders()
+	if len(cmd) != 1 || cmd[0].GetPriceUsd() != 1.5 || cmd[0].GetPrinting().GetScryfallId() != "p-hob" || cmd[0].GetPrinting().GetPriceUsd() != 0 {
+		t.Errorf("commanders = %v, want the stored price and art", cmd)
+	}
+	// The stored deck keeps the owner's price of the copy.
+	if d.Cards[0].OwnedPrinting.PriceUsd != 40 {
+		t.Error("the shared copy changed the stored printing")
+	}
+	// The public export carries no token.
+	if publicDeck(f.decks["d1"]).GetShareToken() != "" {
+		t.Error("publicDeck kept the share token")
 	}
 }
 

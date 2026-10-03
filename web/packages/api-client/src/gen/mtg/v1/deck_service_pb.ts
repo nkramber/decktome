@@ -40,7 +40,7 @@ export const ShareDeckRequestSchema: GenMessage<ShareDeckRequest> = /*@__PURE__*
  */
 export type ShareDeckResponse = Message<"mtg.v1.ShareDeckResponse"> & {
   /**
-   * token is the secret of the link, shown once. The page is /d/<token>.
+   * token is the secret of the link. The page is /d/<token>.
    *
    * @generated from field: string token = 1;
    */
@@ -583,9 +583,9 @@ export const DeckService: GenService<{
   },
   /**
    * ShareDeck makes a share link for one of the caller's decks and
-   * answers the token once (D-315). A deck with a link gets a new one,
-   * and the old link dies. The store keeps a hash of the token, never
-   * the token.
+   * answers the token (D-315). A deck with a link gets a new one, and the
+   * old link dies. The share document is keyed by a hash of the token,
+   * and the deck itself holds the token for its owner (D-1061).
    *
    * @generated from rpc mtg.v1.DeckService.ShareDeck
    */

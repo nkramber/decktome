@@ -15,6 +15,45 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-02d, PR-112
+
+**Branch `fix/phone-live-check-4`: PR-112, four results of the live check of PR-111 (F-201, F-203, F-204, F-205, D-1055 to D-1060).** The pull request is #269.
+
+Author provider: Claude Code
+
+**The base.** `main` is `d38bca5`, from #268. Cloud Build `deploy-api` `9eee92e9` and `deploy-web` `5c081ee3` built it with SUCCESS on 2026-10-02 at about 20:38 UTC.
+
+**The live check of PR-111.** The owner checked the eight changes on the iPhone (D-1055). Changes 2, 3, 4, 7, and 8 passed. "Back to top" passed, and the owner asked for no glow. The price sort failed, because it showed the price of the default printing. The cold start showed the old shell and a reload. That first launch ran the old release `b07a5db`, which has no splash, so the check proved nothing about D-1046.
+
+**The code, done and tested.** Each change has its test:
+
+- The chat stays at its foot after a send, and while the reader stays there (D-1056). `use-stick-to-bottom.test.tsx` reads six cases.
+- The card price is the price of the cheapest playable paper printing (D-1057). Two tests of `cards` read the rule and the printing mark.
+- An owned card shows and sorts on the price of the owned printing (F-203, D-1058). A test of the deck view reads it.
+- "Back to top" has no shadow (D-1059).
+
+**The open fact.** No source confirms the condition of the Scryfall price (F-204). The pages of TCGplayer refused the session with HTTP 403.
+
+**The risk.** A budget request now sees lower prices, because the builder reads the cheapest printing. No paid deck gate run measured this change.
+
+**The checks.** `make verify` on the tree of the P2-2 fix reads "every check passed", with 495 of 495 web tests, under Node 22.
+
+**The review.** Gitar approved `62f5627`, and both Gitar threads are resolved. Codex marks P2-1 fixed in `ba42d54` and P2-2 fixed in `62f5627`. The review record says `Ready for owner merge` for effective head `62f562706ff686e96978b36e35cbc959e652d00f`.
+
+**The checkpoint (D-946).** The first session passed 300K tokens after the code of D-1060, in commit `7ab9a34`. A second clean session added the D-1060 bullet to the roadmap entry. It also added F-205, the ❓ finding for a second price source.
+
+**The Gitar finding on `7ab9a34`.** The budget check skipped an unpriced card when the priced cards came under the budget. The fix warns for each unpriced card to buy, and `TestAnUnpricedCardIsNotFree` reads both cases. The test fails on the old code.
+
+**The open work.** None. The pull request waits for the confirmation of the owner, and then for the auto-merge (D-828).
+
+After the deploy, the owner checks on the iPhone, and the cold start comes first.
+
+### 2026-10-02b: five faults of the live check, PR-110
+
+**The deploy check read `deploy-web` SUCCESS for `e872724`.** `deploy-api` did not run for a merge of web files alone. The owner ran the iPhone check, and the header and the push passed.
+
+**The owner sent five faults with screenshots.** The owner chose one pull request, and rejected both art options for a rule of owned copies. The owner also asked for a check of each claim before a question.
+
 ## The resume section of 2026-10-02c, PR-111
 
 **Branch `fix/phone-live-check-3`: PR-111, eight changes after the live check of PR-110 (D-1045 to D-1054).** The pull request is #268. Gitar and Codex approved it, and it is pending the auto-merge.

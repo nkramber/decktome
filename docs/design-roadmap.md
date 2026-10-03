@@ -597,10 +597,11 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-198 | **The push of a finished build shows three lines.** The iPhone showed "Your deck is ready", "from Deck Tome", and the deck name. iOS adds the middle line from the manifest name. | ✅ PR-110: the push is the title "Your deck is ready!" alone (D-1040). |
 | F-199 | **A deck limited to sets holds a card that the user owns from another set alone.** The deck of the live check held Ghost Quarter, Chromatic Lantern, Lightning Greaves, and Sword of the Animist. Each one has a printing in LTC, but the owner owns copies from SLD, TMC, MSC, and FIC. The app showed that art, and it counted those copies as owned. | ✅ PR-110: a copy counts only when its printing is in a named set (D-1041). |
 | F-200 | **A reloaded page shows a line in place of the live build screen.** The owner reopened the app during a build and read "The build continues on the server". The phase of a build went out on the stream alone, so the reloaded page had no step to show. | ✅ PR-110: the lease records the step, and the page shows the same working row and stepper (D-1042). |
-| F-201 | **A cold start after a deploy reloads the home page.** The app drew the old cached shell. The browser then found the new service worker, and the page reloaded 2 to 5 seconds later (D-692). | ⚠ PR-111 merged the splash (D-1046). The first launch after that deploy ran the old release, so the check of 2026-10-02 proves nothing. The deploy of PR-112 tests it (D-1055). |
+| F-201 | **A cold start after a deploy reloads the home page.** The app drew the old cached shell. The browser then found the new service worker, and the page reloaded 2 to 5 seconds later (D-692). | ⚠ PR-111 merged the splash (D-1046). The cold start of `7b5cebf` showed the splash and then an error, which is F-206 (D-1067). |
 | F-202 | **A card with two halves on one front shows that front twice.** The card data gives each half of an adventure or a split card the image of the whole card. The commander pick showed "Thranduil, Sindarin Liege // Silvan Rally" with two identical images. | ✅ PR-111: such a card is one face, with the text of each half (D-1048). |
 | F-203 | **A deck priced each owned card at its default printing.** A list sorted by price showed the price of the default printing, and not the price of the printing that the reader owns. | ✅ PR-112: the tile and the sort read the price of the owned printing (D-1058). A card to buy reads its cheapest printing (D-1057). |
 | F-204 | **No source confirms the condition of the Scryfall price.** Scryfall uses the TCGplayer market price, and TCGplayer keeps a market price for each condition. The owner requires LP/SP or better (D-1057). | ⚠ The pages of TCGplayer refused the session (HTTP 403, 2026-10-02). A source with a price for each condition closes it. |
+| F-206 | **A cold start after a deploy shows the splash, then an error.** The update check of the splash starts the install of the new worker before workbox listens. Workbox never sees the install, so the reload never comes. After 15 seconds the old shell draws, and its chunks are gone (D-1067). | 🔧 PR-113: the page reloads when the new worker takes control (D-1068). A local replay in Chromium of `7b5cebf` showed no reload in 25 seconds. The same replay of the fix reloaded in about one second. |
 | F-205 | **A card with no USD price has no second price source.** The snapshot of 2026-09-25 holds 219 playable paper cards with no USD price. Of these, 32 have a Cardmarket EUR price (D-1060). | ❓ PR-112 shows "Price unknown" for such a card. A second source, such as MTGJSON or eBay, waits for the owner (D-1060). |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3040,6 +3041,25 @@ The live check after the deploy runs on the iPhone of the owner, and it starts w
 
 > *In plain English:* the chat now stays at the bottom while you read it, and a send takes you there. A card you own shows the price of your own copy. A card to buy shows the price of its cheapest playable copy. A card with no price says so, and a budget never counts it as free. The fix of the cold start gets its first real test after this deploy.
 
+**PR-113: The share page shows the stats, the filters, the price, and the deck-view art (F-206, D-1061 to D-1068).** ✅ merged as #270. The mark comes before any review (D-822). The live check of PR-112 ran on `7b5cebf` (D-1067). The owner chose one pull request for the share page, the cold start, and the chat rule (D-1068).
+
+- **The token (D-1061).** `Deck.share_token` holds the token of the link. The share dialog shows the link above "This deck has a link." A verdict snapshot and the public export drop the token.
+- **The art (D-1062).** `SharedCard.printing` carries the printing of the deck view, with no price. The tile shows its art.
+- **The price (D-1063).** `SharedCard.price_usd` carries the cheapest-printing price, and each tile of the shared page shows it.
+- **The stats and the filters (D-1064, D-1065).** The shared page reuses `DeckStatsPanel`, `SampleHand`, and `FilterBar`, with no owned filter. The caption reads "Card types".
+- **The cold start (F-206).** `startServiceWorker` reloads the page when a new worker takes control of a controlled page.
+- **The questions (D-1066).** `useStickToBottom` puts the reader's latest message at the top when the turn ends with open questions.
+
+Gate:
+- A Go test or a web test reads each of the six changes.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy runs on the iPhone of the owner. The first launch still runs the old shell, so the deploy after this one tests F-206.
+
+> *In plain English:* a shared deck now shows its charts, a sample hand, filters, prices, and the same card art as your own view. The share dialog shows your link again. A chat that asks you questions keeps your last message in view above them. An app update no longer ends on an error page.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3444,6 +3464,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 105. **PR-110** five faults of the live check of PR-108 and PR-109 (F-196 to F-200, D-1038 to D-1043).
 106. **PR-111** eight changes after the live check of PR-110 (F-201, F-202, D-1045 to D-1054).
 107. **PR-112** four results of the live check of PR-111 (F-201, F-203, F-204, F-205, D-1055 to D-1060).
+108. **PR-113** the share page, the cold start, and the chat questions (F-206, D-1061 to D-1068).
 
 ## 9. Open questions
 

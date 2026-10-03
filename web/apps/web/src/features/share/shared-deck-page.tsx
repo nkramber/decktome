@@ -9,9 +9,9 @@ import { Button } from "../../components/ui/button";
 import { deckClient } from "../../lib/api";
 import { copyText } from "../../lib/clipboard";
 import { errorMessage } from "../../lib/errors";
-import { CardGroup } from "../deck/deck-view";
-import { formatLabel, groupByRole, roleLabel } from "../deck/deck-stats";
-import { powerLabel } from "../deck/deck-stats";
+import { CardGroup, DeckStatsPanel, FilterBar, isFiltered, sortLabels } from "../deck/deck-view";
+import { type Filters, filterEntries, formatLabel, groupByRole, powerLabel, roleLabel, roleOrder, type SortKey, sortEntries } from "../deck/deck-stats";
+import { SampleHand } from "../deck/sample-hand-panel";
 import { downloadText } from "../export/buy-list";
 import { identityOfCards, identityOfCommanders } from "../deck/color-identity";
 import { ManaPips } from "../deck/mana-pips";
@@ -19,16 +19,32 @@ import { cardQueryRetry } from "../../lib/card-retry";
 import { DataCredit } from "../credit/data-credit";
 
 // The public deck page of a share link (D-315): the name, the format,
-// the power, the summary, the cards by role with art, and the export.
-// It shows no owner, no collection, no session, and no owned printing.
-// The card data rides in the answer, so the page makes one call and
-// needs no sign-in. A link that does not open says so and nothing more.
+// the power, the summary, the four stats, the sample hand, the export,
+// and the cards by role with art and price, under the filters and the
+// sort of the deck view (D-1064). It shows no owner, no collection, no
+// session, and no owned mark. The art is the art of the deck view, the
+// owned printing included (D-1062). The card data rides in the answer,
+// so the page makes one call and needs no sign-in. A link that does not
+// open says so and nothing more.
 
 // entriesOf turns the shared cards into deck entries for the tiles, with
-// no owned mark and no price of the owner's copies.
+// no owned mark. The price is the cheapest printing (D-1063), and the
+// printing of the deck view gives the art (D-1062).
 export function entriesOf(cards: SharedCard[]): DeckCard[] {
   return cards.map(
-    (c) => ({ oracleId: c.oracleId, name: c.name, count: c.count, role: c.role, reason: c.reason, owned: false, ownedCount: 0, priceUsd: 0, outsideRequestedSets: false }) as DeckCard,
+    (c) =>
+      ({
+        oracleId: c.oracleId,
+        name: c.name,
+        count: c.count,
+        role: c.role,
+        reason: c.reason,
+        owned: false,
+        ownedCount: 0,
+        priceUsd: c.priceUsd,
+        ownedPrinting: c.printing,
+        outsideRequestedSets: false,
+      }) as DeckCard,
   );
 }
 
@@ -86,6 +102,8 @@ export function SharedDeckPage() {
 }
 
 export function SharedDeckView({ deck, token }: { deck: SharedDeck; token: string }) {
+  const [filters, setFilters] = useState<Filters>({});
+  const [sort, setSort] = useState<SortKey>("role");
   const byId = cardsOf(deck);
   const commanders = new Set(deck.commanderOracleIds);
   const main = entriesOf(deck.cards.filter((c) => !commanders.has(c.oracleId)));
@@ -93,10 +111,20 @@ export function SharedDeckView({ deck, token }: { deck: SharedDeck; token: strin
   // stored before F-124 also holds its commander in cards.
   const commanderEntries = entriesOf(deck.commanders.length > 0 ? deck.commanders : deck.cards.filter((c) => commanders.has(c.oracleId)));
   const side = entriesOf(deck.sideboard);
-  const groups = groupByRole(main);
   const fromCommanders = identityOfCommanders(deck.commanderOracleIds, byId);
   const identity = fromCommanders.length > 0 ? fromCommanders : identityOfCards(byId);
-  const total = deck.cardCount > 0 ? deck.cardCount : main.reduce((n, c) => n + c.count, 0) + commanderEntries.length;
+  const countOf = (entries: DeckCard[]) => entries.reduce((n, c) => n + c.count, 0);
+  const total = deck.cardCount > 0 ? deck.cardCount : countOf(main) + commanderEntries.length;
+  // The stats and the sample hand read the card list of the deck, as the
+  // deck view does, so both pages show the same numbers.
+  const statsCards = entriesOf(deck.cards);
+  const filterActive = isFiltered(filters);
+  const show = (entries: DeckCard[]) => sortEntries(filterEntries(entries, byId, filters), byId, sort);
+  const visibleMain = show(main);
+  const visibleSide = show(side);
+  const groups = sort === "role" ? groupByRole(visibleMain) : [{ role: CardRole.UNSPECIFIED, cards: visibleMain, count: countOf(visibleMain) }];
+  const rolesInDeck = roleOrder.filter((r) => main.some((c) => c.role === r));
+  const groupTitle = (role: CardRole) => (sort === "role" ? roleLabel(role) : `Cards by ${sortLabels[sort].toLowerCase()}`);
   return (
     <article aria-labelledby="shared-deck-title" className="flex flex-col gap-5">
       <header className="flex flex-col gap-1.5 rounded-card border border-border bg-card p-6 shadow-card">
@@ -110,12 +138,18 @@ export function SharedDeckView({ deck, token }: { deck: SharedDeck; token: strin
           {formatLabel(deck.format?.id, deck.format?.houseRules ?? "")}
           {powerLabel(deck.power) && ` · ${powerLabel(deck.power)}`}
           {` · ${total} cards`}
-          {side.length > 0 && ` · ${side.reduce((n, c) => n + c.count, 0)} sideboard`}
+          {side.length > 0 && ` · ${countOf(side)} sideboard`}
         </p>
         {deck.legalityAsOf && <p className="text-sm">Built against the card data of {deck.legalityAsOf}.</p>}
         {deck.summary && <p className="mt-2 max-w-measure leading-relaxed">{deck.summary}</p>}
         <p className="text-xs text-muted-foreground">A shared deck, read-only.</p>
       </header>
+
+      <DeckStatsPanel cards={statsCards} byId={byId} commanderOracleIds={deck.commanderOracleIds} />
+
+      <div className="print:hidden">
+        <SampleHand deck={{ id: "shared", cards: statsCards, commanderOracleIds: deck.commanderOracleIds }} byId={byId} />
+      </div>
 
       <div className="print:hidden">
         <SharedExport token={token} />
@@ -123,14 +157,15 @@ export function SharedDeckView({ deck, token }: { deck: SharedDeck; token: strin
 
       <DataCredit />
 
-      {commanderEntries.length > 0 && <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership />}
-      {groups.map((g) => (
-        <CardGroup key={g.role} title={roleLabel(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} hideOwnership />
-      ))}
-      {groups.length === 0 && main.length > 0 && (
-        <CardGroup title={roleLabel(CardRole.UNSPECIFIED)} count={main.length} entries={main} byId={byId} commanders={commanders} hideOwnership />
+      <FilterBar idSuffix="shared" filters={filters} onFilters={setFilters} sort={sort} onSort={setSort} roles={rolesInDeck} shown={countOf(visibleMain)} total={countOf(main)} />
+
+      {commanderEntries.length > 0 && !filterActive && (
+        <CardGroup title="Commander" count={commanderEntries.length} entries={commanderEntries} byId={byId} commanders={commanders} hideOwnership showPrice />
       )}
-      {side.length > 0 && <CardGroup title="Sideboard" count={side.reduce((n, c) => n + c.count, 0)} entries={side} byId={byId} commanders={commanders} hideOwnership />}
+      {groups.map((g) => (
+        <CardGroup key={g.role} title={groupTitle(g.role)} count={g.count} entries={g.cards} byId={byId} commanders={commanders} hideOwnership showPrice />
+      ))}
+      {visibleSide.length > 0 && <CardGroup title="Sideboard" count={countOf(visibleSide)} entries={visibleSide} byId={byId} commanders={commanders} hideOwnership showPrice />}
     </article>
   );
 }

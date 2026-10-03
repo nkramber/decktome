@@ -8,8 +8,9 @@ import { bottom, draw, type Hand, libraryOf, maxMulligans, mulligan, openingHand
 
 // The sample hand panel (D-318): seven from the exact main deck, a
 // mulligan to six and to five by the London rule, and one draw at a
-// time. The reader picks the cards that go to the bottom.
-export function SampleHand({ deck, byId, seed }: { deck: Deck; byId: Map<string, Card>; seed?: number }) {
+// time. The reader picks the cards that go to the bottom. The public
+// page of a share link draws from its deck too (D-1064).
+export function SampleHand({ deck, byId, seed }: { deck: Pick<Deck, "id" | "cards" | "commanderOracleIds">; byId: Map<string, Card>; seed?: number }) {
   // The generator starts on the first click, so the render stays pure
   // and a test can hand over a seed.
   const random = useRef<(() => number) | null>(null);

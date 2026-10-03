@@ -467,14 +467,14 @@ test("the check account sweeps every screen of the deployed web app", async ({ b
     let revoked = false;
     const revoke = async () => {
       await dp.getByRole("button", { name: "Revoke the link" }).click();
-      await expect(dp.getByTestId("share-state")).toBeVisible();
+      await expect(dp.getByTestId("share-state")).toHaveText("This deck has no link yet.");
       revoked = true;
     };
     await sweep.step("share", [dp, anonD.page, anonP.page], async () => {
       try {
         await dp.getByRole("button", { name: /^Share/ }).click();
         await dp.getByRole("button", { name: /^Make (a|a new) link$/ }).click();
-        const linkBox = dp.getByLabel("The link, shown once");
+        const linkBox = dp.getByLabel("The link", { exact: true });
         await expect(linkBox).not.toHaveValue("");
         link = new URL(await linkBox.inputValue()).pathname;
         await sweep.look(dp, "share dialog", "desktop");

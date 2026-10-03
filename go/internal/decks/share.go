@@ -15,7 +15,7 @@ import (
 
 // storedShare is the document at shares/{token hash}: the deck a share
 // link opens (D-315). The hash is the document id, so a lookup is one
-// read and needs no index. The token itself is never stored.
+// read and needs no index. The token sits in the deck alone (D-1061).
 type storedShare struct {
 	UID       string    `firestore:"uid"`
 	DeckID    string    `firestore:"deck_id"`
@@ -26,13 +26,14 @@ func (r *Repo) shareDoc(hash string) *firestore.DocumentRef {
 	return r.client.Collection("shares").Doc(hash)
 }
 
-// Share records the hash of a new token for one deck. A deck that had a
+// Share records a new token and its hash for one deck. A deck that had a
 // link loses the old one: its share document goes, so the old link
 // answers NotFound (D-315). The deck's own document keeps the hash, and
-// the packed proto marks the deck as shared.
-func (r *Repo) Share(ctx context.Context, uid, id, hash string) error {
-	if hash == "" {
-		return errors.New("decks: a share needs a token hash")
+// the packed proto marks the deck as shared and holds the token, so its
+// owner reads the link again (D-1061).
+func (r *Repo) Share(ctx context.Context, uid, id, token, hash string) error {
+	if token == "" || hash == "" {
+		return errors.New("decks: a share needs a token and its hash")
 	}
 	doc := r.doc(uid, id)
 	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
@@ -42,6 +43,7 @@ func (r *Repo) Share(ctx context.Context, uid, id, hash string) error {
 		}
 		old := sd.ShareTokenHash
 		d.Shared = true
+		d.ShareToken = token
 		updated, err := restore(d, sd)
 		if err != nil {
 			return err
@@ -72,6 +74,7 @@ func (r *Repo) Revoke(ctx context.Context, uid, id string) error {
 		}
 		old := sd.ShareTokenHash
 		d.Shared = false
+		d.ShareToken = ""
 		updated, err := restore(d, sd)
 		if err != nil {
 			return err

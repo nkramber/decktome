@@ -1,21 +1,23 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { footSlackPx, useStickToBottom } from "./use-stick-to-bottom";
+import { footSlackPx, topSlackPx, useStickToBottom } from "./use-stick-to-bottom";
 
 // jsdom lays nothing out, so each test gives the page, the thread box,
 // and the foot their geometry by test id.
-type Geometry = { scrollTop: number; scrollHeight: number; clientHeight: number; bottom: number; shown: boolean };
+type Geometry = { scrollTop: number; scrollHeight: number; clientHeight: number; bottom: number; shown: boolean; top?: number };
 let geo: Record<string, Geometry>;
 const of = (el: Element) => geo[(el as HTMLElement).dataset.testid ?? ""];
 
-function Harness({ change }: { change: string }) {
+function Harness({ change, asks = false }: { change: string; asks?: boolean }) {
   const box = useRef<HTMLDivElement>(null);
   const foot = useRef<HTMLDivElement>(null);
-  const pin = useStickToBottom(box, foot, change);
+  const mine = useRef<HTMLDivElement>(null);
+  const pin = useStickToBottom(box, foot, change, mine, asks);
   return (
     <main data-testid="page">
       <div ref={box} data-testid="box" />
+      <div ref={mine} data-testid="mine" />
       <div ref={foot} data-testid="foot" />
       <button type="button" onClick={pin}>
         Send
@@ -26,7 +28,8 @@ function Harness({ change }: { change: string }) {
 
 beforeEach(() => {
   geo = {
-    page: { scrollTop: 0, scrollHeight: 3000, clientHeight: 800, bottom: 800, shown: true },
+    page: { scrollTop: 0, scrollHeight: 3000, clientHeight: 800, bottom: 800, shown: true, top: 0 },
+    mine: { scrollTop: 0, scrollHeight: 0, clientHeight: 0, bottom: 1100, shown: true, top: 1000 },
     box: { scrollTop: 0, scrollHeight: 0, clientHeight: 0, bottom: 0, shown: true },
     foot: { scrollTop: 0, scrollHeight: 0, clientHeight: 0, bottom: 1500, shown: true },
   };
@@ -38,7 +41,10 @@ beforeEach(() => {
     if (!g) return;
     // A real scroller stops at its end, and the foot moves up with it.
     const top = Math.max(0, Math.min(v, g.scrollHeight - g.clientHeight));
-    if (this.dataset.testid === "page") geo.foot.bottom -= top - g.scrollTop;
+    if (this.dataset.testid === "page") {
+      geo.foot.bottom -= top - g.scrollTop;
+      geo.mine.top = (geo.mine.top ?? 0) - (top - g.scrollTop);
+    }
     g.scrollTop = top;
   });
   vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockImplementation(function (this: HTMLElement) {
@@ -48,7 +54,7 @@ beforeEach(() => {
     return of(this)?.clientHeight ?? 0;
   });
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
-    return { bottom: of(this)?.bottom ?? 0 } as DOMRect;
+    return { bottom: of(this)?.bottom ?? 0, top: of(this)?.top ?? 0 } as DOMRect;
   });
   vi.spyOn(Element.prototype, "getClientRects").mockImplementation(function (this: Element) {
     return { length: of(this)?.shown === false ? 0 : 1 } as DOMRectList;
@@ -107,6 +113,31 @@ describe("useStickToBottom (D-1056)", () => {
     render(<Harness change="1" />);
     expect(geo.box.scrollTop).toBe(1500);
     expect(geo.page.scrollTop).toBe(0);
+  });
+
+  // D-1066: a turn that asks shows the reader's latest message at the top,
+  // so the questions read down from it, and the view stays there.
+  it("puts the reader's message at the top when the turn ends with questions", () => {
+    const view = render(<Harness change="1" />);
+    expect(geo.page.scrollTop).toBe(700);
+    geo.foot.bottom += 600;
+    view.rerender(<Harness change="2" asks />);
+    expect(geo.page.scrollTop).toBe(1000 - topSlackPx);
+    expect(geo.mine.top).toBe(topSlackPx);
+    // A later change of the thread does not drag the view to the foot.
+    geo.foot.bottom += 100;
+    view.rerender(<Harness change="3" asks />);
+    expect(geo.page.scrollTop).toBe(1000 - topSlackPx);
+    // The send of the answers takes the view to the foot again.
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(geo.page.scrollTop).toBe(1400);
+  });
+
+  it("goes to the foot as before when the turn asks nothing", () => {
+    const view = render(<Harness change="1" />);
+    geo.foot.bottom += 600;
+    view.rerender(<Harness change="2" />);
+    expect(geo.page.scrollTop).toBe(1300);
   });
 
   it("does not move the page for a chat that is hidden", () => {

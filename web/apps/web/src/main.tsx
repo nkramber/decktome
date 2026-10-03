@@ -24,9 +24,11 @@ startServiceWorker();
 void boot(root);
 
 // boot draws the app after the update check of a cold start (D-1046). A
-// new worker reloads the page into the new shell (D-692), so the page
-// shows a splash and not a home page that goes away seconds later. The
-// time limit draws the app if that reload never comes.
+// new worker reloads the page into the new shell (D-692, F-206), so the
+// page shows a splash and not a home page that goes away seconds later.
+// The time limit draws the app while the old worker still controls the
+// page and still serves the old chunks. The reload follows when the new
+// worker takes control.
 async function boot(el: HTMLElement) {
   splash(el, "Deck Tome");
   if (await pendingShell()) {

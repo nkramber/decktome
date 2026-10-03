@@ -62,7 +62,7 @@ type storedDeck struct {
 	DeckGz             []byte    `firestore:"deck_gz"`
 	SchemaVersion      int64     `firestore:"schema_version"`
 	// ShareTokenHash is the hash of the share token, empty with no link
-	// (D-315). The token itself is never stored.
+	// (D-315). The packed proto holds the token itself (D-1061).
 	ShareTokenHash string `firestore:"share_token_hash"`
 	// Imported marks a list a user brought (PR-70). The backfill of the
 	// user record counts it apart from a built deck (D-852).
@@ -130,7 +130,7 @@ func (r *Repo) Rewrite(ctx context.Context, uid string, d *mtgv1.Deck) error {
 			return err
 		}
 		next := proto.CloneOf(d)
-		next.Name, next.Favorite, next.Shared = cur.GetName(), cur.GetFavorite(), cur.GetShared()
+		next.Name, next.Favorite, next.Shared, next.ShareToken = cur.GetName(), cur.GetFavorite(), cur.GetShared(), cur.GetShareToken()
 		updated, err := restore(next, sd)
 		if err != nil {
 			return err

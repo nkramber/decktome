@@ -74,9 +74,9 @@ type DeckServiceClient interface {
 	// that chat runs (D-922).
 	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
 	// ShareDeck makes a share link for one of the caller's decks and
-	// answers the token once (D-315). A deck with a link gets a new one,
-	// and the old link dies. The store keeps a hash of the token, never
-	// the token.
+	// answers the token (D-315). A deck with a link gets a new one, and the
+	// old link dies. The share document is keyed by a hash of the token,
+	// and the deck itself holds the token for its owner (D-1061).
 	ShareDeck(context.Context, *connect.Request[v1.ShareDeckRequest]) (*connect.Response[v1.ShareDeckResponse], error)
 	// RevokeShare ends the link of one of the caller's decks.
 	RevokeShare(context.Context, *connect.Request[v1.RevokeShareRequest]) (*connect.Response[v1.RevokeShareResponse], error)
@@ -244,9 +244,9 @@ type DeckServiceHandler interface {
 	// that chat runs (D-922).
 	DeleteDeck(context.Context, *connect.Request[v1.DeleteDeckRequest]) (*connect.Response[v1.DeleteDeckResponse], error)
 	// ShareDeck makes a share link for one of the caller's decks and
-	// answers the token once (D-315). A deck with a link gets a new one,
-	// and the old link dies. The store keeps a hash of the token, never
-	// the token.
+	// answers the token (D-315). A deck with a link gets a new one, and the
+	// old link dies. The share document is keyed by a hash of the token,
+	// and the deck itself holds the token for its owner (D-1061).
 	ShareDeck(context.Context, *connect.Request[v1.ShareDeckRequest]) (*connect.Response[v1.ShareDeckResponse], error)
 	// RevokeShare ends the link of one of the caller's decks.
 	RevokeShare(context.Context, *connect.Request[v1.RevokeShareRequest]) (*connect.Response[v1.RevokeShareResponse], error)
