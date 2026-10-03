@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-03 correction pass 258 (PR-70, PR-120, D-1100 to D-1105): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-120, sequencing step 115.
+
 2026-10-03 correction pass 256 (PR-26, PR-118, D-1087 to D-1089): the stale pass of I-1 sets the `stale` flag, so the legality event no longer waits. The owner chose it as the next event of PR-26. The email digest and the new-cards event wait. Changes: PR-26, PR-118, sequencing step 113.
 
 2026-09-29 correction pass 255 (PR-26, D-1004, D-1005): the owner answered OQ-67. PR-26 builds web push alone, with one event, a finished build. The email digest, the legality event, and the new-cards event wait. Changes: PR-26, sequencing step 99.
@@ -2154,7 +2156,7 @@ Gate:
 **PR-70: Import a deck list, and show it as a deck the app built (F-170, F-171, D-845 to D-862).** ✅ merged as #220. The mark comes before any review (D-822). The owner approved the scope on 2026-09-23 (D-860).
 A user brings a deck of their own, and the app stores it as a deck that a build made. So the deck page shows it, and the revise turn changes it. The owner asked for the import on 2026-09-23.
 
-- **The input.** The page `/decks` gets an import form. It takes a text file that Archidekt exports, or a pasted Arena list (D-845). The app fetches no URL.
+- **The input.** The page `/decks` gets an import form. It takes a text file that Archidekt exports, or a pasted Arena list (D-845). The app fetched no URL until PR-120 (D-1100).
 - **The parse.** A deck parser reads the Archidekt line `1x Name (set) number *F* [Category]` and the Arena sections `Commander`, `Deck`, `Sideboard`, and `Companion`. It also reads the line `// COMMANDER`, and a blank line ends that section. It resolves each name as a collection upload does, and it reports each name that matches no card.
 - **The format.** A commander mark or a main deck of 100 cards reads Commander. For any other list, the user picks Standard, Modern, or neither, and neither stores as the house format (D-857).
 - **The commander.** The Archidekt category `Commander{top}`, the Arena header `Commander`, or the line `// COMMANDER` names it. With neither mark, the user picks from the cards of the list that can lead a deck (D-847).
@@ -3157,6 +3159,30 @@ Gate:
 The live check after the deploy: when a ban of 2026-10-12 makes a deck of the owner stale, the phone shows the push. A tap opens the deck or the list. No deck of `decktome-prod` was stale on 2026-10-01 (D-1023), so the check waits for a real ban. UNVERIFIED: no real ban reached a deck before the merge.
 > *In plain English:* when a ban makes one of your decks illegal, your phone tells you, if notifications are on. One push covers all your decks, and a tap opens the deck or your deck list.
 
+**PR-120: A deck import from a link (D-1100 to D-1105).** ✅ merged as #PRNUM. The mark comes before any review (D-822). The owner asked for a workshop of an Archidekt and a Moxfield link on 2026-10-03, and then chose this scope. `docs/reference/deck-links-2026-10-03.md` holds each source fact.
+
+- **The field (D-1103).** The import dialog gets a field "Deck link" and a button "Read". The field names no site, as D-889 asks.
+- **Archidekt (D-1100).** `FetchDeckList` reads a public deck through `go/internal/archidekt` and answers its list as Arena text. The form shows the list, and the user selects Import as for a pasted list.
+- **The safety of the read (D-1100).** The server makes the API URL again from the deck id. It follows no redirect, caps the answer at 4 MiB, and allows each user 10 reads a minute.
+- **The link back (D-1101).** The deck keeps `source_url`, and the deck page and the share page link to the Archidekt deck.
+- **Moxfield (D-1102, D-1103).** The app asks Moxfield for nothing. A Moxfield link gets the exact steps: More, then Export, then Copy for Arena.
+- **Any other site (D-1104).** The link gets the general steps. The page files an import report of the host, and the owner gets a notice. The triage class I2 writes a defect row.
+
+Gate:
+- `go/internal/archidekt` reads two real answers of 2026-10-03: a Modern deck with a sideboard of 15, and a Commander deck whose maybeboard stays out.
+- The tests of `go/internal/archidekt` refuse another host, follow no redirect, and cap the answer.
+- `go/internal/decklink` sorts each link, and each site has its steps.
+- The tests of `go/internal/agentsvc` read a link into an import, the cap of each user, and the steps of Moxfield and of another site. No request leaves for either site.
+- `go/internal/importfault` keeps the host of an unknown site and never its path. The notice names the site.
+- The parser reads the real Moxfield export of the owner, with its name and its commander.
+- The tests of the web form cover the read, the exact steps, the general steps with the report, and the error of the server.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy: read an Archidekt link on `decktome.com`, and import it. UNVERIFIED before the merge: an answer of Archidekt to Cloud Run, and the answer to a private deck.
+> *In plain English:* paste the link of a public Archidekt deck, and the app fills in the list for you. Moxfield blocks other sites, so a Moxfield link shows the three clicks that copy the list. Any other site shows general steps, and the app tells the owner about that site.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3567,6 +3593,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 111. **PR-116** the live check of PR-115, and an email of Deck Tome that proves an address (F-208, D-1079 to D-1084).
 112. **PR-117** the live check of PR-116, and a sign-in that lands on the home page (F-209, D-1085, D-1086).
 113. **PR-118** the push of a legality change, the second event of PR-26 (D-1087 to D-1089).
+115. **PR-120** a deck import from a link (D-1100 to D-1105).
 
 ## 9. Open questions
 

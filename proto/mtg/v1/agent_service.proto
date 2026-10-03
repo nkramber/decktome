@@ -27,6 +27,11 @@ service AgentService {
   // ImportDeck stores a deck list that a user brings, and a session
   // that the revise turn reads (PR-70, D-845, D-851).
   rpc ImportDeck(ImportDeckRequest) returns (ImportDeckResponse) {}
+  // FetchDeckList reads a public deck by its URL and answers its list as
+  // text, which the import form shows before ImportDeck (PR-120, D-1100).
+  // A site that the app can not read gets the steps of an export
+  // (D-1103). It stores nothing.
+  rpc FetchDeckList(FetchDeckListRequest) returns (FetchDeckListResponse) {}
   // ReadImportBracket asks the bracket judge again for an imported deck
   // whose bracket is the floor alone (D-854).
   rpc ReadImportBracket(ReadImportBracketRequest) returns (ReadImportBracketResponse) {}
@@ -207,6 +212,41 @@ message ImportDeckRequest {
   // commander_oracle_ids is the pick of the user for a Commander list
   // with no commander mark (D-847).
   repeated string commander_oracle_ids = 5;
+  // source_url is the Archidekt deck that FetchDeckList read, or empty
+  // for a file or a pasted list. The server keeps only the link that it
+  // makes again from the deck id (D-1101).
+  string source_url = 6;
+}
+
+// FetchDeckListRequest carries the URL of a deck page that the user
+// pasted (D-1100, D-1103).
+message FetchDeckListRequest {
+  string url = 1;
+}
+
+// FetchDeckListResponse holds the list of a site that the app reads, or
+// the steps of an export for any other site (D-1103).
+message FetchDeckListResponse {
+  // text is the list in Arena sections: Commander, Companion, Deck, and
+  // Sideboard. ImportDeck reads it as a pasted list. Empty when the app
+  // can not read the site.
+  string text = 1;
+  // name is the name of the deck on its site.
+  string name = 2;
+  // source_url is the deck page, made again from the deck id.
+  string source_url = 3;
+  // left_out counts the copies of a category that the site keeps out of
+  // the deck, such as the maybeboard.
+  int32 left_out = 4;
+  // site names the site of the link: its name for a known site, or its
+  // host.
+  string site = 5;
+  // export_steps are the steps to copy the list by hand, for a site that
+  // the app can not read. Empty when text is set.
+  repeated string export_steps = 6;
+  // known_site is false for a site that has no steps of its own. The
+  // client then files a report of the link (D-1104).
+  bool known_site = 7;
 }
 
 message ImportDeckResponse {

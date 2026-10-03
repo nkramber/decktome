@@ -122,6 +122,7 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
   // does (D-853).
   const feedbackId = deck.imported ? undefined : deck.id;
   const importNote = importPowerNote(deck);
+  const source = archidektLink(deck.sourceUrl);
 
   return (
     <article aria-labelledby={`deck-title-${deck.id}`} className="flex flex-col gap-5">
@@ -144,6 +145,16 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           {` · ${total} cards`}
           {deck.sideboard.length > 0 && ` · ${countOf(deck.sideboard)} sideboard`}
         </p>
+        {/* An import from a link names its Archidekt deck, on this page
+            and on the share page, as Archidekt asks (D-1101). */}
+        {source && (
+          <p className="text-sm" data-testid="import-source">
+            Imported from{" "}
+            <a href={source} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-4 hover:no-underline">
+              Archidekt
+            </a>
+          </p>
+        )}
         {/* The thumbs of the deck as a whole sit beside the legality line
             (PR-27, D-557). The tiles carry one pair each, and the summary
             its own. */}
@@ -605,6 +616,13 @@ export function CardGroup({
       </ul>
     </section>
   );
+}
+
+// archidektLink is the deck page that an import read, or empty. The
+// server stores only a link it made from the deck id (D-1101), and the
+// page shows no other link.
+export function archidektLink(url: string): string {
+  return /^https:\/\/archidekt\.com\/decks\/[1-9][0-9]*$/.test(url) ? url : "";
 }
 
 // needsPowerRead says an imported deck asks the judge again at this

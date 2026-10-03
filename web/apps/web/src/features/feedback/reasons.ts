@@ -47,7 +47,12 @@ const byKind: Record<FeedbackKind, Reason[]> = {
   // A file the app could not read (D-884). The server names the fault,
   // so the form shows no reason to check, and the key is the one the
   // server stores.
-  [FeedbackKind.IMPORT]: [{ key: "parse_fault", label: "The app could not read the file." }],
+  // A deck link of a site that the app can not read files its own
+  // report (D-1104).
+  [FeedbackKind.IMPORT]: [
+    { key: "parse_fault", label: "The app could not read the file." },
+    { key: "deck_link", label: "The app could not read the deck link." },
+  ],
   // A general note carries no reason, only its text (D-1078).
   [FeedbackKind.GENERAL]: [],
 };

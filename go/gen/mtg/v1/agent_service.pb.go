@@ -1106,8 +1106,12 @@ type ImportDeckRequest struct {
 	// commander_oracle_ids is the pick of the user for a Commander list
 	// with no commander mark (D-847).
 	CommanderOracleIds []string `protobuf:"bytes,5,rep,name=commander_oracle_ids,json=commanderOracleIds,proto3" json:"commander_oracle_ids,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// source_url is the Archidekt deck that FetchDeckList read, or empty
+	// for a file or a pasted list. The server keeps only the link that it
+	// makes again from the deck id (D-1101).
+	SourceUrl     string `protobuf:"bytes,6,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ImportDeckRequest) Reset() {
@@ -1175,6 +1179,166 @@ func (x *ImportDeckRequest) GetCommanderOracleIds() []string {
 	return nil
 }
 
+func (x *ImportDeckRequest) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
+	}
+	return ""
+}
+
+// FetchDeckListRequest carries the URL of a deck page that the user
+// pasted (D-1100, D-1103).
+type FetchDeckListRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Url           string                 `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchDeckListRequest) Reset() {
+	*x = FetchDeckListRequest{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchDeckListRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchDeckListRequest) ProtoMessage() {}
+
+func (x *FetchDeckListRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchDeckListRequest.ProtoReflect.Descriptor instead.
+func (*FetchDeckListRequest) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *FetchDeckListRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+// FetchDeckListResponse holds the list of a site that the app reads, or
+// the steps of an export for any other site (D-1103).
+type FetchDeckListResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// text is the list in Arena sections: Commander, Companion, Deck, and
+	// Sideboard. ImportDeck reads it as a pasted list. Empty when the app
+	// can not read the site.
+	Text string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	// name is the name of the deck on its site.
+	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	// source_url is the deck page, made again from the deck id.
+	SourceUrl string `protobuf:"bytes,3,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	// left_out counts the copies of a category that the site keeps out of
+	// the deck, such as the maybeboard.
+	LeftOut int32 `protobuf:"varint,4,opt,name=left_out,json=leftOut,proto3" json:"left_out,omitempty"`
+	// site names the site of the link: its name for a known site, or its
+	// host.
+	Site string `protobuf:"bytes,5,opt,name=site,proto3" json:"site,omitempty"`
+	// export_steps are the steps to copy the list by hand, for a site that
+	// the app can not read. Empty when text is set.
+	ExportSteps []string `protobuf:"bytes,6,rep,name=export_steps,json=exportSteps,proto3" json:"export_steps,omitempty"`
+	// known_site is false for a site that has no steps of its own. The
+	// client then files a report of the link (D-1104).
+	KnownSite     bool `protobuf:"varint,7,opt,name=known_site,json=knownSite,proto3" json:"known_site,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FetchDeckListResponse) Reset() {
+	*x = FetchDeckListResponse{}
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FetchDeckListResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FetchDeckListResponse) ProtoMessage() {}
+
+func (x *FetchDeckListResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FetchDeckListResponse.ProtoReflect.Descriptor instead.
+func (*FetchDeckListResponse) Descriptor() ([]byte, []int) {
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *FetchDeckListResponse) GetText() string {
+	if x != nil {
+		return x.Text
+	}
+	return ""
+}
+
+func (x *FetchDeckListResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *FetchDeckListResponse) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
+	}
+	return ""
+}
+
+func (x *FetchDeckListResponse) GetLeftOut() int32 {
+	if x != nil {
+		return x.LeftOut
+	}
+	return 0
+}
+
+func (x *FetchDeckListResponse) GetSite() string {
+	if x != nil {
+		return x.Site
+	}
+	return ""
+}
+
+func (x *FetchDeckListResponse) GetExportSteps() []string {
+	if x != nil {
+		return x.ExportSteps
+	}
+	return nil
+}
+
+func (x *FetchDeckListResponse) GetKnownSite() bool {
+	if x != nil {
+		return x.KnownSite
+	}
+	return false
+}
+
 type ImportDeckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// deck and session_id are set when the import stored the deck.
@@ -1195,7 +1359,7 @@ type ImportDeckResponse struct {
 
 func (x *ImportDeckResponse) Reset() {
 	*x = ImportDeckResponse{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[15]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1207,7 +1371,7 @@ func (x *ImportDeckResponse) String() string {
 func (*ImportDeckResponse) ProtoMessage() {}
 
 func (x *ImportDeckResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[15]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1220,7 +1384,7 @@ func (x *ImportDeckResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ImportDeckResponse.ProtoReflect.Descriptor instead.
 func (*ImportDeckResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{15}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *ImportDeckResponse) GetDeck() *Deck {
@@ -1267,7 +1431,7 @@ type ReadImportBracketRequest struct {
 
 func (x *ReadImportBracketRequest) Reset() {
 	*x = ReadImportBracketRequest{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[16]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1279,7 +1443,7 @@ func (x *ReadImportBracketRequest) String() string {
 func (*ReadImportBracketRequest) ProtoMessage() {}
 
 func (x *ReadImportBracketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[16]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1292,7 +1456,7 @@ func (x *ReadImportBracketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadImportBracketRequest.ProtoReflect.Descriptor instead.
 func (*ReadImportBracketRequest) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{16}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ReadImportBracketRequest) GetDeckId() string {
@@ -1311,7 +1475,7 @@ type ReadImportBracketResponse struct {
 
 func (x *ReadImportBracketResponse) Reset() {
 	*x = ReadImportBracketResponse{}
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[17]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1323,7 +1487,7 @@ func (x *ReadImportBracketResponse) String() string {
 func (*ReadImportBracketResponse) ProtoMessage() {}
 
 func (x *ReadImportBracketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_mtg_v1_agent_service_proto_msgTypes[17]
+	mi := &file_mtg_v1_agent_service_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1336,7 +1500,7 @@ func (x *ReadImportBracketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadImportBracketResponse.ProtoReflect.Descriptor instead.
 func (*ReadImportBracketResponse) Descriptor() ([]byte, []int) {
-	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{17}
+	return file_mtg_v1_agent_service_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ReadImportBracketResponse) GetDeck() *Deck {
@@ -1421,13 +1585,27 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\bbuilding\x18\x02 \x01(\bR\bbuilding\x12(\n" +
 	"\x05phase\x18\x03 \x01(\x0e2\x12.mtg.v1.BuildPhaseR\x05phase\x12\x1a\n" +
 	"\brepaired\x18\x04 \x01(\bR\brepaired\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\tR\x06status\"\xbc\x01\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\"\xdb\x01\n" +
 	"\x11ImportDeckRequest\x12\x12\n" +
 	"\x04text\x18\x01 \x01(\tR\x04text\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12#\n" +
 	"\rcollection_id\x18\x03 \x01(\tR\fcollectionId\x12(\n" +
 	"\x06format\x18\x04 \x01(\x0e2\x10.mtg.v1.FormatIdR\x06format\x120\n" +
-	"\x14commander_oracle_ids\x18\x05 \x03(\tR\x12commanderOracleIds\"\xee\x01\n" +
+	"\x14commander_oracle_ids\x18\x05 \x03(\tR\x12commanderOracleIds\x12\x1d\n" +
+	"\n" +
+	"source_url\x18\x06 \x01(\tR\tsourceUrl\"(\n" +
+	"\x14FetchDeckListRequest\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"\xcf\x01\n" +
+	"\x15FetchDeckListResponse\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1d\n" +
+	"\n" +
+	"source_url\x18\x03 \x01(\tR\tsourceUrl\x12\x19\n" +
+	"\bleft_out\x18\x04 \x01(\x05R\aleftOut\x12\x12\n" +
+	"\x04site\x18\x05 \x01(\tR\x04site\x12!\n" +
+	"\fexport_steps\x18\x06 \x03(\tR\vexportSteps\x12\x1d\n" +
+	"\n" +
+	"known_site\x18\a \x01(\bR\tknownSite\"\xee\x01\n" +
 	"\x12ImportDeckResponse\x12 \n" +
 	"\x04deck\x18\x01 \x01(\v2\f.mtg.v1.DeckR\x04deck\x12\x1d\n" +
 	"\n" +
@@ -1449,7 +1627,7 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\x14BUILD_PHASE_BUILDING\x10\x03\x12\x18\n" +
 	"\x14BUILD_PHASE_CHECKING\x10\x04\x12\x19\n" +
 	"\x15BUILD_PHASE_REPAIRING\x10\x05\x12\x14\n" +
-	"\x10BUILD_PHASE_DONE\x10\x062\xec\x04\n" +
+	"\x10BUILD_PHASE_DONE\x10\x062\xbc\x05\n" +
 	"\fAgentService\x125\n" +
 	"\x04Chat\x12\x13.mtg.v1.ChatRequest\x1a\x14.mtg.v1.ChatResponse\"\x000\x01\x12E\n" +
 	"\n" +
@@ -1458,7 +1636,8 @@ const file_mtg_v1_agent_service_proto_rawDesc = "" +
 	"\rUpdateSession\x12\x1c.mtg.v1.UpdateSessionRequest\x1a\x1d.mtg.v1.UpdateSessionResponse\"\x00\x12N\n" +
 	"\rDeleteSession\x12\x1c.mtg.v1.DeleteSessionRequest\x1a\x1d.mtg.v1.DeleteSessionResponse\"\x00\x12E\n" +
 	"\n" +
-	"ImportDeck\x12\x19.mtg.v1.ImportDeckRequest\x1a\x1a.mtg.v1.ImportDeckResponse\"\x00\x12Z\n" +
+	"ImportDeck\x12\x19.mtg.v1.ImportDeckRequest\x1a\x1a.mtg.v1.ImportDeckResponse\"\x00\x12N\n" +
+	"\rFetchDeckList\x12\x1c.mtg.v1.FetchDeckListRequest\x1a\x1d.mtg.v1.FetchDeckListResponse\"\x00\x12Z\n" +
 	"\x11ReadImportBracket\x12 .mtg.v1.ReadImportBracketRequest\x1a!.mtg.v1.ReadImportBracketResponse\"\x00\x12N\n" +
 	"\rSetPageHidden\x12\x1c.mtg.v1.SetPageHiddenRequest\x1a\x1d.mtg.v1.SetPageHiddenResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"
 
@@ -1475,7 +1654,7 @@ func file_mtg_v1_agent_service_proto_rawDescGZIP() []byte {
 }
 
 var file_mtg_v1_agent_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_mtg_v1_agent_service_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_mtg_v1_agent_service_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_mtg_v1_agent_service_proto_goTypes = []any{
 	(BuildPhase)(0),                   // 0: mtg.v1.BuildPhase
 	(*ListSessionsRequest)(nil),       // 1: mtg.v1.ListSessionsRequest
@@ -1493,62 +1672,66 @@ var file_mtg_v1_agent_service_proto_goTypes = []any{
 	(*GetSessionRequest)(nil),         // 13: mtg.v1.GetSessionRequest
 	(*GetSessionResponse)(nil),        // 14: mtg.v1.GetSessionResponse
 	(*ImportDeckRequest)(nil),         // 15: mtg.v1.ImportDeckRequest
-	(*ImportDeckResponse)(nil),        // 16: mtg.v1.ImportDeckResponse
-	(*ReadImportBracketRequest)(nil),  // 17: mtg.v1.ReadImportBracketRequest
-	(*ReadImportBracketResponse)(nil), // 18: mtg.v1.ReadImportBracketResponse
-	(SessionStatus)(0),                // 19: mtg.v1.SessionStatus
-	(*Usage)(nil),                     // 20: mtg.v1.Usage
-	(*timestamppb.Timestamp)(nil),     // 21: google.protobuf.Timestamp
-	(*Answer)(nil),                    // 22: mtg.v1.Answer
-	(PoolRule)(0),                     // 23: mtg.v1.PoolRule
-	(*Question)(nil),                  // 24: mtg.v1.Question
-	(*Slots)(nil),                     // 25: mtg.v1.Slots
-	(*Deck)(nil),                      // 26: mtg.v1.Deck
-	(*Session)(nil),                   // 27: mtg.v1.Session
-	(FormatId)(0),                     // 28: mtg.v1.FormatId
-	(*DeckCard)(nil),                  // 29: mtg.v1.DeckCard
-	(*UnresolvedRow)(nil),             // 30: mtg.v1.UnresolvedRow
+	(*FetchDeckListRequest)(nil),      // 16: mtg.v1.FetchDeckListRequest
+	(*FetchDeckListResponse)(nil),     // 17: mtg.v1.FetchDeckListResponse
+	(*ImportDeckResponse)(nil),        // 18: mtg.v1.ImportDeckResponse
+	(*ReadImportBracketRequest)(nil),  // 19: mtg.v1.ReadImportBracketRequest
+	(*ReadImportBracketResponse)(nil), // 20: mtg.v1.ReadImportBracketResponse
+	(SessionStatus)(0),                // 21: mtg.v1.SessionStatus
+	(*Usage)(nil),                     // 22: mtg.v1.Usage
+	(*timestamppb.Timestamp)(nil),     // 23: google.protobuf.Timestamp
+	(*Answer)(nil),                    // 24: mtg.v1.Answer
+	(PoolRule)(0),                     // 25: mtg.v1.PoolRule
+	(*Question)(nil),                  // 26: mtg.v1.Question
+	(*Slots)(nil),                     // 27: mtg.v1.Slots
+	(*Deck)(nil),                      // 28: mtg.v1.Deck
+	(*Session)(nil),                   // 29: mtg.v1.Session
+	(FormatId)(0),                     // 30: mtg.v1.FormatId
+	(*DeckCard)(nil),                  // 31: mtg.v1.DeckCard
+	(*UnresolvedRow)(nil),             // 32: mtg.v1.UnresolvedRow
 }
 var file_mtg_v1_agent_service_proto_depIdxs = []int32{
 	3,  // 0: mtg.v1.ListSessionsResponse.sessions:type_name -> mtg.v1.SessionSummary
-	19, // 1: mtg.v1.SessionSummary.status:type_name -> mtg.v1.SessionStatus
-	20, // 2: mtg.v1.SessionSummary.usage:type_name -> mtg.v1.Usage
-	21, // 3: mtg.v1.SessionSummary.created_at:type_name -> google.protobuf.Timestamp
-	21, // 4: mtg.v1.SessionSummary.updated_at:type_name -> google.protobuf.Timestamp
+	21, // 1: mtg.v1.SessionSummary.status:type_name -> mtg.v1.SessionStatus
+	22, // 2: mtg.v1.SessionSummary.usage:type_name -> mtg.v1.Usage
+	23, // 3: mtg.v1.SessionSummary.created_at:type_name -> google.protobuf.Timestamp
+	23, // 4: mtg.v1.SessionSummary.updated_at:type_name -> google.protobuf.Timestamp
 	3,  // 5: mtg.v1.UpdateSessionResponse.session:type_name -> mtg.v1.SessionSummary
-	22, // 6: mtg.v1.ChatRequest.answers:type_name -> mtg.v1.Answer
-	23, // 7: mtg.v1.ChatRequest.pool_rule:type_name -> mtg.v1.PoolRule
-	24, // 8: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
-	25, // 9: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
-	26, // 10: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
+	24, // 6: mtg.v1.ChatRequest.answers:type_name -> mtg.v1.Answer
+	25, // 7: mtg.v1.ChatRequest.pool_rule:type_name -> mtg.v1.PoolRule
+	26, // 8: mtg.v1.ChatResponse.question:type_name -> mtg.v1.Question
+	27, // 9: mtg.v1.ChatResponse.slots:type_name -> mtg.v1.Slots
+	28, // 10: mtg.v1.ChatResponse.deck:type_name -> mtg.v1.Deck
 	11, // 11: mtg.v1.ChatResponse.failure:type_name -> mtg.v1.AgentError
-	20, // 12: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
+	22, // 12: mtg.v1.ChatResponse.usage:type_name -> mtg.v1.Usage
 	0,  // 13: mtg.v1.ChatResponse.phase:type_name -> mtg.v1.BuildPhase
-	27, // 14: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
+	29, // 14: mtg.v1.GetSessionResponse.session:type_name -> mtg.v1.Session
 	0,  // 15: mtg.v1.GetSessionResponse.phase:type_name -> mtg.v1.BuildPhase
-	28, // 16: mtg.v1.ImportDeckRequest.format:type_name -> mtg.v1.FormatId
-	26, // 17: mtg.v1.ImportDeckResponse.deck:type_name -> mtg.v1.Deck
-	29, // 18: mtg.v1.ImportDeckResponse.commander_options:type_name -> mtg.v1.DeckCard
-	30, // 19: mtg.v1.ImportDeckResponse.unresolved:type_name -> mtg.v1.UnresolvedRow
-	26, // 20: mtg.v1.ReadImportBracketResponse.deck:type_name -> mtg.v1.Deck
+	30, // 16: mtg.v1.ImportDeckRequest.format:type_name -> mtg.v1.FormatId
+	28, // 17: mtg.v1.ImportDeckResponse.deck:type_name -> mtg.v1.Deck
+	31, // 18: mtg.v1.ImportDeckResponse.commander_options:type_name -> mtg.v1.DeckCard
+	32, // 19: mtg.v1.ImportDeckResponse.unresolved:type_name -> mtg.v1.UnresolvedRow
+	28, // 20: mtg.v1.ReadImportBracketResponse.deck:type_name -> mtg.v1.Deck
 	10, // 21: mtg.v1.AgentService.Chat:input_type -> mtg.v1.ChatRequest
 	13, // 22: mtg.v1.AgentService.GetSession:input_type -> mtg.v1.GetSessionRequest
 	1,  // 23: mtg.v1.AgentService.ListSessions:input_type -> mtg.v1.ListSessionsRequest
 	4,  // 24: mtg.v1.AgentService.UpdateSession:input_type -> mtg.v1.UpdateSessionRequest
 	6,  // 25: mtg.v1.AgentService.DeleteSession:input_type -> mtg.v1.DeleteSessionRequest
 	15, // 26: mtg.v1.AgentService.ImportDeck:input_type -> mtg.v1.ImportDeckRequest
-	17, // 27: mtg.v1.AgentService.ReadImportBracket:input_type -> mtg.v1.ReadImportBracketRequest
-	8,  // 28: mtg.v1.AgentService.SetPageHidden:input_type -> mtg.v1.SetPageHiddenRequest
-	12, // 29: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
-	14, // 30: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
-	2,  // 31: mtg.v1.AgentService.ListSessions:output_type -> mtg.v1.ListSessionsResponse
-	5,  // 32: mtg.v1.AgentService.UpdateSession:output_type -> mtg.v1.UpdateSessionResponse
-	7,  // 33: mtg.v1.AgentService.DeleteSession:output_type -> mtg.v1.DeleteSessionResponse
-	16, // 34: mtg.v1.AgentService.ImportDeck:output_type -> mtg.v1.ImportDeckResponse
-	18, // 35: mtg.v1.AgentService.ReadImportBracket:output_type -> mtg.v1.ReadImportBracketResponse
-	9,  // 36: mtg.v1.AgentService.SetPageHidden:output_type -> mtg.v1.SetPageHiddenResponse
-	29, // [29:37] is the sub-list for method output_type
-	21, // [21:29] is the sub-list for method input_type
+	16, // 27: mtg.v1.AgentService.FetchDeckList:input_type -> mtg.v1.FetchDeckListRequest
+	19, // 28: mtg.v1.AgentService.ReadImportBracket:input_type -> mtg.v1.ReadImportBracketRequest
+	8,  // 29: mtg.v1.AgentService.SetPageHidden:input_type -> mtg.v1.SetPageHiddenRequest
+	12, // 30: mtg.v1.AgentService.Chat:output_type -> mtg.v1.ChatResponse
+	14, // 31: mtg.v1.AgentService.GetSession:output_type -> mtg.v1.GetSessionResponse
+	2,  // 32: mtg.v1.AgentService.ListSessions:output_type -> mtg.v1.ListSessionsResponse
+	5,  // 33: mtg.v1.AgentService.UpdateSession:output_type -> mtg.v1.UpdateSessionResponse
+	7,  // 34: mtg.v1.AgentService.DeleteSession:output_type -> mtg.v1.DeleteSessionResponse
+	18, // 35: mtg.v1.AgentService.ImportDeck:output_type -> mtg.v1.ImportDeckResponse
+	17, // 36: mtg.v1.AgentService.FetchDeckList:output_type -> mtg.v1.FetchDeckListResponse
+	20, // 37: mtg.v1.AgentService.ReadImportBracket:output_type -> mtg.v1.ReadImportBracketResponse
+	9,  // 38: mtg.v1.AgentService.SetPageHidden:output_type -> mtg.v1.SetPageHiddenResponse
+	30, // [30:39] is the sub-list for method output_type
+	21, // [21:30] is the sub-list for method input_type
 	21, // [21:21] is the sub-list for extension type_name
 	21, // [21:21] is the sub-list for extension extendee
 	0,  // [0:21] is the sub-list for field type_name
@@ -1581,7 +1764,7 @@ func file_mtg_v1_agent_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_mtg_v1_agent_service_proto_rawDesc), len(file_mtg_v1_agent_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

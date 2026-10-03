@@ -83,6 +83,10 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 	case msg.GetCollectionId() != "" && !gzstore.ValidID(msg.GetCollectionId()):
 		return nil, connect.NewError(connect.CodeInvalidArgument, errBadCollectionID)
 	}
+	source, err := sourceURL(msg.GetSourceUrl())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
 	importer, ok := s.decks.(Importer)
 	if !ok || s.deckStore == nil || s.index == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoImporter)
@@ -174,6 +178,7 @@ func (s *Server) ImportDeck(ctx context.Context, req *connect.Request[mtgv1.Impo
 	}
 	deck := importedDeck(entries, s.roles(idx), format)
 	deck.Id, deck.SessionId, deck.Name, deck.CreatedAt = s.deckStore.NewID(uid), session.GetId(), session.GetName(), now
+	deck.SourceUrl = source
 
 	acc := llm.NewAccumulator(s.prices)
 	importer.ReadImport(ctx, deck, owned, acc)

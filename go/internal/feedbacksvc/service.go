@@ -174,6 +174,9 @@ func (s *Server) SubmitFeedback(ctx context.Context, req *connect.Request[mtgv1.
 		}
 		item.Import = fault
 		item.Reasons = []string{"parse_fault"}
+		if fault.GetPage() == mtgv1.ImportPage_IMPORT_PAGE_DECK_LINK {
+			item.Reasons = []string{"deck_link"}
+		}
 	} else if sess, deck, err = s.checkOwner(ctx, uid, fb); err != nil {
 		return nil, err
 	}
@@ -233,7 +236,9 @@ func noticeOf(id, email string, item feedback.Item) notify.Notice {
 	line("screen", item.Screen)
 	line("reasons", strings.Join(item.Reasons, ", "))
 	line("message", firstWords(item.Text, messageWords))
-	if f := item.Import; f != nil {
+	if f := item.Import; f != nil && f.GetPage() == mtgv1.ImportPage_IMPORT_PAGE_DECK_LINK {
+		line("page", fmt.Sprintf("%s, the site %s", f.GetPage(), f.GetHeader()))
+	} else if f != nil {
 		line("page", fmt.Sprintf("%s, %d of %d rows do not parse", f.GetPage(), f.GetBadRowCount(), f.GetRowCount()))
 		line("error", f.GetError())
 	}

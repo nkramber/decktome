@@ -20,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/agent_service.proto.
  */
 export const file_mtg_v1_agent_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIjwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiWQoUTGlzdFNlc3Npb25zUmVzcG9uc2USKAoIc2Vzc2lvbnMYASADKAsyFi5tdGcudjEuU2Vzc2lvblN1bW1hcnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIpECCg5TZXNzaW9uU3VtbWFyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWZpcnN0X21lc3NhZ2UYAyABKAkSFQoNY29sbGVjdGlvbl9pZBgEIAEoCRIlCgZzdGF0dXMYBSABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxISCgpkZWNrX2NvdW50GAYgASgFEhwKBXVzYWdlGAcgASgLMg0ubXRnLnYxLlVzYWdlEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKFFVwZGF0ZVNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEbmFtZRgCIAEoCSJAChVVcGRhdGVTZXNzaW9uUmVzcG9uc2USJwoHc2Vzc2lvbhgBIAEoCzIWLm10Zy52MS5TZXNzaW9uU3VtbWFyeSIqChREZWxldGVTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIhcKFURlbGV0ZVNlc3Npb25SZXNwb25zZSI6ChRTZXRQYWdlSGlkZGVuUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEg4KBmhpZGRlbhgCIAEoCCIXChVTZXRQYWdlSGlkZGVuUmVzcG9uc2UiyQEKC0NoYXRSZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSFQoNY29sbGVjdGlvbl9pZBgCIAEoCRIPCgdtZXNzYWdlGAMgASgJEh8KB2Fuc3dlcnMYBCADKAsyDi5tdGcudjEuQW5zd2VyEiMKCXBvb2xfcnVsZRgHIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIVCg1yZXJ1bl9kZWNrX2lkGAggASgJSgQIBRAGSgQIBhAHUgRzZWVkUg9rZWVwX29yYWNsZV9pZHMiPgoKQWdlbnRFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEQoJcmV0cnlhYmxlGAMgASgIIr8CCgxDaGF0UmVzcG9uc2USGQoPc2Vzc2lvbl9zdGFydGVkGAEgASgJSAASFAoKdGV4dF9kZWx0YRgCIAEoCUgAEiQKCHF1ZXN0aW9uGAMgASgLMhAubXRnLnYxLlF1ZXN0aW9uSAASHgoFc2xvdHMYBCABKAsyDS5tdGcudjEuU2xvdHNIABIQCgZzdGF0dXMYBSABKAlIABIcCgRkZWNrGAYgASgLMgwubXRnLnYxLkRlY2tIABITCgVlcnJvchgHIAEoCUICGAFIABIlCgdmYWlsdXJlGAggASgLMhIubXRnLnYxLkFnZW50RXJyb3JIABIeCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZUgAEiMKBXBoYXNlGAogASgOMhIubXRnLnYxLkJ1aWxkUGhhc2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIo0BChJHZXRTZXNzaW9uUmVzcG9uc2USIAoHc2Vzc2lvbhgBIAEoCzIPLm10Zy52MS5TZXNzaW9uEhAKCGJ1aWxkaW5nGAIgASgIEiEKBXBoYXNlGAMgASgOMhIubXRnLnYxLkJ1aWxkUGhhc2USEAoIcmVwYWlyZWQYBCABKAgSDgoGc3RhdHVzGAUgASgJIoYBChFJbXBvcnREZWNrUmVxdWVzdBIMCgR0ZXh0GAEgASgJEgwKBG5hbWUYAiABKAkSFQoNY29sbGVjdGlvbl9pZBgDIAEoCRIgCgZmb3JtYXQYBCABKA4yEC5tdGcudjEuRm9ybWF0SWQSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBSADKAkisgEKEkltcG9ydERlY2tSZXNwb25zZRIaCgRkZWNrGAEgASgLMgwubXRnLnYxLkRlY2sSEgoKc2Vzc2lvbl9pZBgCIAEoCRIUCgxuZWVkc19mb3JtYXQYAyABKAgSKwoRY29tbWFuZGVyX29wdGlvbnMYBCADKAsyEC5tdGcudjEuRGVja0NhcmQSKQoKdW5yZXNvbHZlZBgFIAMoCzIVLm10Zy52MS5VbnJlc29sdmVkUm93IisKGFJlYWRJbXBvcnRCcmFja2V0UmVxdWVzdBIPCgdkZWNrX2lkGAEgASgJIjcKGVJlYWRJbXBvcnRCcmFja2V0UmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrKsIBCgpCdWlsZFBoYXNlEhsKF0JVSUxEX1BIQVNFX1VOU1BFQ0lGSUVEEAASFwoTQlVJTERfUEhBU0VfUkVBRElORxABEhkKFUJVSUxEX1BIQVNFX1NIT1JUTElTVBACEhgKFEJVSUxEX1BIQVNFX0JVSUxESU5HEAMSGAoUQlVJTERfUEhBU0VfQ0hFQ0tJTkcQBBIZChVCVUlMRF9QSEFTRV9SRVBBSVJJTkcQBRIUChBCVUlMRF9QSEFTRV9ET05FEAYy7AQKDEFnZW50U2VydmljZRI1CgRDaGF0EhMubXRnLnYxLkNoYXRSZXF1ZXN0GhQubXRnLnYxLkNoYXRSZXNwb25zZSIAMAESRQoKR2V0U2Vzc2lvbhIZLm10Zy52MS5HZXRTZXNzaW9uUmVxdWVzdBoaLm10Zy52MS5HZXRTZXNzaW9uUmVzcG9uc2UiABJLCgxMaXN0U2Vzc2lvbnMSGy5tdGcudjEuTGlzdFNlc3Npb25zUmVxdWVzdBocLm10Zy52MS5MaXN0U2Vzc2lvbnNSZXNwb25zZSIAEk4KDVVwZGF0ZVNlc3Npb24SHC5tdGcudjEuVXBkYXRlU2Vzc2lvblJlcXVlc3QaHS5tdGcudjEuVXBkYXRlU2Vzc2lvblJlc3BvbnNlIgASTgoNRGVsZXRlU2Vzc2lvbhIcLm10Zy52MS5EZWxldGVTZXNzaW9uUmVxdWVzdBodLm10Zy52MS5EZWxldGVTZXNzaW9uUmVzcG9uc2UiABJFCgpJbXBvcnREZWNrEhkubXRnLnYxLkltcG9ydERlY2tSZXF1ZXN0GhoubXRnLnYxLkltcG9ydERlY2tSZXNwb25zZSIAEloKEVJlYWRJbXBvcnRCcmFja2V0EiAubXRnLnYxLlJlYWRJbXBvcnRCcmFja2V0UmVxdWVzdBohLm10Zy52MS5SZWFkSW1wb3J0QnJhY2tldFJlc3BvbnNlIgASTgoNU2V0UGFnZUhpZGRlbhIcLm10Zy52MS5TZXRQYWdlSGlkZGVuUmVxdWVzdBodLm10Zy52MS5TZXRQYWdlSGlkZGVuUmVzcG9uc2UiAEIyWjBnaXRodWIuY29tL25rcmFtYmVyL2RlY2t0b21lL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_mtg_v1_collection, file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
+  fileDesc("ChptdGcvdjEvYWdlbnRfc2VydmljZS5wcm90bxIGbXRnLnYxIjwKE0xpc3RTZXNzaW9uc1JlcXVlc3QSEQoJcGFnZV9zaXplGAEgASgFEhIKCnBhZ2VfdG9rZW4YAiABKAkiWQoUTGlzdFNlc3Npb25zUmVzcG9uc2USKAoIc2Vzc2lvbnMYASADKAsyFi5tdGcudjEuU2Vzc2lvblN1bW1hcnkSFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJIpECCg5TZXNzaW9uU3VtbWFyeRIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEhUKDWZpcnN0X21lc3NhZ2UYAyABKAkSFQoNY29sbGVjdGlvbl9pZBgEIAEoCRIlCgZzdGF0dXMYBSABKA4yFS5tdGcudjEuU2Vzc2lvblN0YXR1cxISCgpkZWNrX2NvdW50GAYgASgFEhwKBXVzYWdlGAcgASgLMg0ubXRnLnYxLlVzYWdlEi4KCmNyZWF0ZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi4KCnVwZGF0ZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIjgKFFVwZGF0ZVNlc3Npb25SZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSDAoEbmFtZRgCIAEoCSJAChVVcGRhdGVTZXNzaW9uUmVzcG9uc2USJwoHc2Vzc2lvbhgBIAEoCzIWLm10Zy52MS5TZXNzaW9uU3VtbWFyeSIqChREZWxldGVTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIhcKFURlbGV0ZVNlc3Npb25SZXNwb25zZSI6ChRTZXRQYWdlSGlkZGVuUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJEg4KBmhpZGRlbhgCIAEoCCIXChVTZXRQYWdlSGlkZGVuUmVzcG9uc2UiyQEKC0NoYXRSZXF1ZXN0EhIKCnNlc3Npb25faWQYASABKAkSFQoNY29sbGVjdGlvbl9pZBgCIAEoCRIPCgdtZXNzYWdlGAMgASgJEh8KB2Fuc3dlcnMYBCADKAsyDi5tdGcudjEuQW5zd2VyEiMKCXBvb2xfcnVsZRgHIAEoDjIQLm10Zy52MS5Qb29sUnVsZRIVCg1yZXJ1bl9kZWNrX2lkGAggASgJSgQIBRAGSgQIBhAHUgRzZWVkUg9rZWVwX29yYWNsZV9pZHMiPgoKQWdlbnRFcnJvchIMCgRjb2RlGAEgASgJEg8KB21lc3NhZ2UYAiABKAkSEQoJcmV0cnlhYmxlGAMgASgIIr8CCgxDaGF0UmVzcG9uc2USGQoPc2Vzc2lvbl9zdGFydGVkGAEgASgJSAASFAoKdGV4dF9kZWx0YRgCIAEoCUgAEiQKCHF1ZXN0aW9uGAMgASgLMhAubXRnLnYxLlF1ZXN0aW9uSAASHgoFc2xvdHMYBCABKAsyDS5tdGcudjEuU2xvdHNIABIQCgZzdGF0dXMYBSABKAlIABIcCgRkZWNrGAYgASgLMgwubXRnLnYxLkRlY2tIABITCgVlcnJvchgHIAEoCUICGAFIABIlCgdmYWlsdXJlGAggASgLMhIubXRnLnYxLkFnZW50RXJyb3JIABIeCgV1c2FnZRgJIAEoCzINLm10Zy52MS5Vc2FnZUgAEiMKBXBoYXNlGAogASgOMhIubXRnLnYxLkJ1aWxkUGhhc2VIAEIHCgVldmVudCInChFHZXRTZXNzaW9uUmVxdWVzdBISCgpzZXNzaW9uX2lkGAEgASgJIo0BChJHZXRTZXNzaW9uUmVzcG9uc2USIAoHc2Vzc2lvbhgBIAEoCzIPLm10Zy52MS5TZXNzaW9uEhAKCGJ1aWxkaW5nGAIgASgIEiEKBXBoYXNlGAMgASgOMhIubXRnLnYxLkJ1aWxkUGhhc2USEAoIcmVwYWlyZWQYBCABKAgSDgoGc3RhdHVzGAUgASgJIpoBChFJbXBvcnREZWNrUmVxdWVzdBIMCgR0ZXh0GAEgASgJEgwKBG5hbWUYAiABKAkSFQoNY29sbGVjdGlvbl9pZBgDIAEoCRIgCgZmb3JtYXQYBCABKA4yEC5tdGcudjEuRm9ybWF0SWQSHAoUY29tbWFuZGVyX29yYWNsZV9pZHMYBSADKAkSEgoKc291cmNlX3VybBgGIAEoCSIjChRGZXRjaERlY2tMaXN0UmVxdWVzdBILCgN1cmwYASABKAkikQEKFUZldGNoRGVja0xpc3RSZXNwb25zZRIMCgR0ZXh0GAEgASgJEgwKBG5hbWUYAiABKAkSEgoKc291cmNlX3VybBgDIAEoCRIQCghsZWZ0X291dBgEIAEoBRIMCgRzaXRlGAUgASgJEhQKDGV4cG9ydF9zdGVwcxgGIAMoCRISCgprbm93bl9zaXRlGAcgASgIIrIBChJJbXBvcnREZWNrUmVzcG9uc2USGgoEZGVjaxgBIAEoCzIMLm10Zy52MS5EZWNrEhIKCnNlc3Npb25faWQYAiABKAkSFAoMbmVlZHNfZm9ybWF0GAMgASgIEisKEWNvbW1hbmRlcl9vcHRpb25zGAQgAygLMhAubXRnLnYxLkRlY2tDYXJkEikKCnVucmVzb2x2ZWQYBSADKAsyFS5tdGcudjEuVW5yZXNvbHZlZFJvdyIrChhSZWFkSW1wb3J0QnJhY2tldFJlcXVlc3QSDwoHZGVja19pZBgBIAEoCSI3ChlSZWFkSW1wb3J0QnJhY2tldFJlc3BvbnNlEhoKBGRlY2sYASABKAsyDC5tdGcudjEuRGVjayrCAQoKQnVpbGRQaGFzZRIbChdCVUlMRF9QSEFTRV9VTlNQRUNJRklFRBAAEhcKE0JVSUxEX1BIQVNFX1JFQURJTkcQARIZChVCVUlMRF9QSEFTRV9TSE9SVExJU1QQAhIYChRCVUlMRF9QSEFTRV9CVUlMRElORxADEhgKFEJVSUxEX1BIQVNFX0NIRUNLSU5HEAQSGQoVQlVJTERfUEhBU0VfUkVQQUlSSU5HEAUSFAoQQlVJTERfUEhBU0VfRE9ORRAGMrwFCgxBZ2VudFNlcnZpY2USNQoEQ2hhdBITLm10Zy52MS5DaGF0UmVxdWVzdBoULm10Zy52MS5DaGF0UmVzcG9uc2UiADABEkUKCkdldFNlc3Npb24SGS5tdGcudjEuR2V0U2Vzc2lvblJlcXVlc3QaGi5tdGcudjEuR2V0U2Vzc2lvblJlc3BvbnNlIgASSwoMTGlzdFNlc3Npb25zEhsubXRnLnYxLkxpc3RTZXNzaW9uc1JlcXVlc3QaHC5tdGcudjEuTGlzdFNlc3Npb25zUmVzcG9uc2UiABJOCg1VcGRhdGVTZXNzaW9uEhwubXRnLnYxLlVwZGF0ZVNlc3Npb25SZXF1ZXN0Gh0ubXRnLnYxLlVwZGF0ZVNlc3Npb25SZXNwb25zZSIAEk4KDURlbGV0ZVNlc3Npb24SHC5tdGcudjEuRGVsZXRlU2Vzc2lvblJlcXVlc3QaHS5tdGcudjEuRGVsZXRlU2Vzc2lvblJlc3BvbnNlIgASRQoKSW1wb3J0RGVjaxIZLm10Zy52MS5JbXBvcnREZWNrUmVxdWVzdBoaLm10Zy52MS5JbXBvcnREZWNrUmVzcG9uc2UiABJOCg1GZXRjaERlY2tMaXN0EhwubXRnLnYxLkZldGNoRGVja0xpc3RSZXF1ZXN0Gh0ubXRnLnYxLkZldGNoRGVja0xpc3RSZXNwb25zZSIAEloKEVJlYWRJbXBvcnRCcmFja2V0EiAubXRnLnYxLlJlYWRJbXBvcnRCcmFja2V0UmVxdWVzdBohLm10Zy52MS5SZWFkSW1wb3J0QnJhY2tldFJlc3BvbnNlIgASTgoNU2V0UGFnZUhpZGRlbhIcLm10Zy52MS5TZXRQYWdlSGlkZGVuUmVxdWVzdBodLm10Zy52MS5TZXRQYWdlSGlkZGVuUmVzcG9uc2UiAEIyWjBnaXRodWIuY29tL25rcmFtYmVyL2RlY2t0b21lL2dvL2dlbi9tdGcvdjE7bXRndjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_mtg_v1_collection, file_mtg_v1_deck, file_mtg_v1_format, file_mtg_v1_session]);
 
 /**
  * @generated from message mtg.v1.ListSessionsRequest
@@ -543,6 +543,15 @@ export type ImportDeckRequest = Message<"mtg.v1.ImportDeckRequest"> & {
    * @generated from field: repeated string commander_oracle_ids = 5;
    */
   commanderOracleIds: string[];
+
+  /**
+   * source_url is the Archidekt deck that FetchDeckList read, or empty
+   * for a file or a pasted list. The server keeps only the link that it
+   * makes again from the deck id (D-1101).
+   *
+   * @generated from field: string source_url = 6;
+   */
+  sourceUrl: string;
 };
 
 /**
@@ -551,6 +560,96 @@ export type ImportDeckRequest = Message<"mtg.v1.ImportDeckRequest"> & {
  */
 export const ImportDeckRequestSchema: GenMessage<ImportDeckRequest> = /*@__PURE__*/
   messageDesc(file_mtg_v1_agent_service, 14);
+
+/**
+ * FetchDeckListRequest carries the URL of a deck page that the user
+ * pasted (D-1100, D-1103).
+ *
+ * @generated from message mtg.v1.FetchDeckListRequest
+ */
+export type FetchDeckListRequest = Message<"mtg.v1.FetchDeckListRequest"> & {
+  /**
+   * @generated from field: string url = 1;
+   */
+  url: string;
+};
+
+/**
+ * Describes the message mtg.v1.FetchDeckListRequest.
+ * Use `create(FetchDeckListRequestSchema)` to create a new message.
+ */
+export const FetchDeckListRequestSchema: GenMessage<FetchDeckListRequest> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 15);
+
+/**
+ * FetchDeckListResponse holds the list of a site that the app reads, or
+ * the steps of an export for any other site (D-1103).
+ *
+ * @generated from message mtg.v1.FetchDeckListResponse
+ */
+export type FetchDeckListResponse = Message<"mtg.v1.FetchDeckListResponse"> & {
+  /**
+   * text is the list in Arena sections: Commander, Companion, Deck, and
+   * Sideboard. ImportDeck reads it as a pasted list. Empty when the app
+   * can not read the site.
+   *
+   * @generated from field: string text = 1;
+   */
+  text: string;
+
+  /**
+   * name is the name of the deck on its site.
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * source_url is the deck page, made again from the deck id.
+   *
+   * @generated from field: string source_url = 3;
+   */
+  sourceUrl: string;
+
+  /**
+   * left_out counts the copies of a category that the site keeps out of
+   * the deck, such as the maybeboard.
+   *
+   * @generated from field: int32 left_out = 4;
+   */
+  leftOut: number;
+
+  /**
+   * site names the site of the link: its name for a known site, or its
+   * host.
+   *
+   * @generated from field: string site = 5;
+   */
+  site: string;
+
+  /**
+   * export_steps are the steps to copy the list by hand, for a site that
+   * the app can not read. Empty when text is set.
+   *
+   * @generated from field: repeated string export_steps = 6;
+   */
+  exportSteps: string[];
+
+  /**
+   * known_site is false for a site that has no steps of its own. The
+   * client then files a report of the link (D-1104).
+   *
+   * @generated from field: bool known_site = 7;
+   */
+  knownSite: boolean;
+};
+
+/**
+ * Describes the message mtg.v1.FetchDeckListResponse.
+ * Use `create(FetchDeckListResponseSchema)` to create a new message.
+ */
+export const FetchDeckListResponseSchema: GenMessage<FetchDeckListResponse> = /*@__PURE__*/
+  messageDesc(file_mtg_v1_agent_service, 16);
 
 /**
  * @generated from message mtg.v1.ImportDeckResponse
@@ -598,7 +697,7 @@ export type ImportDeckResponse = Message<"mtg.v1.ImportDeckResponse"> & {
  * Use `create(ImportDeckResponseSchema)` to create a new message.
  */
 export const ImportDeckResponseSchema: GenMessage<ImportDeckResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 15);
+  messageDesc(file_mtg_v1_agent_service, 17);
 
 /**
  * @generated from message mtg.v1.ReadImportBracketRequest
@@ -615,7 +714,7 @@ export type ReadImportBracketRequest = Message<"mtg.v1.ReadImportBracketRequest"
  * Use `create(ReadImportBracketRequestSchema)` to create a new message.
  */
 export const ReadImportBracketRequestSchema: GenMessage<ReadImportBracketRequest> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 16);
+  messageDesc(file_mtg_v1_agent_service, 18);
 
 /**
  * @generated from message mtg.v1.ReadImportBracketResponse
@@ -632,7 +731,7 @@ export type ReadImportBracketResponse = Message<"mtg.v1.ReadImportBracketRespons
  * Use `create(ReadImportBracketResponseSchema)` to create a new message.
  */
 export const ReadImportBracketResponseSchema: GenMessage<ReadImportBracketResponse> = /*@__PURE__*/
-  messageDesc(file_mtg_v1_agent_service, 17);
+  messageDesc(file_mtg_v1_agent_service, 19);
 
 /**
  * BuildPhase names where a turn stands (roadmap PR-19). The stepper of
@@ -762,6 +861,19 @@ export const AgentService: GenService<{
     methodKind: "unary";
     input: typeof ImportDeckRequestSchema;
     output: typeof ImportDeckResponseSchema;
+  },
+  /**
+   * FetchDeckList reads a public deck by its URL and answers its list as
+   * text, which the import form shows before ImportDeck (PR-120, D-1100).
+   * A site that the app can not read gets the steps of an export
+   * (D-1103). It stores nothing.
+   *
+   * @generated from rpc mtg.v1.AgentService.FetchDeckList
+   */
+  fetchDeckList: {
+    methodKind: "unary";
+    input: typeof FetchDeckListRequestSchema;
+    output: typeof FetchDeckListResponseSchema;
   },
   /**
    * ReadImportBracket asks the bracket judge again for an imported deck

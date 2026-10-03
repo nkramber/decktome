@@ -54,6 +54,10 @@ enum ImportPage {
   IMPORT_PAGE_COLLECTION = 1;
   // IMPORT_PAGE_DECK is the deck import.
   IMPORT_PAGE_DECK = 2;
+  // IMPORT_PAGE_DECK_LINK is a deck link of a site that the app can not
+  // read and has no steps for. The content is the link, and the fault
+  // keeps its host alone (D-1104).
+  IMPORT_PAGE_DECK_LINK = 3;
 }
 
 // FeedbackVerdict is the thumb.

@@ -1,0 +1,72 @@
+About
+Name Finally, A Casual Urza Deck
+
+Commander
+1 Urza, Lord High Artificer
+
+Deck
+1 Aether Spellbomb
+1 Amphibian Downpour
+1 An Offer You Can't Refuse
+1 Arcane Signet
+1 Arid Archway
+1 Astrologian's Planisphere
+1 Bender's Waterskin
+1 Counterspell
+1 Cryogen Relic
+1 Cyberdrive Awakener
+1 Cyclonic Rift
+1 Dauntless Scrapbot
+1 Elixir
+1 Emergence Zone
+1 Flooded Strand
+1 Fomori Vault
+1 Force of Will
+1 Frantic Search
+1 Fugitive Droid
+1 Ghost Quarter
+1 High Fae Trickster
+1 Howling Mine
+1 Inventors' Fair
+1 Kappa Cannoneer
+1 Lightning Greaves
+1 Mana Drain
+1 March of Swirling Mist
+1 Midnight Clock
+1 Mirage Mirror
+1 Misty Rainforest
+1 Mystic Remora
+1 Mystic Sanctuary
+1 Otawara, Soaring City
+1 Phyrexian Metamorph
+1 Polluted Delta
+1 Ponder
+1 Portal to Phyrexia
+1 PuPu UFO
+1 Repurposing Bay
+1 Resculpt
+1 Rhystic Study
+1 Sai, Master Thopterist
+1 Sapphire Medallion
+1 Scalding Tarn
+1 Scavenger Grounds
+1 Scour for Scrap
+1 Simulacrum Synthesizer
+1 Sink into Stupor
+3 Snow-Covered Island
+11 Snow-Covered Island
+1 Swan Song
+1 Sword of Hearth and Home
+1 Tezzeret, Cruel Captain
+1 The Aetherspark
+1 The Mightstone and Weakstone
+1 The Reality Chip
+1 Thespian's Stage
+1 Thought Monitor
+1 Urza's Cave
+1 Wayfarer's Bauble
+1 Whir of Invention
+1 Worldwalker Helm
+
+Sideboard
+1 Trophy Mage

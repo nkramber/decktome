@@ -110,6 +110,9 @@ message Deck {
   // before D-1061, which needs one new link. The public copy of a deck
   // and the snapshot of a verdict never carry it.
   string share_token = 32;
+  // source_url is the Archidekt deck that an import read, or empty. The
+  // deck page and the public copy link to it (D-1101).
+  string source_url = 33;
 }
 
 // RerunCase is the rerun of a stale deck (D-1008). A patch replaces the

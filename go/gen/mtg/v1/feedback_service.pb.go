@@ -111,6 +111,10 @@ const (
 	ImportPage_IMPORT_PAGE_COLLECTION ImportPage = 1
 	// IMPORT_PAGE_DECK is the deck import.
 	ImportPage_IMPORT_PAGE_DECK ImportPage = 2
+	// IMPORT_PAGE_DECK_LINK is a deck link of a site that the app can not
+	// read and has no steps for. The content is the link, and the fault
+	// keeps its host alone (D-1104).
+	ImportPage_IMPORT_PAGE_DECK_LINK ImportPage = 3
 )
 
 // Enum value maps for ImportPage.
@@ -119,11 +123,13 @@ var (
 		0: "IMPORT_PAGE_UNSPECIFIED",
 		1: "IMPORT_PAGE_COLLECTION",
 		2: "IMPORT_PAGE_DECK",
+		3: "IMPORT_PAGE_DECK_LINK",
 	}
 	ImportPage_value = map[string]int32{
 		"IMPORT_PAGE_UNSPECIFIED": 0,
 		"IMPORT_PAGE_COLLECTION":  1,
 		"IMPORT_PAGE_DECK":        2,
+		"IMPORT_PAGE_DECK_LINK":   3,
 	}
 )
 
@@ -582,12 +588,13 @@ const file_mtg_v1_feedback_service_proto_rawDesc = "" +
 	"\x12FEEDBACK_KIND_DECK\x10\x04\x12\x16\n" +
 	"\x12FEEDBACK_KIND_CHAT\x10\x05\x12\x18\n" +
 	"\x14FEEDBACK_KIND_IMPORT\x10\x06\x12\x19\n" +
-	"\x15FEEDBACK_KIND_GENERAL\x10\a*[\n" +
+	"\x15FEEDBACK_KIND_GENERAL\x10\a*v\n" +
 	"\n" +
 	"ImportPage\x12\x1b\n" +
 	"\x17IMPORT_PAGE_UNSPECIFIED\x10\x00\x12\x1a\n" +
 	"\x16IMPORT_PAGE_COLLECTION\x10\x01\x12\x14\n" +
-	"\x10IMPORT_PAGE_DECK\x10\x02*g\n" +
+	"\x10IMPORT_PAGE_DECK\x10\x02\x12\x19\n" +
+	"\x15IMPORT_PAGE_DECK_LINK\x10\x03*g\n" +
 	"\x0fFeedbackVerdict\x12 \n" +
 	"\x1cFEEDBACK_VERDICT_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13FEEDBACK_VERDICT_UP\x10\x01\x12\x19\n" +

@@ -274,14 +274,14 @@ func TestEveryReasonKeyNamesOneClass(t *testing.T) {
 		"card/off_theme", "card/illegal", "card/unwanted_buy", "card/wrong_printing", "card/wrong_power",
 		"deck/off_spec", "deck/bad_mana", "deck/too_little_interaction", "deck/wrong_power", "deck/too_many_to_buy",
 		"chat/stuck", "chat/ignored_request", "chat/wrong_questions", "chat/no_deck", "chat/error",
-		"import/parse_fault",
+		"import/parse_fault", "import/deck_link",
 	} {
 		if seen[want] == "" {
 			t.Errorf("reason %s names no class", want)
 		}
 	}
-	if len(classes) != 23 {
-		t.Errorf("%d classes, want 23: one per reason key", len(classes))
+	if len(classes) != 24 {
+		t.Errorf("%d classes, want 24: one per reason key", len(classes))
 	}
 }
 

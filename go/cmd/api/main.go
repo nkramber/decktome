@@ -27,6 +27,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/adminsvc"
 	"github.com/nkramber/decktome/go/internal/agentsvc"
 	"github.com/nkramber/decktome/go/internal/allowlist"
+	"github.com/nkramber/decktome/go/internal/archidekt"
 	"github.com/nkramber/decktome/go/internal/auth"
 	"github.com/nkramber/decktome/go/internal/authblock"
 	"github.com/nkramber/decktome/go/internal/candidates"
@@ -671,6 +672,7 @@ func agentService(client *llm.Client, fs *firestore.Client, index *cardsvc.Serve
 		agentsvc.WithPreconSource(preconSrc),
 		agentsvc.WithPreconTable(tableSrc),
 		agentsvc.WithScorer(scorer),
+		agentsvc.WithArchidekt(archidekt.New()),
 	}
 	prices, err := llm.LoadPrices()
 	if err != nil {

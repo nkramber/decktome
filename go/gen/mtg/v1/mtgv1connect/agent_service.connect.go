@@ -48,6 +48,9 @@ const (
 	AgentServiceDeleteSessionProcedure = "/mtg.v1.AgentService/DeleteSession"
 	// AgentServiceImportDeckProcedure is the fully-qualified name of the AgentService's ImportDeck RPC.
 	AgentServiceImportDeckProcedure = "/mtg.v1.AgentService/ImportDeck"
+	// AgentServiceFetchDeckListProcedure is the fully-qualified name of the AgentService's
+	// FetchDeckList RPC.
+	AgentServiceFetchDeckListProcedure = "/mtg.v1.AgentService/FetchDeckList"
 	// AgentServiceReadImportBracketProcedure is the fully-qualified name of the AgentService's
 	// ReadImportBracket RPC.
 	AgentServiceReadImportBracketProcedure = "/mtg.v1.AgentService/ReadImportBracket"
@@ -73,6 +76,11 @@ type AgentServiceClient interface {
 	// ImportDeck stores a deck list that a user brings, and a session
 	// that the revise turn reads (PR-70, D-845, D-851).
 	ImportDeck(context.Context, *connect.Request[v1.ImportDeckRequest]) (*connect.Response[v1.ImportDeckResponse], error)
+	// FetchDeckList reads a public deck by its URL and answers its list as
+	// text, which the import form shows before ImportDeck (PR-120, D-1100).
+	// A site that the app can not read gets the steps of an export
+	// (D-1103). It stores nothing.
+	FetchDeckList(context.Context, *connect.Request[v1.FetchDeckListRequest]) (*connect.Response[v1.FetchDeckListResponse], error)
 	// ReadImportBracket asks the bracket judge again for an imported deck
 	// whose bracket is the floor alone (D-854).
 	ReadImportBracket(context.Context, *connect.Request[v1.ReadImportBracketRequest]) (*connect.Response[v1.ReadImportBracketResponse], error)
@@ -129,6 +137,12 @@ func NewAgentServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 			connect.WithSchema(agentServiceMethods.ByName("ImportDeck")),
 			connect.WithClientOptions(opts...),
 		),
+		fetchDeckList: connect.NewClient[v1.FetchDeckListRequest, v1.FetchDeckListResponse](
+			httpClient,
+			baseURL+AgentServiceFetchDeckListProcedure,
+			connect.WithSchema(agentServiceMethods.ByName("FetchDeckList")),
+			connect.WithClientOptions(opts...),
+		),
 		readImportBracket: connect.NewClient[v1.ReadImportBracketRequest, v1.ReadImportBracketResponse](
 			httpClient,
 			baseURL+AgentServiceReadImportBracketProcedure,
@@ -152,6 +166,7 @@ type agentServiceClient struct {
 	updateSession     *connect.Client[v1.UpdateSessionRequest, v1.UpdateSessionResponse]
 	deleteSession     *connect.Client[v1.DeleteSessionRequest, v1.DeleteSessionResponse]
 	importDeck        *connect.Client[v1.ImportDeckRequest, v1.ImportDeckResponse]
+	fetchDeckList     *connect.Client[v1.FetchDeckListRequest, v1.FetchDeckListResponse]
 	readImportBracket *connect.Client[v1.ReadImportBracketRequest, v1.ReadImportBracketResponse]
 	setPageHidden     *connect.Client[v1.SetPageHiddenRequest, v1.SetPageHiddenResponse]
 }
@@ -186,6 +201,11 @@ func (c *agentServiceClient) ImportDeck(ctx context.Context, req *connect.Reques
 	return c.importDeck.CallUnary(ctx, req)
 }
 
+// FetchDeckList calls mtg.v1.AgentService.FetchDeckList.
+func (c *agentServiceClient) FetchDeckList(ctx context.Context, req *connect.Request[v1.FetchDeckListRequest]) (*connect.Response[v1.FetchDeckListResponse], error) {
+	return c.fetchDeckList.CallUnary(ctx, req)
+}
+
 // ReadImportBracket calls mtg.v1.AgentService.ReadImportBracket.
 func (c *agentServiceClient) ReadImportBracket(ctx context.Context, req *connect.Request[v1.ReadImportBracketRequest]) (*connect.Response[v1.ReadImportBracketResponse], error) {
 	return c.readImportBracket.CallUnary(ctx, req)
@@ -213,6 +233,11 @@ type AgentServiceHandler interface {
 	// ImportDeck stores a deck list that a user brings, and a session
 	// that the revise turn reads (PR-70, D-845, D-851).
 	ImportDeck(context.Context, *connect.Request[v1.ImportDeckRequest]) (*connect.Response[v1.ImportDeckResponse], error)
+	// FetchDeckList reads a public deck by its URL and answers its list as
+	// text, which the import form shows before ImportDeck (PR-120, D-1100).
+	// A site that the app can not read gets the steps of an export
+	// (D-1103). It stores nothing.
+	FetchDeckList(context.Context, *connect.Request[v1.FetchDeckListRequest]) (*connect.Response[v1.FetchDeckListResponse], error)
 	// ReadImportBracket asks the bracket judge again for an imported deck
 	// whose bracket is the floor alone (D-854).
 	ReadImportBracket(context.Context, *connect.Request[v1.ReadImportBracketRequest]) (*connect.Response[v1.ReadImportBracketResponse], error)
@@ -265,6 +290,12 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 		connect.WithSchema(agentServiceMethods.ByName("ImportDeck")),
 		connect.WithHandlerOptions(opts...),
 	)
+	agentServiceFetchDeckListHandler := connect.NewUnaryHandler(
+		AgentServiceFetchDeckListProcedure,
+		svc.FetchDeckList,
+		connect.WithSchema(agentServiceMethods.ByName("FetchDeckList")),
+		connect.WithHandlerOptions(opts...),
+	)
 	agentServiceReadImportBracketHandler := connect.NewUnaryHandler(
 		AgentServiceReadImportBracketProcedure,
 		svc.ReadImportBracket,
@@ -291,6 +322,8 @@ func NewAgentServiceHandler(svc AgentServiceHandler, opts ...connect.HandlerOpti
 			agentServiceDeleteSessionHandler.ServeHTTP(w, r)
 		case AgentServiceImportDeckProcedure:
 			agentServiceImportDeckHandler.ServeHTTP(w, r)
+		case AgentServiceFetchDeckListProcedure:
+			agentServiceFetchDeckListHandler.ServeHTTP(w, r)
 		case AgentServiceReadImportBracketProcedure:
 			agentServiceReadImportBracketHandler.ServeHTTP(w, r)
 		case AgentServiceSetPageHiddenProcedure:
@@ -326,6 +359,10 @@ func (UnimplementedAgentServiceHandler) DeleteSession(context.Context, *connect.
 
 func (UnimplementedAgentServiceHandler) ImportDeck(context.Context, *connect.Request[v1.ImportDeckRequest]) (*connect.Response[v1.ImportDeckResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.ImportDeck is not implemented"))
+}
+
+func (UnimplementedAgentServiceHandler) FetchDeckList(context.Context, *connect.Request[v1.FetchDeckListRequest]) (*connect.Response[v1.FetchDeckListResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("mtg.v1.AgentService.FetchDeckList is not implemented"))
 }
 
 func (UnimplementedAgentServiceHandler) ReadImportBracket(context.Context, *connect.Request[v1.ReadImportBracketRequest]) (*connect.Response[v1.ReadImportBracketResponse], error) {
