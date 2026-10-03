@@ -25,11 +25,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` reads "every check passed", with 536 of 536 web tests, under Node 22. The Go tests of the stale pass, the push, and the worker pass.
 
-**The review.** Codex reviewed effective head `61a474f2ac7a5850582b8b0137c808cd268609d5`. The verdict is Ready for owner merge. No finding remains open.
+**The review.** Gitar approved `61a474f` with no finding and no thread, and the answer to its CI note is on the pull request. Codex reviewed effective head `61a474f2ac7a5850582b8b0137c808cd268609d5`. The verdict is Ready for owner merge, pending the auto-merge. No finding remains open.
 
 **The open work.**
 
-1. The owner confirmation of the merge.
+1. The owner confirmation of the merge, then the auto-merge.
 2. After the deploy, read the log of the snapshot job for the line "stale pass ended" with "users hit".
 3. After the ban announcement of 2026-10-12, a stale deck of the owner must send the push. The live rerun of I-1 can use the same deck (D-1023).
 
