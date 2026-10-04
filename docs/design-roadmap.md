@@ -3216,7 +3216,7 @@ The replay of 2026-10-03 cost nothing. It joined the 268 first printings of Real
 UNVERIFIED: the tag file of that snapshot holds no tag of a new card, so no tag signal fired in the replay. The tag file of a release day can also lack the new cards. The live check after the deploy waits for Star Trek on 2026-11-13 (Scryfall, read 2026-10-03).
 > *In plain English:* when a new set comes out, the app looks for new cards that fit each of your decks. Your phone tells you, and the deck shows the cards with a button to revise the deck. A dismiss hides the panel.
 
-**PR-122: The app sends its email from `mail@decktome.com` (D-1112).** The mark comes before any review (D-822).
+**PR-122: The app sends its email from `mail@decktome.com` (D-1112).** ✅ merged as #281. The mark comes before any review (D-822).
 
 - **The sender.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`. The approval email and the proof email use it. The old sender `beta@mail.decktome.com` had no inbox, so each reply failed.
 - **The inbox.** The root domain receives mail in iCloud Mail of the owner. Section 8.2 of `docs/setup-gcp.md` holds its records.

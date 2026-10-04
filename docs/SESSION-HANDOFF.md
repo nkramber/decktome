@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03g)
 
-**Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #PRNUM.
+**Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #281.
 
 Author provider: Claude Code
 
