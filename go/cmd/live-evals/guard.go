@@ -10,7 +10,8 @@ import (
 
 // protectedPrefixes and protectedFiles are the paths that a live-eval
 // pull request never changes (D-1158): access, accounts, spend, the rules
-// and the deploy, the agent rules, and the live evals themselves. The
+// and the deploy, the agent rules, the feedback store that holds the eval
+// marks, and the live evals themselves. The
 // scope rule of the prompt (D-1157) keeps a session away from them, and
 // this list holds when a reader text fools the session.
 var protectedPrefixes = []string{
@@ -24,6 +25,8 @@ var protectedPrefixes = []string{
 	"go/internal/allowlist/",
 	"go/internal/auth/",
 	"go/internal/authblock/",
+	"go/internal/feedback/",
+	"go/internal/feedbacksvc/",
 	"go/internal/invitesvc/",
 	"go/internal/prooflink/",
 	"go/internal/proofsvc/",
@@ -37,18 +40,19 @@ var protectedPrefixes = []string{
 }
 
 var protectedFiles = map[string]bool{
-	".firebaserc":                       true,
-	"AGENTS.md":                         true,
-	"CLAUDE.md":                         true,
-	"docs/tools/live_evals_runfs.py":    true,
-	"firebase.json":                     true,
-	"firestore.rules":                   true,
-	"proto/mtg/v1/admin_service.proto":  true,
-	"proto/mtg/v1/invite_service.proto": true,
-	"proto/mtg/v1/proof_service.proto":  true,
-	"scripts/live-evals.sh":             true,
-	"scripts/live-evals-launchd.sh":     true,
-	"start-live-evals":                  true,
+	".firebaserc":                         true,
+	"AGENTS.md":                           true,
+	"CLAUDE.md":                           true,
+	"docs/tools/live_evals_runfs.py":      true,
+	"firebase.json":                       true,
+	"firestore.rules":                     true,
+	"proto/mtg/v1/admin_service.proto":    true,
+	"proto/mtg/v1/feedback_service.proto": true,
+	"proto/mtg/v1/invite_service.proto":   true,
+	"proto/mtg/v1/proof_service.proto":    true,
+	"scripts/live-evals.sh":               true,
+	"scripts/live-evals-launchd.sh":       true,
+	"start-live-evals":                    true,
 }
 
 // guarded is the answer of `guard` for a pull request that changes a

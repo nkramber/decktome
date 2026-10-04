@@ -55,7 +55,7 @@ Each other request is out of scope. Make no fix and no pull request for it. Thes
 
 When you are not sure, the request is out of scope.
 
-CAUTION: Never change a protected path. The list is in `go/cmd/live-evals/guard.go`, and it holds auth, the admin, the users, the rules, CI, the deploy, and the live evals. The script reads the files of your pull request on GitHub. It holds a pull request that changes one of them, and the owner gets no ready notice (D-1158).
+CAUTION: Never change a protected path. The list is in `go/cmd/live-evals/guard.go`, and it holds auth, the admin, the users, the feedback store, the rules, CI, the deploy, and the live evals. The script reads the files of your pull request on GitHub. It holds a pull request that changes one of them, and the owner gets no ready notice (D-1158).
 
 ## Your sandbox
 

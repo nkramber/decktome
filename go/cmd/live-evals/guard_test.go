@@ -34,6 +34,17 @@ func TestProtectedOfHoldsAccessAndDeployPaths(t *testing.T) {
 	}
 }
 
+// The feedback store holds the eval marks and the snapshots of D-635, so
+// a steered session can not change the queue that it reads (D-1158).
+func TestProtectedOfHoldsTheFeedbackStore(t *testing.T) {
+	files := []string{"go/internal/feedback/evaluation.go", "go/internal/feedbacksvc/service.go",
+		"proto/mtg/v1/feedback_service.proto", "web/apps/web/src/features/deck/deck-view.tsx"}
+	want := files[:3]
+	if got := protectedOf(files); !reflect.DeepEqual(got, want) {
+		t.Fatalf("protectedOf = %v, want %v", got, want)
+	}
+}
+
 // A prefix matches a folder, and never a longer name that shares it.
 func TestProtectedOfMatchesWholeFolders(t *testing.T) {
 	if got := protectedOf([]string{"go/internal/authority/x.go", "go/internal/usagestats/x.go", "scripts/live-evals-notes.md"}); len(got) != 0 {

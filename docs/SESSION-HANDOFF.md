@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merge of PR-128 made the branch conflict, so the session moved it onto `a7731f5`. The effective head is `dda60f3`. The later `cdd6b48` commit changes only this hand-off. Codex found that the path guard allows changes to feedback storage and its service. Finding `P2-1` is open, and the verdict is Changes required.
+**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merge of PR-128 made the branch conflict, so the session moved it onto `a7731f5`. The effective head is `dda60f3`. The later `cdd6b48` commit changes only this hand-off. Codex round 2 found P2-1: the guard did not hold the feedback store. The fix adds it, and `docs/reviews/pr-285-response.md` holds the answer.
 
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
