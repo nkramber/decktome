@@ -319,6 +319,10 @@ enum CardRole {
   CARD_ROLE_SYNERGY = 8;
   CARD_ROLE_WINCON = 9;
   CARD_ROLE_OTHER = 10;
+  // CARD_ROLE_PROTECTION is a permanent that protects a creature, for
+  // example Swiftfoot Boots. The interaction band does not count it
+  // (D-1120).
+  CARD_ROLE_PROTECTION = 11;
 }
 
 // ValidationResult is the rules-engine verdict (guardrail 1, PR-5).
