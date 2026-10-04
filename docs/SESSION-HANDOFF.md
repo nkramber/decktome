@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The checks.** The Go tests pass. A local replay of the two stored decks reads 1 and 2 fast mana, not 3 and 4. It reads 0 finishers, not 2.
 
-**The review.** Gitar passed on `7fbd0e0` with no open finding. Codex found no defect at `7fbd0e047e4629e75c7bd3b8e263c64ae1544cbf`. `make verify` passed with Node 22. The review record is on the branch.
+**The review.** Codex found no defect at effective head `7fbd0e047e4629e75c7bd3b8e263c64ae1544cbf`. The verdict is Ready for owner merge, with no open finding. Gitar, `pr-contract`, `review-gate`, and all active verify checks passed after the record push. `make verify` passed with Node 22.
 
 After the deploy, one check follows: a new owned-only deck of bracket 4 holds no filter as fast mana and no Hurricane as a finisher.
 
