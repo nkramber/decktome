@@ -3413,7 +3413,8 @@ Gate:
 - **The change.** `go/cmd/api-build` sends `owned-only` by default. The flag `-pool owned-first` still selects the old rule.
 
 Gate:
-- The tool tests prove that the default pool rule is `POOL_RULE_OWNED_ONLY`.
+- The tool tests prove that the registered default of `-pool` parses as `POOL_RULE_OWNED_ONLY`.
+- The same test fails when the registered default is `owned-first`.
 
 > *In plain English:* the build check now uses only the cards of the collection, as the app does.
 
