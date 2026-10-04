@@ -8,31 +8,25 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04c)
 
-**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1139).** The pull request is #282.
+**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1145).** The pull request is #282.
 
 Author provider: Claude Code
 
-**The base.** The branch stacks on `fix/first-user-feedback` at `5a862a5`, PR-124 (#283). `main` is `b308a71`, from #277.
-
-**The owner choices.** On 2026-10-03 the session watched the first outside user build two decks, and the owner asked to automate that read (D-1132). The first run marks the waiting decks read (D-1133). Each session can spend $3.00, and the live-test lanes stay closed (D-1134). Every account gets an eval (D-1135). One session runs at a time, at most three live-eval pull requests stay open, and each starts from the newest one (D-1138). The owner kept `bypassPermissions` and asked for notices before all user text (D-1139).
+**The base.** The branch stacks on `fix/first-user-feedback` at `5a862a5`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
 
 **The code.**
 
-- `go/internal/decks` holds `has_been_evaluated` and `evaluated_at`. `keepStored` keeps them on each rewrite. `Unevaluated` and `MarkEvaluated` read and write them.
-- `go/cmd/live-evals` holds `pending`, `summary`, `bundle`, `mark`, `ready`, and `notify`. Each bundle file carries the untrusted-data notice.
-- `scripts/live-evals.sh` is the loop, and `./start-live-evals` starts it. `scripts/live-evals/` holds the eval, continue, and restack prompts.
+- `go/internal/decks` holds the mark `has_been_evaluated`, and `go/cmd/live-evals` serves the loop. `replay-input` writes the inputs of a replay (D-1144).
+- `go/cmd/chat-probe` takes `-messages-json`, `-collection-json`, and `-deck-out`.
+- `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
 
-**The checks.** `make verify` passed on `00ade53`, with the web tests under Node 22. `make store-check` passed against the emulator. `./start-live-evals --dry` read the six decks of 2026-10-03, and it marked nothing.
-
-**The review.** The owner renumbered this pull request, because `fix/first-user-feedback` holds its first ids. The Gitar pass runs again, and no Codex review ran yet.
+**The checks.** The Go tests pass. A probe of the profile passed 27 checks. The pinned Claude Code starts in the profile and stops at "Not logged in", as designed.
 
 **The open work.**
 
-1. Add the two changes that the owner asked for on 2026-10-04, in this pull request:
-   - A Pushover notice for each new deck and each revision, and for each eval that finds a fix.
-   - Replay the user session with the fix, and prove an improvement. After two more failed tries, send a notice that the fix failed.
-2. Run `make pr-check`, then do the Gitar pass with the `gitar-review` skill, then `make codex-review PR=282`.
-3. The merge of the owner (D-828, D-834).
+1. `make verify`, the push, the Gitar pass, and `make codex-review PR=282`.
+2. The merge of the owner (D-828, D-834).
+3. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
 4. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
 
 ## How to resume
@@ -108,7 +102,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **PR-124: the findings of the first outside user** (F-212 to F-223, D-1116 to D-1131). The resume section of 2026-10-04b in the archive holds its open work.
-0. **PR-125: the live evals** (D-1132 to D-1139). It stacks on PR-124. The resume section holds the open work.
+0. **PR-125: the live evals** (D-1132 to D-1145). It stacks on PR-124. The resume section holds the open work.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -158,6 +152,8 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner asked the session to watch the traffic of other users.** The logs name no user, so the session read the record of D-638 each minute. The first outside user built two decks, and the session found nine faults by hand.
 
 **The owner asked to automate that read, and chose D-1133 to D-1138.** The classifier refused the launcher as an unsafe agent, and the owner asked for the notices of D-1139.
+
+**The owner asked for a rebase onto PR-124, and chose D-1140 to D-1145.** Gitar found a path from the session to the gcloud config, so a Seatbelt profile now holds the session.
 
 ## The archive
 

@@ -119,6 +119,9 @@ func main() {
 
 func run() error {
 	collPath := flag.String("collection", "", "a ManaBox CSV, which puts the session in an owned mode")
+	collJSON := flag.String("collection-json", "", "a stored collection as protojson, from `live-evals replay-input` (D-1144)")
+	msgsJSON := flag.String("messages-json", "", "a JSON list of the user's turns, which wins over -messages (D-1144)")
+	deckOut := flag.String("deck-out", "", "write the deck that reached the user to this file as protojson (D-1144)")
 	msgs := flag.String("messages", "Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.", "the user's turns, separated by |")
 	decksOut := flag.String("decks-out", "", "a new file for each deck that reaches the user, one JSON line per deck")
 	flag.Parse()
@@ -163,13 +166,26 @@ func run() error {
 		agentsvc.WithDecks(generate.NewBuilder(client, rcfg, idx, quiet, generate.WithProfiler(prof), generate.WithScorer(scorer))),
 		agentsvc.WithScorer(scorer),
 	}
-	if *collPath != "" {
-		owned, _, err := gatekit.LoadOwned(*collPath, idx)
+	owned := *collPath != "" || *collJSON != ""
+	switch {
+	case *collJSON != "":
+		counts, err := ownedFromJSON(*collJSON)
 		if err != nil {
 			return err
 		}
-		fmt.Printf("collection: %d owned cards\n", len(owned))
-		opts = append(opts, agentsvc.WithCollections(ownedSrc{owned}))
+		fmt.Printf("collection: %d owned cards\n", len(counts))
+		opts = append(opts, agentsvc.WithCollections(ownedSrc{counts}))
+	case *collPath != "":
+		counts, _, err := gatekit.LoadOwned(*collPath, idx)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("collection: %d owned cards\n", len(counts))
+		opts = append(opts, agentsvc.WithCollections(ownedSrc{counts}))
+	}
+	userTurns, err := turns(*msgs, *msgsJSON)
+	if err != nil {
+		return err
 	}
 	srv, err := agentsvc.New(cat, client, newMemStore(),
 		func(context.Context) string { return "probe-user" }, opts...)
@@ -194,14 +210,13 @@ func run() error {
 	var sessionID string
 	var deck *mtgv1.Deck
 	start := time.Now()
-	for i, m := range strings.Split(*msgs, "|") {
-		m = strings.TrimSpace(m)
+	for i, m := range userTurns {
 		fmt.Printf("\n--- turn %d: %q\n", i+1, m)
 		req := &mtgv1.ChatRequest{Message: m}
 		if sessionID != "" {
 			req.SessionId = sessionID
 		}
-		if *collPath != "" && sessionID == "" {
+		if owned && sessionID == "" {
 			req.CollectionId = "probe-collection"
 		}
 		stream, err := c.Chat(context.Background(), connect.NewRequest(req))
@@ -248,9 +263,15 @@ func run() error {
 	}
 
 	if deck == nil {
-		return fmt.Errorf("no deck reached the user after %d turns", len(strings.Split(*msgs, "|")))
+		return fmt.Errorf("no deck reached the user after %d turns", len(userTurns))
 	}
 	report(deck, time.Since(start))
+	if *deckOut != "" {
+		if err := writeDeck(*deckOut, deck); err != nil {
+			return err
+		}
+		fmt.Printf("deck: wrote %s\n", *deckOut)
+	}
 	return nil
 }
 
