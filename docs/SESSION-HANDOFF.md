@@ -20,14 +20,19 @@ Author provider: Claude Code
 - `go/cmd/chat-probe` takes `-messages-json`, `-collection-json`, and `-deck-out`.
 - `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
 
-**The checks.** The Go tests pass. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. The pinned Claude Code starts in the profile and stops at "Not logged in", as designed.
+**The checks.** `make verify` passed on `8e4ab24`. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script.
 
-**The open work.**
+**The review.** The Gitar review of `8e4ab24` closed three findings and opened one. CI ran no `verify` and no `pr-contract` on `70bf357` or `8e4ab24`, because #282 conflicts with its base. No Codex review ran yet.
 
-1. `make verify`, the push, the Gitar pass, and `make codex-review PR=282`.
-2. The merge of the owner (D-828, D-834).
-3. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
-4. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
+**The open work.** The session stopped at the checkpoint (D-946).
+
+1. Rebase onto `origin/fix/first-user-feedback`, now `63bf6c7`. Expect a conflict here. Keep this file under 24,000 bytes.
+2. Fix the Gitar thread on `scripts/live-evals.sh:403`. An interrupted clone leaves the run folder, and `mkdir "$run"` then fails on each retry. With no `branch` in the deck state, no session ran there, so remove it and clone again.
+3. Run `make verify`, push one time, and confirm that `verify` and `pr-contract` run on the head. Do the Gitar pass, then `make codex-review PR=282`.
+4. The merge question of the owner (D-828, D-834).
+5. Remove the probe folder `/Volumes/SSD-1TB/decktome-live-evals-probe`.
+6. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
+7. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
 
 ## How to resume
 
