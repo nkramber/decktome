@@ -245,8 +245,13 @@ func Count(list []*mtgv1.Card, unmatched []string, tagged Tagged) map[string]flo
 
 // DeckCount measures one deck that reached the user: each card measure,
 // the lands, the distinct names, the grade, and the names it kept from
-// the deck of the step before (D-1124). It answers counts alone.
-func DeckCount(d, prev *mtgv1.Deck, card func(oracleID string) (*mtgv1.Card, bool), tagged Tagged) map[string]float64 {
+// the deck of the step before (D-1124). It answers counts alone. A card
+// the snapshot does not hold, or a deck with no grade, is an error: a
+// partial count can pass a max bar.
+func DeckCount(d, prev *mtgv1.Deck, card func(oracleID string) (*mtgv1.Card, bool), tagged Tagged) (map[string]float64, error) {
+	if d.GetQuality() == nil {
+		return nil, fmt.Errorf("deck %s holds no grade", d.GetId())
+	}
 	ids := map[string]bool{}
 	var picked []*mtgv1.Card
 	lands := 0.0
@@ -254,7 +259,7 @@ func DeckCount(d, prev *mtgv1.Deck, card func(oracleID string) (*mtgv1.Card, boo
 		ids[dc.GetOracleId()] = true
 		c, ok := card(dc.GetOracleId())
 		if !ok {
-			continue
+			return nil, fmt.Errorf("deck %s: the snapshot holds no card %s", d.GetId(), dc.GetOracleId())
 		}
 		picked = append(picked, c)
 		if slices.Contains(c.GetCardTypes(), "Land") {
@@ -276,7 +281,7 @@ func DeckCount(d, prev *mtgv1.Deck, card func(oracleID string) (*mtgv1.Card, boo
 		}
 		out["kept_from_build_1"] = float64(kept)
 	}
-	return out
+	return out, nil
 }
 
 // Row is one line of the table.
@@ -288,11 +293,16 @@ type Row struct {
 	Verdict  string
 }
 
-// Judge reads each measure of a step against its bar.
+// Judge reads each measure of a step against its bar. A measure the
+// count does not hold fails, and its value reads 0.
 func Judge(step Step, now map[string]float64) []Row {
 	rows := make([]Row, 0, len(step.Measures))
 	for _, m := range step.Measures {
-		v := now[m.ID]
+		v, ok := now[m.ID]
+		if !ok {
+			rows = append(rows, Row{Step: step.Name, ID: m.ID, Baseline: m.Baseline, Bar: m.Bar.String(), Verdict: Fail})
+			continue
+		}
 		rows = append(rows, Row{Step: step.Name, ID: m.ID, Baseline: m.Baseline, Now: v, Bar: m.Bar.String(), Verdict: m.Bar.Judge(v)})
 	}
 	return rows

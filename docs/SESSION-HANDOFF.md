@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04b)
 
-**Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-222, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).
+**Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).
 
 Author provider: Claude Code
 
@@ -23,9 +23,9 @@ Author provider: Claude Code
 - `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
 - `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
 
-**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Quality gate run 26 reads PASS on `6503306`, and its decks name no bracket. Question gate run 57 failed on one flaky classifier miss. Runs 58 and 59 read PASS. Run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar. Its grade names no cEDH reason.
+**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Quality gate run 26 reads PASS on `6503306`, and its decks name no bracket. Question gate run 57 failed on one flaky classifier miss. Runs 58 and 59 read PASS. Run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar, and the stored decks of the user fail 9 deck bars. A free rescore of the replay decks after F-223 keeps both grades above their bars.
 
-**The review.** Codex round 1 on `d1c6ce5` found P2-1, and `docs/reviews/pr-283-response.md` answers it. The owner then put F-221 and F-222 into this pull request. The owner knows of D-1126. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
+**The review.** Codex round 1 on `d1c6ce5` found P2-1, and `docs/reviews/pr-283-response.md` answers it. The owner then put F-221 to F-223 into this pull request. The owner knows of D-1126. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
 
 **The open work.**
 
@@ -105,7 +105,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-124: the findings of the first outside user** (F-212 to F-222, D-1116 to D-1131). The resume section holds the open work.
+0. **PR-124: the findings of the first outside user** (F-212 to F-223, D-1116 to D-1131). The resume section holds the open work.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.

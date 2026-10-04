@@ -170,7 +170,10 @@ func TestDeckCountReadsTheDeck(t *testing.T) {
 		Cards:   []*mtgv1.DeckCard{{OracleId: "cs", Count: 1}, {OracleId: "eq", Count: 1}, {OracleId: "hs", Count: 1}, {OracleId: "isl", Count: 30}},
 		Quality: &mtgv1.DeckQuality{Score: 0.5},
 	}
-	got := DeckCount(d, prev, card, tagged)
+	got, err := DeckCount(d, prev, card, tagged)
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := map[string]float64{
 		"lands": 30, "unique_names": 4, "quality_grade": 0.5, "kept_from_build_1": 2,
 		"counterspells": 1, "cantrips": 1, "equipment": 1, "hand_size": 1,
@@ -183,8 +186,29 @@ func TestDeckCountReadsTheDeck(t *testing.T) {
 	if _, ok := got[shortlist]; ok {
 		t.Error("a deck count holds the shortlist size")
 	}
-	if _, ok := DeckCount(d, nil, card, tagged)["kept_from_build_1"]; ok {
+	first, err := DeckCount(d, nil, card, tagged)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := first["kept_from_build_1"]; ok {
 		t.Error("the first deck has no deck before it to keep from")
+	}
+	unknown := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{{OracleId: "new", Count: 1}}, Quality: d.GetQuality()}
+	if _, err := DeckCount(unknown, nil, card, tagged); err == nil {
+		t.Error("a card the snapshot does not hold must fail the count")
+	}
+	if _, err := DeckCount(&mtgv1.Deck{Cards: d.GetCards()}, nil, card, tagged); err == nil {
+		t.Error("a deck with no grade must fail the count")
+	}
+}
+
+// TestJudgeFailsAMissingMeasure: a bar whose measure the count does not
+// hold fails, so a max bar never passes on an absent value.
+func TestJudgeFailsAMissingMeasure(t *testing.T) {
+	step := Step{Name: "s", Measures: []Measure{{ID: "kept_from_build_1", Bar: Bar{Max: ptr(45)}}}}
+	rows := Judge(step, map[string]float64{})
+	if len(rows) != 1 || rows[0].Verdict != Fail {
+		t.Errorf("rows = %+v, want one FAIL", rows)
 	}
 }
 

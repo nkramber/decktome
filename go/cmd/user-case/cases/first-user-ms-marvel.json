@@ -92,7 +92,11 @@
         {"id": "lands", "baseline": 38, "bar": {"min": 34, "max": 38}},
         {"id": "counterspells", "baseline": 0, "bar": {"min": 3}},
         {"id": "kept_from_build_1", "baseline": 57, "note": "of 71 unique names of build 1", "bar": {"max": 45}},
-        {"id": "quality_grade", "baseline": 0.378, "bar": {"min": 0.378}}
+        {"id": "quality_grade", "baseline": 0.378, "bar": {"min": 0.378}},
+        {"id": "cantrips", "baseline": 1, "note": "the user asked for cantrips on turn 5", "bar": {"min": 6}},
+        {"id": "hand_size", "baseline": 5, "note": "the user asked for hand size on turn 5", "bar": {"min": 8}},
+        {"id": "equipment", "baseline": 25, "note": "the user asked for fewer artifacts on turn 5", "bar": {"max": 12}},
+        {"id": "artifact_creatures", "baseline": 9, "bar": {"max": 4}}
       ]
     }
   ]

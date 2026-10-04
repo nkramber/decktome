@@ -199,7 +199,11 @@ func replay(c *Case, o opts, csvPath string) error {
 			if d == nil {
 				return fmt.Errorf("%w: no deck reached the user by turn %d of step %s", errFail, step.AfterTurn, step.Name)
 			}
-			for _, r := range Judge(Step{Name: step.Name + "-deck", Measures: step.Deck}, DeckCount(d, prev, idx.ByOracleID, tagged)) {
+			now, err := DeckCount(d, prev, idx.ByOracleID, tagged)
+			if err != nil {
+				return err
+			}
+			for _, r := range Judge(Step{Name: step.Name + "-deck", Measures: step.Deck}, now) {
 				switch r.Verdict {
 				case Fail:
 					failed++

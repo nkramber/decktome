@@ -6,18 +6,19 @@ import (
 )
 
 // TestCEDHSignalReadsBracketFiveAlone reads a commander that places in
-// no cEDH event. A deck of bracket 3 or 4 reads the mean of the model,
-// so the signal names no reason. A deck of bracket 5 and a deck with no
-// bracket keep the signal (D-1123).
+// no cEDH event and leads few decks. A deck of bracket 3 or 4 reads the
+// mean of the model for both, so neither names a reason. A deck of
+// bracket 5 and a deck with no bracket keep both signals (D-1123).
 func TestCEDHSignalReadsBracketFiveAlone(t *testing.T) {
 	w := newCommanderWorld(t)
 	fm := &FormatModel{
-		Keys:    []string{KeyCEDHSignal},
-		Means:   []float64{0.2},
-		Stds:    []float64{0.1},
-		Weights: []float64{0.5},
+		Keys:    []string{KeyCEDHSignal, KeyCommanderDecks},
+		Means:   []float64{0.2, 6},
+		Stds:    []float64{0.1, 4},
+		Weights: []float64{0.5, -0.4},
 	}
-	const words = "the commander does not place in cEDH events"
+	words := []string{"the commander does not place in cEDH events", "few decks lead with the commander"}
+	names := func(got []string, w string) bool { return strings.Contains(strings.Join(got, "|"), w) }
 	read := func(bracket int32) []string {
 		d := w.landDeck(36)
 		d.Power = nil
@@ -27,14 +28,16 @@ func TestCEDHSignalReadsBracketFiveAlone(t *testing.T) {
 		in := w.input(d)
 		return reasons(fm, fm.vector(Features(in, fm)), ruleChecks(in), in.Profile)
 	}
-	for _, b := range []int32{3, 4} {
-		if got := read(b); strings.Contains(strings.Join(got, "|"), words) {
-			t.Errorf("bracket %d names %q", b, got)
+	for _, want := range words {
+		for _, b := range []int32{3, 4} {
+			if got := read(b); names(got, want) {
+				t.Errorf("bracket %d names %q", b, got)
+			}
 		}
-	}
-	for _, b := range []int32{5, 0} {
-		if got := read(b); !strings.Contains(strings.Join(got, "|"), words) {
-			t.Errorf("bracket %d names %q, want the cEDH reason", b, got)
+		for _, b := range []int32{5, 0} {
+			if got := read(b); !names(got, want) {
+				t.Errorf("bracket %d names %q, want %q", b, got, want)
+			}
 		}
 	}
 }
