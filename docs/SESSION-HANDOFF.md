@@ -25,12 +25,11 @@ Author provider: Claude Code
 
 **The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate runs 25 and 26 read PASS. Run 26 decks name no bracket. Question gate run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Rejudge run 40 of deck gate run 39 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar, and the stored decks of the user fail 9 deck bars. A free rescore of the replay decks after F-223 keeps both grades above their bars.
 
-**The review.** Codex round 1 on `d1c6ce5` found P2-1, and `docs/reviews/pr-283-response.md` answers it. The owner then put F-221 to F-223 into this pull request. Gitar on `e3d30ab` found one finding: the deck bars read absent values as 0. The next push fixes it, and its thread waits for a reply. The owner knows of D-1126. PR #282 renumbers its ids (D-1131).
+**The review.** Codex round 2 approves effective head `c712e844`. P2-1 is fixed in `a078bb5`. Gitar found that absent deck-bar values passed as zero. Commit `1f1b0f4` fixes it. Gitar resolved the thread. The owner knows of D-1126. PR #282 renumbers its ids (D-1131).
 
 **The open work.**
 
-1. Reply on the Gitar thread of `go/cmd/user-case/case.go` with the fix commit, and resolve it. Answer the Gitar CI note: the `review-gate` record waits for Codex round 2.
-2. Do the Gitar pass, then run `make codex-review PR=283`. Then ask the owner to confirm the merge.
+1. Push the review record and hand-off. Verify the branch head and required checks. Then ask the owner to confirm the merge.
 3. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
 4. The owner tells the user about the fixes.
 
