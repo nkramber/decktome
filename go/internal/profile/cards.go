@@ -133,9 +133,18 @@ func isColorlessLand(c *mtgv1.Card) bool {
 // one or less: Sol Ring, a ritual, a Mox. A signet costs two and a dork
 // is a creature, so neither counts. A card whose every mana ability pays
 // mana or taps a creature counts neither, because it makes no deck
-// faster: Barbed Sextant, the Eggs, Springleaf Drum (D-1159).
+// faster: Barbed Sextant, the Eggs, Springleaf Drum (D-1159). A card
+// whose mana value hides its real cost counts neither: an X in the cost,
+// as on Astral Cornucopia, or a multikicker, as on Everflowing Chalice
+// (D-1162).
 func isFastMana(c *mtgv1.Card) bool {
-	return !isLand(c) && !isCreature(c) && c.GetManaValue() <= 1 && producesMana(c) && freeManaAbility(c)
+	return !isLand(c) && !isCreature(c) && c.GetManaValue() <= 1 && producesMana(c) && freeManaAbility(c) && !hiddenCost(c)
+}
+
+// hiddenCost reports a card that pays for its mana through an X or a
+// multikicker, so its mana value reads lower than any useful cast.
+func hiddenCost(c *mtgv1.Card) bool {
+	return strings.Contains(c.GetManaCost(), "{X}") || strings.Contains(strings.ToLower(c.GetOracleText()), "multikicker")
 }
 
 // manaSymbol matches a mana symbol of a cost: a generic number, a color,

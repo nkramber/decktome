@@ -56,6 +56,30 @@ func TestFastManaNeedsAFreeManaAbility(t *testing.T) {
 	}
 }
 
+// TestFastManaNeedsNoHiddenCost is D-1162: an X or a multikicker pays for
+// the mana, so a mana value of 0 or 1 says nothing of its speed. The texts
+// are the Oracle texts of Scryfall on 2026-10-04.
+func TestFastManaNeedsNoHiddenCost(t *testing.T) {
+	card := func(name, cost, kind string, mv float64, text string) *mtgv1.Card {
+		return &mtgv1.Card{OracleId: "o-" + name, Name: name, CardTypes: []string{kind}, ManaCost: cost, ManaValue: mv,
+			ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_G}, OracleText: text}
+	}
+	for _, tt := range []struct {
+		c    *mtgv1.Card
+		want bool
+	}{
+		{card("Astral Cornucopia", "{X}{X}{X}", "Artifact", 0, "This artifact enters with X charge counters on it.\n{T}: Choose a color. Add one mana of that color for each charge counter on this artifact."), false},
+		{card("Mana Bloom", "{X}{G}", "Enchantment", 1, "This enchantment enters with X charge counters on it.\nRemove a charge counter from this enchantment: Add one mana of any color. Activate only once each turn.\nAt the beginning of your upkeep, if this enchantment has no charge counters on it, return it to its owner's hand."), false},
+		{card("Everflowing Chalice", "{0}", "Artifact", 0, "Multikicker {2} (You may pay an additional {2} any number of times as you cast this spell.)\nThis artifact enters with a charge counter on it for each time it was kicked.\n{T}: Add {C} for each charge counter on this artifact."), false},
+		{card("Sol Ring", "{1}", "Artifact", 1, "{T}: Add {C}{C}."), true},
+		{card("Mana Crypt", "{0}", "Artifact", 0, "At the beginning of your upkeep, flip a coin. If you lose the flip, this artifact deals 3 damage to you.\n{T}: Add {C}{C}."), true},
+	} {
+		if got := isFastMana(tt.c); got != tt.want {
+			t.Errorf("%s reads fast mana %v, want %v", tt.c.GetName(), got, tt.want)
+		}
+	}
+}
+
 // TestPowerOfNamesEveryFloorACardCounts is D-704: a card counts toward
 // each power floor it meets. A tutor with the Game Changer flag counts
 // toward two, and a land search is ramp and no tutor.
