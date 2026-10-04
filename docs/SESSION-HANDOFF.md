@@ -31,7 +31,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `b41a32c` with Node 22 on the PATH. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
 
-**The review.** Codex found no defect at `b6d76b90f8e91425b2b863ee17b6603961de9681`. Local and fresh CI checks pass after the hand-off size fix. The record needs its final publication.
+**The review.** Codex found no defect at `b6d76b90f8e91425b2b863ee17b6603961de9681`. Local verify and fresh CI passed after the hand-off size fix. The owner can review the record and decide on the merge.
 
 After the deploy, four checks follow:
 
