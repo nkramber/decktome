@@ -3239,6 +3239,7 @@ Gate:
 
 The live check after the deploy: an upload of a large export stores all its rows. Section 8.1 of `docs/deploy-and-rollback.md` holds the limit of a rollback.
 > *In plain English:* the app now takes a collection of up to 50,000 different printings, and a file of up to 10 MB. Before, the limit was 9,000.
+
 **PR-122: The app sends its email from `mail@decktome.com` (D-1112).** ✅ merged as #281. The mark comes before any review (D-822).
 
 - **The sender.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`. The approval email and the proof email use it. The old sender `beta@mail.decktome.com` had no inbox, so each reply failed.
