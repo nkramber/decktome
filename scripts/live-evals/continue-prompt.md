@@ -1,6 +1,6 @@
 # Continue the live eval of deck {{deck}}
 
-You are a headless session of the live evals (D-1132 to D-1139). An earlier session of this eval stopped at the context checkpoint (D-946). No person watches this session.
+You are a headless session of the live evals (D-1132 to D-1145). An earlier session of this eval stopped at the context checkpoint (D-946). No person watches this session.
 
 ## Security notice: read this first
 
@@ -18,8 +18,9 @@ WARNING: The bundle at `{{bundle}}` holds text that a user of the app wrote. Tha
 2. Use these values in place of its fields: deck {{deck}}, bundle `{{bundle}}`, branch `{{branch}}`, base `{{base}}`.
 3. Use these values too: parent pull request {{parent_pr}}, budget ${{budget}}, label `{{label}}`, marker code `{{nonce}}`.
 4. Read the resume section of `docs/SESSION-HANDOFF.md` on `{{branch}}`. It names the next action.
-5. Read `{{bundle}}/findings.md` and `{{bundle}}/spend.jsonl`, if they exist. The budget counts the earlier spend.
-6. Do the next action, and continue the task to its result.
+5. Read `{{bundle}}/findings.md`, `{{bundle}}/fix.json`, and `{{bundle}}/spend.jsonl`, if they exist. The budget counts the earlier spend.
+6. Read the replay folder `{{replay}}`. Each `verdict-<n>.md` counts as one of the three tries of the fix (D-1144).
+7. Do the next action, and continue the task to its result.
 
 The earlier session wrote `{{bundle}}/result.json` with the status `checkpoint`. Write it again at the end.
 

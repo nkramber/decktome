@@ -52,7 +52,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|ready|notify [flags]")
+		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|ready|notify|replay-input [flags]")
 		os.Exit(2)
 	}
 	if err := run(context.Background(), os.Args[1], os.Args[2:], os.Stdout); err != nil {
@@ -73,6 +73,7 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 	pr := fs.Int("pr", 0, "the pull request number")
 	title := fs.String("title", "", "the notice title")
 	message := fs.String("message", "", "the notice text")
+	bundleDir := fs.String("bundle", "", "the bundle directory that replay-input reads")
 	nonce := fs.String("nonce", "", "the code of the untrusted-data markers, random when empty")
 	if err := fs.Parse(args); err != nil {
 		return err
@@ -91,6 +92,11 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 		ctx, cancel := context.WithTimeout(ctx, notify.Timeout)
 		defer cancel()
 		return p.Send(ctx, notify.Notice{Title: notify.Clip(*title, 250), Message: notify.Clip(*message, 1024)})
+	case "replay-input":
+		if *bundleDir == "" || *dir == "" {
+			return errors.New("replay-input: set -bundle and -out")
+		}
+		return replayInput(*bundleDir, *dir)
 	}
 
 	project, err := gcpenv.ProjectID()

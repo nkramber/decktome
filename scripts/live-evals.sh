@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
-# The live evals (D-1132 to D-1139). `./start-live-evals` runs this file.
+# The live evals (D-1132 to D-1145). `./start-live-evals` runs this file.
 #
 # It prints a summary of every deck that no live eval read. Then it
-# polls every five minutes. For each new deck and each revision, it
-# starts one headless Claude Code session in its own worktree. That
-# session reads the deck against the prompt and the answers of the
-# reader, fixes the most important new fault in one pull request, and
-# takes the pull request through Gitar and the Codex review. When GitHub
-# shows the pull request ready, this script sends the owner a Pushover
-# notice. The owner merges. No session merges, deploys, or pushes main.
+# polls every five minutes. The owner gets a Pushover notice for each new
+# deck and each revision (D-1143). For each one, the script starts one
+# headless Claude Code session in its own clone. That session reads the
+# deck against the prompt and the answers of the reader. It chooses the
+# most important new fault, and the owner gets a notice. It replays the
+# chat of the reader on the base code and on its fix, and it tries the
+# fix at most three times (D-1144). Then it takes one pull request
+# through Gitar and the Codex review. When GitHub shows the pull request
+# ready, this script sends the owner a notice. The owner merges. No
+# session merges, deploys, or pushes main.
 #
 #   ./start-live-evals                    poll until Ctrl-C
 #   ./start-live-evals --once             one pass, then stop
@@ -17,8 +20,16 @@
 #
 # CAUTION: each session spends the Claude plan of the owner, the Codex
 # plan, and at most LIVE_EVALS_BUDGET_USD (3.00) of provider money on
-# paid targets (D-1134). The live-test lanes stay closed to a session,
-# because a deck that a session builds would start another session.
+# paid targets, the replays included (D-1134). The live-test lanes stay
+# closed to a session, because a deck that a session builds would start
+# another session.
+#
+# Each session runs the pinned Claude Code binary under the Seatbelt
+# profile scripts/live-evals/sandbox.sb (D-1136, D-1141, D-1145). It
+# reads and writes its run folder, and it can not read the gcloud
+# config, the .env of the owner, the state of this script, or any other
+# file of the owner. It gets its own Claude token, Codex login, and
+# GitHub token, and a .env with the provider keys alone (D-1142).
 #
 # The first run marks every deck that waits as read, after the summary,
 # and starts no session for it (D-1133). --evaluate-backlog changes that.
@@ -31,11 +42,20 @@
 #
 # Settings, each with its default:
 #   LIVE_EVALS_PROJECT=decktome-prod  LIVE_EVALS_INTERVAL=300 (seconds)
-#   LIVE_EVALS_HOME=<repo>/../decktome-live-evals  (worktrees and bundles)
+#   LIVE_EVALS_HOME=<repo>/../decktome-live-evals  (runs, state, caches)
+#   LIVE_EVALS_SECRETS=~/.config/decktome-live-evals  (claude-token, gh-token)
 #   LIVE_EVALS_ACCOUNT=<active gcloud account>     (reads Firestore and secrets)
+#   LIVE_EVALS_CLAUDE_VERSION=2.1.288  (the pinned Claude Code, D-1145)
 #   LIVE_EVALS_TIMEOUT=14400 (seconds a session may run)
 #   LIVE_EVALS_BUDGET_USD=3.00  LIVE_EVALS_MAX_OPEN=3  LIVE_EVALS_MIN_FREE_GB=20
 #   LIVE_EVALS_MODEL=<claude default>
+#
+# The one-time setup of the owner (D-1141):
+#   claude setup-token        > $LIVE_EVALS_SECRETS/claude-token
+#   a fine-grained GitHub token for decktome alone > $LIVE_EVALS_SECRETS/gh-token
+#     (contents, pull requests, and issues: read and write. Actions,
+#     checks, and commit statuses: read.)
+#   CODEX_HOME=$LIVE_EVALS_HOME/codex-home codex login
 set -uo pipefail
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "live-evals: run it inside the decktome repository"; exit 1; }
@@ -44,6 +64,8 @@ cd "$ROOT" || exit 1
 PROJECT=${LIVE_EVALS_PROJECT:-decktome-prod}
 INTERVAL=${LIVE_EVALS_INTERVAL:-300}
 HOME_DIR=${LIVE_EVALS_HOME:-$(dirname "$ROOT")/decktome-live-evals}
+SECRETS=${LIVE_EVALS_SECRETS:-$HOME/.config/decktome-live-evals}
+CLAUDE_VERSION=${LIVE_EVALS_CLAUDE_VERSION:-2.1.288}
 TIMEOUT=${LIVE_EVALS_TIMEOUT:-14400}
 BUDGET=${LIVE_EVALS_BUDGET_USD:-3.00}
 MAX_OPEN=${LIVE_EVALS_MAX_OPEN:-3}
@@ -52,9 +74,9 @@ MAX_ATTEMPTS=2
 MAX_CONTINUES=3
 READY_WAIT=7200
 LABEL=live-eval
-STATE=$ROOT/.local/live-evals
-TOOL=$STATE/bin/live-evals
 PROMPTS=$ROOT/scripts/live-evals
+PROFILE=$PROMPTS/sandbox.sb
+CARDS=$ROOT/.local/gcs/mtg-local-cards
 
 once=0
 dry=0
@@ -64,7 +86,7 @@ for arg in "$@"; do
     --once) once=1 ;;
     --dry) dry=1 ;;
     --evaluate-backlog) backlog=1 ;;
-    -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,58p' "$0"; exit 0 ;;
     *) echo "live-evals: unknown flag $arg"; exit 2 ;;
   esac
 done
@@ -74,7 +96,16 @@ die() { say "STOP: $*"; exit 1; }
 
 # --- preflight ---------------------------------------------------------
 
-mkdir -p "$STATE/decks" "$STATE/bin" "$HOME_DIR" || die "can not make $STATE or $HOME_DIR"
+# The profile reads real paths, so each folder is resolved once here.
+mkdir -p "$HOME_DIR" || die "can not make $HOME_DIR"
+HOME_DIR=$(cd "$HOME_DIR" && pwd -P)
+STATE=$HOME_DIR/state
+BIN=$HOME_DIR/bin
+CACHE=$HOME_DIR/cache
+CODEX_DIR=$HOME_DIR/codex-home
+TOOL=$BIN/live-evals
+CLAUDE_BIN=$BIN/claude-$CLAUDE_VERSION
+mkdir -p "$STATE/decks" "$BIN" "$CACHE" "$CODEX_DIR" || die "can not make the folders under $HOME_DIR"
 
 # One copy at a time. mkdir is atomic, and a dead holder frees the lock.
 LOCK=$STATE/lock
@@ -96,19 +127,20 @@ trap cleanup EXIT
 trap 'exit 130' INT TERM
 
 # The tuning loop resets the checkout of the owner, and this script
-# makes worktrees from the same repository.
+# clones with that checkout as its reference.
 if pgrep -f "scripts/(autotune|feedback-loop)\.sh" >/dev/null; then
   die "a tuning or feedback loop runs. Stop it first."
 fi
 
-for cmd in git go gh jq claude codex gcloud python3; do
+for cmd in git go gh jq codex gcloud python3 sandbox-exec shasum; do
   command -v "$cmd" >/dev/null || die "$cmd is not on PATH"
 done
 gh auth status >/dev/null 2>&1 || die "gh is not signed in"
-codex login status 2>&1 | grep -q "ChatGPT" || die "codex is not signed in with ChatGPT (D-833)"
 
 free_gb=$(df -g "$HOME_DIR" | awk 'NR==2 {print $4}')
-[ "${free_gb:-0}" -ge "$MIN_FREE_GB" ] || die "only ${free_gb} GB free under $HOME_DIR, and the floor is $MIN_FREE_GB GB"
+if [ "${free_gb:-0}" -lt "$MIN_FREE_GB" ]; then
+  die "only ${free_gb} GB free under $HOME_DIR, and the floor is $MIN_FREE_GB GB"
+fi
 
 ACCOUNT=${LIVE_EVALS_ACCOUNT:-$(gcloud config get-value account 2>/dev/null)}
 [ -n "$ACCOUNT" ] || die "no gcloud account. Set LIVE_EVALS_ACCOUNT."
@@ -125,18 +157,67 @@ export LIVE_EVALS_TEST_EMAIL=${LIVE_EVALS_TEST_EMAIL:-}
 # shell, and only the notify call sees it.
 PO_TOKEN=$(gcloud secrets versions access latest --secret=pushover-app-token --project "$PROJECT" 2>/dev/null) || PO_TOKEN=""
 PO_USER=$(gcloud secrets versions access latest --secret=pushover-user-key --project "$PROJECT" 2>/dev/null) || PO_USER=""
-[ -n "$PO_TOKEN" ] && [ -n "$PO_USER" ] || die "can not read the Pushover secrets of $PROJECT as $ACCOUNT"
+if [ -z "$PO_TOKEN" ] || [ -z "$PO_USER" ]; then
+  die "can not read the Pushover secrets of $PROJECT as $ACCOUNT"
+fi
 
 say "building the live-evals tool"
 (cd "$ROOT/go" && go build -o "$TOOL" ./cmd/live-evals) || die "the tool does not build"
 
-tool() { PROJECT_ID=$PROJECT "$TOOL" "$@"; }
+# The script checks each binary before each call. The profile already
+# keeps a session out of $BIN, and the sum catches any other change.
+sum() { shasum -a 256 < "$1" | cut -d' ' -f1; }
+TOOL_SUM=$(sum "$TOOL")
+check_sum() { # file sum
+  [ "$(sum "$1")" = "$2" ] || die "$1 changed after the start. Stop, and read who wrote it."
+}
+
+tool() { check_sum "$TOOL" "$TOOL_SUM"; PROJECT_ID=$PROJECT "$TOOL" "$@"; }
 
 notify() {
   if [ "$dry" = 1 ]; then say "notice (dry, not sent): $1"; return 0; fi
+  check_sum "$TOOL" "$TOOL_SUM"
   PUSHOVER_APP_TOKEN=$PO_TOKEN PUSHOVER_USER_KEY=$PO_USER "$TOOL" notify -title "$1" -message "$2" \
     || say "the notice did not send: $1"
 }
+
+if [ "$dry" = 0 ]; then
+  # The pinned Claude Code (D-1145). A copy outside the folder of the
+  # updater keeps the version, and the profile keeps a session out of it.
+  if [ ! -x "$CLAUDE_BIN" ]; then
+    src=$HOME/.local/share/claude/versions/$CLAUDE_VERSION
+    [ -f "$src" ] || die "Claude Code $CLAUDE_VERSION is not installed at $src. Set LIVE_EVALS_CLAUDE_VERSION."
+    if ! cp "$src" "$CLAUDE_BIN" || ! chmod 755 "$CLAUDE_BIN"; then die "can not copy $src to $CLAUDE_BIN"; fi
+  fi
+  "$CLAUDE_BIN" --version 2>/dev/null | grep -q "^$CLAUDE_VERSION " || die "$CLAUDE_BIN is not Claude Code $CLAUDE_VERSION"
+  CLAUDE_SUM=$(sum "$CLAUDE_BIN")
+
+  # The session gets its own logins, and never the ones of the owner
+  # (D-1141).
+  [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Run claude setup-token, and save the token there."
+  [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Save a fine-grained GitHub token for decktome alone there."
+  CLAUDE_TOKEN=$(cat "$SECRETS/claude-token")
+  GH_SESSION_TOKEN=$(cat "$SECRETS/gh-token")
+  CODEX_HOME=$CODEX_DIR codex login status 2>&1 | grep -q "ChatGPT" \
+    || die "the session Codex is not signed in. Run: CODEX_HOME=$CODEX_DIR codex login (D-833)"
+  [ -d "$CARDS/scryfall" ] || die "no card store at $CARDS. A replay needs it."
+  REPO_URL=$(gh repo view --json url --jq .url).git
+
+  # The tools of a session: Node 22 for the web tests, and the pnpm of
+  # the owner (CLAUDE.md). The profile lets the session read both.
+  NODE22=$HOME/.nvm/versions/node/v$(tr -d 'v \n' < "$ROOT/.nvmrc")
+  [ -x "$NODE22/bin/node" ] || die "no Node $(cat "$ROOT/.nvmrc") at $NODE22"
+  pnpm_bin=$(command -v pnpm) || die "pnpm is not on PATH"
+  NODE20=$(cd "$(dirname "$pnpm_bin")/.." && pwd -P)
+  NODE22=$(cd "$NODE22" && pwd -P)
+  # PATH keeps no folder of the home or of a volume, because the profile
+  # hides them. The session prefix and Node come first.
+  SESSION_PATH=$CACHE/npm-global/bin:$NODE22/bin:$NODE20/bin
+  IFS=: read -r -a path_parts <<<"$PATH"
+  for p in "${path_parts[@]}"; do
+    case "$p" in "$HOME"/*|/Volumes/*|"") ;; *) SESSION_PATH=$SESSION_PATH:$p ;; esac
+  done
+fi
 
 if [ "$dry" = 0 ] && ! gh label list --limit 200 --json name --jq '.[].name' | grep -qx "$LABEL"; then
   gh label create "$LABEL" --description "A pull request of the live evals (D-1132)" --color 5319e7 >/dev/null \
@@ -145,15 +226,21 @@ fi
 
 # --- deck state ---------------------------------------------------------
 # One JSON file per deck in $STATE/decks holds its state. ledger.jsonl
-# keeps each change. Both stay in .local, out of git, because they name
-# users (D-639).
+# keeps each change. Both stay outside the repository and outside the
+# reach of a session, because they name users (D-639).
 
 dstate() { echo "$STATE/decks/$1.json"; }
 
 dget() { # deck key -> value, or empty
   local f
   f=$(dstate "$1")
-  [ -f "$f" ] && jq -r --arg k "$2" '.[$k] // empty' "$f"
+  if [ -f "$f" ]; then jq -r --arg k "$2" '.[$k] // empty' "$f"; fi
+}
+
+dnum() { # deck key -> the number, or 0 when the key is absent
+  local v
+  v=$(dget "$1" "$2")
+  echo "${v:-0}"
 }
 
 dset() { # deck key value [key value ...]
@@ -184,28 +271,41 @@ import json, sys, pathlib
 template, deck, run, budget = sys.argv[1:5]
 ctx = json.loads(pathlib.Path(run, "bundle", "context.json").read_text())
 text = pathlib.Path(template).read_text()
-values = dict(ctx, deck=deck, run=run, bundle=str(pathlib.Path(run, "bundle")), budget=budget)
+values = dict(ctx, deck=deck, run=run, bundle=str(pathlib.Path(run, "bundle")),
+              replay=str(pathlib.Path(run, "replay")), budget=budget)
 for key, value in values.items():
     text = text.replace("{{" + key + "}}", str(value))
 print(text)
 PY
 }
 
-run_claude() { # run prompt-file log-file -> exit code
-  local run=$1 prompt=$2 log=$3 started rc model_args=()
-  mkdir -p "$run/no-gcloud"
+run_claude() { # deck run prompt-file log-file -> exit code
+  local deck=$1 run=$2 prompt=$3 log=$4 started rc model_args=()
+  mkdir -p "$run/tmp" "$run/claude-config" "$run/gh-config" "$run/xdg-config" "$run/replay"
   if [ -n "${LIVE_EVALS_MODEL:-}" ]; then model_args=(--model "$LIVE_EVALS_MODEL"); fi
+  check_sum "$CLAUDE_BIN" "$CLAUDE_SUM"
   say "session starts in $run/repo, log $log"
-  # No cloud credentials and no Codex key reach the session (D-833,
-  # D-1136). It reads the bundle and never the deployed project.
-  (cd "$run/repo" && env -u CLOUDSDK_CORE_ACCOUNT -u LIVE_EVALS_OWNER_EMAIL -u LIVE_EVALS_TEST_EMAIL \
-    -u CODEX_API_KEY CLOUDSDK_CONFIG="$run/no-gcloud" GOOGLE_APPLICATION_CREDENTIALS="$run/no-gcloud/none.json" \
+  # env -i passes only the names below. No cloud credential, no login of
+  # the owner, and no provider key reach the process. A provider key in
+  # the environment would also replace the Claude plan (D-1142).
+  (cd "$run/repo" && env -i \
+    HOME="$HOME" USER="$(id -un)" LOGNAME="$(id -un)" LANG="${LANG:-en_US.UTF-8}" TERM=dumb SHELL=/bin/bash \
+    PATH="$SESSION_PATH" TMPDIR="$run/tmp" \
+    CLAUDE_CONFIG_DIR="$run/claude-config" CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_TOKEN" DISABLE_AUTOUPDATER=1 \
+    GH_TOKEN="$GH_SESSION_TOKEN" GH_CONFIG_DIR="$run/gh-config" XDG_CONFIG_HOME="$run/xdg-config" \
+    GOCACHE="$CACHE/go-build" GOMODCACHE="$CACHE/go-mod" GOPATH="$CACHE/gopath" \
+    npm_config_prefix="$CACHE/npm-global" npm_config_cache="$CACHE/npm" \
+    npm_config_store_dir="$CACHE/pnpm-store" PNPM_HOME="$CACHE/pnpm-home" CODEX_HOME="$CODEX_DIR" \
     LIVE_EVAL_BUNDLE="$run/bundle" LIVE_EVAL_BUDGET_USD="$BUDGET" \
-    claude -p "$(cat "$prompt")" --permission-mode bypassPermissions --add-dir "$run/bundle" \
-    ${model_args[@]+"${model_args[@]}"} --output-format stream-json --verbose > "$log" 2>&1) &
+    sandbox-exec -f "$PROFILE" -D HOME="$HOME" -D RUN="$run" -D CACHE="$CACHE" -D CODEX="$CODEX_DIR" \
+      -D BIN="$BIN" -D CARDS="$CARDS" -D NODE22="$NODE22" -D NODE20="$NODE20" \
+    "$CLAUDE_BIN" -p "$(cat "$prompt")" --permission-mode bypassPermissions \
+      --add-dir "$run/bundle" --add-dir "$run/replay" \
+      ${model_args[@]+"${model_args[@]}"} --output-format stream-json --verbose > "$log" 2>&1) &
   child=$!
   started=$(date +%s)
   while kill -0 "$child" 2>/dev/null; do
+    fix_notice "$deck" "$run"
     if [ $(( $(date +%s) - started )) -ge "$TIMEOUT" ]; then
       say "the session passed $TIMEOUT seconds, and it stops"
       pkill -TERM -P "$child" 2>/dev/null
@@ -217,7 +317,17 @@ run_claude() { # run prompt-file log-file -> exit code
   wait "$child"
   rc=$?
   child=""
+  fix_notice "$deck" "$run"
   return "$rc"
+}
+
+fix_notice() { # deck run -> notify once when the session chose a fix (D-1143)
+  local f=$2/bundle/fix.json
+  if [ -f "$f" ] && [ -z "$(dget "$1" fix_notice)" ]; then
+    dset "$1" fix_notice sent
+    notify "decktome live eval: deck $1 needs a fix" \
+      "$(jq -r '"Finding: \(.finding // "?")\nBar: \(.bar // "?")"' "$f" 2>/dev/null || echo "fix.json does not read")"
+  fi
 }
 
 spent() { # run -> dollars the session wrote to spend.jsonl
@@ -227,12 +337,15 @@ spent() { # run -> dollars the session wrote to spend.jsonl
 
 result() { # run key -> value of result.json
   local f=$1/bundle/result.json
-  [ -f "$f" ] && jq -r --arg k "$2" '.[$k] // empty | if type == "array" then join("; ") else tostring end' "$f"
+  if [ -f "$f" ]; then
+    jq -r --arg k "$2" '.[$k] // empty | if type == "array" then join("; ") else tostring end' "$f"
+  fi
 }
 
 summary_text() { # run -> the four sections of D-836
-  printf 'What: %s\nHow: %s\nCI: %s\nCodex review: %s\nSpent: $%s of $%s' \
-    "$(result "$1" what)" "$(result "$1" how)" "$(result "$1" ci)" "$(result "$1" codex)" "$(spent "$1")" "$BUDGET"
+  printf 'What: %s\nHow: %s\nReplay: %s\nCI: %s\nCodex review: %s\nSpent: $%s of $%s' \
+    "$(result "$1" what)" "$(result "$1" how)" "$(result "$1" replay)" "$(result "$1" ci)" \
+    "$(result "$1" codex)" "$(spent "$1")" "$BUDGET"
 }
 
 open_prs() { # -> number<TAB>branch, oldest first
@@ -240,8 +353,27 @@ open_prs() { # -> number<TAB>branch, oldest first
     --jq 'sort_by(.createdAt) | .[] | "\(.number)\t\(.headRefName)"'
 }
 
-prepare() { # uid deck kind who -> 0 when the run directory is ready
-  local uid=$1 deck=$2 kind=$3 who=$4 run=$HOME_DIR/$2 branch base parent newest nonce
+clone() { # run branch base -> a clone of the base on a new branch
+  local run=$1 branch=$2 base=$3 repo=$1/repo
+  # --dissociate copies the objects, so the clone never writes or needs
+  # the checkout of the owner after this step.
+  git clone --quiet --reference "$ROOT" --dissociate --branch "$base" "$REPO_URL" "$repo" || return 1
+  git -C "$repo" switch --quiet -c "$branch" || return 1
+  git -C "$repo" config credential.helper '!gh auth git-credential'
+  git -C "$repo" config user.name "$(git config user.name)"
+  git -C "$repo" config user.email "$(git config user.email)"
+  # The session gets the provider keys alone (D-1142). The test account
+  # of make api-build stays out, because the live-test lanes stay closed.
+  if [ -f "$ROOT/.env" ]; then
+    (umask 077 && grep -E '^(OPENAI_API_KEY|ANTHROPIC_API_KEY|LLM_[A-Z_]+)=' "$ROOT/.env" > "$repo/.env")
+  fi
+  # The replay reads the card store through this link, and the profile
+  # keeps the store read-only.
+  mkdir -p "$repo/.local/gcs" && ln -s "$CARDS" "$repo/.local/gcs/mtg-local-cards"
+}
+
+prepare() { # uid deck kind who -> 0 when the run folder is ready
+  local uid=$1 deck=$2 kind=$3 who=$4 run=$HOME_DIR/$2 branch base parent newest nonce keep f
   branch=live-eval/$(echo "$deck" | tr '[:upper:]' '[:lower:]' | cut -c1-12)
   git fetch --quiet origin || return 1
   if [ ! -d "$run/repo" ]; then
@@ -253,16 +385,24 @@ prepare() { # uid deck kind who -> 0 when the run directory is ready
       base=${newest#*$'\t'}
     fi
     mkdir -p "$run"
-    git worktree add --quiet -b "$branch" "$run/repo" "origin/$base" || return 1
-    ln -s "$ROOT/.env" "$run/repo/.env" 2>/dev/null
-    ln -s "$ROOT/.local" "$run/repo/.local" 2>/dev/null
+    clone "$run" "$branch" "$base" || { rm -rf "$run/repo"; return 1; }
     dset "$deck" uid "$uid" kind "$kind" who "$who" branch "$branch" base "$base" parent_pr "$parent" status running
   fi
+  # A continuation rebuilds the bundle, and it keeps what the earlier
+  # session wrote: its findings and its spend (D-1134).
+  keep=$run/keep
+  rm -rf "$keep" && mkdir -p "$keep"
+  for f in findings.md spend.jsonl fix.json; do
+    if [ -f "$run/bundle/$f" ]; then cp "$run/bundle/$f" "$keep/$f"; fi
+  done
   rm -rf "$run/bundle"
   # The nonce marks where reader text ends. The prompt names it, and a
   # reader can not guess it (D-1139).
   nonce=$(python3 -c 'import secrets; print(secrets.token_hex(8))')
   tool bundle -uid "$uid" -deck "$deck" -out "$run/bundle" -nonce "$nonce" || return 1
+  for f in "$keep"/*; do
+    if [ -f "$f" ]; then cp "$f" "$run/bundle/"; fi
+  done
   open_prs | jq -R -s -c 'split("\n") | map(select(length > 0) | split("\t") | {number: .[0], branch: .[1]})' > "$run/bundle/open-prs.json"
   cp "$STATE/findings-index.md" "$run/bundle/earlier-findings.md" 2>/dev/null || echo "No earlier finding." > "$run/bundle/earlier-findings.md"
   jq -n --arg branch "$(dget "$deck" branch)" --arg base "$(dget "$deck" base)" --arg parent_pr "$(dget "$deck" parent_pr)" \
@@ -272,11 +412,13 @@ prepare() { # uid deck kind who -> 0 when the run directory is ready
 }
 
 finish() { # deck run -> act on result.json
-  local deck=$1 run=$2 status pr uid
+  local deck=$1 run=$2 status pr uid n
   uid=$(dget "$deck" uid)
   status=$(result "$run" status)
   pr=$(result "$run" pr)
-  [ -n "$(result "$run" findings)" ] && printf -- '- deck %s: %s\n' "$deck" "$(result "$run" findings)" >> "$STATE/findings-index.md"
+  if [ -n "$(result "$run" findings)" ]; then
+    printf -- '- deck %s: %s\n' "$deck" "$(result "$run" findings)" >> "$STATE/findings-index.md"
+  fi
   case "$status" in
     ready)
       dset "$deck" status waiting pr "$pr" waiting_since "$(date +%s)"
@@ -286,7 +428,16 @@ finish() { # deck run -> act on result.json
       say "deck $deck: no new fault. $(result "$run" findings)"
       dset "$deck" status "done"
       mark "$uid" "$deck"
-      git worktree remove --force "$run/repo" 2>/dev/null
+      rm -rf "$run/repo"
+      ;;
+    fix-failed)
+      # Three tries of the fix did not beat the replay of the base code
+      # (D-1144). The run folder stays for the owner.
+      dset "$deck" status fix-failed
+      mark "$uid" "$deck"
+      notify "decktome live eval: the fix failed on deck $deck" "$(result "$run" reason)
+Replay: $(result "$run" replay)
+Spent: \$$(spent "$run") of \$$BUDGET. Read $run"
       ;;
     blocked)
       dset "$deck" status blocked pr "$pr"
@@ -296,13 +447,11 @@ Questions: $(result "$run" questions)
 $( [ -n "$pr" ] && echo "PR #$pr")"
       ;;
     checkpoint)
-      local n
-      n=$(( $(dget "$deck" continues || echo 0) + 1 ))
+      n=$(( $(dnum "$deck" continues) + 1 ))
       dset "$deck" status checkpoint continues "$n"
       ;;
     *)
-      local n
-      n=$(( $(dget "$deck" attempts || echo 0) + 1 ))
+      n=$(( $(dnum "$deck" attempts) + 1 ))
       dset "$deck" status failed attempts "$n"
       if [ "$n" -ge "$MAX_ATTEMPTS" ]; then
         mark "$uid" "$deck"
@@ -317,6 +466,7 @@ check_ready() { # deck -> notify once when GitHub shows the pull request ready
   pr=$(dget "$deck" pr)
   run=$HOME_DIR/$deck
   [ -n "$pr" ] || return 0
+  check_sum "$TOOL" "$TOOL_SUM"
   if out=$("$TOOL" ready -pr "$pr" 2>&1); then
     dset "$deck" status ready
     mark "$(dget "$deck" uid)" "$deck"
@@ -336,18 +486,18 @@ ${out#ready }"
 evaluate() { # uid deck kind who
   local uid=$1 deck=$2 kind=$3 who=$4 run=$HOME_DIR/$2 template n status
   if ! prepare "$uid" "$deck" "$kind" "$who"; then
-    n=$(( $(dget "$deck" attempts || echo 0) + 1 ))
+    n=$(( $(dnum "$deck" attempts) + 1 ))
     dset "$deck" status failed attempts "$n"
-    say "deck $deck: the worktree or the bundle failed"
+    say "deck $deck: the clone or the bundle failed"
     return
   fi
   template=$PROMPTS/eval-prompt.md
-  [ "$(dget "$deck" status)" = checkpoint ] && template=$PROMPTS/continue-prompt.md
+  if [ "$(dget "$deck" status)" = checkpoint ]; then template=$PROMPTS/continue-prompt.md; fi
   render "$template" "$deck" "$run" > "$run/prompt.md"
   rm -f "$run/bundle/result.json"
-  n=$(( $(dget "$deck" sessions || echo 0) + 1 ))
+  n=$(( $(dnum "$deck" sessions) + 1 ))
   dset "$deck" sessions "$n" status running
-  run_claude "$run" "$run/prompt.md" "$run/session-$n.log"
+  run_claude "$deck" "$run" "$run/prompt.md" "$run/session-$n.log"
   status=$?
   say "deck $deck: the session ended with exit $status and result $(result "$run" status)"
   finish "$deck" "$run"
@@ -360,9 +510,9 @@ restack() { # deck target -> rebase the pull request of deck onto target
     && mv "$run/bundle/context.tmp" "$run/bundle/context.json"
   render "$PROMPTS/restack-prompt.md" "$deck" "$run" > "$run/restack-prompt.md"
   rm -f "$run/bundle/result.json"
-  n=$(( $(dget "$deck" sessions || echo 0) + 1 ))
+  n=$(( $(dnum "$deck" sessions) + 1 ))
   dset "$deck" sessions "$n" status restacking
-  run_claude "$run" "$run/restack-prompt.md" "$run/session-$n.log"
+  run_claude "$deck" "$run" "$run/restack-prompt.md" "$run/session-$n.log"
   if [ "$(result "$run" status)" = ready ]; then
     local parent=""
     if [ "$target" != main ]; then parent=$(dget "$deck" parent_pr); fi
@@ -385,7 +535,7 @@ restack_pass() {
     pr=$(dget "$deck" pr)
     parent=$(dget "$deck" parent_pr)
     case "$(dget "$deck" status)" in waiting|ready) ;; *) continue ;; esac
-    [ -n "$pr" ] && [ -n "$parent" ] || continue
+    if [ -z "$pr" ] || [ -z "$parent" ]; then continue; fi
     state=$(gh pr view "$pr" --json state --jq .state 2>/dev/null)
     [ "$state" = OPEN ] || continue
     read -r state phead < <(gh pr view "$parent" --json state,headRefName --jq '"\(.state) \(.headRefName)"' 2>/dev/null)
@@ -411,30 +561,42 @@ waiting_pass() {
   for f in "$STATE"/decks/*.json; do
     [ -f "$f" ] || continue
     deck=$(basename "$f" .json)
-    [ "$(dget "$deck" status)" = waiting ] && check_ready "$deck"
+    if [ "$(dget "$deck" status)" = waiting ]; then check_ready "$deck"; fi
   done
 }
 
-cleanup_pass() { # remove the worktree of a merged or closed pull request
+cleanup_pass() { # remove the clone of a merged or closed pull request
   local f deck pr state
   for f in "$STATE"/decks/*.json; do
     [ -f "$f" ] || continue
     deck=$(basename "$f" .json)
     pr=$(dget "$deck" pr)
-    [ -n "$pr" ] && [ -d "$HOME_DIR/$deck/repo" ] || continue
+    if [ -z "$pr" ] || [ ! -d "$HOME_DIR/$deck/repo" ]; then continue; fi
     state=$(gh pr view "$pr" --json state --jq .state 2>/dev/null)
     case "$state" in
       MERGED|CLOSED)
-        git worktree remove --force "$HOME_DIR/$deck/repo" 2>/dev/null && say "removed the worktree of PR #$pr ($state)"
+        rm -rf "$HOME_DIR/$deck/repo" && say "removed the clone of PR #$pr ($state)"
         dset "$deck" status "$(echo "$state" | tr '[:upper:]' '[:lower:]')"
         ;;
     esac
   done
 }
 
+announce_pass() { # one notice for each new deck and each revision (D-1143)
+  local line deck kind who
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    deck=$(jq -r .deck <<<"$line")
+    [ -z "$(dget "$deck" announced)" ] || continue
+    kind=$(jq -r .kind <<<"$line")
+    who=$(jq -r .who <<<"$line")
+    dset "$deck" announced "$(date +%s)"
+    notify "decktome: a new $kind of a $who account" "Deck $deck. A live eval reads it next."
+  done < "$STATE/pending.jsonl"
+}
+
 eval_pass() {
   local line uid deck kind who status open
-  tool pending > "$STATE/pending.jsonl" || { say "the pending list did not read"; return; }
   while IFS= read -r line; do
     [ -n "$line" ] || continue
     uid=$(jq -r .uid <<<"$line")
@@ -442,9 +604,9 @@ eval_pass() {
     kind=$(jq -r .kind <<<"$line")
     who=$(jq -r .who <<<"$line")
     status=$(dget "$deck" status)
-    case "$status" in waiting|ready|blocked|done|restacking) continue ;; esac
-    if [ "$status" = failed ] && [ "$(dget "$deck" attempts || echo 0)" -ge "$MAX_ATTEMPTS" ]; then continue; fi
-    if [ "$status" = checkpoint ] && [ "$(dget "$deck" continues || echo 0)" -gt "$MAX_CONTINUES" ]; then
+    case "$status" in waiting|ready|blocked|done|restacking|fix-failed) continue ;; esac
+    if [ "$status" = failed ] && [ "$(dnum "$deck" attempts)" -ge "$MAX_ATTEMPTS" ]; then continue; fi
+    if [ "$status" = checkpoint ] && [ "$(dnum "$deck" continues)" -gt "$MAX_CONTINUES" ]; then
       dset "$deck" status failed attempts "$MAX_ATTEMPTS"
       mark "$uid" "$deck"
       notify "decktome live eval: deck $deck passed $MAX_CONTINUES checkpoints" "Read $HOME_DIR/$deck"
@@ -473,7 +635,7 @@ if [ ! -f "$STATE/initialized" ] && [ "$backlog" = 0 ]; then
   say "first run: every deck above is marked read, and no session starts for it (D-1133)"
   tool pending | while IFS= read -r line; do
     deck=$(jq -r .deck <<<"$line")
-    tool mark -uid "$(jq -r .uid <<<"$line")" -deck "$deck" && dset "$deck" status backlog
+    tool mark -uid "$(jq -r .uid <<<"$line")" -deck "$deck" && dset "$deck" status backlog announced backlog
   done
 fi
 touch "$STATE/initialized"
@@ -482,7 +644,12 @@ while true; do
   cleanup_pass
   restack_pass
   waiting_pass
-  eval_pass
+  if tool pending > "$STATE/pending.jsonl"; then
+    announce_pass
+    eval_pass
+  else
+    say "the pending list did not read"
+  fi
   [ "$once" = 1 ] && break
   say "next poll in $INTERVAL seconds"
   sleep "$INTERVAL"
