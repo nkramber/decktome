@@ -6,7 +6,7 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04b)
+## RESUME HERE (2026-10-04c)
 
 **Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).
 
@@ -23,15 +23,16 @@ Author provider: Claude Code
 - `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
 - `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
 
-**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Quality gate run 26 reads PASS on `6503306`, and its decks name no bracket. Question gate run 57 failed on one flaky classifier miss. Runs 58 and 59 read PASS. Run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar, and the stored decks of the user fail 9 deck bars. A free rescore of the replay decks after F-223 keeps both grades above their bars.
+**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate runs 25 and 26 read PASS. Run 26 decks name no bracket. Question gate run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Rejudge run 40 of deck gate run 39 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar, and the stored decks of the user fail 9 deck bars. A free rescore of the replay decks after F-223 keeps both grades above their bars.
 
-**The review.** Codex round 1 on `d1c6ce5` found P2-1, and `docs/reviews/pr-283-response.md` answers it. The owner then put F-221 to F-223 into this pull request. The owner knows of D-1126. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
+**The review.** Codex round 1 on `d1c6ce5` found P2-1, and `docs/reviews/pr-283-response.md` answers it. The owner then put F-221 to F-223 into this pull request. Gitar on `e3d30ab` found one finding: the deck bars read absent values as 0. The next push fixes it, and its thread waits for a reply. The owner knows of D-1126. PR #282 renumbers its ids (D-1131).
 
 **The open work.**
 
-1. Do the Gitar pass, then run `make codex-review PR=283`.
-2. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
-3. The owner tells the user about the fixes.
+1. Reply on the Gitar thread of `go/cmd/user-case/case.go` with the fix commit, and resolve it. Answer the Gitar CI note: the `review-gate` record waits for Codex round 2.
+2. Do the Gitar pass, then run `make codex-review PR=283`. Then ask the owner to confirm the merge.
+3. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
+4. The owner tells the user about the fixes.
 
 ## How to resume
 
