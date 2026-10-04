@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04d)
 
-**Branch `fix/proof-link-ios-direct`: PR-126, iOS Safari goes on to the app after the proof (D-1147).** The pull request is #PRNUM.
+**Branch `fix/proof-link-ios-direct`: PR-126, the proof page on iOS, the spend for the admin alone, and a live eval for each thumbs down (D-1147 to D-1150).** The pull request is #PRNUM. The owner put the three changes into one pull request (D-1150).
 
 Author provider: Claude Code
 
@@ -22,11 +22,19 @@ Author provider: Claude Code
 - Three calls of the same uid then ended with code ok, so the link signed in the account.
 - Each `rpc` line of the new revision holds a uid. No log line since 06:25 UTC holds an email.
 
-**The code.** The proof page has no iOS state, and `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp`. A test proves that an iPhone browser goes on to the app.
+**The code.**
+
+- The proof page has no iOS state, and `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp` (D-1147).
+- `go/internal/spendmask` clears the spend of each agent and deck answer for a caller with no admin claim. The chat page shows the session id and the spend to the admin alone (D-1148).
+- `go/internal/feedback` holds the eval mark of a verdict. `go/cmd/live-evals` puts each down verdict in the queue with the key `v-` and its id (D-1149).
 
 **The checks.** CHECKS
 
-**The open work.** The Gitar pass, the Codex review, and the merge question of D-834. After the deploy, the owner opens a new proof link in iOS Safari.
+**The open work.** The Gitar pass, the Codex review, and the merge question of D-834. After the deploy, three checks follow:
+
+- The owner opens a new proof link in iOS Safari, and the app opens with no screen between.
+- The test account sees no session id and no spend, and the owner sees both.
+- `./start-live-evals --dry` lists the five old thumbs down, and marks nothing.
 
 ## How to resume
 
@@ -100,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-126: iOS Safari goes on to the app** (D-1147). The resume section holds the open work.
+0. **PR-126: the proof page, the spend, and the thumbs down** (D-1147 to D-1150). The resume section holds the open work.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -152,7 +160,7 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
 
-**The owner chose no screen over a short screen (D-1147).** iOS Safari goes on to the app, as each other browser does.
+**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change and the thumbs-down eval (D-1148 to D-1150).
 
 ## The archive
 

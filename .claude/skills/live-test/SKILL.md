@@ -85,5 +85,5 @@ CLOUDSDK_CORE_ACCOUNT=<owner account> SESSION_PROJECT=decktome-prod \
 ## Record the check
 
 - Record the session id, the lane, the time, and the outcome in the record of the pull request.
-- Record the cost from the `Session spend` line of the screenshot, or from the stored session.
+- Record the cost from the stored session. The test account is not the admin, so its screen shows no spend line (D-1148).
 - A lane that fails before the send costs nothing. Record the failure and its cause.

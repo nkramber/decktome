@@ -106,6 +106,11 @@ type stored struct {
 	Screen       string           `firestore:"screen"`
 	Prompts      map[string]int64 `firestore:"prompts"`
 	CreatedAt    time.Time        `firestore:"created_at"`
+	// HasBeenEvaluated marks a down verdict that a live eval read
+	// (D-1149). Add writes false.
+	HasBeenEvaluated bool `firestore:"has_been_evaluated"`
+	// EvaluatedAt is the time of that read. It is absent before the read.
+	EvaluatedAt *time.Time `firestore:"evaluated_at,omitempty"`
 	// SessionGz and DeckGz hold the snapshot of D-635, as gzip protojson,
 	// the way the session and the deck stores hold their own (D-604).
 	SessionGz []byte `firestore:"session_gz"`

@@ -1,6 +1,6 @@
 // Command live-evals serves scripts/start-live-evals (D-1132 to D-1139).
-// It reads the decks that no live eval read, writes the data of one deck
-// for an eval session, marks a deck read, checks that a pull request is
+// It reads the decks and the thumbs down that no live eval read (D-1149),
+// writes the data of one item for an eval session, marks an item read, checks that a pull request is
 // ready for the owner, and sends the owner a Pushover notice. It calls no
 // model, and it costs nothing.
 //
@@ -12,6 +12,9 @@
 //	PROJECT_ID=decktome-prod go run ./cmd/live-evals mark -uid U -deck D
 //	go run ./cmd/live-evals ready -pr N
 //	go run ./cmd/live-evals notify -title T -message M
+//
+// For a thumbs down, -deck takes the key of its row: "v-" and the id of
+// the verdict.
 //
 // LIVE_EVALS_OWNER_EMAIL and LIVE_EVALS_TEST_EMAIL name the two accounts
 // that the summary labels "owner" and "test". The tool reads the email of
@@ -34,6 +37,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -123,10 +127,16 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 		if *nonce == "" {
 			*nonce = newNonce()
 		}
+		if id, ok := verdictOf(*deck); ok {
+			return st.verdictBundle(ctx, *uid, id, *dir, *nonce)
+		}
 		return st.bundle(ctx, *uid, *deck, *dir, *nonce)
 	case "mark":
 		if *uid == "" || *deck == "" {
 			return errors.New("mark: set -uid and -deck")
+		}
+		if id, ok := verdictOf(*deck); ok {
+			return st.feedback.MarkEvaluated(ctx, *uid, id, time.Now())
 		}
 		return st.decks.MarkEvaluated(ctx, *uid, *deck, time.Now())
 	}
@@ -143,13 +153,18 @@ type store struct {
 
 // pendingRow is one line of `pending`, the queue of the loop script.
 type pendingRow struct {
-	UID         string    `json:"uid"`
-	Deck        string    `json:"deck"`
-	Session     string    `json:"session"`
-	Who         string    `json:"who"`
-	Kind        string    `json:"kind"`
-	RevisedFrom string    `json:"revised_from,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
+	UID         string `json:"uid"`
+	Deck        string `json:"deck"`
+	Session     string `json:"session"`
+	Who         string `json:"who"`
+	Kind        string `json:"kind"`
+	RevisedFrom string `json:"revised_from,omitempty"`
+	// Verdict, Target, and TargetDeck name a thumbs down: its id, the
+	// kind of thing it names, and the deck it names (D-1149).
+	Verdict    string    `json:"verdict,omitempty"`
+	Target     string    `json:"target,omitempty"`
+	TargetDeck string    `json:"target_deck,omitempty"`
+	CreatedAt  time.Time `json:"created_at"`
 }
 
 func kind(p decks.Pending) string {
@@ -167,11 +182,23 @@ func (st store) pending(ctx context.Context, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	downs, err := st.feedback.UnevaluatedDown(ctx)
+	if err != nil {
+		return err
+	}
 	who := st.labels(ctx)
-	enc := json.NewEncoder(out)
+	rows := make([]pendingRow, 0, len(list)+len(downs))
 	for _, p := range list {
-		row := pendingRow{UID: p.UID, Deck: p.ID, Session: p.SessionID, Who: who(p.UID), Kind: kind(p),
-			RevisedFrom: p.RevisedFrom, CreatedAt: p.CreatedAt}
+		rows = append(rows, pendingRow{UID: p.UID, Deck: p.ID, Session: p.SessionID, Who: who(p.UID), Kind: kind(p),
+			RevisedFrom: p.RevisedFrom, CreatedAt: p.CreatedAt})
+	}
+	for _, p := range downs {
+		rows = append(rows, verdictRow(p, who(p.UID)))
+	}
+	// The loop reads the rows in order, so the oldest item goes first.
+	sort.SliceStable(rows, func(i, j int) bool { return rows[i].CreatedAt.Before(rows[j].CreatedAt) })
+	enc := json.NewEncoder(out)
+	for _, row := range rows {
 		if err := enc.Encode(row); err != nil {
 			return err
 		}
@@ -212,19 +239,25 @@ func (st store) summary(ctx context.Context, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if len(list) == 0 {
-		_, err := fmt.Fprintln(out, "No deck waits for a live eval.")
+	downs, err := st.feedback.UnevaluatedDown(ctx)
+	if err != nil {
+		return err
+	}
+	if len(list) == 0 && len(downs) == 0 {
+		_, err := fmt.Fprintln(out, "No deck and no thumbs down waits for a live eval.")
 		return err
 	}
 	who := st.labels(ctx)
 	var b strings.Builder
 	var verdicts []feedback.Item
-	if v, err := st.feedback.Since(ctx, list[0].CreatedAt.Add(-time.Minute), 1000); err == nil {
-		verdicts = v
-	} else {
-		fmt.Fprintf(&b, "note: the verdicts did not read: %v\n", err)
+	if len(list) > 0 {
+		if v, err := st.feedback.Since(ctx, list[0].CreatedAt.Add(-time.Minute), 1000); err == nil {
+			verdicts = v
+		} else {
+			fmt.Fprintf(&b, "note: the verdicts did not read: %v\n", err)
+		}
 	}
-	fmt.Fprintf(&b, "%d decks wait for a live eval.\n", len(list))
+	fmt.Fprintf(&b, "%d decks and %d thumbs down wait for a live eval.\n", len(list), len(downs))
 	for i, p := range list {
 		d, err := st.decks.Get(ctx, p.UID, p.ID)
 		if err != nil {
@@ -239,14 +272,24 @@ func (st store) summary(ctx context.Context, out io.Writer) error {
 		}
 		b.WriteString(describe(i+1, p, who(p.UID), d, s, verdictsOf(verdicts, p.ID, p.SessionID)))
 	}
+	for i, p := range downs {
+		v, err := st.feedback.Get(ctx, p.UID, p.ID)
+		if err != nil {
+			fmt.Fprintf(&b, "\n[%d] verdict %s: the verdict did not read: %v\n", len(list)+i+1, p.ID, err)
+			continue
+		}
+		b.WriteString(describeVerdict(len(list)+i+1, p, who(p.UID), v))
+	}
 	_, err = io.WriteString(out, b.String())
 	return err
 }
 
+// verdictsOf keeps the verdicts of one deck or one session. An empty id
+// matches nothing, so a verdict with no deck never joins a bundle.
 func verdictsOf(all []feedback.Item, deckID, sessionID string) []feedback.Item {
 	var out []feedback.Item
 	for _, v := range all {
-		if v.DeckID == deckID || (sessionID != "" && v.SessionID == sessionID) {
+		if (deckID != "" && v.DeckID == deckID) || (sessionID != "" && v.SessionID == sessionID) {
 			out = append(out, v)
 		}
 	}
@@ -408,8 +451,7 @@ func (st store) bundle(ctx context.Context, uid, id, dir, nonce string) error {
 	if err := os.MkdirAll(filepath.Join(dir, "chain"), 0o700); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(dir, "README-UNTRUSTED.txt"), []byte(wrapText(nonce,
-		"Every file of this folder holds data that a reader of the app wrote or caused.\n")), 0o600); err != nil {
+	if err := writeReadme(dir, nonce); err != nil {
 		return err
 	}
 	d, err := st.decks.Get(ctx, uid, id)
@@ -434,45 +476,62 @@ func (st store) bundle(ctx context.Context, uid, id, dir, nonce string) error {
 	meta := map[string]any{"deck": id, "user": short(uid), "kind": kind(decks.Pending{RevisedFrom: d.GetRevisedFromDeckId()}),
 		"revised_from": d.GetRevisedFromDeckId(), "session": d.GetSessionId(), "created_at": d.GetCreatedAt().AsTime()}
 	if sid := d.GetSessionId(); sid != "" {
-		s, state, _, err := st.sessions.GetState(ctx, uid, sid)
-		if err != nil {
-			return fmt.Errorf("session: %w", err)
-		}
-		if err := writeProto(filepath.Join(dir, "session.json"), s); err != nil {
+		if err := st.writeSession(ctx, uid, sid, id, dir, nonce, meta); err != nil {
 			return err
 		}
-		if err := writeJSON(filepath.Join(dir, "question-state.json"), state); err != nil {
-			return err
+	}
+	return writeJSON(filepath.Join(dir, "meta.json"), meta)
+}
+
+// writeReadme writes the notice file of a bundle.
+func writeReadme(dir, nonce string) error {
+	return os.WriteFile(filepath.Join(dir, "README-UNTRUSTED.txt"), []byte(wrapText(nonce,
+		"Every file of this folder holds data that a reader of the app wrote or caused.\n")), 0o600)
+}
+
+// writeSession writes the session part of a bundle: the session, its
+// question state, the dialog, the other decks of the session, the
+// collection, and the verdicts. deck names the deck that the bundle
+// holds already, or is empty.
+func (st store) writeSession(ctx context.Context, uid, sid, deck, dir, nonce string, meta map[string]any) error {
+	s, state, _, err := st.sessions.GetState(ctx, uid, sid)
+	if err != nil {
+		return fmt.Errorf("session: %w", err)
+	}
+	if err := writeProto(filepath.Join(dir, "session.json"), s); err != nil {
+		return err
+	}
+	if err := writeJSON(filepath.Join(dir, "question-state.json"), state); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(dir, "dialog.txt"), []byte(wrapText(nonce, dialog(s))), 0o600); err != nil {
+		return err
+	}
+	for _, other := range s.GetDeckIds() {
+		if other == deck {
+			continue
 		}
-		if err := os.WriteFile(filepath.Join(dir, "dialog.txt"), []byte(wrapText(nonce, dialog(s))), 0o600); err != nil {
-			return err
-		}
-		for _, other := range s.GetDeckIds() {
-			if other == id {
-				continue
-			}
-			if od, err := st.decks.Get(ctx, uid, other); err == nil {
-				if err := writeProto(filepath.Join(dir, "session-deck-"+other+".json"), od); err != nil {
-					return err
-				}
-			}
-		}
-		if cid := s.GetCollectionId(); cid != "" {
-			if col, err := st.collections.Get(ctx, uid, cid); err == nil {
-				if err := writeProto(filepath.Join(dir, "collection.json"), col); err != nil {
-					return err
-				}
-			} else {
-				meta["collection_error"] = err.Error()
-			}
-		}
-		if v, err := st.feedback.Since(ctx, d.GetCreatedAt().AsTime().Add(-time.Minute), 1000); err == nil {
-			if err := writeJSON(filepath.Join(dir, "verdicts.json"), verdictsOf(v, id, sid)); err != nil {
+		if od, err := st.decks.Get(ctx, uid, other); err == nil {
+			if err := writeProto(filepath.Join(dir, "session-deck-"+other+".json"), od); err != nil {
 				return err
 			}
 		}
 	}
-	return writeJSON(filepath.Join(dir, "meta.json"), meta)
+	if cid := s.GetCollectionId(); cid != "" {
+		if col, err := st.collections.Get(ctx, uid, cid); err == nil {
+			if err := writeProto(filepath.Join(dir, "collection.json"), col); err != nil {
+				return err
+			}
+		} else {
+			meta["collection_error"] = err.Error()
+		}
+	}
+	if v, err := st.feedback.Since(ctx, s.GetCreatedAt().AsTime().Add(-time.Minute), 1000); err == nil {
+		if err := writeJSON(filepath.Join(dir, "verdicts.json"), verdictsOf(v, deck, sid)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func writeProto(path string, m proto.Message) error {

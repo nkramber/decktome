@@ -61,6 +61,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/rules"
 	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/spellbook"
+	"github.com/nkramber/decktome/go/internal/spendmask"
 	"github.com/nkramber/decktome/go/internal/usage"
 	"github.com/nkramber/decktome/go/internal/users"
 )
@@ -323,6 +324,13 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	deckOpts := append([]connect.HandlerOption{connect.WithInterceptors(
 		limiter.Interceptor(public...),
 		auth.Interceptor(authOpts.verifier, append(append([]auth.Option{}, authOpts.opts...), auth.WithPublic(public...))...),
+		spendmask.Interceptor(),
+	)}, probeOpts...)
+	// The model spend reaches the admin alone (D-1148). The agent and the
+	// deck answers are the only ones that carry it.
+	agentOpts := append([]connect.HandlerOption{connect.WithInterceptors(
+		auth.Interceptor(authOpts.verifier, authOpts.opts...),
+		spendmask.Interceptor(),
 	)}, probeOpts...)
 	mux := http.NewServeMux()
 	mux.Handle(mtgv1connect.NewHealthServiceHandler(healthServer, probeOpts...))
@@ -331,7 +339,7 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	mux.Handle(mtgv1connect.NewCardServiceHandler(cardServer, append(opts, connect.WithReadMaxBytes(cardRequestBytes))...))
 	mux.Handle(mtgv1connect.NewCollectionServiceHandler(collectionServer, opts...))
 	mux.Handle(mtgv1connect.NewDeckServiceHandler(deckServer, deckOpts...))
-	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, opts...))
+	mux.Handle(mtgv1connect.NewAgentServiceHandler(agentServer, agentOpts...))
 	mux.Handle(mtgv1connect.NewFeedbackServiceHandler(feedbackServer, opts...))
 	mux.Handle(mtgv1connect.NewPushServiceHandler(pushServer, opts...))
 	// Each admin call needs a sign-in and the admin claim (D-1076).
