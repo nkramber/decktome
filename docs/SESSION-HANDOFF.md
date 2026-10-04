@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04g)
 
-**Branch `fix/x-cost-fast-mana`: PR-130, fast mana needs no X and no multikicker (F-225, D-1162).**
+**Branch `fix/x-cost-fast-mana`: PR-130 is #288, fast mana needs no X and no multikicker (F-225, D-1162).**
 
 Author provider: Claude Code
 
