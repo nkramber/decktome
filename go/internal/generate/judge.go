@@ -28,9 +28,13 @@ Report two things.
 
 First, every statement in the paragraph that asserts a rule of the game. A rule of the game is anything about what a card may do, what a format allows, what is banned or legal, what counts toward a limit, how many copies a deck may hold, or whether a card can lead a deck. A description of what the deck does on the table is not a rule.
 
+A limit, a band, or a target of the deck builder itself, for example a count of lands, a count of fixing lands, or a shortlist that holds too few cards of a kind, is not a rule of the game. Judge such a statement as no rules claim.
+
 Second, for each such statement, whether it is true. Judge it against the real rules of Magic: The Gathering. Say "unknown" when you can not tell.
 
 Be strict about what counts as a rules claim and honest about truth. A summary with no rules claim is the expected result.
+
+In Commander, the singleton rule exempts every basic land, so a deck may hold any number of each basic land.
 
 When the input holds the card list with the mana cost and the type line of each card from the card data, judge a claim about the cost, the color, or the type of a card against that list, and not against your memory of the card.`
 
@@ -50,8 +54,10 @@ const SixtyJudgeVersion = 2
 
 // SummaryJudgeVersion changes when the instructions or the input of the
 // summary judge change. Version 2 reads the card facts of the deck
-// (D-789). A change starts a new epoch of the false-rule rows.
-const SummaryJudgeVersion = 2
+// (D-789). Version 3 says that a band of the builder is no rule of the
+// game and that the singleton rule exempts basic lands (D-1130). A
+// change starts a new epoch of the false-rule rows.
+const SummaryJudgeVersion = 3
 
 const judgeSchema = `{
   "type": "object",

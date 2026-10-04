@@ -321,6 +321,21 @@ describe("deleting a collection", () => {
     expect(useAppStore.getState().poolMode).toBe("any");
   });
 
+  it("reads the deleted collection no more", async () => {
+    useAppStore.setState({ collectionId: "c-old" });
+    deleteCollection.mockResolvedValue({});
+    await renderAt("/collection");
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Delete binder-july.csv" }));
+    await waitFor(() => expect(getCollection).toHaveBeenCalled());
+    const reads = () => getCollection.mock.calls.filter(([req]) => (req as { collectionId: string }).collectionId === "c-old").length;
+    const before = reads();
+    await user.click(screen.getByRole("button", { name: "Delete the collection" }));
+    await waitFor(() => expect(useAppStore.getState().collectionId).toBe(""));
+    await new Promise((r) => setTimeout(r, 50));
+    expect(reads()).toBe(before);
+  });
+
   it("keeps the collection when the reader backs out", async () => {
     await renderAt("/collection");
     const user = userEvent.setup();

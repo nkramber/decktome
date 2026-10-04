@@ -32,7 +32,7 @@ func themeRowAsked(theme string) *State {
 // not ready (D-725).
 func TestThemeRowAsksBeforeTheBuild(t *testing.T) {
 	out := classifyOut{Format: "commander", Theme: "opponent milling cards", PoolRule: "unknown"}
-	a, _ := testAgentHints(t, &fakeHints{unmatched: true}, classifyStep(t, out),
+	a, _ := testAgentHints(t, &fakeHints{unmatched: []string{"opponent", "milling", "cards"}}, classifyStep(t, out),
 		fits(t, "theme_unmatched", "power_commander", "colors"), askStep(t))
 	st := NewState(true)
 	res, err := a.Turn(context.Background(), st, "Build a deck focused around opponent milling cards.", nil)
@@ -44,7 +44,7 @@ func TestThemeRowAsksBeforeTheBuild(t *testing.T) {
 	}
 	asked := false
 	for _, q := range res.Questions {
-		asked = asked || strings.HasPrefix(q.GetText(), "No card I know matches the theme opponent milling cards.")
+		asked = asked || strings.HasPrefix(q.GetText(), `No card I know matches "opponent", "milling", or "cards" in the theme opponent milling cards.`)
 	}
 	if !asked {
 		t.Errorf("the turn did not ask the theme row: %v", res.Questions)
@@ -74,7 +74,7 @@ func TestThemeRowClosesOnAThemeThatMatches(t *testing.T) {
 // Before this, the re-ask of D-599 sent the same question again. With no
 // reply the question stays out, for the net of D-351.
 func TestThemeRowSkipsAKeptTheme(t *testing.T) {
-	a, _ := testAgentHints(t, &fakeHints{unmatched: true})
+	a, _ := testAgentHints(t, &fakeHints{unmatched: []string{"opponent", "milling", "cards"}})
 	st := themeRowAsked("opponent milling cards")
 	st.AnsweredQuestions = []string{"q1-theme_unmatched"}
 	a.readThemeMatch(st)
@@ -92,7 +92,7 @@ func TestThemeRowSkipsAKeptTheme(t *testing.T) {
 // The same theme gets no second question, and another theme that matches
 // no card gets one.
 func TestThemeRowAsksAgainOnlyForAnotherMiss(t *testing.T) {
-	a, _ := testAgentHints(t, &fakeHints{unmatched: true})
+	a, _ := testAgentHints(t, &fakeHints{unmatched: []string{"opponent", "milling", "cards"}})
 	c := load(t)
 	st := themeRowAsked("opponent milling cards")
 	st.Skip(SlotThemeUnmatched)
@@ -165,18 +165,26 @@ func TestThemeUnmatchedReadsTheCardDatabase(t *testing.T) {
 		t.Fatal(err)
 	}
 	h := &CandidateHints{Index: idx, Builder: b, Format: mtgv1.FormatId_FORMAT_ID_COMMANDER}
-	if h.ThemeUnmatched("opponent milling cards") {
-		t.Error("milling finds the mill row, and Millstone mills")
+	// The index holds one card, so "opponent" can read as a word no card
+	// holds. The test is about the mill word alone.
+	for _, w := range h.ThemeUnmatched("opponent milling cards") {
+		if strings.HasPrefix(w, "mill") {
+			t.Errorf("milling finds the mill row, and Millstone mills, but %q read as unmatched", w)
+		}
 	}
-	if !h.ThemeUnmatched("zzzz") {
-		t.Error("a word no card holds must read as unmatched")
+	if got := h.ThemeUnmatched("zzzz"); len(got) != 1 || got[0] != "zzzz" {
+		t.Errorf("a word no card holds must read as unmatched: %v", got)
 	}
-	if h.ThemeUnmatched("") {
-		t.Error("an empty theme is no miss")
+	// D-1116: one dead word is a miss, though another word matches.
+	if got := h.ThemeUnmatched("mill zzzz"); len(got) != 1 || got[0] != "zzzz" {
+		t.Errorf("the word no card holds beside a word that matches: %v", got)
+	}
+	if got := h.ThemeUnmatched(""); got != nil {
+		t.Errorf("an empty theme is no miss: %v", got)
 	}
 	var none *CandidateHints
-	if none.ThemeUnmatched("zzzz") {
-		t.Error("a nil hint source can not tell, so it answers false")
+	if got := none.ThemeUnmatched("zzzz"); got != nil {
+		t.Errorf("a nil hint source can not tell, so it answers nil: %v", got)
 	}
 }
 
@@ -207,5 +215,126 @@ func TestThemeMatchReadsTheIndexOncePerTheme(t *testing.T) {
 	a.readThemeMatch(st)
 	if h.unmatchedCalls != 3 {
 		t.Errorf("a new color and a new theme read the index %d times in all, want 3", h.unmatchedCalls)
+	}
+}
+
+// TestThemeRowAsksOnOneDeadWord is D-1116. The first outside user wrote
+// voltron and hand size. "voltron" matched cards, so the row of D-725
+// closed, and the build dropped the other words in silence. The row now
+// asks when one word matches no card, and it names that word.
+func TestThemeRowAsksOnOneDeadWord(t *testing.T) {
+	out := classifyOut{Format: "commander", Theme: "voltron, handsize matters", PoolRule: "unknown"}
+	h := &fakeHints{unmatchedBy: map[string][]string{"voltron, handsize matters": {"handsize"}}}
+	a, _ := testAgentHints(t, h, classifyStep(t, out),
+		fits(t, "theme_unmatched", "power_commander", "colors"), askStep(t))
+	st := NewState(true)
+	res, err := a.Turn(context.Background(), st, "Build a voltron deck, handsize matters.", nil)
+	if err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if res.Ready {
+		t.Error("a theme with a word that matches no card reached the build")
+	}
+	want := `No card I know matches "handsize" in the theme voltron, handsize matters.`
+	asked := false
+	for _, q := range res.Questions {
+		asked = asked || strings.HasPrefix(q.GetText(), want)
+	}
+	if !asked {
+		t.Errorf("the turn did not name the dead word: %v", res.Questions)
+	}
+}
+
+// TestThemeRowReplyThatFixesTheThemeCloses is D-1116. The reader answers
+// with words that all match cards, so the key closes and the build names
+// no dead word.
+func TestThemeRowReplyThatFixesTheThemeCloses(t *testing.T) {
+	h := &fakeHints{unmatchedBy: map[string][]string{"voltron, handsize matters": {"handsize"}}}
+	a, _ := testAgentHints(t, h)
+	st := themeRowAsked("voltron, handsize matters")
+	st.Ctx.ThemeMissing, st.Ctx.ThemeUnmatched = []string{"handsize"}, true
+	st.AnsweredQuestions = []string{"q1-theme_unmatched"}
+	st.Slots.Theme = "voltron, card draw"
+	a.readThemeMatch(st)
+	if got := st.Slots.GetSlotStates()[SlotThemeUnmatched]; got != mtgv1.SlotState_SLOT_STATE_FILLED {
+		t.Errorf("slot state = %v, want filled", got)
+	}
+	if st.Ctx.ThemeUnmatched || len(st.Ctx.ThemeMissing) > 0 {
+		t.Errorf("a theme whose words match still reads as unmatched: %v", st.Ctx.ThemeMissing)
+	}
+	if note := st.UnusedThemeNote(); note != "" {
+		t.Errorf("a theme whose words match got the note %q", note)
+	}
+}
+
+// TestThemeRowReplyWithADeadWordBuilds is D-1116 beside D-599. The reader
+// replied with another theme, and one word still matches no card. The
+// row does not ask again on this turn or the next, and the build names
+// the word it can not use. Before this, each such reply asked again.
+func TestThemeRowReplyWithADeadWordBuilds(t *testing.T) {
+	h := &fakeHints{unmatchedBy: map[string][]string{
+		"voltron, handsize matters":           {"handsize"},
+		"voltron, evasioin, handsize matters": {"evasioin", "handsize"},
+	}}
+	a, _ := testAgentHints(t, h)
+	c := load(t)
+	st := themeRowAsked("voltron, handsize matters")
+	st.AnsweredQuestions = []string{"q1-theme_unmatched"}
+	st.Slots.Theme = "voltron, evasioin, handsize matters"
+	a.readThemeMatch(st)
+	if got := st.Slots.GetSlotStates()[SlotThemeUnmatched]; got != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("a reply with a dead word left slot state %v, want skipped", got)
+	}
+	if contains(ids(c.Plan(st.Ctx)), "theme_unmatched") {
+		t.Error("the row asked again after the reply")
+	}
+	want := `No card I know matches "evasioin" or "handsize", so the deck is built without those words`
+	if got := st.UnusedThemeNote(); got != want {
+		t.Errorf("note = %q, want %q", got, want)
+	}
+	st.AnsweredQuestions = nil
+	st.Turn++
+	a.readThemeMatch(st)
+	if contains(ids(c.Plan(st.Ctx)), "theme_unmatched") {
+		t.Error("the row asked again on the turn after the reply")
+	}
+}
+
+// TestThemeRowKeptThemeNamesTheDeadWords is D-599 beside D-1116. A reply
+// that keeps the theme builds it as written, and the build names the
+// words it can not use.
+func TestThemeRowKeptThemeNamesTheDeadWords(t *testing.T) {
+	h := &fakeHints{unmatchedBy: map[string][]string{"voltron, handsize matters": {"handsize"}}}
+	a, _ := testAgentHints(t, h)
+	st := themeRowAsked("voltron, handsize matters")
+	st.AnsweredQuestions = []string{"q1-theme_unmatched"}
+	a.readThemeMatch(st)
+	if got := st.Slots.GetSlotStates()[SlotThemeUnmatched]; got != mtgv1.SlotState_SLOT_STATE_SKIPPED {
+		t.Errorf("a kept theme left slot state %v, want skipped", got)
+	}
+	want := `No card I know matches "handsize", so the deck is built without that word`
+	if got := st.UnusedThemeNote(); got != want {
+		t.Errorf("note = %q, want %q", got, want)
+	}
+}
+
+// TestThemeRowTextNamesTheWords is D-1116 through the resolver. The row
+// names the dead words, and a session with no word takes the fallback.
+func TestThemeRowTextNamesTheWords(t *testing.T) {
+	c := load(t)
+	row, ok := c.Row(SlotThemeUnmatched)
+	if !ok {
+		t.Fatal("no theme row")
+	}
+	st := themeRowAsked("voltron, handsize, cantrips")
+	st.Ctx.ThemeMissing = []string{"handsize", "cantrips"}
+	text, _, _ := resolve(row, st, nil)
+	want := `No card I know matches "handsize" or "cantrips" in the theme voltron, handsize, cantrips. What should the deck do: a creature type, a mechanic, or a play style?`
+	if text != want {
+		t.Errorf("text = %q, want %q", text, want)
+	}
+	st.Ctx.ThemeMissing = nil
+	if text, _, _ := resolve(row, st, nil); text != row.Fallback {
+		t.Errorf("a row with no word = %q, want the fallback", text)
 	}
 }

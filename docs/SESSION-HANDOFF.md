@@ -6,34 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04a)
+## RESUME HERE (2026-10-04c)
 
-**Branch `feat/archidekt-url-import`: PR-123, a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** The pull request is #277. The owner renamed it two times (D-1108, D-1115).
+**Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).
 
 Author provider: Claude Code
 
-**The base.** `main` is `bebee78`, from #281. The branch merged `main` after #278, and again after #281. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
-
-**The owner choices.** An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1113 answer the Codex reviews. `make codex-review` accepts the new Gitar reply "Running a review on this PR now" (D-1114).
+**The base.** `main` is `b308a71`, from #277.
 
 **The code.**
 
-- `go/internal/archidekt` reads one deck and writes its Arena text. `go/internal/decklink` sorts a link and holds the steps of each site.
-- `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
-- `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
-- The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
-- `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1113).
+- `go/internal/candidates`: the rows `hand-size`, `cantrips`, and `heroic`, the unmatched words, the roles, the staple floor, and `avoid`.
+- `go/internal/questions` and `go/internal/agentsvc`: a question for each dead word, the classifier field `avoid`, the revision rule, and snapshot version 7 (D-1129).
+- Prompts: generate 18, questions 22, and summary judge 3.
+- `go/internal/quality` and `go/internal/profile`: the feature `land_need`, no reason inside a band, and the shape of the bracket.
+- `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
+- `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
 
-**The checks.** `make verify` passed on `8e577ef`, with 555 web tests under Node 22. Codex ran `make store-check` against the emulator on `8e577ef`, and it passed.
+**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate runs 25, 26, and 27 read PASS. Run 26 decks name no bracket. Run 27 on `944ce24` holds F-223 and keeps each number of run 26. Question gate run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Rejudge run 40 of deck gate run 39 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar, and the stored decks of the user fail 9 deck bars. A free rescore of the replay decks after F-223 keeps both grades above their bars.
 
-**The review.** The record `docs/reviews/pr-277.md` reads `Ready for owner merge` at effective head `8e577ef`, with no open finding. Gitar approved `8e577ef` at 01:54 UTC on 2026-10-04, with no open thread. The state is pending the auto-merge (D-828).
+**The review.** Codex round 2 approves effective head `c712e844`. P2-1 is fixed in `a078bb5`. Gitar found that absent deck-bar values passed as zero. Commit `1f1b0f4` fixes it. Gitar resolved the thread. The Codex record says that no quality source file changed after `0216e65`. That is not true: F-221 and F-223 changed `features.go`. Run 27 measures the head. The owner knows of D-1126. PR #282 renumbers its ids (D-1131).
 
 **The open work.**
 
-1. The owner confirms the merge, and the auto-merge merges the pull request (D-828, D-834).
-2. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1113).
-3. After the deploy, read an Archidekt link on `decktome.com`, and import it.
-4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+1. Do the Gitar pass on the commit of quality gate run 27. Then ask the owner to confirm the merge.
+2. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
+3. The owner tells the user about the fixes.
 
 ## How to resume
 
@@ -57,7 +55,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
-- Seventeen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
+- Eighteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate document names the commit of `HEAD`, and never the tree. Deck gate run 29 ran over uncommitted work, so its header names the parent commit `5fd8085`. Commit the change before a paid run.
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -100,16 +98,16 @@ Twenty-two things a fresh session gets wrong without this file.
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 16 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 18 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-123: a deck import from a link** (D-1100 to D-1108, D-1113 to D-1115). The resume section holds the open work.
+0. **PR-124: the findings of the first outside user** (F-212 to F-223, D-1116 to D-1131). The resume section holds the open work.
+0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
-0. **The check of PR-121** (F-211, D-1110). It merged as #280. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page. The owner can tell the user that the limit is 50,000 rows now.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -136,12 +134,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03g: a collection of 50,000 rows, PR-121
-
-**A user wrote "Collection limit too small".** The log showed a refused import of about 2.3 MB, past the limit of 9,000 rows.
-
-**The owner chose 50,000 rows and a file of 10 MiB.** The session first gave the request size as the file size. The web app sends base64, so the session corrected the estimate and the request cap before the code.
-
 ### 2026-10-03h: the sender `mail@decktome.com`, PR-122
 
 **The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
@@ -156,6 +148,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner renamed the item two times (D-1108, D-1115).** D-1106, D-1107, D-1113, and D-1114 answer the reviews and the gate.
 
+### 2026-10-04b: the findings of the first outside user, PR-124
+
+**The owner watched the first outside user and listed nine findings.** The session read the session and both decks, and replayed the shortlist for free.
+
+**The owner overrode the one concern of the skill (D-1125).** The owner answered twelve questions, and five workers changed the code by package.
+
+**Two gates failed on one item each.** A probe proved the question miss a flake. The owner chose a fix of the summary judge and a rejudge (D-1130).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03g, the records of 2026-08-31 to 2026-10-03e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04a, the records of 2026-08-31 to 2026-10-03g, and 104 more sections, word for word. Read it for the detail behind a decision.

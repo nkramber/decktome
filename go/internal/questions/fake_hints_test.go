@@ -1,6 +1,8 @@
 package questions
 
 import (
+	"strings"
+
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/candidates"
 )
@@ -26,9 +28,11 @@ type fakeHints struct {
 	owned int
 	thin  bool
 	count int
-	// unmatched is the ThemeSource answer (D-725), and unmatchedCalls
-	// counts the reads.
-	unmatched      bool
+	// unmatched is the ThemeSource answer for every theme (D-725), and
+	// unmatchedBy answers one theme, in lower case (D-1116).
+	// unmatchedCalls counts the reads.
+	unmatched      []string
+	unmatchedBy    map[string][]string
 	unmatchedCalls int
 	// saw are the colors the agent handed over inside the turn (D-124).
 	saw []mtgv1.Color
@@ -65,8 +69,11 @@ func (f *fakeHints) OwnedThemeCount(string) int {
 
 func (f *fakeHints) ThinTheme(string) (bool, int) { return f.thin, f.count }
 
-func (f *fakeHints) ThemeUnmatched(string) bool {
+func (f *fakeHints) ThemeUnmatched(theme string) []string {
 	f.unmatchedCalls++
+	if v, ok := f.unmatchedBy[strings.ToLower(strings.TrimSpace(theme))]; ok {
+		return v
+	}
 	return f.unmatched
 }
 

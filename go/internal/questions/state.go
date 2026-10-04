@@ -1,11 +1,13 @@
 package questions
 
 import (
+	"encoding/base64"
 	"sort"
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cardname"
+	"google.golang.org/protobuf/proto"
 )
 
 // State is one session's question state. Slots hold the values the deck
@@ -109,6 +111,11 @@ type State struct {
 	// The row asks again only for another theme that matches no card, the
 	// D-210 rule of the set row.
 	UnmatchedThemeAsked string
+	// BuiltSlots is the SlotsKey of the slots the last deck was built
+	// from. A turn after a build compares the slots with it, so a change
+	// in a turn that asked a question still rebuilds the deck on the turn
+	// that answers it (D-1118).
+	BuiltSlots string
 	// CurrentOffer are the names on the table now. The pick row repeats
 	// with these same names until the user asks for others, so the user
 	// never reads a new list as an ignored answer (D-80).
@@ -926,4 +933,56 @@ var sixtySteps = map[string]mtgv1.SixtyStep{
 	"casual":     mtgv1.SixtyStep_SIXTY_STEP_CASUAL,
 	"fnm":        mtgv1.SixtyStep_SIXTY_STEP_FNM,
 	"tournament": mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT,
+}
+
+// SlotsKey is the value of the deck settings, as text. Two slot sets with
+// one key build the same deck, so a message after a build that leaves the
+// key alone revises the deck (D-241, D-283, D-1118).
+//
+// It leaves out the slot states, which say how a value was settled and
+// not what it is. It also leaves out avoid: a wish for less of a thing
+// is a change request against the deck the user reads, and the revision
+// reads it, so it is no reason to build again from the start (D-1122).
+func SlotsKey(slots *mtgv1.Slots) string {
+	c := &mtgv1.Slots{}
+	if slots != nil {
+		c = proto.Clone(slots).(*mtgv1.Slots)
+	}
+	c.SlotStates, c.Avoid = nil, ""
+	b, err := proto.MarshalOptions{Deterministic: true}.Marshal(c)
+	if err != nil {
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+// MarkBuilt records the slots of the deck this turn builds (D-1118).
+func (s *State) MarkBuilt() { s.BuiltSlots = SlotsKey(s.Slots) }
+
+// SlotsChangedSinceBuild reports whether the slots differ from the slots
+// of the last deck. ok is false when no build recorded its slots, and the
+// caller then compares the slots before and after the turn (D-241).
+func (s *State) SlotsChangedSinceBuild() (changed, ok bool) {
+	if s.BuiltSlots == "" {
+		return false, false
+	}
+	return SlotsKey(s.Slots) != s.BuiltSlots, true
+}
+
+// UnusedThemeNote is the line a build sends when words of the theme
+// match no card (D-1116). The theme row asked about them, or it is still
+// out, and the build drops them. It is empty when every word matches.
+func (s *State) UnusedThemeNote() string {
+	if strings.TrimSpace(s.Slots.GetTheme()) == "" {
+		return ""
+	}
+	words := s.Ctx.ThemeMissing
+	if len(words) == 0 {
+		return ""
+	}
+	noun := "that word"
+	if len(words) > 1 {
+		noun = "those words"
+	}
+	return "No card I know matches " + quotedList(words, "or") + ", so the deck is built without " + noun
 }

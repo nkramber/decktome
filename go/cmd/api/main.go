@@ -180,6 +180,9 @@ func run(ctx context.Context, logger *slog.Logger) error {
 	// minutes, so a user who signs in and makes nothing has one too
 	// (D-1092, D-1093).
 	authOpts.opts = append(authOpts.opts, auth.WithVisits(users.NewVisits(users.NewRepo(fs).Touch, nil, logger)))
+	// Each call that the check reads writes one line with the uid and the
+	// trace of the request, and never the email (D-1117).
+	authOpts.opts = append(authOpts.opts, auth.WithCallLog(logger, gcpenv.TraceAttr(project)))
 	// The interceptor puts the user id in the context.
 	userFn := auth.UserID
 	// The repo reads the index for the summary of a collection stored

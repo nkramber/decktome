@@ -32,6 +32,8 @@ func TestThemeWordsFindTheirRow(t *testing.T) {
 		"superfriends": "superfriends", "planeswalkers": "superfriends", "going-wide": "go-wide",
 		"spell-slinger": "spellslinger", "land-destruction": "land-destruction",
 		"heroes": "heroes", "superhero": "heroes", "superheroes": "heroes", "avengers": "heroes",
+		"handsize": "hand-size", "hand-size": "hand-size", "cantrips": "cantrips", "cantrip": "cantrips",
+		"heroic": "heroic", "targeting": "heroic", "targets": "heroic",
 	}
 	for word, want := range rows {
 		if got, ok := b.themes.rowOf(word); !ok || got != want {
@@ -61,6 +63,10 @@ func TestTwoWordsJoinThroughAForm(t *testing.T) {
 		"land destruction":       "land-destruction",
 		"counter spells":         "counter-spells",
 		"opponent milling cards": "opponent milling",
+		// The filler words of F-212 go, and "hand size" joins its row.
+		"hand size":                           "hand-size",
+		"handsize matters, heavy on cantrips": "handsize cantrips",
+		"a good protection suite":             "protection",
 	}
 	for theme, want := range cases {
 		if got := strings.Join(b.themes.words(theme), " "); got != want {

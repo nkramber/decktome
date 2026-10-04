@@ -286,7 +286,7 @@ func TestImportCollectionErrorMapping(t *testing.T) {
 	repo.putErr = collections.ErrTooLarge
 	s = newServer(repo, testIndex())
 	_, err = s.ImportCollection(context.Background(), importReq("n", mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV, goodCSV))
-	if connect.CodeOf(err) != connect.CodeResourceExhausted {
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("too large: %v", err)
 	}
 
@@ -555,7 +555,7 @@ func TestImportRefusesACollectionOverTheRowLimit(t *testing.T) {
 		rows int
 		want connect.Code
 	}{
-		{collections.MaxEntries + 1, connect.CodeResourceExhausted},
+		{collections.MaxEntries + 1, connect.CodeInvalidArgument},
 		{collections.MaxEntries, 0},
 	} {
 		repo := newFakeRepo()

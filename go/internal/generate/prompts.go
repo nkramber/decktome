@@ -72,7 +72,13 @@ package generate
 // card with no price, and the budget block counts such a card as over the
 // budget. The line read "$0.00", which the model can read as free
 // (D-1060).
-const PromptVersion = 17
+//
+// Version 18: the job list holds protection, a permanent that protects a
+// creature, apart from interaction (D-1120). The format shape block reads
+// the published lists at the power of the request (D-1123). The plan
+// carries the later messages of the user and what the user wants less
+// of (D-1122).
+const PromptVersion = 18
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -154,7 +160,7 @@ const deckSchema = `{
           "count": {"type": "integer"},
           "role": {
             "type": "string",
-            "enum": ["land", "ramp", "draw", "removal", "wipe", "threat", "interaction", "synergy", "wincon", "other"]
+            "enum": ["land", "ramp", "draw", "removal", "wipe", "threat", "interaction", "protection", "synergy", "wincon", "other"]
           },
           "reason": {"type": "string"}
         }
@@ -171,7 +177,7 @@ const deckSchema = `{
           "count": {"type": "integer"},
           "role": {
             "type": "string",
-            "enum": ["land", "ramp", "draw", "removal", "wipe", "threat", "interaction", "synergy", "wincon", "other"]
+            "enum": ["land", "ramp", "draw", "removal", "wipe", "threat", "interaction", "protection", "synergy", "wincon", "other"]
           },
           "reason": {"type": "string"}
         }

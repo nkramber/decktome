@@ -27,7 +27,8 @@ func TestPinnedPowerCardSkipsItsRoleCap(t *testing.T) {
 	b, _ := New()
 	idx := fixture(t, pinCards())
 	req := pinRequest()
-	req.Limits = Limits{PerRole: map[mtgv1.CardRole]int{mtgv1.CardRole_CARD_ROLE_RAMP: 1}}
+	// The staple floor of D-1121 is off, so the cap reads the score alone.
+	req.Limits = Limits{PerRole: map[mtgv1.CardRole]int{mtgv1.CardRole_CARD_ROLE_RAMP: 1}, floor: map[mtgv1.CardRole]int{}}
 	for _, pin := range []bool{false, true} {
 		req.PowerRate = PowerRate{Weight: 0.1, Keep: 0.5, Pin: pin}
 		list, err := b.Build(idx, req)

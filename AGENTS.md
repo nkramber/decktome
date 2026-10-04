@@ -45,7 +45,7 @@ make pipefail-check   # each piped recipe of the Makefile sets pipefail, part of
 make ruleset-check    # the live ruleset of main against .github/rulesets (D-828)
 ```
 
-Seventeen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each one.
+Eighteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each one.
 
 CI runs `verify` on each pull request (D-639). A change of documents alone skips the six heavy jobs when the code under it passed (D-818). The `pr-contract` workflow reads the body and the diff of each pull request against D-747. The `review-gate` workflow reads the review record.
 

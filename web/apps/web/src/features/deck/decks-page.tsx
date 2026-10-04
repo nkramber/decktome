@@ -37,7 +37,7 @@ const powerOptions = [
   { value: "b2", label: "Bracket 2, core" },
   { value: "b3", label: "Bracket 3, upgraded" },
   { value: "b4", label: "Bracket 4, optimized" },
-  { value: "b5", label: "Bracket 5, competitive" },
+  { value: "b5", label: "Bracket 5, cEDH" },
   { value: "s1", label: "60-card casual" },
   { value: "s2", label: "60-card FNM" },
   { value: "s3", label: "60-card tournament" },

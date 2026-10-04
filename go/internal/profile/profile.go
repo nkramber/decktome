@@ -37,6 +37,7 @@ const (
 	KeyRemoval             = "removal"
 	KeyWipe                = "wipe"
 	KeyInteraction         = "interaction"
+	KeyProtection          = "protection"
 	KeyAvgManaValue        = "avg_mana_value"
 	KeyTutor               = "tutor"
 	KeyFastMana            = "fast_mana"
@@ -240,7 +241,7 @@ func (p *Profiler) measure(deck *mtgv1.Deck, src rules.CardSource) (*mtgv1.DeckP
 // then the simulation.
 var featureOrder = []string{
 	KeyLand, KeyTappedLand, KeyColorlessLand, KeyColorSources, KeyFixingLand, KeyAvgManaValue,
-	KeyRamp, KeyDraw, KeyRemoval, KeyWipe, KeyInteraction,
+	KeyRamp, KeyDraw, KeyRemoval, KeyWipe, KeyInteraction, KeyProtection,
 	KeyTutor, KeyFastMana, KeyGameChanger, KeyFinisher,
 	KeyManaTurnFour, KeyHandsTwoToFourLands, KeyCommanderTurnOverMV,
 }
@@ -314,7 +315,10 @@ func (f *features) counts(entries []entry, commanders []*mtgv1.Card) {
 	f.set(KeyDraw, float64(roles[mtgv1.CardRole_CARD_ROLE_DRAW]), "")
 	f.set(KeyRemoval, float64(roles[mtgv1.CardRole_CARD_ROLE_REMOVAL]), "")
 	f.set(KeyWipe, float64(roles[mtgv1.CardRole_CARD_ROLE_WIPE]), "")
+	// Interaction counts the role interaction alone. Protection has a row
+	// of its own with no band, for display (D-1120).
 	f.set(KeyInteraction, float64(roles[mtgv1.CardRole_CARD_ROLE_INTERACTION]), "")
+	f.set(KeyProtection, float64(roles[mtgv1.CardRole_CARD_ROLE_PROTECTION]), "")
 	f.set(KeyFastMana, float64(fast), names(fastNames))
 	f.set(KeyGameChanger, float64(changers), names(changerNames))
 }
@@ -874,6 +878,7 @@ var featureWords = map[string]string{
 	KeyRemoval:             "the removal count",
 	KeyWipe:                "the wipe count",
 	KeyInteraction:         "the interaction count",
+	KeyProtection:          "the protection count",
 	KeyAvgManaValue:        "the average mana value of the nonland cards",
 	KeyTutor:               "the tutor count",
 	KeyFastMana:            "the fast mana count",

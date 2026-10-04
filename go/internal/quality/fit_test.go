@@ -280,7 +280,7 @@ func TestScoreAndRoundTrip(t *testing.T) {
 	if len(rows) != 1 || rows[0].GetFormat() != mtgv1.FormatId_FORMAT_ID_STANDARD || rows[0].GetInclusion() == 0 {
 		t.Errorf("card qualities = %+v", rows)
 	}
-	lines := s.ShapeLines(mtgv1.FormatId_FORMAT_ID_STANDARD)
+	lines := s.ShapeLines(mtgv1.FormatId_FORMAT_ID_STANDARD, nil)
 	if len(lines) != 2 || !strings.Contains(lines[0], "lands") || !strings.Contains(lines[1], "Staple") {
 		t.Errorf("shape lines = %v", lines)
 	}

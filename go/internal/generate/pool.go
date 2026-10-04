@@ -117,6 +117,8 @@ var roleWords = map[mtgv1.CardRole]string{
 	mtgv1.CardRole_CARD_ROLE_WIPE: "wipe", mtgv1.CardRole_CARD_ROLE_THREAT: "threat",
 	mtgv1.CardRole_CARD_ROLE_INTERACTION: "interaction", mtgv1.CardRole_CARD_ROLE_SYNERGY: "synergy",
 	mtgv1.CardRole_CARD_ROLE_WINCON: "wincon",
+	// A permanent that protects a creature is no interaction (D-1120).
+	mtgv1.CardRole_CARD_ROLE_PROTECTION: "protection",
 }
 
 func roleWord(r mtgv1.CardRole) string {

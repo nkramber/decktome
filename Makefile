@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -369,6 +369,32 @@ chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real provid
 		CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
 		$(GO) run ./cmd/chat-probe -messages "$(CHAT_PROBE_MESSAGES)" | tee $(CHAT_PROBE_OUT)
 	@echo "wrote $(CHAT_PROBE_OUT)"
+
+# USER_CASE names a case of go/cmd/user-case/cases (D-1124). The files it
+# pins download to .local/user-cases with gcloud, which reads the account
+# from CLOUDSDK_CORE_ACCOUNT.
+USER_CASE ?= first-user-ms-marvel
+USER_CASE_ARGS ?=
+USER_CASE_CHAT_OUT ?= .local/probes/user-case-$(USER_CASE).txt
+USER_CASE_DECKS_OUT ?= $(USER_CASE_CHAT_OUT:.txt=.decks.jsonl)
+
+user-case: ## Replay the shortlists of a real user session and read the bars (D-1124). Free, no model calls
+	@echo "tree: $$(git rev-parse --short HEAD), $$(git status --porcelain | wc -l | tr -d ' ') changed paths"
+	@$(GO) run ./cmd/user-case -case $(USER_CASE) $(USER_CASE_ARGS)
+
+user-case-chat: ## Drive chat-probe through the turns of a user case (D-1124). CAUTION: calls the real providers and costs money. Needs CONFIRM=1
+	@[ "$(CONFIRM)" = 1 ] || { echo "user-case-chat: this calls the real providers and costs money. Set CONFIRM=1."; exit 1; }
+	@[ -f .env ] || { echo "user-case-chat: .env is absent."; exit 1; }
+	@test ! -f $(USER_CASE_CHAT_OUT) || { echo "$(USER_CASE_CHAT_OUT) exists. Set USER_CASE_CHAT_OUT to a new file."; exit 1; }
+	@test ! -f $(USER_CASE_DECKS_OUT) || { echo "$(USER_CASE_DECKS_OUT) exists. Set USER_CASE_CHAT_OUT to a new file."; exit 1; }
+	@mkdir -p $(dir $(USER_CASE_CHAT_OUT))
+	@coll="$$($(GO) run ./cmd/user-case -case $(USER_CASE) -print collection)" && \
+		msgs="$$($(GO) run ./cmd/user-case -case $(USER_CASE) -print messages)" && \
+		set -a && . ./.env && set +a && \
+		CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/user-cases/store/scryfall \
+		$(GO) run ./cmd/chat-probe -collection "$$coll" -messages "$$msgs" -decks-out $(abspath $(USER_CASE_DECKS_OUT)) > $(USER_CASE_CHAT_OUT)
+	@echo "wrote $(USER_CASE_CHAT_OUT) and $(USER_CASE_DECKS_OUT)"
+	@$(GO) run ./cmd/user-case -case $(USER_CASE) -decks $(abspath $(USER_CASE_DECKS_OUT))
 
 api-build: ## Build one deck over the deployed API, with no GUI (D-778). CAUTION: the deployed API calls the real providers and costs money
 	@[ -f .env ] || { echo "api-build: .env is absent. It holds API_BUILD_EMAIL and API_BUILD_PASSWORD."; exit 1; }

@@ -9,6 +9,7 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/meta"
+	"github.com/nkramber/decktome/go/internal/profile"
 )
 
 // Scorer grades decks with the loaded model. The model swaps when the
@@ -65,7 +66,7 @@ func (s *Scorer) Score(in Input) *mtgv1.DeckQuality {
 		out.Probabilities = append(out.Probabilities, &mtgv1.TierProbability{Tier: fm.Tiers[k], Probability: round4(v)})
 	}
 	out.Tier = fm.Tiers[argmax(p)]
-	out.Reasons = reasons(fm, z, rr)
+	out.Reasons = reasons(fm, z, rr, in.Profile)
 	return out
 }
 
@@ -142,12 +143,28 @@ func (s *Scorer) CardQualities(oracleID string) []*mtgv1.CardQuality {
 	return out
 }
 
-// ShapeLines writes the format shape for the generate prompt: the
-// mean land count and mana value of the great lists, and the cards
-// they hold most (roadmap PR-14B). Nil with no model.
-func (s *Scorer) ShapeLines(f mtgv1.FormatId) []string {
+// ShapeLines writes the format shape for the generate prompt: the mean
+// land count and mana value of the lists of the request's power, and the
+// cards the top lists hold most (roadmap PR-14B). A Commander request of
+// bracket 1 to 3 reads the typical lists, the EDHREC average decks, and
+// bracket 4 or 5 reads the great lists (D-1123). A model with no typical
+// shape writes nothing for bracket 1 to 3, because the top lists are not
+// its norm. The top cards come from the top lists, so only a request
+// that reads the great lists carries them. A 60-card format reads the
+// great lists. Nil with no model.
+func (s *Scorer) ShapeLines(f mtgv1.FormatId, power *mtgv1.PowerLevel) []string {
 	fm := s.Model().Format(f)
-	if fm == nil || fm.Shape.Lists == 0 {
+	if fm == nil {
+		return nil
+	}
+	if f == mtgv1.FormatId_FORMAT_ID_COMMANDER && TypicalBracket(power) {
+		if fm.TypicalShape.Lists == 0 {
+			return nil
+		}
+		return []string{fmt.Sprintf("- The average %s decks hold %.0f lands at an average mana value of %.2f, over %d lists.",
+			formatWord(f), fm.TypicalShape.Lands, fm.TypicalShape.AvgManaValue, fm.TypicalShape.Lists)}
+	}
+	if fm.Shape.Lists == 0 {
 		return nil
 	}
 	lines := []string{
@@ -158,6 +175,17 @@ func (s *Scorer) ShapeLines(f mtgv1.FormatId) []string {
 		lines = append(lines, "- The cards they hold most: "+strings.Join(fm.TopCards, ", ")+".")
 	}
 	return lines
+}
+
+// TypicalBracket says whether a Commander power reads the shape of the
+// typical lists: bracket 1 to 3, and no bracket, which reads the default
+// bracket of the bands (D-1123).
+func TypicalBracket(power *mtgv1.PowerLevel) bool {
+	b := power.GetBracket()
+	if b < 1 || b > 5 {
+		b = profile.DefaultBracket
+	}
+	return b <= 3
 }
 
 func formatWord(f mtgv1.FormatId) string {
@@ -184,6 +212,7 @@ var phrases = map[string]phrase{
 	KeyUnseenShare:    {"many of the cards appear in no top list", "nearly every card appears in a top list"},
 	KeySynergy:        {"the cards pair the way the top lists pair them", "the cards pair in ways the top lists do not"},
 	KeyLand:           {"the land count sits above the norm of the format", "the land count sits below the norm of the format"},
+	KeyLandNeed:       {"the deck holds more lands than its curve needs", "the deck holds fewer lands than its curve needs"},
 	KeyAvgManaValue:   {"the curve sits high for the format", "the curve sits low for the format"},
 	KeyColorSources:   {"the color sources cover the pips", "the color sources fall short of the pips"},
 	KeyTappedShare:    {"many lands enter tapped", "few lands enter tapped"},
@@ -207,11 +236,40 @@ var phrases = map[string]phrase{
 	KeyCommanderDecks: {"the commander is a popular one", "few decks lead with the commander"},
 }
 
+// bandRows maps a feature to the profile row whose band it reads. A
+// feature inside the band of its row names no reason (D-1123).
+var bandRows = map[string]string{
+	KeyLand: profile.KeyLand, KeyLandNeed: profile.KeyLand, KeyAvgManaValue: profile.KeyAvgManaValue,
+	KeyColorSources: profile.KeyColorSources, KeyTappedShare: profile.KeyTappedLand,
+	KeyManaTurnFour: profile.KeyManaTurnFour, KeyHandsTwoToFour: profile.KeyHandsTwoToFourLands,
+	KeyRamp: profile.KeyRamp, KeyDraw: profile.KeyDraw, KeyRemoval: profile.KeyRemoval,
+	KeyWipe: profile.KeyWipe, KeyInteraction: profile.KeyInteraction,
+	KeyFastMana: profile.KeyFastMana, KeyGameChanger: profile.KeyGameChanger,
+}
+
+// inBand says whether the deck's row of a feature sits inside a band. A
+// row with no band, and a feature with no row, is not inside one.
+func inBand(key string, p *mtgv1.DeckProfile) bool {
+	rowKey, ok := bandRows[key]
+	if !ok {
+		return false
+	}
+	for _, row := range p.GetFeatures() {
+		if row.GetKey() == rowKey {
+			return (row.GetLow() > 0 || row.GetHasHigh()) && !row.GetOffBand()
+		}
+	}
+	return false
+}
+
 // reasons names the ReasonCount strongest signals, the strongest first.
 // The strength is the weight times the standardized value, and the
 // words follow the value's side of the norm and say which way the
-// signal moved the grade.
-func reasons(fm *FormatModel, z []float64, r RuleRead) []string {
+// signal moved the grade. A feature whose profile row sits inside its
+// band names no reason, because the band is the norm the deck answers
+// to (D-1123). The land need reads its own sign, not the side of the
+// norm, so the words say what the deck holds against its need.
+func reasons(fm *FormatModel, z []float64, r RuleRead, p *mtgv1.DeckProfile) []string {
 	// A deck the rules flag names the checks, and a deck the rules check
 	// and pass names the ladder, because the ladder set its tier (D-678).
 	if r.Flagged() {
@@ -237,10 +295,14 @@ func reasons(fm *FormatModel, z []float64, r RuleRead) []string {
 		sign = -1
 	}
 	for i, k := range fm.Keys {
-		if _, ok := phrases[k]; !ok || z[i] == 0 {
+		if _, ok := phrases[k]; !ok || z[i] == 0 || inBand(k, p) {
 			continue
 		}
-		all = append(all, contribution{k, sign * weights[i] * z[i], z[i]})
+		side := z[i]
+		if k == KeyLandNeed {
+			side = z[i]*fm.Stds[i] + fm.Means[i]
+		}
+		all = append(all, contribution{k, sign * weights[i] * z[i], side})
 	}
 	sort.SliceStable(all, func(i, j int) bool { return math.Abs(all[i].c) > math.Abs(all[j].c) })
 	var out []string

@@ -269,6 +269,8 @@ var roleNames = map[string]mtgv1.CardRole{
 	"wipe": mtgv1.CardRole_CARD_ROLE_WIPE, "threat": mtgv1.CardRole_CARD_ROLE_THREAT,
 	"interaction": mtgv1.CardRole_CARD_ROLE_INTERACTION, "synergy": mtgv1.CardRole_CARD_ROLE_SYNERGY,
 	"wincon": mtgv1.CardRole_CARD_ROLE_WINCON, "other": mtgv1.CardRole_CARD_ROLE_OTHER,
+	// A permanent that protects a creature is no interaction (D-1120).
+	"protection": mtgv1.CardRole_CARD_ROLE_PROTECTION,
 }
 
 // cardRole reads the role word the model wrote. An unknown word is the

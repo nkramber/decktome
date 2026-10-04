@@ -31,6 +31,7 @@ const (
 	KeyUnseenShare    = "unseen_share"
 	KeySynergy        = "synergy"
 	KeyLand           = "land"
+	KeyLandNeed       = "land_need"
 	KeyAvgManaValue   = "avg_mana_value"
 	KeyColorSources   = "color_sources"
 	KeyTappedShare    = "tapped_share"
@@ -55,10 +56,12 @@ const (
 )
 
 // Keys lists every feature the fit measures. A feature with no spread
-// in a format's lists leaves the format's model.
+// in a format's lists leaves the format's model. The fit reads the lands
+// against the Karsten need, not the raw count (D-1123). Features still
+// writes KeyLand, so a stored model fitted on it scores until the refit.
 var Keys = []string{
 	KeyCardRate, KeyUnseenShare, KeySynergy,
-	KeyLand, KeyAvgManaValue, KeyColorSources, KeyTappedShare, KeyManaTurnFour, KeyHandsTwoToFour,
+	KeyLandNeed, KeyAvgManaValue, KeyColorSources, KeyTappedShare, KeyManaTurnFour, KeyHandsTwoToFour,
 	KeyCurveLow, KeyCurveHigh,
 	KeyRamp, KeyDraw, KeyRemoval, KeyWipe, KeyInteraction, KeyEmptyRoles,
 	KeyFastMana, KeyGameChanger, KeyPlaysetShare, KeySingletonShare, KeySourceSpread,
@@ -122,6 +125,9 @@ type FormatModel struct {
 	TopCards []string `json:"top_cards"`
 	// Shape is the mean shape of the great lists, for the prompt.
 	Shape Shape `json:"shape"`
+	// TypicalShape is the mean shape of the typical lists, the EDHREC
+	// average decks, for the prompt of brackets 1 to 3 (D-1123).
+	TypicalShape Shape `json:"typical_shape,omitzero"`
 	// Commanders holds the commander signals by Oracle id, Commander
 	// alone. A pair is keyed by both ids in order with a plus between.
 	Commanders map[string]CommanderSignal `json:"commanders,omitempty"`

@@ -4,7 +4,7 @@ This file holds the cost, the flags, and the guards of each `make` target and lo
 
 ## The paid targets
 
-Seventeen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run, except a round of `make codex-review` (D-831).
+Eighteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before every run, except a round of `make codex-review` (D-831).
 
 ## Each target
 
@@ -56,6 +56,10 @@ The guards are `API_BUILD=1` and a check on `API_BUILD_OUT`. `API_BUILD_EMAIL` a
 The guards are `LIVE_WEB=1`, which the target sets, and a check on `LIVE_WEB_OUT`: any file or folder there stops the run. The lane keeps no trace, because a trace records the typed password. The `live-test` skill holds the procedure.
 
 `make live-sweep` walks every screen of the deployed web app as the check account, on a desktop and on a phone (D-961). Each screen reads console errors, uncaught errors, failed requests, sideways overflow, and broken images. The sweep writes `report.md`, `report.json`, and one screenshot for each screen to `LIVE_SWEEP_OUT`, and it fails on any fault. One run sends one vague message, answers each question, and builds one deck, for about $0.05 to $0.20. `LIVE_SWEEP_BUILD=0` sends no message and sweeps the newest deck of the account, for nothing. `LIVE_SWEEP_DELETE=1` deletes the deck of the run at the end.
+
+`make user-case-chat CONFIRM=1` replays the chat of the first outside user through `make chat-probe` with the private collection of the case (D-1124). It sends six turns and can build two decks. Deck gate run 35 cost $3.1278 for 25 builds, about $0.13 for each build. So one run costs about $0.30, and the first run must confirm this number. It refuses to run without `CONFIRM=1`, without `.env`, or with an existing `USER_CASE_CHAT_OUT` or `USER_CASE_DECKS_OUT`.
+
+The target writes each deck that reached the user to `USER_CASE_DECKS_OUT`. Then `user-case -decks` reads the deck bars of each step for free. `make user-case` is free: it replays the shortlists of the case and checks the bars.
 
 The guards are `LIVE_SWEEP=1`, which the target sets, and a check on `LIVE_SWEEP_OUT`. The free run of 2026-09-26 read 36 screens in 53 seconds. The paid run of the same day read 41 screens in 131 seconds, and its chat cost $0.0545 for 8 calls, with bracket 1 picked.
 

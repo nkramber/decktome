@@ -190,7 +190,7 @@
       "fixed": true,
       "repeat": true,
       "repeat_on_change": true,
-      "text": "No card I know matches the theme {theme}. What should the deck do: a creature type, a mechanic, or a play style?",
+      "text": "No card I know matches {unmatched} in the theme {theme}. What should the deck do: a creature type, a mechanic, or a play style?",
       "when": {
         "theme_unmatched": true,
         "requires": [
@@ -354,12 +354,12 @@
       "id": "power_commander",
       "slot": "power",
       "order": 40,
-      "text": "Which power bracket should the deck target? 2 is the core level, near a precon, 3 is upgraded, 4 is high power.",
+      "text": "Which Commander bracket should the deck target: 1 Exhibition, 2 Core, 3 Upgraded, 4 Optimized, or 5 cEDH?",
       "options": [
-        "1 exhibition",
-        "2 core",
-        "3 upgraded",
-        "4 optimized",
+        "1 Exhibition",
+        "2 Core",
+        "3 Upgraded",
+        "4 Optimized",
         "5 cEDH"
       ],
       "when": {

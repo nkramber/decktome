@@ -11,7 +11,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
 	"strings"
+	"time"
 	"unicode"
 
 	"connectrpc.com/connect"
@@ -198,12 +201,27 @@ func WithVisits(v Visits) Option {
 	return func(i *interceptor) { i.visits = v }
 }
 
+// WithCallLog writes one line for each call that the check reads: the
+// procedure, the Connect code ("ok" for success), the latency, the uid,
+// and the trace (D-1117). A refused call gets a line too, with the uid
+// when the token named one. The email never enters a line (D-559,
+// D-596, D-1093). trace reads the trace attribute from the request
+// header, and nil means no trace.
+func WithCallLog(log *slog.Logger, trace func(http.Header) slog.Attr) Option {
+	return func(i *interceptor) {
+		i.log = log
+		i.trace = trace
+	}
+}
+
 type interceptor struct {
 	verify   Verifier
 	fallback string
 	allow    Allowlist
 	closed   Closed
 	visits   Visits
+	log      *slog.Logger
+	trace    func(http.Header) slog.Attr
 	// public names the procedures that need no sign-in, the shared deck
 	// reads of D-315. Such a call carries no user in its context.
 	public map[string]bool
@@ -290,54 +308,85 @@ func unverified() *connect.Error {
 }
 
 // resolve reads the Authorization header and returns the context that
-// carries the user, or the Connect error to answer with.
-func (i *interceptor) resolve(ctx context.Context, procedure, authorization string) (context.Context, error) {
+// carries the user, or the Connect error to answer with. The uid is the
+// one the token named, also on a refusal, and "" when none is known.
+func (i *interceptor) resolve(ctx context.Context, procedure, authorization string) (context.Context, string, error) {
 	token, present := bearer(authorization)
 	if !present {
 		if i.fallback == "" {
-			return nil, connect.NewError(connect.CodeUnauthenticated, errNoToken)
+			return nil, "", connect.NewError(connect.CodeUnauthenticated, errNoToken)
 		}
-		return WithUserID(ctx, i.fallback), nil
+		return WithUserID(ctx, i.fallback), i.fallback, nil
 	}
 	if token == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, errNoToken)
+		return nil, "", connect.NewError(connect.CodeUnauthenticated, errNoToken)
 	}
 	id, err := i.verify.Verify(ctx, token)
 	if err != nil {
 		// The verifier's reason stays in the log, not on the wire: it can
 		// name the project or the key id.
-		return nil, connect.NewError(connect.CodeUnauthenticated, errBadToken)
+		return nil, "", connect.NewError(connect.CodeUnauthenticated, errBadToken)
 	}
 	if id.UID == "" {
-		return nil, connect.NewError(connect.CodeUnauthenticated, errBadToken)
+		return nil, "", connect.NewError(connect.CodeUnauthenticated, errBadToken)
 	}
 	if i.allow != nil {
 		ok, err := i.allow.Allowed(ctx, id.Email)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeUnavailable, errors.New("the invite list could not be read"))
+			return nil, id.UID, connect.NewError(connect.CodeUnavailable, errors.New("the invite list could not be read"))
 		}
 		if !ok {
-			return nil, notInvited()
+			return nil, id.UID, notInvited()
 		}
 		if !id.EmailVerified && !i.unproved[procedure] {
-			return nil, unverified()
+			return nil, id.UID, unverified()
 		}
 	}
 	if i.closed != nil {
 		closed, err := i.closed.Closed(ctx, id.UID)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeUnavailable, errors.New("the account state could not be read"))
+			return nil, id.UID, connect.NewError(connect.CodeUnavailable, errors.New("the account state could not be read"))
 		}
 		if closed {
 			err := connect.NewError(connect.CodePermissionDenied, errClosed)
 			err.Meta().Set(RefusalHeader, RefusalClosed)
-			return nil, err
+			return nil, id.UID, err
 		}
 	}
 	if i.visits != nil && id.EmailVerified {
 		i.visits.Seen(ctx, id.UID, id.Email)
 	}
-	return WithAdmin(WithEmail(WithUserID(ctx, id.UID), id.Email), id.Admin), nil
+	return WithAdmin(WithEmail(WithUserID(ctx, id.UID), id.Email), id.Admin), id.UID, nil
+}
+
+// logCall writes the line of WithCallLog (D-1117). A refusal carries
+// its state from RefusalHeader. The line holds no email.
+func (i *interceptor) logCall(ctx context.Context, msg, procedure, uid string, header http.Header, start time.Time, err error) {
+	if i.log == nil {
+		return
+	}
+	code := "ok"
+	if err != nil {
+		code = connect.CodeOf(err).String()
+	}
+	attrs := []slog.Attr{
+		slog.String("procedure", procedure),
+		slog.String("code", code),
+		slog.Int64("latency_ms", time.Since(start).Milliseconds()),
+		slog.String("uid", uid),
+	}
+	var ce *connect.Error
+	if errors.As(err, &ce) {
+		if state := ce.Meta().Get(RefusalHeader); state != "" {
+			attrs = append(attrs, slog.String("refusal", state))
+		}
+	}
+	if i.trace != nil {
+		if a := i.trace(header); a.Key != "" {
+			attrs = append(attrs, a)
+		}
+	}
+	i.log.LogAttrs(ctx, slog.LevelInfo, msg, attrs...)
 }
 
 // bearer splits "Bearer <token>". present is false when the header is
@@ -370,11 +419,16 @@ func (i *interceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 		if req.Spec().IsClient || i.public[req.Spec().Procedure] {
 			return next(ctx, req)
 		}
-		ctx, err := i.resolve(ctx, req.Spec().Procedure, req.Header().Get("Authorization"))
+		start := time.Now()
+		procedure := req.Spec().Procedure
+		authed, uid, err := i.resolve(ctx, procedure, req.Header().Get("Authorization"))
 		if err != nil {
+			i.logCall(ctx, "rpc refused", procedure, uid, req.Header(), start, err)
 			return nil, err
 		}
-		return next(ctx, req)
+		res, err := next(authed, req)
+		i.logCall(authed, "rpc", procedure, uid, req.Header(), start, err)
+		return res, err
 	}
 }
 
@@ -387,10 +441,15 @@ func (i *interceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) co
 		if i.public[conn.Spec().Procedure] {
 			return next(ctx, conn)
 		}
-		ctx, err := i.resolve(ctx, conn.Spec().Procedure, conn.RequestHeader().Get("Authorization"))
+		start := time.Now()
+		procedure := conn.Spec().Procedure
+		authed, uid, err := i.resolve(ctx, procedure, conn.RequestHeader().Get("Authorization"))
 		if err != nil {
+			i.logCall(ctx, "rpc refused", procedure, uid, conn.RequestHeader(), start, err)
 			return err
 		}
-		return next(ctx, conn)
+		err = next(authed, conn)
+		i.logCall(authed, "rpc", procedure, uid, conn.RequestHeader(), start, err)
+		return err
 	}
 }

@@ -119,8 +119,12 @@ func Features(in Input, fm *FormatModel) map[string]float64 {
 		out[KeySourceSpread] = (best - worst) / lands
 	}
 
-	// The shape and the jobs, from the profile.
+	// The shape and the jobs, from the profile. The fit reads the lands
+	// against Karsten's need of the deck's curve, because the need moves
+	// with the curve and the raw count does not (D-1123). KeyLand stays
+	// for a stored model fitted on it.
 	out[KeyLand] = rows[profile.KeyLand]
+	out[KeyLandNeed] = rows[profile.KeyLand] - landNeed(commander, rows[profile.KeyAvgManaValue], cheapCount(in.Deck, in.Cards))
 	out[KeyAvgManaValue] = rows[profile.KeyAvgManaValue]
 	out[KeyColorSources] = rows[profile.KeyColorSources]
 	if lands := rows[profile.KeyLand]; lands > 0 {
@@ -153,8 +157,33 @@ func Features(in Input, fm *FormatModel) map[string]float64 {
 		out[KeyCEDHSignal] = sig.CEDH
 		out[KeyHighBracket] = sig.HighBracket
 		out[KeyCommanderDecks] = math.Log1p(float64(sig.Decks))
+		// The top-cut share in cEDH events is the signal of bracket 5
+		// alone (D-1123). The deck count is no signal of quality: the
+		// typical rung holds the average decks of the most built
+		// commanders alone, so the fit reads a rare commander as a better
+		// deck. A deck that names bracket 1 to 4 reads the mean of the
+		// model for both, so they move no grade and name no reason. A
+		// deck with no bracket, such as a list of the corpus, keeps them.
+		if b := in.Deck.GetPower().GetBracket(); b >= 1 && b <= 4 {
+			out[KeyCEDHSignal] = fm.mean(KeyCEDHSignal)
+			out[KeyCommanderDecks] = fm.mean(KeyCommanderDecks)
+		}
 	}
 	return out
+}
+
+// mean answers the mean of a feature over the fitted lists, 0 for a key
+// the model does not hold.
+func (fm *FormatModel) mean(key string) float64 {
+	if fm == nil {
+		return 0
+	}
+	for i, k := range fm.Keys {
+		if k == key && i < len(fm.Means) {
+			return fm.Means[i]
+		}
+	}
+	return 0
 }
 
 // vector reads the model's keys out of a feature map, standardized.
