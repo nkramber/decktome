@@ -55,21 +55,21 @@
       "theme": "voltron with a good protection suite",
       "avoid": "",
       "measures": [
-        {"id": "shortlist", "baseline": 295, "note": "the session stored 297 with the commander and Island", "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "unmatched_words", "baseline": 1, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "equipment", "baseline": 131, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "counterspells", "baseline": 1, "note": "one modal Instant // Land of the list holds the counterspell tag, and the deck of the session held 0", "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "cantrips", "baseline": 1, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "hand_size", "baseline": 7, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "targeting_spells", "baseline": 0, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "enchant_creature_auras", "baseline": 15, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "artifact_creatures", "baseline": 31, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}}
+        {"id": "shortlist", "baseline": 295, "note": "the session stored 297 with the commander and Island", "bar": {"min": 250, "max": 320}},
+        {"id": "unmatched_words", "baseline": 1, "bar": {"max": 0}},
+        {"id": "equipment", "baseline": 131, "bar": {"max": 125}},
+        {"id": "counterspells", "baseline": 1, "note": "one modal Instant // Land of the list holds the counterspell tag, and the deck of the session held 0", "bar": {"min": 6}},
+        {"id": "cantrips", "baseline": 1, "bar": {"min": 3}},
+        {"id": "hand_size", "baseline": 7, "bar": {"min": 3}},
+        {"id": "targeting_spells", "baseline": 0, "bar": {"min": 8}},
+        {"id": "enchant_creature_auras", "baseline": 15, "bar": {"min": 15}},
+        {"id": "artifact_creatures", "baseline": 31, "bar": {"max": 28}}
       ],
       "deck": [
-        {"id": "lands", "baseline": 38, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "counterspells", "baseline": 0, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "unique_names", "baseline": 71, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "quality_grade", "baseline": 0.354, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}}
+        {"id": "lands", "baseline": 38, "bar": {"min": 34, "max": 38}},
+        {"id": "counterspells", "baseline": 0, "bar": {"min": 3}},
+        {"id": "unique_names", "baseline": 71, "bar": {"min": 60}},
+        {"id": "quality_grade", "baseline": 0.354, "bar": {"min": 0.354}}
       ]
     },
     {
@@ -78,21 +78,21 @@
       "theme": "voltron, evasion, protection, handsize matters, heavy on cantrips",
       "avoid": "artifacts",
       "measures": [
-        {"id": "shortlist", "baseline": 295, "note": "the session stored 297 with the commander and Island", "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
+        {"id": "shortlist", "baseline": 295, "note": "the session stored 297 with the commander and Island", "bar": {"min": 250, "max": 320}},
         {"id": "unmatched_words", "baseline": 5, "note": "evasion, handsize, matters, heavy, cantrips", "bar": {"max": 0}},
-        {"id": "equipment", "baseline": 131, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "counterspells", "baseline": 1, "note": "one modal Instant // Land of the list holds the counterspell tag, and the deck of the session held 0", "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "cantrips", "baseline": 1, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "hand_size", "baseline": 7, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "targeting_spells", "baseline": 0, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "enchant_creature_auras", "baseline": 15, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "artifact_creatures", "baseline": 31, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}}
+        {"id": "equipment", "baseline": 131, "bar": {"max": 125}},
+        {"id": "counterspells", "baseline": 1, "note": "one modal Instant // Land of the list holds the counterspell tag, and the deck of the session held 0", "bar": {"min": 6}},
+        {"id": "cantrips", "baseline": 1, "bar": {"min": 10}},
+        {"id": "hand_size", "baseline": 7, "bar": {"min": 15}},
+        {"id": "targeting_spells", "baseline": 0, "bar": {"min": 10}},
+        {"id": "enchant_creature_auras", "baseline": 15, "bar": {"min": 15}},
+        {"id": "artifact_creatures", "baseline": 31, "bar": {"max": 20}}
       ],
       "deck": [
-        {"id": "lands", "baseline": 38, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "counterspells", "baseline": 0, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "kept_from_build_1", "baseline": 57, "note": "of 71 unique names of build 1", "bar": {"todo": "TODO(D-1124): set after the builder changes land"}},
-        {"id": "quality_grade", "baseline": 0.378, "bar": {"todo": "TODO(D-1124): set after the builder changes land"}}
+        {"id": "lands", "baseline": 38, "bar": {"min": 34, "max": 38}},
+        {"id": "counterspells", "baseline": 0, "bar": {"min": 3}},
+        {"id": "kept_from_build_1", "baseline": 57, "note": "of 71 unique names of build 1", "bar": {"max": 45}},
+        {"id": "quality_grade", "baseline": 0.378, "bar": {"min": 0.378}}
       ]
     }
   ]

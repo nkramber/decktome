@@ -6,6 +6,8 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-04 correction pass 261 (PR-124, F-212 to F-220, D-1116 to D-1129): the first outside user built a deck on 2026-10-04, and the owner read the traffic. The owner put each finding of that session into one pull request (D-1125). Changes: F-212 to F-220, PR-124, sequencing step 119.
+
 2026-10-03 correction pass 260 (PR-70, PR-123, D-1100 to D-1108, D-1113 to D-1115): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-123, sequencing step 118.
 2026-10-03 correction pass 259 (PR-121, F-211, D-1110): a collection passed the limit of 9,000 distinct rows. The store writes parts now, and a collection holds 50,000 rows. Changes: the Firestore row, REV-026, F-211, PR-121, sequencing step 116.
 2026-10-03 correction pass 258 (PR-26, PR-120, D-1090, D-1091, D-1095): the owner chose the new-cards event as the third event of PR-26, before the email digest. The digest holds the new cards of each deck, so this event comes first. Changes: PR-26, PR-120, sequencing steps 99 and 115.
@@ -614,6 +616,15 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-207 | **On a phone, the "Back to top" button covers the first question.** PR-114 put the first question at the top of the view (D-1071). The fixed button under the header then sat on the question text (D-1072). | ✅ PR-115: on a phone, the anchor also leaves the band of the button, 52 pixels. |
 | F-210 | **An invited user who signed in and made nothing had no user record.** Only a creation wrote the record of D-638. The user proved the email and opened two pages on 2026-10-03 (D-1092). | ✅ PR-119 (#276): the first verified call writes the record. |
 | F-211 | **A collection passed the limit of 9,000 distinct rows.** At 2026-10-04 00:07 UTC a user wrote "Collection limit too small". The API refused an upload of about 12,400 to 18,900 rows of that user 30 seconds before (D-1110). | ✅ PR-121 (#280): the store writes parts, and a collection holds 50,000 rows. |
+| F-212 | **The shortlist ignored the trigger of the commander.** Ms. Marvel, Kamala Khan draws a card for each spell that targets a creature of its controller. The voltron theme filled the list with 131 Equipment, and an equip ability is not a spell. | ✅ PR-124 (#PRNUM): a commander with that trigger adds the row `heroic` to the theme. |
+| F-213 | **The theme matcher missed "hand size" and "cantrips", and one word that matched cleared the whole theme.** A rebuild of 2026-10-04 kept 57 of 71 names and the same 295 cards of the shortlist. The words "less artifacts" had no effect. | ✅ PR-124 (#PRNUM): new rows, a precise list of unmatched words, a question for each such word (D-1116), and the slot `avoid` (D-1122). |
+| F-214 | **Protection gear counted as interaction.** Seven pieces of equipment filled the interaction band of a mono-blue deck with no counterspell. Steel Hellkite counted as a wipe. | ✅ PR-124 (#PRNUM): the role `CARD_ROLE_PROTECTION`, and the interaction band counts interaction alone (D-1120). |
+| F-215 | **Owned counterspells never reached a themed shortlist.** The user owned about 150 blue counterspells, and both shortlists held 1. | ✅ PR-124 (#PRNUM): each staple role keeps a floor of its most popular staples (D-1121). |
+| F-216 | **The quality model marked down a land count inside its band.** Both decks held 38 lands, inside 34 to 38. The land norm of the model came from cEDH lists of about 27 lands. | ✅ PR-124 (#PRNUM): no reason inside a band, a shape line of the bracket, and the feature lands minus the Karsten need (D-1123). |
+| F-217 | **The text of the power question disagreed with its options.** The text said "high power" and the option said "4 Optimized". | ✅ PR-124 (#PRNUM): one text with the names of Wizards (D-1127). |
+| F-218 | **A rebuild in the same session counted as a new deck, and a turn after a question revised the old deck.** | ✅ PR-124 (#PRNUM): a rebuild with the same commander is a revision (D-1118), and the session keeps the settings of its last deck (D-1129). |
+| F-219 | **A mail scanner could use the one-use proof link.** A second client opened the link of a new user 10 seconds after the user, with no token. | ✅ PR-124 (#PRNUM): the page waits for a click, and a second open says that the email is verified (D-1119). |
+| F-220 | **The API logs named no user.** The owner told a new user apart from the own tests by the network and the browser alone. | ✅ PR-124 (#PRNUM): one log line for each verified call, with the uid and the trace (D-1117). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3286,6 +3297,37 @@ Gate:
 The live check after the deploy: run the TTL command of `docs/setup-gcp.md` section 6 one time. Then read an Archidekt link on `decktome.com`, and import it. UNVERIFIED before the merge: an answer of Archidekt to Cloud Run, and the answer to a private deck.
 > *In plain English:* paste the link of a public Archidekt deck, and the app fills in the list for you. Moxfield blocks other sites, so a Moxfield link shows the three clicks that copy the list. Any other site shows general steps, and the app tells the owner about that site.
 
+**PR-124: The findings of the first outside user (F-212 to F-220, D-1116 to D-1129).** ✅ merged as #PRNUM. The mark comes before any review (D-822). The first outside user built a mono-blue deck around Ms. Marvel, Kamala Khan on 2026-10-04. The user asked for hand size and cantrips after the first deck, and the rebuild kept most of the deck. The owner put each finding into one pull request (D-1125).
+
+- **The theme (F-213).** `themes.json` gets the rows `hand-size`, `cantrips`, and `heroic`. The generic rule also tries the singular slug. A word counts as unmatched only when its own signals find no card.
+- **The question (D-1116, D-1128).** The theme question asks when any word finds no card, and it names each such word. A reply ends the question. The build then names each word that it can not use.
+- **The avoid slot (D-1122).** The classifier writes what the user wants less of to `avoid`. A soft request ranks the payoff cards of the row lower, and "no artifacts" ranks each artifact lower. The plan of the build reads the later turns of the user.
+- **The commander (F-212).** A commander with the text "whenever you cast a spell that targets" adds the row `heroic`. Such a row adds no word, so the question never names it.
+- **The roles (F-214, D-1120).** A protection permanent takes `CARD_ROLE_PROTECTION`. A creature never takes the wipe role, and Equipment never takes the removal role. The interaction row of the profile counts interaction alone.
+- **The staple floor (F-215, D-1121).** Each staple role keeps the middle of its band in popular staples, on top of its cap.
+- **The quality model (F-216, D-1123).** A count inside its band gives no reason. Brackets 1 to 3 read the shape of the EDHREC average decks. The feature `land_need` reads the lands minus the Karsten need.
+- **The power question (F-217, D-1127).** The text names 1 Exhibition, 2 Core, 3 Upgraded, 4 Optimized, and 5 cEDH.
+- **The revision (F-218, D-1118, D-1129).** A rebuild with the same format and commander sets `revised_from_deck_id`. The session keeps the settings of its last deck.
+- **The proof link (F-219, D-1119).** The page waits for the button "Confirm my email". A used link keeps no email, and a second open answers `already_proved`.
+- **The call log (F-220, D-1117).** Each verified call writes one line with the procedure, the code, the latency, the uid, and the trace. No line holds the email.
+- **The size refusal (D-1126).** A collection over its limit gets InvalidArgument. A delete of a collection reads that collection no more.
+- **The replay case (D-1124).** `go/cmd/user-case` replays the shortlists of the session from a private copy of the collection, and `make user-case` checks the bars.
+
+Gate:
+- The free replay of the session: the theme string of the rebuild leaves no unmatched word. The shortlist holds 12 counterspells, 16 cantrips, and 23 hand-size cards, against 1, 1, and 7 before.
+- The tests of `go/internal/candidates` cover the rows, the roles, the floor, the avoid slot, and the commander row.
+- The tests of `go/internal/questions` and `go/internal/agentsvc` cover the question, the avoid slot, the revision, and the settings of the last deck.
+- The tests of `go/internal/quality` and `go/internal/profile` cover the band, the shape line, and the land need.
+- The tests of `go/internal/auth`, `go/internal/prooflink`, and the web app cover the call log, the proof link, and the delete.
+- `make quality-gate` passes with the new feature, at no cost.
+- A question gate run passes on prompt version 21 (D-725, D-1116).
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy: run `make user-case`, and sign in through a new proof link. Read one `rpc` line of the API log with a uid.
+> *In plain English:* the app now reads "hand size" and "cantrips". It asks about each word that it does not know, and it ranks lower what the user wants less of. It keeps counterspells in the list, calls boots protection, and gives a normal land count no lower grade.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3701,6 +3743,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 116. **PR-121** a collection of 50,000 rows, in parts (F-211, D-1110).
 117. **PR-122** the app sends its email from `mail@decktome.com` (D-1112).
 118. **PR-123** a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).
+119. **PR-124** the findings of the first outside user (F-212 to F-220, D-1116 to D-1129).
 
 ## 9. Open questions
 
