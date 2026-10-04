@@ -26,7 +26,7 @@ func sharedDeckFixture() *mtgv1.Deck {
 	return &mtgv1.Deck{
 		Id: "d1", Name: "Elf test", SessionId: "s-secret", Favorite: true, NewOracleIds: []string{"o-new"}, NewCardsVersion: "v1",
 		Format: &mtgv1.Format{Id: mtgv1.FormatId_FORMAT_ID_MODERN}, Summary: "A small deck.",
-		LegalityAsOf: "2026-09-03", CardCount: 5,
+		LegalityAsOf: "2026-09-03", CardCount: 5, SourceUrl: "https://archidekt.com/decks/42",
 		Cards: []*mtgv1.DeckCard{
 			{OracleId: "o-elf", Name: "Llanowar Elves", Count: 4, Role: mtgv1.CardRole_CARD_ROLE_RAMP, Reason: "Turn-one mana.", Owned: true, OwnedCount: 4,
 				OwnedPrinting: &mtgv1.Printing{ScryfallId: "p-alpha", PriceUsd: 40}},
@@ -78,6 +78,9 @@ func TestShareRevokeAndRead(t *testing.T) {
 	d := got.Msg.Deck
 	if d.Name != "Elf test" || d.Summary != "A small deck." || d.CardCount != 5 || len(d.Cards) != 2 {
 		t.Errorf("shared deck = %+v", d)
+	}
+	if d.SourceUrl != "https://archidekt.com/decks/42" {
+		t.Errorf("shared source_url = %q, want the Archidekt link (D-1101)", d.SourceUrl)
 	}
 	if d.Cards[0].Card == nil || d.Cards[0].Card.Name != "Llanowar Elves" || d.Cards[0].Reason != "Turn-one mana." {
 		t.Errorf("the card data rides along: %+v", d.Cards[0])

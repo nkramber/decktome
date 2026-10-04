@@ -119,6 +119,9 @@ message Deck {
   // whose pass last wrote new_oracle_ids. A rerun of the same marker
   // skips the deck, so a dismiss stays and no second push goes (D-1095).
   string new_cards_version = 34;
+  // source_url is the Archidekt deck that an import read, or empty. The
+  // deck page and the public copy link to it (D-1101).
+  string source_url = 35;
 }
 
 // RerunCase is the rerun of a stale deck (D-1008). A patch replaces the
@@ -249,6 +252,9 @@ message SharedDeck {
   // import keeps it in the ids alone, so the page found no commander
   // (REV-021). The public copy holds no owned mark and no owner price.
   repeated SharedCard commanders = 10;
+  // source_url is the Archidekt deck that an import read, or empty. The
+  // public copy links to it, as Archidekt asks (D-1101).
+  string source_url = 11;
 }
 
 // SharedCard is one entry of a shared deck, with the card data inline,

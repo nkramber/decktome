@@ -6,33 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03h)
+## RESUME HERE (2026-10-04a)
 
-**Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #281.
+**Branch `feat/archidekt-url-import`: PR-123, a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** The pull request is #277. The owner renamed it two times (D-1108, D-1115).
 
 Author provider: Claude Code
 
-**The base.** `main` is `41746b0`, from #280. The branch merged it on 2026-10-04. This session did not read the deploy of `41746b0`.
+**The base.** `main` is `bebee78`, from #281. The branch merged `main` after #278, and again after #281. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
 
-**The owner choice.** The owner made an inbox for `mail@decktome.com` in iCloud Mail. The owner chose it as the sender over a reply-to (D-1112), and D-1112 amends the subdomain of D-1077.
+**The owner choices.** An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1113 answer the Codex reviews. `make codex-review` accepts the new Gitar reply "Running a review on this PR now" (D-1114).
 
-**The code.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`, and `TestDefaultFromIsTheRootInbox` reads it. Sections 8.1 and 8.2 of `docs/setup-gcp.md` and section 4 of `docs/deploy-and-rollback.md` hold the new steps and the records of the inbox.
+**The code.**
 
-**The steps of the owner before the merge.** Resend refuses a sender on a domain that it did not verify. So a merge before these steps stops each email of the app.
+- `go/internal/archidekt` reads one deck and writes its Arena text. `go/internal/decklink` sorts a link and holds the steps of each site.
+- `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
+- `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
+- The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
+- `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1113).
 
-1. In Resend, add the domain `decktome.com`, and add its three records at GoDaddy.
-2. Edit the domain of the key to all domains, with More options and Edit API key. The old revision then keeps its email.
+**The checks.** `make verify` passed on `8e577ef`, with 555 web tests under Node 22. Codex ran `make store-check` against the emulator on `8e577ef`, and it passed.
 
-The owner did both steps on 2026-10-03, and Resend read the domain as verified.
-
-**The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
-
-**The review.** The record `docs/reviews/pr-281.md` reads Ready for owner merge at effective head `94cf257`. Gitar passed with no open finding.
+**The review.** The record `docs/reviews/pr-277.md` reads `Ready for owner merge` at effective head `8e577ef`, with no open finding. Gitar approved `8e577ef` at 01:54 UTC on 2026-10-04, with no open thread. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
-1. The owner confirms the merge, and the pull request is pending the auto-merge (D-828, D-834).
-2. After the deploy, send one approval email, and read the sender and a reply in the inbox.
+1. The owner confirms the merge, and the auto-merge merges the pull request (D-828, D-834).
+2. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1113).
+3. After the deploy, read an Archidekt link on `decktome.com`, and import it.
+4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
 
@@ -106,7 +107,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-122: the sender `mail@decktome.com`** (D-1112). The resume section holds the open work.
+0. **PR-123: a deck import from a link** (D-1100 to D-1108, D-1113 to D-1115). The resume section holds the open work.
+0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-121** (F-211, D-1110). It merged as #280. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page. The owner can tell the user that the limit is 50,000 rows now.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
@@ -134,12 +136,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03f: the push of new cards, PR-120
-
-**The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
-
-**The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
-
 ### 2026-10-03g: a collection of 50,000 rows, PR-121
 
 **A user wrote "Collection limit too small".** The log showed a refused import of about 2.3 MB, past the limit of 9,000 rows.
@@ -151,6 +147,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
 
 **The owner chose the root domain as the sender over a reply-to.** The Resend documents and the domain limit of the key showed that a change of the code alone stops each email. So the steps of the owner come before the merge.
+
+### 2026-10-03i: a deck import from a link, PR-123
+
+**The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites (`docs/reference/deck-links-2026-10-03.md`), and Moxfield answered 403 again.
+
+**The owner asked for a headless browser for Moxfield.** The session declined (D-502), and the owner chose the steps (D-1102).
+
+**The owner renamed the item two times (D-1108, D-1115).** D-1106, D-1107, D-1113, and D-1114 answer the reviews and the gate.
 
 ## The archive
 

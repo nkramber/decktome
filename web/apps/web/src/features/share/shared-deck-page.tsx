@@ -9,7 +9,7 @@ import { Button } from "../../components/ui/button";
 import { deckClient } from "../../lib/api";
 import { copyText } from "../../lib/clipboard";
 import { errorMessage } from "../../lib/errors";
-import { CardGroup, DeckStatsPanel, FilterBar, isFiltered, sortLabels } from "../deck/deck-view";
+import { CardGroup, DeckStatsPanel, FilterBar, ImportSource, isFiltered, sortLabels } from "../deck/deck-view";
 import { type Filters, filterEntries, formatLabel, groupByRole, powerLabel, roleLabel, roleOrder, type SortKey, sortEntries } from "../deck/deck-stats";
 import { SampleHand } from "../deck/sample-hand-panel";
 import { downloadText } from "../export/buy-list";
@@ -141,6 +141,7 @@ export function SharedDeckView({ deck, token }: { deck: SharedDeck; token: strin
           {side.length > 0 && ` · ${countOf(side)} sideboard`}
         </p>
         {deck.legalityAsOf && <p className="text-sm">Built against the card data of {deck.legalityAsOf}.</p>}
+        <ImportSource url={deck.sourceUrl} />
         {deck.summary && <p className="mt-2 max-w-measure leading-relaxed">{deck.summary}</p>}
         <p className="text-xs text-muted-foreground">A shared deck, read-only.</p>
       </header>

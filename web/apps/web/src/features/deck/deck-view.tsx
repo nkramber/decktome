@@ -144,6 +144,9 @@ export function DeckView({ deck, base }: { deck: Deck; base?: Deck }) {
           {` · ${total} cards`}
           {deck.sideboard.length > 0 && ` · ${countOf(deck.sideboard)} sideboard`}
         </p>
+        {/* An import from a link names its Archidekt deck, on this page
+            and on the share page, as Archidekt asks (D-1101). */}
+        <ImportSource url={deck.sourceUrl} />
         {/* The thumbs of the deck as a whole sit beside the legality line
             (PR-27, D-557). The tiles carry one pair each, and the summary
             its own. */}
@@ -605,6 +608,28 @@ export function CardGroup({
       </ul>
     </section>
   );
+}
+
+// ImportSource names the Archidekt deck of an import, on the deck page and
+// on the share page (D-1101). It shows nothing for any other link.
+export function ImportSource({ url }: { url: string }) {
+  const source = archidektLink(url);
+  if (!source) return null;
+  return (
+    <p className="text-sm" data-testid="import-source">
+      Imported from{" "}
+      <a href={source} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-4 hover:no-underline">
+        Archidekt
+      </a>
+    </p>
+  );
+}
+
+// archidektLink is the deck page that an import read, or empty. The
+// server stores only a link it made from the deck id (D-1101), and the
+// page shows no other link.
+export function archidektLink(url: string): string {
+  return /^https:\/\/archidekt\.com\/decks\/[1-9][0-9]*$/.test(url) ? url : "";
 }
 
 // needsPowerRead says an imported deck asks the judge again at this

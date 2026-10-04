@@ -197,3 +197,28 @@ func TestEveryReportReads(t *testing.T) {
 		}
 	}
 }
+
+// TestADeckLinkKeepsItsHostAlone is D-1104: a link of a site with no
+// steps is a fault that keeps the host and never the path. A site that
+// the app reads, or that has steps, is no fault.
+func TestADeckLinkKeepsItsHostAlone(t *testing.T) {
+	link := mtgv1.ImportPage_IMPORT_PAGE_DECK_LINK
+	f, err := Read(link, []byte("https://www.tappedout.net/mtg-decks/a-person/deck/"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f.GetPage() != link || f.GetHeader() != "tappedout.net" || f.GetRowCount() != 0 || len(f.GetRows()) != 0 {
+		t.Errorf("fault = %v", f)
+	}
+	if strings.Contains(f.String(), "a-person") {
+		t.Errorf("the fault keeps the path: %v", f)
+	}
+	for _, known := range []string{"https://archidekt.com/decks/42", "https://moxfield.com/decks/abc"} {
+		if _, err := Read(link, []byte(known)); !errors.Is(err, ErrNoFault) {
+			t.Errorf("%s: err = %v, want ErrNoFault", known, err)
+		}
+	}
+	if _, err := Read(link, []byte("1 Sol Ring")); !errors.Is(err, errBadLink) {
+		t.Errorf("no link: err = %v", err)
+	}
+}

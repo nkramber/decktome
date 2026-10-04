@@ -70,6 +70,12 @@ func TestEveryVerdictPingsTheOwner(t *testing.T) {
 			title: "decktome: thumbs down, import",
 			lines: []string{"reasons: parse_fault", "message: Some app", "page: IMPORT_PAGE_DECK, 1 of 1 rows do not parse", "error: no line of the list reads as a card"},
 		},
+		{
+			name:  "a deck link of a site with no steps (D-1104)",
+			fb:    &mtgv1.Feedback{Kind: kindImport, Verdict: down, ImportPage: mtgv1.ImportPage_IMPORT_PAGE_DECK_LINK, ImportContent: []byte("https://tappedout.net/mtg-decks/x/")},
+			title: "decktome: thumbs down, import",
+			lines: []string{"reasons: deck_link", "page: IMPORT_PAGE_DECK_LINK, the site tappedout.net"},
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			clock := at

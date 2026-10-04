@@ -15,6 +15,40 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03h, PR-122
+
+**Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #281.
+
+Author provider: Claude Code
+
+**The base.** `main` is `41746b0`, from #280. The branch merged it on 2026-10-04. This session did not read the deploy of `41746b0`.
+
+**The owner choice.** The owner made an inbox for `mail@decktome.com` in iCloud Mail. The owner chose it as the sender over a reply-to (D-1112), and D-1112 amends the subdomain of D-1077.
+
+**The code.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`, and `TestDefaultFromIsTheRootInbox` reads it. Sections 8.1 and 8.2 of `docs/setup-gcp.md` and section 4 of `docs/deploy-and-rollback.md` hold the new steps and the records of the inbox.
+
+**The steps of the owner before the merge.** Resend refuses a sender on a domain that it did not verify. So a merge before these steps stops each email of the app.
+
+1. In Resend, add the domain `decktome.com`, and add its three records at GoDaddy.
+2. Edit the domain of the key to all domains, with More options and Edit API key. The old revision then keeps its email.
+
+The owner did both steps on 2026-10-03, and Resend read the domain as verified.
+
+**The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
+
+**The review.** The record `docs/reviews/pr-281.md` reads Ready for owner merge at effective head `94cf257`. Gitar passed with no open finding.
+
+**The open work.**
+
+1. The owner confirms the merge, and the pull request is pending the auto-merge (D-828, D-834).
+2. After the deploy, send one approval email, and read the sender and a reply in the inbox.
+
+### 2026-10-03f: the push of new cards, PR-120
+
+**The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
+
+**The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
+
 ## The resume section of 2026-10-03g, PR-121
 
 **Branch `feat/collection-limit-50k`: PR-121, a collection of 50,000 rows, in parts (F-211, D-1110).** The pull request is #280.

@@ -82,10 +82,11 @@ REQUEST = re.compile(r"^\s*gitar review\s*$", re.IGNORECASE)
 REPLY = re.compile(r"^> gitar review", re.IGNORECASE)
 DASHBOARD = "<b>Code Review</b>"
 # Gitar accepts a request with one of these replies. "On it" comes before
-# the review, and "running the review now" comes after the dashboard
-# changed, since 2026-09-29 (D-992).
+# the review. "Running the review now" comes after the dashboard changed,
+# since 2026-09-29 (D-992), and "running a review on this pr now" since
+# 2026-10-04 (D-1114).
 ACK_BEFORE = "on it"
-ACK_AFTER = "running the review now"
+ACK_AFTER = ("running the review now", "running a review on this pr now")
 # The dashboard shows this spinner image while a review runs (D-992). A
 # quoted finding can name the file in prose, so the image tag counts alone.
 SPINNER = re.compile(r"<img\b[^>]*gitar-spin\.svg", re.IGNORECASE)
@@ -219,7 +220,7 @@ def gitar_problems(pushed, comments, gitar_runs, threads):
             body = reply["body"].lower()
             if ACK_BEFORE in body:
                 changed = dashboard > reply["created_at"]
-            elif ACK_AFTER in body:
+            elif any(ack in body for ack in ACK_AFTER):
                 changed = dashboard > asked
             else:
                 problems.append(f"Gitar refused the request of {asked}. Wait, then ask again.")

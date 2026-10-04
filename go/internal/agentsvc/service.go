@@ -24,6 +24,7 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
+	"github.com/nkramber/decktome/go/internal/archidekt"
 	"github.com/nkramber/decktome/go/internal/auth"
 	"github.com/nkramber/decktome/go/internal/candidates"
 	"github.com/nkramber/decktome/go/internal/cards"
@@ -35,6 +36,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/precons"
 	"github.com/nkramber/decktome/go/internal/quality"
 	"github.com/nkramber/decktome/go/internal/questions"
+	"github.com/nkramber/decktome/go/internal/ratelimit"
 	"github.com/nkramber/decktome/go/internal/sessions"
 	"github.com/nkramber/decktome/go/internal/usage"
 	"github.com/nkramber/decktome/go/internal/users"
@@ -190,7 +192,14 @@ type Server struct {
 	// A nil one sends nothing, which is local mode and every test that
 	// does not wire it.
 	push PushNotifier
-	log  *slog.Logger
+	// archidekt reads a deck by its URL for the import form (D-1100). A
+	// nil one refuses each read. fetches limits the reads of each user on
+	// this instance (D-1106). reads records each read, and an import keeps
+	// a link only after one (D-1107). A nil one refuses each read too.
+	archidekt *archidekt.Client
+	fetches   *ratelimit.Limiter
+	reads     ReadLog
+	log       *slog.Logger
 }
 
 // Option configures the server.
@@ -345,6 +354,19 @@ type PushNotifier interface {
 // WithPush sends a push when a build ends after the client left.
 func WithPush(p PushNotifier) Option { return func(s *Server) { s.push = p } }
 
+// WithArchidekt wires the read of an Archidekt deck URL (PR-123, D-1100).
+func WithArchidekt(c *archidekt.Client) Option { return func(s *Server) { s.archidekt = c } }
+
+// ReadLog records the deck reads of each user (D-1107). The Firestore one
+// is deckreads.Repo.
+type ReadLog interface {
+	Add(ctx context.Context, uid string, deckID int64, text string, now time.Time) error
+	Has(ctx context.Context, uid string, deckID int64, text string, now time.Time) (bool, error)
+}
+
+// WithReadLog wires the record of each deck read (D-1107).
+func WithReadLog(l ReadLog) Option { return func(s *Server) { s.reads = l } }
+
 // New wires the service.
 func New(cat *questions.Catalog, client *llm.Client, store Store, userFn auth.UserFunc, opts ...Option) (*Server, error) {
 	if cat == nil || client == nil || store == nil || userFn == nil {
@@ -361,6 +383,7 @@ func New(cat *questions.Catalog, client *llm.Client, store Store, userFn auth.Us
 	if s.turns == nil {
 		s.turns = make(chan struct{}, DefaultChatLimit)
 	}
+	s.fetches = ratelimit.New(FetchesPerMinute, time.Minute).WithClock(s.now)
 	return s, nil
 }
 

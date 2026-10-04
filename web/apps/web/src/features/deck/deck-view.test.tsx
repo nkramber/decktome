@@ -9,7 +9,7 @@ import { axe } from "jest-axe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { makeQueryClient } from "../../lib/query-client";
-import { DeckView } from "./deck-view";
+import { archidektLink, DeckView } from "./deck-view";
 
 const getCards = vi.fn();
 const getRulings = vi.fn();
@@ -122,6 +122,18 @@ describe("DeckView", () => {
     expect(screen.queryByRole("group", { name: "Rate the deck description" })).not.toBeInTheDocument();
     expect(screen.queryAllByRole("button", { name: "This helped" })).toHaveLength(0);
     expect(screen.getByText(/imported, power step not read yet/)).toBeInTheDocument();
+  });
+
+  it("links an import from a link to its Archidekt deck (D-1101)", async () => {
+    renderDeck({ ...deck, imported: true, sourceUrl: "https://archidekt.com/decks/42" } as unknown as Deck);
+    await screen.findByAltText("Forest (card)");
+    expect(screen.getByRole("link", { name: "Archidekt" })).toHaveAttribute("href", "https://archidekt.com/decks/42");
+  });
+
+  it("shows no source line for a deck with no link", async () => {
+    renderDeck();
+    await screen.findByAltText("Forest (card)");
+    expect(screen.queryByTestId("import-source")).not.toBeInTheDocument();
   });
 
   it("marks a bracket that is the floor of the rules alone as an estimate (D-854)", async () => {
@@ -559,5 +571,14 @@ describe("DeckView", () => {
     renderDeck();
     await screen.findByAltText("Forest (card)");
     expect(screen.queryByTestId("power-counts")).not.toBeInTheDocument();
+  });
+});
+
+describe("archidektLink", () => {
+  it("keeps only the deck page that the server makes (D-1101)", () => {
+    expect(archidektLink("https://archidekt.com/decks/42")).toBe("https://archidekt.com/decks/42");
+    for (const bad of ["", "javascript:alert(1)", "https://archidekt.com.evil.example/decks/42", "https://archidekt.com/decks/42/x", "http://archidekt.com/decks/42", "https://archidekt.com/decks/042"]) {
+      expect(archidektLink(bad)).toBe("");
+    }
   });
 });

@@ -32,7 +32,7 @@ func TestNamesAndReasons(t *testing.T) {
 		mtgv1.FeedbackKind_FEEDBACK_KIND_CARD:     5,
 		mtgv1.FeedbackKind_FEEDBACK_KIND_DECK:     5,
 		mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT:     5,
-		mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT:   1,
+		mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT:   2,
 	}
 	for k, n := range want {
 		keys := Reasons(k)

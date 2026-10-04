@@ -2,7 +2,8 @@ import type { DeckCard } from "@mtg/api-client/mtg/v1/deck_pb";
 import type { ImportDeckResponse } from "@mtg/api-client/mtg/v1/agent_service_pb";
 import { FormatId } from "@mtg/api-client/mtg/v1/format_pb";
 import type { UnresolvedRow } from "@mtg/api-client/mtg/v1/collection_pb";
-import { ImportPage } from "@mtg/api-client/mtg/v1/feedback_service_pb";
+import { FeedbackKind, FeedbackVerdict, ImportPage } from "@mtg/api-client/mtg/v1/feedback_service_pb";
+import { ConnectError } from "@connectrpc/connect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon } from "lucide-react";
 import { type FormEvent, useState } from "react";
@@ -16,10 +17,18 @@ import { agentClient, collectionClient } from "../../lib/api";
 import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { isUnreadable, parseFaults, ReportImport } from "../feedback/report-import";
+import { useSubmitFeedback } from "../feedback/use-feedback";
 
 // The deck import (PR-70). A reader brings a deck list: a text file that
 // Archidekt exports, or a pasted Arena list (D-845). The app stores it as
 // a deck it built, so the deck page shows it and the chat revises it.
+//
+// A deck link fills the list (PR-123, D-1100). The server reads a site
+// it can read and answers the text, so the reader sees the list before
+// the import. Any other site answers the steps of an export: the exact
+// steps of a known site, or the general steps (D-1103). A site with no
+// steps of its own files a report, so the owner can add it (D-1104). The
+// field names no site before an answer (D-889).
 //
 // A list can need one answer before it stores. A list that is not
 // Commander asks Standard, Modern, or neither (D-857), and a Commander
@@ -32,6 +41,13 @@ export const maxImportBytes = 128 * 1024;
 type Step = "pick" | "format" | "commander" | "done";
 
 // nameFromFile turns "living_weapon.txt" into "living weapon".
+// fetchErrorText is the answer of the server to a deck link, with no code
+// and no field name.
+export function fetchErrorText(err: unknown): string {
+  if (err instanceof ConnectError) return err.rawMessage.replace(/^url: /, "");
+  return errorMessage(err);
+}
+
 export function nameFromFile(file: string): string {
   return file
     .replace(/\.[^.]+$/, "")
@@ -70,6 +86,8 @@ function ImportBody({ onClose }: { onClose: () => void }) {
   const [options, setOptions] = useState<DeckCard[]>([]);
   const [picked, setPicked] = useState("");
   const [result, setResult] = useState<ImportDeckResponse | null>(null);
+  const [url, setUrl] = useState("");
+  const [sourceUrl, setSourceUrl] = useState("");
 
   const tooLarge = new TextEncoder().encode(text).length > maxImportBytes;
 
@@ -81,6 +99,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
         collectionId,
         format: answer.format ?? format,
         commanderOracleIds: answer.commander ? [answer.commander] : [],
+        sourceUrl,
       }),
     onSuccess: async (res) => {
       if (res.needsFormat) {
@@ -106,6 +125,32 @@ function ImportBody({ onClose }: { onClose: () => void }) {
     },
   });
 
+  const report = useSubmitFeedback();
+  const fetchList = useMutation({
+    mutationFn: () => agentClient.fetchDeckList({ url }),
+    onSuccess: (res) => {
+      if (!res.knownSite) {
+        report.mutate({
+          kind: FeedbackKind.IMPORT,
+          verdict: FeedbackVerdict.DOWN,
+          importPage: ImportPage.DECK_LINK,
+          importContent: new TextEncoder().encode(url.trim()),
+        });
+      }
+      if (res.text === "") return;
+      setText(res.text);
+      setFileName("");
+      setSourceUrl(res.sourceUrl);
+      if (name.trim() === "") setName(res.name);
+      send.reset();
+    },
+  });
+
+  function onFetch() {
+    if (url.trim() === "" || fetchList.isPending) return;
+    fetchList.mutate();
+  }
+
   // A list the app could not read shows the report form in place of the
   // error of the server (D-887, D-889).
   const unreadable = send.isError && isUnreadable(send.error);
@@ -113,6 +158,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
   async function readFile(f: File | undefined) {
     if (!f) return;
     setFileName(f.name);
+    setSourceUrl("");
     setText(await f.text());
   }
 
@@ -130,7 +176,7 @@ function ImportBody({ onClose }: { onClose: () => void }) {
         ? "The list marks no commander. Pick the card that leads it."
         : step === "done"
           ? "Each line below matched no card, so the deck holds the rest."
-          : "Upload a deck list file, or paste the list. The deck opens like a deck the agent built.";
+          : "Paste the link of a public deck, upload a deck list file, or paste the list. The deck opens like a deck the agent built.";
 
   return (
     <DialogContent className="max-w-xl" aria-describedby="import-dialog-note">
@@ -143,6 +189,42 @@ function ImportBody({ onClose }: { onClose: () => void }) {
 
       {step === "pick" && (
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="deck-url">Deck link</Label>
+            <div className="flex gap-2">
+              <Input
+                id="deck-url"
+                inputMode="url"
+                autoComplete="off"
+                placeholder="Paste the link of a public deck"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onFetch();
+                  }
+                }}
+              />
+              <Button type="button" variant="outline" onClick={onFetch} disabled={url.trim() === "" || fetchList.isPending}>
+                {fetchList.isPending ? "Reading..." : "Read"}
+              </Button>
+            </div>
+            {fetchList.isError && (
+              <p role="alert" className="text-sm text-danger">
+                {fetchErrorText(fetchList.error)}
+              </p>
+            )}
+            {fetchList.isSuccess && fetchList.data.text !== "" && (
+              <p role="status" className="text-sm text-muted-foreground">
+                Read {fetchList.data.name || "the deck"} from {fetchList.data.site}.
+                {fetchList.data.leftOut > 0 && ` ${fetchList.data.leftOut} ${fetchList.data.leftOut === 1 ? "card" : "cards"} outside the deck, such as the maybeboard, stay out.`}
+              </p>
+            )}
+            {fetchList.isSuccess && fetchList.data.exportSteps.length > 0 && (
+              <ExportSteps site={fetchList.data.site} known={fetchList.data.knownSite} steps={fetchList.data.exportSteps} reported={report.isSuccess} />
+            )}
+          </div>
           <label
             htmlFor="deck-file"
             className="flex cursor-pointer flex-col items-center gap-1.5 rounded-card border-2 border-dashed border-border px-6 py-6 text-center transition-colors hover:border-accent hover:bg-muted"
@@ -158,7 +240,12 @@ function ImportBody({ onClose }: { onClose: () => void }) {
               id="deck-text"
               rows={8}
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => {
+                // A list edited by hand no longer matches its source, and a
+                // changed deck keeps no link (D-1101).
+                setText(e.target.value);
+                setSourceUrl("");
+              }}
               placeholder={"Commander\n1 Heroes in a Half Shell (TMC) 6\n\nDeck\n1 Acidic Slime (TMC) 48"}
               className="min-h-32 rounded-card border border-border bg-background p-2 font-mono text-xs"
             />
@@ -319,6 +406,23 @@ function Choice({
         </Button>
       </DialogFooter>
     </form>
+  );
+}
+
+// ExportSteps tells the reader how to copy the list of a site that the
+// app can not read (D-1103). A site with no steps of its own also says
+// that the app sent a report of it (D-1104).
+function ExportSteps({ site, known, steps, reported }: { site: string; known: boolean; steps: string[]; reported: boolean }) {
+  return (
+    <div className="flex flex-col gap-1.5 rounded-card border border-border p-3 text-sm" data-testid="export-steps">
+      <p className="font-medium">{known ? `${site} does not let the app read its decks. Copy the list by hand:` : `The app can not read decks from ${site} yet. Copy the list by hand:`}</p>
+      <ol className="list-decimal pl-5">
+        {steps.map((step) => (
+          <li key={step}>{step}</li>
+        ))}
+      </ol>
+      {!known && reported && <p role="status">The app sent a report of this site, so that it can be added.</p>}
+    </div>
   );
 }
 

@@ -453,8 +453,9 @@ var reasonKeys = map[mtgv1.FeedbackKind][]string{
 	// reason set of its own (D-594).
 	mtgv1.FeedbackKind_FEEDBACK_KIND_CHAT: {"stuck", "ignored_request", "wrong_questions", "no_deck", "error"},
 	// A file the app could not read has one fault, and the server names
-	// it: the user checks no reason (D-884).
-	mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT: {"parse_fault"},
+	// it: the user checks no reason (D-884). A deck link of a site that
+	// the app can not read files its own report (D-1104).
+	mtgv1.FeedbackKind_FEEDBACK_KIND_IMPORT: {"parse_fault", "deck_link"},
 }
 
 // Reasons lists the reason keys of a kind, in the order the dialog

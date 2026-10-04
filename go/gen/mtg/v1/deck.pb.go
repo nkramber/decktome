@@ -307,8 +307,11 @@ type Deck struct {
 	// whose pass last wrote new_oracle_ids. A rerun of the same marker
 	// skips the deck, so a dismiss stays and no second push goes (D-1095).
 	NewCardsVersion string `protobuf:"bytes,34,opt,name=new_cards_version,json=newCardsVersion,proto3" json:"new_cards_version,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// source_url is the Archidekt deck that an import read, or empty. The
+	// deck page and the public copy link to it (D-1101).
+	SourceUrl     string `protobuf:"bytes,35,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Deck) Reset() {
@@ -568,6 +571,13 @@ func (x *Deck) GetNewOracleIds() []string {
 func (x *Deck) GetNewCardsVersion() string {
 	if x != nil {
 		return x.NewCardsVersion
+	}
+	return ""
+}
+
+func (x *Deck) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
 	}
 	return ""
 }
@@ -1174,7 +1184,10 @@ type SharedDeck struct {
 	// data. A build keeps the commander out of cards since F-124, and an
 	// import keeps it in the ids alone, so the page found no commander
 	// (REV-021). The public copy holds no owned mark and no owner price.
-	Commanders    []*SharedCard `protobuf:"bytes,10,rep,name=commanders,proto3" json:"commanders,omitempty"`
+	Commanders []*SharedCard `protobuf:"bytes,10,rep,name=commanders,proto3" json:"commanders,omitempty"`
+	// source_url is the Archidekt deck that an import read, or empty. The
+	// public copy links to it, as Archidekt asks (D-1101).
+	SourceUrl     string `protobuf:"bytes,11,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1277,6 +1290,13 @@ func (x *SharedDeck) GetCommanders() []*SharedCard {
 		return x.Commanders
 	}
 	return nil
+}
+
+func (x *SharedDeck) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
+	}
+	return ""
 }
 
 // SharedCard is one entry of a shared deck, with the card data inline,
@@ -1785,7 +1805,7 @@ var File_mtg_v1_deck_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
-	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9c\n" +
+	"\x11mtg/v1/deck.proto\x12\x06mtg.v1\x1a\x11mtg/v1/card.proto\x1a\x13mtg/v1/format.proto\x1a\x14mtg/v1/session.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbb\n" +
 	"\n" +
 	"\x04Deck\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -1830,7 +1850,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\vshare_token\x18  \x01(\tR\n" +
 	"shareToken\x12$\n" +
 	"\x0enew_oracle_ids\x18! \x03(\tR\fnewOracleIds\x12*\n" +
-	"\x11new_cards_version\x18\" \x01(\tR\x0fnewCardsVersionJ\x04\b\n" +
+	"\x11new_cards_version\x18\" \x01(\tR\x0fnewCardsVersion\x12\x1d\n" +
+	"\n" +
+	"source_url\x18# \x01(\tR\tsourceUrlJ\x04\b\n" +
 	"\x10\vR\x04seed\"\xb5\x01\n" +
 	"\vDeckQuality\x12\x12\n" +
 	"\x04tier\x18\x01 \x01(\tR\x04tier\x12\x14\n" +
@@ -1877,7 +1899,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x05speed\x18\x04 \x01(\x05R\x05speed\x12\x1d\n" +
 	"\n" +
 	"extra_turn\x18\x05 \x01(\bR\textraTurn\x12(\n" +
-	"\x10mass_land_denial\x18\x06 \x01(\bR\x0emassLandDenial\"\x93\x03\n" +
+	"\x10mass_land_denial\x18\x06 \x01(\bR\x0emassLandDenial\"\xb2\x03\n" +
 	"\n" +
 	"SharedDeck\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12&\n" +
@@ -1893,7 +1915,9 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\n" +
 	"commanders\x18\n" +
 	" \x03(\v2\x12.mtg.v1.SharedCardR\n" +
-	"commanders\"\xfe\x01\n" +
+	"commanders\x12\x1d\n" +
+	"\n" +
+	"source_url\x18\v \x01(\tR\tsourceUrl\"\xfe\x01\n" +
 	"\n" +
 	"SharedCard\x12\x1b\n" +
 	"\toracle_id\x18\x01 \x01(\tR\boracleId\x12\x12\n" +

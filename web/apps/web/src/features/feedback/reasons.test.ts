@@ -12,7 +12,7 @@ describe("reasonsOf", () => {
     expect(reasonsOf(FeedbackKind.CARD).map((r) => r.key)).toEqual(["off_theme", "illegal", "unwanted_buy", "wrong_printing", "wrong_power"]);
     expect(reasonsOf(FeedbackKind.DECK).map((r) => r.key)).toEqual(["off_spec", "bad_mana", "too_little_interaction", "wrong_power", "too_many_to_buy"]);
     expect(reasonsOf(FeedbackKind.CHAT).map((r) => r.key)).toEqual(["stuck", "ignored_request", "wrong_questions", "no_deck", "error"]);
-    expect(reasonsOf(FeedbackKind.IMPORT).map((r) => r.key)).toEqual(["parse_fault"]);
+    expect(reasonsOf(FeedbackKind.IMPORT).map((r) => r.key)).toEqual(["parse_fault", "deck_link"]);
     expect(reasonsOf(FeedbackKind.UNSPECIFIED)).toEqual([]);
   });
 

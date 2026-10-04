@@ -173,6 +173,7 @@ func sharedDeck(d *mtgv1.Deck, cards export.Lookup) *mtgv1.SharedDeck {
 		Sideboard:          sharedCards(d.GetSideboard(), cards),
 		LegalityAsOf:       d.GetLegalityAsOf(),
 		CardCount:          d.GetCardCount(),
+		SourceUrl:          d.GetSourceUrl(),
 	}
 }
 

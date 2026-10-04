@@ -68,8 +68,8 @@ type Class struct {
 // classes is the whole set, in report order. The ten classes of the
 // design note keep their ids and their words. Five more carry the chat
 // kind of D-594, which arrived after the note, and seven carry the
-// reason keys the note left unmapped (D-643). One carries the import
-// kind of D-884. Every reason key of every kind names exactly one class,
+// reason keys the note left unmapped (D-643). Two carry the import kind
+// of D-884 and D-1104. Every reason key of every kind names exactly one class,
 // so no verdict falls through.
 var classes = []Class{
 	{"Q1", "asked again", "question", "already_answered", AConversation, "the catalog trigger, the word rules, the classify prompt", ""},
@@ -100,6 +100,7 @@ var classes = []Class{
 	{"X5", "an error", "chat", "error", ADefect, "the error path", ""},
 
 	{"I1", "the import failed", "import", "parse_fault", AParseFixture, "the parser of the page, go/internal/collections or go/internal/decklist", ""},
+	{"I2", "a deck link of a site with no steps", "import", "deck_link", ADefect, "the sites of go/internal/decklink: their steps, or a reader", ""},
 }
 
 // byKey finds a class by its kind and its reason key.

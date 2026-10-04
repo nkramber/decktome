@@ -1,0 +1,508 @@
+{
+ "id": 3045150,
+ "name": "Modern Artifact Burn",
+ "deckFormat": 2,
+ "private": false,
+ "unlisted": false,
+ "categories": [
+  {
+   "name": "Maybeboard",
+   "isPremier": false,
+   "includedInDeck": false
+  },
+  {
+   "name": "Sorcery",
+   "isPremier": false,
+   "includedInDeck": true
+  },
+  {
+   "name": "Land",
+   "isPremier": false,
+   "includedInDeck": true
+  },
+  {
+   "name": "Artifact",
+   "isPremier": false,
+   "includedInDeck": true
+  },
+  {
+   "name": "Enchantment",
+   "isPremier": false,
+   "includedInDeck": true
+  },
+  {
+   "name": "Sideboard",
+   "isPremier": false,
+   "includedInDeck": true
+  },
+  {
+   "name": "Creature",
+   "isPremier": false,
+   "includedInDeck": true
+  },
+  {
+   "name": "Instant",
+   "isPremier": false,
+   "includedInDeck": true
+  }
+ ],
+ "cards": [
+  {
+   "quantity": 4,
+   "categories": [
+    "Instant"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "e0798cec-aaa3-4a52-99f8-d000ca7d59db",
+    "collectorNumber": "161",
+    "edition": {
+     "editioncode": "m15"
+    },
+    "oracleCard": {
+     "name": "Shrapnel Blast"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Creature"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "feda6bb3-ee22-489c-bcfd-52ef04841024",
+    "collectorNumber": "308",
+    "edition": {
+     "editioncode": "vow"
+    },
+    "oracleCard": {
+     "name": "Voldaren Epicure"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Instant"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "f5881bbc-8600-464d-9dcd-5a7780918d1d",
+    "collectorNumber": "91",
+    "edition": {
+     "editioncode": "som"
+    },
+    "oracleCard": {
+     "name": "Galvanic Blast"
+    }
+   }
+  },
+  {
+   "quantity": 1,
+   "categories": [
+    "Sideboard"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "088c801d-381f-403b-aeb7-fbbfafee99bf",
+    "collectorNumber": "283",
+    "edition": {
+     "editioncode": "2xm"
+    },
+    "oracleCard": {
+     "name": "Pyrite Spellbomb"
+    }
+   }
+  },
+  {
+   "quantity": 3,
+   "categories": [
+    "Sideboard"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "0b057eb7-8439-4d26-89df-c345ab2773e1",
+    "collectorNumber": "156",
+    "edition": {
+     "editioncode": "znr"
+    },
+    "oracleCard": {
+     "name": "Roiling Vortex"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Artifact"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "2b8877c3-1f04-4452-9f2c-98fb8dc71e5f",
+    "collectorNumber": "IMA-221",
+    "edition": {
+     "editioncode": "plst"
+    },
+    "oracleCard": {
+     "name": "Mishra's Bauble"
+    }
+   }
+  },
+  {
+   "quantity": 1,
+   "categories": [
+    "Land"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "f231caf8-56c0-4719-a90d-5e5efbee3148",
+    "collectorNumber": "254",
+    "edition": {
+     "editioncode": "afr"
+    },
+    "oracleCard": {
+     "name": "Den of the Bugbear"
+    }
+   }
+  },
+  {
+   "quantity": 1,
+   "categories": [
+    "Land"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "aa548dcd-c1dd-492d-a69f-c65dfeef0633",
+    "collectorNumber": "276",
+    "edition": {
+     "editioncode": "neo"
+    },
+    "oracleCard": {
+     "name": "Sokenzan, Crucible of Defiance"
+    }
+   }
+  },
+  {
+   "quantity": 2,
+   "categories": [
+    "Land"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "45277efb-de6d-42f1-b84f-680e4441b9f9",
+    "collectorNumber": "we313",
+    "edition": {
+     "editioncode": "wc03"
+    },
+    "oracleCard": {
+     "name": "Bloodstained Mire"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Land"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "1716b4dd-9045-462b-b053-72de450a8cde",
+    "collectorNumber": "125",
+    "edition": {
+     "editioncode": "sld"
+    },
+    "oracleCard": {
+     "name": "Blood Crypt"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Land"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "160479a6-e18e-4728-84ca-d9f3a72f48ff",
+    "collectorNumber": "tvdl345",
+    "edition": {
+     "editioncode": "wc01"
+    },
+    "oracleCard": {
+     "name": "Sulfurous Springs"
+    }
+   }
+  },
+  {
+   "quantity": 1,
+   "categories": [
+    "Land"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "cabe866d-01c3-4ec5-9d41-70305208c2b1",
+    "collectorNumber": "282",
+    "edition": {
+     "editioncode": "bro"
+    },
+    "oracleCard": {
+     "name": "Swamp"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Sideboard"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "752bf493-5839-47e8-95f2-6d8201907428",
+    "collectorNumber": "235",
+    "edition": {
+     "editioncode": "dmr"
+    },
+    "oracleCard": {
+     "name": "Tormod's Crypt"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Artifact"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "c47931c9-685d-4b83-8299-bc347224b4e8",
+    "collectorNumber": "138",
+    "edition": {
+     "editioncode": "neo"
+    },
+    "oracleCard": {
+     "name": "Experimental Synthesizer"
+    }
+   }
+  },
+  {
+   "quantity": 7,
+   "categories": [
+    "Land"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "cd757142-45b7-40db-80f2-fe161379aa4e",
+    "collectorNumber": "285",
+    "edition": {
+     "editioncode": "bro"
+    },
+    "oracleCard": {
+     "name": "Mountain"
+    }
+   }
+  },
+  {
+   "quantity": 2,
+   "categories": [
+    "Sideboard",
+    "Instant"
+   ],
+   "companion": false,
+   "modifier": "Foil",
+   "deletedAt": null,
+   "card": {
+    "uid": "74843584-d6b1-4ee6-bedb-999ab0a42bb9",
+    "collectorNumber": "5",
+    "edition": {
+     "editioncode": "f17"
+    },
+    "oracleCard": {
+     "name": "Unlicensed Disintegration"
+    }
+   }
+  },
+  {
+   "quantity": 1,
+   "categories": [
+    "Sideboard"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "0d732b87-08e5-41b6-8448-62dd6bf20d9c",
+    "collectorNumber": "206",
+    "edition": {
+     "editioncode": "m12"
+    },
+    "oracleCard": {
+     "name": "Dragon's Claw"
+    }
+   }
+  },
+  {
+   "quantity": 3,
+   "categories": [
+    "Creature"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "3b303ea3-9f4d-4c28-9446-285a23f841a0",
+    "collectorNumber": "106",
+    "edition": {
+     "editioncode": "tmt"
+    },
+    "oracleCard": {
+     "name": "Ravenous Robots"
+    }
+   }
+  },
+  {
+   "quantity": 2,
+   "categories": [
+    "Enchantment"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "a058f1a6-318c-4bba-981e-ace079ada806",
+    "collectorNumber": "168",
+    "edition": {
+     "editioncode": "eoe"
+    },
+    "oracleCard": {
+     "name": "Weapons Manufacturing"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Artifact"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "5a077de0-1893-40d0-a499-ee2e6e2258f1",
+    "collectorNumber": "12",
+    "edition": {
+     "editioncode": "big"
+    },
+    "oracleCard": {
+     "name": "Legion Extruder"
+    }
+   }
+  },
+  {
+   "quantity": 3,
+   "categories": [
+    "Creature"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "d16f8670-f038-400a-83e7-a53a7f8c47ac",
+    "collectorNumber": "100",
+    "edition": {
+     "editioncode": "mh3"
+    },
+    "oracleCard": {
+     "name": "Marionette Apprentice"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Artifact"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "c2e8d492-2c67-410b-b556-c157a14c4cec",
+    "collectorNumber": "263",
+    "edition": {
+     "editioncode": "tsr"
+    },
+    "oracleCard": {
+     "name": "Chromatic Star"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Instant"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "435589bb-27c6-4a6d-9d63-394d5092b9d8",
+    "collectorNumber": "146",
+    "edition": {
+     "editioncode": "m10"
+    },
+    "oracleCard": {
+     "name": "Lightning Bolt"
+    }
+   }
+  },
+  {
+   "quantity": 4,
+   "categories": [
+    "Sideboard"
+   ],
+   "companion": false,
+   "modifier": "Normal",
+   "deletedAt": null,
+   "card": {
+    "uid": "655c489f-bffb-45a4-8e7c-2d1a35220197",
+    "collectorNumber": "163",
+    "edition": {
+     "editioncode": "ori"
+    },
+    "oracleCard": {
+     "name": "Smash to Smithereens"
+    }
+   }
+  }
+ ]
+}

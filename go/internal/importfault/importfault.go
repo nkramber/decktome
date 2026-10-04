@@ -21,6 +21,7 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/collections"
+	"github.com/nkramber/decktome/go/internal/decklink"
 	"github.com/nkramber/decktome/go/internal/decklist"
 )
 
@@ -44,7 +45,8 @@ var (
 	// ErrNoCardLine reports a deck list with no line that reads as a
 	// card. The deck import answers it, marked as unreadable.
 	ErrNoCardLine = errors.New("no line of the list reads as a card")
-	errBadPage    = errors.New("import_page: name the collection or the deck page")
+	errBadPage    = errors.New("import_page: name the collection, the deck, or the deck link page")
+	errBadLink    = errors.New("import_content: give the deck link")
 	errEmpty      = errors.New("import_content: give the file")
 	errTooLarge   = errors.New("import_content: the file is larger than 5 MiB")
 )
@@ -84,6 +86,9 @@ func Read(page mtgv1.ImportPage, content []byte) (*mtgv1.ImportFault, error) {
 	case len(content) > MaxContentBytes:
 		return nil, errTooLarge
 	}
+	if page == mtgv1.ImportPage_IMPORT_PAGE_DECK_LINK {
+		return readLink(content)
+	}
 	var readErr error
 	var bad []*mtgv1.UnresolvedRow
 	switch page {
@@ -118,6 +123,24 @@ func Read(page mtgv1.ImportPage, content []byte) (*mtgv1.ImportFault, error) {
 	}
 	fault.Rows = bad
 	return fault, nil
+}
+
+// readLink reads a deck link again (D-1104). A site that the app reads,
+// or that has steps of its own, is no fault. The fault keeps the host
+// alone and never the path, which can name a person.
+func readLink(content []byte) (*mtgv1.ImportFault, error) {
+	link, err := decklink.Parse(string(content))
+	if err != nil {
+		return nil, errBadLink
+	}
+	if link.Site != decklink.Unknown {
+		return nil, ErrNoFault
+	}
+	return &mtgv1.ImportFault{
+		Page:   mtgv1.ImportPage_IMPORT_PAGE_DECK_LINK,
+		Error:  "the app has no reader and no steps for the deck links of " + link.Host,
+		Header: link.Host,
+	}, nil
 }
 
 // readCollection reads a collection file the way the upload reads it,

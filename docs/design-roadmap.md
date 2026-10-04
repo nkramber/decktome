@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-03 correction pass 260 (PR-70, PR-123, D-1100 to D-1108, D-1113 to D-1115): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-123, sequencing step 118.
 2026-10-03 correction pass 259 (PR-121, F-211, D-1110): a collection passed the limit of 9,000 distinct rows. The store writes parts now, and a collection holds 50,000 rows. Changes: the Firestore row, REV-026, F-211, PR-121, sequencing step 116.
 2026-10-03 correction pass 258 (PR-26, PR-120, D-1090, D-1091, D-1095): the owner chose the new-cards event as the third event of PR-26, before the email digest. The digest holds the new cards of each deck, so this event comes first. Changes: PR-26, PR-120, sequencing steps 99 and 115.
 2026-10-03 correction pass 257 (PR-119, F-210, D-1092 to D-1094): an invited user who signed in and made nothing had no user record. The first verified call writes it now. `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat. Changes: the `users` record row, F-210, PR-119, sequencing step 114.
@@ -2162,7 +2163,7 @@ Gate:
 **PR-70: Import a deck list, and show it as a deck the app built (F-170, F-171, D-845 to D-862).** ✅ merged as #220. The mark comes before any review (D-822). The owner approved the scope on 2026-09-23 (D-860).
 A user brings a deck of their own, and the app stores it as a deck that a build made. So the deck page shows it, and the revise turn changes it. The owner asked for the import on 2026-09-23.
 
-- **The input.** The page `/decks` gets an import form. It takes a text file that Archidekt exports, or a pasted Arena list (D-845). The app fetches no URL.
+- **The input.** The page `/decks` gets an import form. It takes a text file that Archidekt exports, or a pasted Arena list (D-845). The app fetched no URL until PR-123 (D-1100).
 - **The parse.** A deck parser reads the Archidekt line `1x Name (set) number *F* [Category]` and the Arena sections `Commander`, `Deck`, `Sideboard`, and `Companion`. It also reads the line `// COMMANDER`, and a blank line ends that section. It resolves each name as a collection upload does, and it reports each name that matches no card.
 - **The format.** A commander mark or a main deck of 100 cards reads Commander. For any other list, the user picks Standard, Modern, or neither, and neither stores as the house format (D-857).
 - **The commander.** The Archidekt category `Commander{top}`, the Arena header `Commander`, or the line `// COMMANDER` names it. With neither mark, the user picks from the cards of the list that can lead a deck (D-847).
@@ -3256,6 +3257,35 @@ Gate:
 
 > *In plain English:* the emails of the app come from `mail@decktome.com` now, and a reply reaches the owner.
 
+**PR-123: A deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** ✅ merged as #277. The mark comes before any review (D-822). The owner asked for a workshop of an Archidekt and a Moxfield link on 2026-10-03, and then chose this scope. `docs/reference/deck-links-2026-10-03.md` holds each source fact.
+
+- **The field (D-1103).** The import dialog gets a field "Deck link" and a button "Read". The field names no site, as D-889 asks.
+- **Archidekt (D-1100).** `FetchDeckList` reads a public deck through `go/internal/archidekt` and answers its list as Arena text. The form shows the list, and the user selects Import as for a pasted list.
+- **The safety of the read (D-1100).** The server makes the API URL again from the deck id. It follows no redirect, caps the answer at 4 MiB, and allows each user 10 reads a minute on each API instance (D-1106).
+- **The link back (D-1101).** The deck keeps `source_url`, and the deck page and the share page link to the Archidekt deck.
+- **The record of a read (D-1107, D-1113).** `go/internal/deckreads` keeps each read as one document of `deck_reads`: the user, the deck id, a hash of the text, and `expire_at`. `ImportDeck` keeps a link only after such a read in the last hour. A Firestore TTL policy deletes an expired read.
+- **Moxfield (D-1102, D-1103).** The app asks Moxfield for nothing. A Moxfield link gets the exact steps: More, then Export, then Copy for Arena.
+- **Any other site (D-1104).** The link gets the general steps. The page files an import report of the host, and the owner gets a notice. The triage class I2 writes a defect row.
+- **The review check (D-1114).** `make codex-review` also accepts the Gitar reply "Running a review on this PR now", with the rule of D-992.
+
+Gate:
+- `go/internal/archidekt` reads two real answers of 2026-10-03: a Modern deck with a sideboard of 15, and a Commander deck whose maybeboard stays out.
+- The tests of `go/internal/archidekt` refuse another host, follow no redirect, and cap the answer.
+- `go/internal/decklink` sorts each link, and each site has its steps.
+- The tests of `go/internal/agentsvc` read a link into an import, the cap of each user, and the steps of Moxfield and of another site. No request leaves for either site.
+- `go/internal/importfault` keeps the host of an unknown site and never its path. The notice names the site.
+- The parser reads the real Moxfield export of the owner, with its name and its commander.
+- The tests of the web form cover the read, the exact steps, the general steps with the report, and the error of the server.
+- The share page links to the Archidekt deck. A list that the user edits after the read keeps no link, as a revision keeps none.
+- An import refuses a link with no read of the same deck and text. A fault of the record fails the read and the import. A read still matches after 25 newer reads. `make store-check` runs the store against the emulator.
+- `docs/tools/test_codex_review.py` accepts the reply of D-1114 after a dashboard edit, and refuses it before one.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy: run the TTL command of `docs/setup-gcp.md` section 6 one time. Then read an Archidekt link on `decktome.com`, and import it. UNVERIFIED before the merge: an answer of Archidekt to Cloud Run, and the answer to a private deck.
+> *In plain English:* paste the link of a public Archidekt deck, and the app fills in the list for you. Moxfield blocks other sites, so a Moxfield link shows the three clicks that copy the list. Any other site shows general steps, and the app tells the owner about that site.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3670,6 +3700,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 115. **PR-120** the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).
 116. **PR-121** a collection of 50,000 rows, in parts (F-211, D-1110).
 117. **PR-122** the app sends its email from `mail@decktome.com` (D-1112).
+118. **PR-123** a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).
 
 ## 9. Open questions
 

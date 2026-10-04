@@ -106,6 +106,26 @@ func TestParseArenaExport(t *testing.T) {
 	}
 }
 
+// TestParseMoxfieldArenaExport reads a real "Copy for Arena" export of
+// Moxfield, which the owner gave on 2026-10-03 (D-1102). The About
+// section names the deck, and the Commander section marks the commander,
+// so the steps of D-1102 lead to a list that needs no question.
+func TestParseMoxfieldArenaExport(t *testing.T) {
+	l := parseFile(t, "testdata/moxfield_arena.txt")
+	if len(l.Bad) != 0 {
+		t.Fatalf("bad lines: %v", l.Bad)
+	}
+	if l.Name != "Finally, A Casual Urza Deck" {
+		t.Errorf("name = %q", l.Name)
+	}
+	if !l.Marked || sum(l, Commander) != 1 || sum(l, Main) != 74 || sum(l, Sideboard) != 1 {
+		t.Fatalf("marked = %v, commander = %d, main = %d, sideboard = %d", l.Marked, sum(l, Commander), sum(l, Main), sum(l, Sideboard))
+	}
+	if cmd, _ := find(l, "Urza, Lord High Artificer"); cmd.Section != Commander {
+		t.Errorf("commander line = %+v", cmd)
+	}
+}
+
 // TestParseArenaSections covers each header of an Arena list, the About
 // name, a comment, and a line that reads as no card.
 func TestParseArenaSections(t *testing.T) {
@@ -189,14 +209,19 @@ func snapshotIndex(t *testing.T) *cards.Index {
 	return snapshotIdx
 }
 
-// TestResolveRealExports reads both exports of the owner against the
-// card snapshot. Every line resolves, the foil line and the collector
-// number XLN-235 included.
+// TestResolveRealExports reads the exports of the owner against the card
+// snapshot. Every line resolves, the foil line and the collector number
+// XLN-235 included. The Moxfield export holds 76 cards with its
+// sideboard (D-1103).
 func TestResolveRealExports(t *testing.T) {
 	idx := snapshotIndex(t)
-	for _, tc := range []struct{ file, commander string }{
-		{"testdata/archidekt_living_weapon.txt", "Ekthi, Contaminator Priest"},
-		{"testdata/arena_turtle_power.txt", "Heroes in a Half Shell"},
+	for _, tc := range []struct {
+		file, commander string
+		cards           int
+	}{
+		{"testdata/archidekt_living_weapon.txt", "Ekthi, Contaminator Priest", 100},
+		{"testdata/arena_turtle_power.txt", "Heroes in a Half Shell", 100},
+		{"testdata/moxfield_arena.txt", "Urza, Lord High Artificer", 76},
 	} {
 		got, bad := Resolve(parseFile(t, tc.file), idx)
 		if len(bad) != 0 {
@@ -210,7 +235,7 @@ func TestResolveRealExports(t *testing.T) {
 				cmd = append(cmd, e.Card.GetName())
 			}
 		}
-		if n != 100 || len(cmd) != 1 || cmd[0] != tc.commander {
+		if n != tc.cards || len(cmd) != 1 || cmd[0] != tc.commander {
 			t.Errorf("%s: %d cards, commander %v", tc.file, n, cmd)
 		}
 	}
