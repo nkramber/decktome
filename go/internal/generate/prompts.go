@@ -83,7 +83,11 @@ package generate
 // mana for no mana and taps no creature, so a filter such as Barbed
 // Sextant reads as no fast mana (D-1159). The shortlist marks no card of
 // the tag burn-player-each as a finisher (D-1160).
-const PromptVersion = 19
+//
+// Version 20: the deck shape block reads no card with an X or a
+// multikicker in its cost as fast mana, such as Astral Cornucopia
+// (D-1162).
+const PromptVersion = 20
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.

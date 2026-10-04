@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-04 correction pass 266 (PR-130, F-225, D-1162): the check of PR-128 built a deck that marked Astral Cornucopia as fast mana. Fast mana now needs no X and no multikicker in the cost. Changes: F-225, PR-130, sequencing step 125.
 2026-10-04 correction pass 265 (PR-128, F-224, D-1159, D-1160): a reader verdict named Barbed Sextant, Springleaf Drum, and Hurricane in a mono-green deck. Fast mana now needs a mana ability that pays no mana and taps no creature. The finisher count drops the tag `burn-player-each`. Changes: F-224, PR-128, sequencing step 123.
 2026-10-04 correction pass 264 (PR-127, D-1155 to D-1158): the owner asked that the live evals start with no open terminal, as the night fixer of what-you-carry does. A launchd agent now runs one pass every five minutes from a clone of origin/main. The "Leave feedback" notes join the queue, and a scope rule keeps each fix to the product. Changes: PR-127, sequencing step 122.
 2026-10-04 correction pass 263 (PR-126, D-1147 to D-1154): the owner signed up through a new proof link. iOS Safari now goes on to the app at once. The session id and the spend show to the admin alone, and each thumbs down starts a live eval. The commander offer reads the depth of the collection and a color spread, and "best possible" fills bracket 5 in Commander. Changes: PR-116, PR-125, PR-126, sequencing step 121.
@@ -633,6 +634,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-222 | **The paid replay read no deck.** `make user-case-chat` printed the last deck with no counts and no avoid slot, so no bar read the deck of the user. | ✅ PR-124 (#283): chat-probe writes each deck, and `user-case -decks` reads the deck bars (D-1124). |
 | F-223 | **A rare commander raised the grade.** The deck of the paid replay got the reason "few decks lead with the commander, and that raises the grade". The typical rung holds the average decks of the 100 most built commanders alone, so the fit gave the deck count a weight of -0.164. | ✅ PR-124 (#283): a deck of bracket 1 to 4 reads the mean of the model for the deck count too (D-1123). A later item can give the typical rung commanders of each popularity. |
 | F-224 | **Weak cards filled the power floors.** Reader verdict `x5JGF0zyIE3DcID7QB5c` named Barbed Sextant and Springleaf Drum in a mono-green deck of bracket 4, and said that Hurricane is no win condition. The fast mana counter marked a filter and a creature tap, and the finisher count read the tag `burn-player-each`, whose cards also hit the caster. | ✅ PR-128 (#286): fast mana needs a mana ability that pays no mana and taps no creature (D-1159), and the finisher count drops the tag (D-1160). |
+| F-225 | **A hidden cost read as fast mana.** The check of PR-128 built an owned-only deck of bracket 4, and its profile marked Astral Cornucopia as fast mana. The cost {X}{X}{X} gives a mana value of 0, but one mana costs 3. | ✅ PR-130 (#288): fast mana needs no X and no multikicker in the cost (D-1162). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3436,6 +3438,20 @@ Gate:
 
 > *In plain English:* the build check now uses only the cards of the collection, as the app does.
 
+**PR-130: Fast mana needs no X and no multikicker (F-225, D-1162).** ✅ merged as #288. The mark comes before any review (D-822). On 2026-10-04 the check of PR-128 built an owned-only deck of bracket 4. Its profile marked Astral Cornucopia as fast mana.
+
+- **The cause.** An X or a multikicker pays for the mana, so a mana value of 0 or 1 says nothing of the speed. Astral Cornucopia costs 3 for one mana.
+- **The change (D-1162).** `isFastMana` in `go/internal/profile` counts no card with an X in its mana cost or a multikicker in its text.
+- **The prompt.** The deck shape block states the rule, and the generate prompt reads version 20.
+- **The counts.** `docs/reference/hidden-cost-fast-mana-2026-10-04.md` holds the deck of the check and the replay of the snapshot.
+
+Gate:
+- The profile tests prove that Astral Cornucopia, Mana Bloom, and Everflowing Chalice are no fast mana.
+- The same tests prove that Sol Ring and Mana Crypt stay fast mana.
+- A replay of the snapshot of 2026-09-04 drops these three cards alone, from 77 to 74.
+
+> *In plain English:* a card that needs extra mana before it makes mana no longer counts as "fast mana".
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3857,6 +3873,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 122. **PR-127** the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).
 123. **PR-128** the power cards of a reader verdict (F-224, D-1159, D-1160).
 124. **PR-129** `make api-build` sends the pool rule of the web app (D-1161).
+125. **PR-130** fast mana needs no X and no multikicker (F-225, D-1162).
 
 ## 9. Open questions
 

@@ -6,13 +6,13 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04g)
+## RESUME HERE (2026-10-04h)
 
 **Branch `feat/live-evals-launchd`: PR-127 is #285, the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).** The owner approved the plan as one pull request.
 
 Author provider: Claude Code
 
-**The base.** PR-129 merged as #287, so the branch sits on `main` at `c8a70af`.
+**The base.** PR-130 merged as #288, and the branch holds `main` at `fb66b5c` through a merge.
 
 **The code.**
 
@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar approved the moved head `bec0e573`, and both Gitar threads are closed. Review round 4 fixed P2-1 and P2-2, then found P2-3: the guard left `go/internal/gatekit/` and `go/internal/llm/` open. The guard now holds both, with a test. The owner kept the user cap of D-1109 open (D-1163). `docs/reviews/pr-285-response.md` holds the three answers.
+**The review.** Gitar approved the moved head `bec0e573`, and both Gitar threads are closed. Review round 4 fixed P2-1 and P2-2, then found P2-3: the guard left `go/internal/gatekit/` and `go/internal/llm/` open. The guard now holds both, with a test. The owner kept the user cap of D-1109 open (D-1163). PR-130 (#288) took D-1162 first, so this decision reads D-1163. The merge of `fb66b5c` into the branch moved no code of this pull request. `docs/reviews/pr-285-response.md` holds the three answers.
 
 **Open work.** Do the Gitar pass of the P2-3 fix, then run review round 5. A finding stops the loop for the owner at its third open round (D-826). Ask the owner to confirm the merge only after an approval.
 
@@ -103,10 +103,9 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **PR-127: the live evals with no terminal, the notes, and a scope rule** (D-1155 to D-1158). The resume section holds the open work.
-0. **The check of PR-128** (F-224, D-1159, D-1160). It merged as #286. After the deploy, build a new owned-only deck of bracket 4. It holds no filter as fast mana and no Hurricane as a finisher.
-0. **The checks of PR-126** (D-1147 to D-1154). It merged as #284. After the deploy, the owner opens a new proof link in iOS Safari. The test account sees no session id and no spend. A Commander request for the "best possible deck" gets no bracket question.
+0. **The check of PR-130** (F-225, D-1162). It merged as #288. After the deploy, read `/readyz` for the merge commit.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. After PR-127, `make live-evals-install CONFIRM=1` starts the agent, and the first tick marks each item that waits read.
-0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
+0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -128,12 +127,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-04e: the power cards of a reader verdict, PR-128
-
-**The owner asked for an analysis of verdict `x5JGF0zyIE3DcID7QB5c`, and a fix.** The session read the verdict, the two decks of the reader, and the profile of each. It found the two counters.
-
-**The owner chose the fast mana rule that drops the filters and Springleaf Drum (D-1159).** The owner first chose a lifegain condition for the finisher tag. The measurement showed that the lists seldom pair the tag with lifegain, and the owner then chose the removal (D-1160).
-
 ### 2026-10-04f: the checks of PR-126 and PR-123, and PR-129
 
 **The checks of the deploy of `42982d0` passed, and the owner approved the TTL command.** The owner then asked the session to run its own checks of the owner with Playwright.
@@ -142,7 +135,15 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The `make api-build` run of "best possible deck" held cards that the collection does not hold.** The owner chose the fix of the default pool rule (D-1161).
 
-### 2026-10-04g: the live evals with no terminal, PR-127
+### 2026-10-04g: the checks of PR-128, and PR-130
+
+**The deploy of `a7731f5` and the check of PR-128 passed.** The test collection holds no Hurricane. So the owner chose a red and green deck, where Earthquake of the same tag can show.
+
+**The deck marked Astral Cornucopia as fast mana.** The owner asked for the fix in this pull request, and chose the X costs and the multikicker (D-1162).
+
+**The checks of PR-126 needed no run.** PR-129 ran them on the deploy of `42982d0`.
+
+### 2026-10-04h: the live evals with no terminal, PR-127
 
 **The owner asked if the live evals run with no open terminal.** They did not, because the script ran in the foreground until Ctrl-C.
 
@@ -150,4 +151,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04e, the records of 2026-08-31 to 2026-10-04d, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04g, the records of 2026-08-31 to 2026-10-04e, and 104 more sections, word for word. Read it for the detail behind a decision.

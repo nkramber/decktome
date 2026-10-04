@@ -15,7 +15,30 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04g, PR-130
+
+**Branch `fix/x-cost-fast-mana`: PR-130 is #288, fast mana needs no X and no multikicker (F-225, D-1162).**
+
+Author provider: Claude Code
+
+**The base.** PR-129 merged as #287, so the branch sits on `main` at `c8a70af`.
+
+**The deploy of `a7731f5` passed.** The `deploy-api` build ended SUCCESS at 20:29 UTC. After a cold start, `/readyz` read `ok` with `a7731f5`. PR-128 changed no web file, so no `deploy-web` build ran.
+
+**The check of PR-128 passed.** `make api-build` built deck `HpWYMR9DrNN2YbHNBoWt` of session `KeGnDO4SLj0cxKBuDqTg` for $0.0570. The deck is red and green, bracket 4, with the owned cards alone. Its profile marks no filter or Springleaf Drum as fast mana, and no card that hits its caster as a finisher. The model took neither Springleaf Drum nor Earthquake, and the test collection holds no Hurricane.
+
+**The fault (F-225).** The same profile marked Astral Cornucopia as fast mana. Its cost {X}{X}{X} gives a mana value of 0, but one mana costs 3.
+
+**The code.** `isFastMana` in `go/internal/profile` counts no card with an X or a multikicker in its cost (D-1162). The deck shape block states the rule, and the generate prompt reads version 20.
+
+**The checks.** The Go tests of `profile`, `generate`, and `candidates` pass. A replay of the snapshot of 2026-09-04 drops Astral Cornucopia, Mana Bloom, and Everflowing Chalice alone, from 77 to 74. `docs/reference/hidden-cost-fast-mana-2026-10-04.md` holds the counts.
+
+**The review.** Gitar approved effective head `5881231`, and no review thread stays open. Codex reviewed `58812319b19e0ee120ac03556796ce2e7cfff8cc`. The verdict is `Ready for owner merge`. No finding stays open. CI passed every verify job, `pr-contract`, and Gitar on `5881231`.
+
+**Open.** The pull request is pending the auto-merge (D-828). After the deploy, read `/readyz` for the merge commit.
+
 ## The resume section of 2026-10-04f, PR-129
+
 
 **Branch `fix/pr123-checks`: PR-129 is #287, `make api-build` sends the pool rule of the web app (D-1161).** It is pending the auto-merge.
 
@@ -41,6 +64,12 @@ Author provider: Claude Code
 **The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`. The review record is on the branch.
 
 **Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
+
+### 2026-10-04e: the power cards of a reader verdict, PR-128
+
+**The owner asked for an analysis of verdict `x5JGF0zyIE3DcID7QB5c`, and a fix.** The session read the verdict, the two decks of the reader, and the profile of each. It found the two counters.
+
+**The owner chose the fast mana rule that drops the filters and Springleaf Drum (D-1159).** The owner first chose a lifegain condition for the finisher tag. The measurement showed that the lists seldom pair the tag with lifegain, and the owner then chose the removal (D-1160).
 
 ## The resume section of 2026-10-04e, PR-128
 
