@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04b)
 
-**Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-220, D-1116 to D-1130).** The pull request is #PRNUM. The owner put each finding into one pull request (D-1125).
+**Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-220, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).
 
 Author provider: Claude Code
 
@@ -25,16 +25,16 @@ Author provider: Claude Code
 
 **The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Question gate run 57 failed on one flaky classifier miss. Ten plays of that conversation met each slot. Run 58 reads PASS for $0.0661. Its theme question named filler words, so a fifth group of stop words came after it, and no gate run reads that group. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of the chat built a deck of grade typical.
 
-**The review.** No pull request is open yet. The context checkpoint of D-946 ended the session before `make verify`.
+**The review.** The pull request is #283. `make verify` passes. Gitar and Codex review the head next. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
 
 **The open work.**
 
-1. Run `make verify`, open the pull request, and replace each `#PRNUM` of the roadmap and this file. Then do the Gitar pass and `make codex-review`.
-5. Ask the owner about a question gate run for the stop words of the fifth group, about $0.07.
-6. Tell the owner two things. D-1126 changed a code that D-910 named. The grade of a bracket 3 deck still reads the cEDH rate of its commander.
-2. After the deploy, run `make user-case-chat CONFIRM=1` to a new output file.
-3. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
-4. The owner tells the user about the fixes.
+1. Do the Gitar pass, then run `make codex-review PR=283`.
+2. Ask the owner about a question gate run for the stop words of the fifth group, about $0.07.
+3. Tell the owner two things. D-1126 changed a code that D-910 named. The grade of a bracket 3 deck still reads the cEDH rate of its commander.
+4. After the deploy, run `make user-case-chat CONFIRM=1` to a new output file.
+5. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
+6. The owner tells the user about the fixes.
 
 ## How to resume
 
@@ -108,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-124: the findings of the first outside user** (F-212 to F-220, D-1116 to D-1130). The resume section holds the open work.
+0. **PR-124: the findings of the first outside user** (F-212 to F-220, D-1116 to D-1131). The resume section holds the open work.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
