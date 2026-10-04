@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04d)
 
-**Branch `fix/proof-link-ios-direct`: PR-126, four changes (D-1147 to D-1151).** No pull request is open yet. The owner put the four into one pull request (D-1150).
+**Branch `fix/proof-link-ios-direct`: PR-126, five changes (D-1147 to D-1153).** No pull request is open yet. The owner put them in one pull request (D-1150).
 
 Author provider: Claude Code
 
@@ -20,7 +20,7 @@ Author provider: Claude Code
 - PR-125 changed no web path, so `/version.json` names `8bd442f`, the merge of PR-124.
 - The owner signed up through a new proof link at 15:28 UTC. The log holds the refusal `email-unverified`, then `SendLink` with code ok.
 - Three calls of the same uid then ended with code ok, so the link signed in the account.
-- Each `rpc` line of the new revision holds a uid. No log line since 06:25 UTC holds an email.
+- Each `rpc` line holds a uid, and no log line since 06:25 UTC holds an email.
 
 **The code.**
 
@@ -32,12 +32,13 @@ Author provider: Claude Code
 
 **The open work: the commander offer of D-1151.** The session stopped at the checkpoint of D-946, before the code.
 
-1. In `go/internal/candidates/candidates.go`, score the unthemed fill on depth and popularity, half each.
+1. In `go/internal/candidates/candidates.go`, score the unthemed fill half on depth, half on popularity.
 2. Count the depth over the owned commander-legal nonbasic cards that `req.Owned` holds, by color identity.
-3. In `go/internal/questions/hints_candidates.go`, read the whole ranked pool, not `3+len(skip)` names.
+3. In `go/internal/questions/hints_candidates.go`, read the whole ranked pool.
 4. With no colors, keep a mono-colored and a multicolor name in each offer of three.
-5. Add the tests, the roadmap entry, and the rows of the draft body in `.local/pr126/body.md`.
-6. Push, open the pull request, and mark the roadmap item. Then do the reviews.
+5. Add the tests, the roadmap entry, and the rows of `.local/pr126/body.md`.
+6. Build D-1153: "best" fills bracket 5 in Commander.
+7. Push, open the pull request, and mark the roadmap item. Then do the reviews.
 
 After the deploy, three checks follow:
 
