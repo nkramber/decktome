@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04d)
 
-**Branch `fix/proof-link-ios-direct`: PR-126, five changes (D-1147 to D-1153).** No pull request is open yet. The owner put them in one pull request (D-1150).
+**Branch `fix/proof-link-ios-direct`: PR-126 is #284, five changes (D-1147 to D-1154).** It is pending the auto-merge. The owner put them in one pull request (D-1150).
 
 Author provider: Claude Code
 
@@ -29,14 +29,12 @@ Author provider: Claude Code
 - With no theme and an owned pool rule, the commander fill ranks half on the depth of the collection. With no colors, each offer of three holds a mono-colored and a multicolor name (D-1151).
 - In Commander, a superlative such as "best possible deck" fills bracket 5 with no question. "Competitive" still asks the bracket (D-1153, D-1154).
 
-**The checks.** The Go tests of `go/internal` pass on the code commits. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
+**The checks.** `make verify` passed on `b41a32c` with Node 22 on the PATH. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
 
 **The open work.**
 
-1. Run `make verify` on the head.
-2. Push, and open the pull request with `.local/pr126/body.md`.
-3. Mark the roadmap item with the number of the pull request.
-4. Do the Gitar pass and the Codex review, then ask the owner for the merge.
+1. Do the Gitar pass on #284, and answer each finding.
+2. Run `make codex-review PR=284`, then ask the owner for the merge.
 
 After the deploy, four checks follow:
 

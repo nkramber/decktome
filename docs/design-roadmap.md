@@ -3360,7 +3360,7 @@ Gate:
 
 > *In plain English:* each time someone builds or revises a deck, a robot reads it against what they asked. It fixes the worst new problem, and the owner gets a ping when the fix is ready.
 
-**PR-126: Five owner changes after the proof link (D-1147 to D-1154).** 🔧 in review. On 2026-10-04 the owner signed up through a new proof link. The owner then asked for five changes in one pull request (D-1150).
+**PR-126: Five owner changes after the proof link (D-1147 to D-1154).** ✅ merged as #284. The mark comes before any review (D-822). On 2026-10-04 the owner signed up through a new proof link. The owner then asked for five changes in one pull request (D-1150).
 
 - **The page (D-1147).** The proof page has no iOS state. After the click, each browser goes on to the app, iOS Safari too.
 - **The spend (D-1148).** `go/internal/spendmask` clears each `Usage` message of an agent or deck answer for a caller with no admin claim. It clears a copy, so storage keeps the spend.
