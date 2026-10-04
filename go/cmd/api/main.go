@@ -92,8 +92,10 @@ func inviteListOrNil(l *allowlist.List) invitesvc.Allowlist {
 }
 
 // maxRequestBytes bounds one request body before it enters memory. The
-// largest expected body is a ManaBox export, under 5 MiB.
-const maxRequestBytes = 8 << 20
+// largest expected body is an upload of 10 MiB. The web app sends Connect
+// JSON, and base64 makes that about 13.4 MiB (D-1110). Cloud Run caps an
+// HTTP/1 request at 32 MiB.
+const maxRequestBytes = 16 << 20
 
 // apiInstances is the instance cap of the service, `--max-instances 3` in
 // `docs/setup-gcp.md`. Each instance takes its share of the Spellbook

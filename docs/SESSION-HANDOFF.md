@@ -6,13 +6,13 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03g)
+## RESUME HERE (2026-10-03h)
 
 **Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #281.
 
 Author provider: Claude Code
 
-**The base.** `main` is `d0b8498`, from #278. This session did not read the deploy of `d0b8498`.
+**The base.** `main` is `41746b0`, from #280. The branch merged it on 2026-10-04. This session did not read the deploy of `41746b0`.
 
 **The owner choice.** The owner made an inbox for `mail@decktome.com` in iCloud Mail. The owner chose it as the sender over a reply-to (D-1112), and D-1112 amends the subdomain of D-1077.
 
@@ -27,7 +27,7 @@ The owner did both steps on 2026-10-03, and Resend read the domain as verified.
 
 **The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
 
-**The review.** Gitar passed on `d880ffc`, with no open finding. The Codex review approves effective head `d880ffc`.
+**The review.** Gitar passed on `d880ffc`, with no open finding, and the Codex record approved `d880ffc`. The merge of `41746b0` moves the effective head, so Gitar and Codex review it again.
 
 **The open work.**
 
@@ -106,8 +106,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **PR-122: the sender `mail@decktome.com`** (D-1112). The resume section holds the open work.
-0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
-0. **The new cards of Star Trek** (D-1091). The set releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
+0. **The check of PR-121** (F-211, D-1110). It merged as #280. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page. The owner can tell the user that the limit is 50,000 rows now.
+0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
@@ -133,17 +133,19 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03e: the spend cap of $2, D-1109
-
-**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
-
 ### 2026-10-03f: the push of new cards, PR-120
 
 **The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
 
 **The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
 
-### 2026-10-03g: the sender `mail@decktome.com`, PR-122
+### 2026-10-03g: a collection of 50,000 rows, PR-121
+
+**A user wrote "Collection limit too small".** The log showed a refused import of about 2.3 MB, past the limit of 9,000 rows.
+
+**The owner chose 50,000 rows and a file of 10 MiB.** The session first gave the request size as the file size. The web app sends base64, so the session corrected the estimate and the request cap before the code.
+
+### 2026-10-03h: the sender `mail@decktome.com`, PR-122
 
 **The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
 
@@ -151,4 +153,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03f, the records of 2026-08-31 to 2026-10-03d, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03g, the records of 2026-08-31 to 2026-10-03e, and 104 more sections, word for word. Read it for the detail behind a decision.

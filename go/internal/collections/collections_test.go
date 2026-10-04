@@ -1,7 +1,10 @@
 package collections
 
 import (
+	"bytes"
 	"context"
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"errors"
 	"math"
 	"os"
@@ -12,6 +15,7 @@ import (
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cards"
+	"github.com/nkramber/decktome/go/internal/gzstore"
 )
 
 func fixtureIndex(t *testing.T) *cards.Index {
@@ -455,14 +459,39 @@ func TestReasonCounts(t *testing.T) {
 
 func TestPutRefusesOversizedPayload(t *testing.T) {
 	r := NewRepo(nil)
-	// Random-like text does not compress. 1 MiB of it exceeds the guard.
-	var entries []*mtgv1.CollectionEntry
-	for i := 0; i < 8000; i++ {
-		entries = append(entries, &mtgv1.CollectionEntry{OracleId: ContentHash([]byte{byte(i), byte(i >> 8)}) + ContentHash([]byte{byte(i >> 3)}), Name: ContentHash([]byte{byte(i * 7)}), Quantity: 1})
+	// Random hex compresses to about half. 20 MB of it is past
+	// MaxPayloadBytes, so Put refuses it before any write.
+	raw := make([]byte, 10<<20)
+	if _, err := cryptorand.Read(raw); err != nil {
+		t.Fatal(err)
 	}
+	entries := []*mtgv1.CollectionEntry{{OracleId: "o1", Name: hex.EncodeToString(raw), Quantity: 1}}
 	_, err := r.Put(context.Background(), "u", &mtgv1.Collection{Entries: entries})
 	if !errors.Is(err, ErrTooLarge) {
 		t.Fatalf("err = %v, want ErrTooLarge", err)
+	}
+}
+
+// TestSplit is D-1110: each part fits one document, and the parts join
+// back to the payload.
+func TestSplit(t *testing.T) {
+	for _, n := range []int{0, 1, gzstore.MaxStoredBytes, gzstore.MaxStoredBytes + 1, 3*gzstore.MaxStoredBytes + 7} {
+		payload := bytes.Repeat([]byte{7}, n)
+		parts := split(payload)
+		want := max(1, (n+gzstore.MaxStoredBytes-1)/gzstore.MaxStoredBytes)
+		if len(parts) != want {
+			t.Errorf("%d bytes: %d parts, want %d", n, len(parts), want)
+		}
+		var joined []byte
+		for _, part := range parts {
+			if len(part) > gzstore.MaxStoredBytes {
+				t.Errorf("%d bytes: a part holds %d bytes", n, len(part))
+			}
+			joined = append(joined, part...)
+		}
+		if !bytes.Equal(joined, payload) {
+			t.Errorf("%d bytes: the parts do not join to the payload", n)
+		}
 	}
 }
 

@@ -1,6 +1,8 @@
 package collections
 
 import (
+	cryptorand "crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"testing"
@@ -26,7 +28,8 @@ import (
 //
 // CAUTION: a t.Cleanup can not delete from Firestore. Go cancels
 // t.Context before a cleanup runs, so the delete fails and the next run
-// reads the leftovers. Each test takes a fresh user id instead.
+// reads the leftovers. Each test takes a fresh user id for each run
+// instead.
 
 func emulatorRepo(t *testing.T) (*Repo, string) {
 	t.Helper()
@@ -38,7 +41,7 @@ func emulatorRepo(t *testing.T) (*Repo, string) {
 		t.Fatalf("firestore: %v", err)
 	}
 	t.Cleanup(func() { _ = client.Close() })
-	return NewRepo(client), fmt.Sprintf("u-%s", t.Name())
+	return NewRepo(client), fmt.Sprintf("u-%s-%d", t.Name(), time.Now().UnixNano())
 }
 
 func sampleCollection(name string) *mtgv1.Collection {
@@ -276,4 +279,133 @@ func TestEmulatorHeadOfAnOldDocumentReadsTheIndex(t *testing.T) {
 	if len(head.GetSummary().GetSets()) != 2 {
 		t.Errorf("sets = %v, want both", head.GetSummary().GetSets())
 	}
+}
+
+// bigCollection holds n rows of random printing ids, so its payload does
+// not fit one document.
+func bigCollection(t *testing.T, name string, n int) *mtgv1.Collection {
+	t.Helper()
+	entries := make([]*mtgv1.CollectionEntry, n)
+	for i := range entries {
+		id := make([]byte, 32)
+		if _, err := cryptorand.Read(id); err != nil {
+			t.Fatal(err)
+		}
+		entries[i] = &mtgv1.CollectionEntry{ScryfallId: hex.EncodeToString(id[:16]), OracleId: hex.EncodeToString(id[16:]),
+			Name: fmt.Sprintf("Card %d", i), SetCode: "tst", SetName: "Test Set", CollectorNumber: fmt.Sprint(i),
+			Quantity: 1, Rarity: "common", Finish: mtgv1.Finish_FINISH_NORMAL, Language: "en"}
+	}
+	return &mtgv1.Collection{
+		Name: name, Source: mtgv1.ImportSource_IMPORT_SOURCE_MANABOX_CSV,
+		ContentHash: "hash-" + name, Entries: entries, CardCount: CardCount(entries),
+		Summary: Summarize(entries, nil),
+	}
+}
+
+func partIDs(t *testing.T, repo *Repo, uid, id string) []string {
+	t.Helper()
+	snaps, err := repo.doc(uid, id).Collection(partsName).Documents(t.Context()).GetAll()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	for _, snap := range snaps {
+		out = append(out, snap.Ref.ID)
+	}
+	return out
+}
+
+// TestEmulatorPartsHoldALargeCollection is D-1110. A payload over one
+// document goes into parts, every read joins them, and a replace with a
+// small file and a delete leave no part behind.
+func TestEmulatorPartsHoldALargeCollection(t *testing.T) {
+	repo, uid := emulatorRepo(t)
+	big := bigCollection(t, "large", 20000)
+	id, err := repo.Put(t.Context(), uid, big)
+	if err != nil {
+		t.Fatal(err)
+	}
+	snap, err := repo.doc(uid, id).Get(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	var stored storedCollection
+	if err := snap.DataTo(&stored); err != nil {
+		t.Fatal(err)
+	}
+	if stored.EntryParts < 2 || stored.CountParts < 1 || len(stored.EntriesGz) != 0 || len(stored.OracleCntGz) != 0 {
+		t.Fatalf("stored = %d entry parts, %d count parts, %d inline entry bytes, %d inline count bytes; want parts alone",
+			stored.EntryParts, stored.CountParts, len(stored.EntriesGz), len(stored.OracleCntGz))
+	}
+	if got, want := len(partIDs(t, repo, uid, id)), int(stored.EntryParts+stored.CountParts); got != want {
+		t.Errorf("%d parts stored, want %d", got, want)
+	}
+
+	full, err := repo.Get(t.Context(), uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(full.GetEntries()) != 20000 || full.GetEntries()[19999].GetScryfallId() != big.Entries[19999].GetScryfallId() {
+		t.Errorf("a full read = %d entries, want the 20,000 rows in order", len(full.GetEntries()))
+	}
+	counts, err := repo.OracleCounts(t.Context(), uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(counts) != 20000 || counts[big.Entries[0].GetOracleId()] != 1 {
+		t.Errorf("owned counts hold %d cards, want 20,000", len(counts))
+	}
+	head, err := repo.GetHead(t.Context(), uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if head.GetSummary().GetRowCount() != 20000 || len(head.GetEntries()) != 0 {
+		t.Errorf("head = %d summary rows, %d entries", head.GetSummary().GetRowCount(), len(head.GetEntries()))
+	}
+
+	small := sampleCollection("small")
+	if _, err := repo.Replace(t.Context(), uid, id, small); err != nil {
+		t.Fatal(err)
+	}
+	if parts := partIDs(t, repo, uid, id); len(parts) != 0 {
+		t.Errorf("a small replacement left parts %v", parts)
+	}
+	full, err = repo.Get(t.Context(), uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(full.GetEntries()) != 3 {
+		t.Errorf("after the replace: %d entries, want 3", len(full.GetEntries()))
+	}
+
+	if _, err := repo.Replace(t.Context(), uid, id, bigCollection(t, "large again", 20000)); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Delete(t.Context(), uid, id); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.doc(uid, id).Get(t.Context()); status.Code(err) != codes.NotFound {
+		t.Errorf("after the delete: err = %v, want NotFound", err)
+	}
+	if parts := partIDs(t, repo, uid, id); len(parts) != 0 {
+		t.Errorf("the delete left parts %v", parts)
+	}
+}
+
+// TestEmulatorPartsHoldMaxEntries is D-1110: a collection at the stated
+// limit stores in one commit and reads back whole.
+func TestEmulatorPartsHoldMaxEntries(t *testing.T) {
+	repo, uid := emulatorRepo(t)
+	id, err := repo.Put(t.Context(), uid, bigCollection(t, "at the limit", MaxEntries))
+	if err != nil {
+		t.Fatal(err)
+	}
+	full, err := repo.Get(t.Context(), uid, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(full.GetEntries()) != MaxEntries {
+		t.Errorf("a full read = %d entries, want %d", len(full.GetEntries()), MaxEntries)
+	}
+	t.Logf("%d rows in %d parts", MaxEntries, len(partIDs(t, repo, uid, id)))
 }

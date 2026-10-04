@@ -78,6 +78,25 @@ func TestInflateLimit(t *testing.T) {
 	}
 }
 
+// TestInflateLimitOfTheCaller: a caller can name a limit above
+// MaxInflatedBytes, and the limit still holds (D-1110).
+func TestInflateLimitOfTheCaller(t *testing.T) {
+	limit := MaxInflatedBytes + 1024
+	at, err := Marshal(bytes.Repeat([]byte("a"), limit))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Unmarshal(at); !errors.Is(err, ErrTooLarge) {
+		t.Errorf("the default limit: err = %v, want ErrTooLarge", err)
+	}
+	if raw, err := UnmarshalMax(at, limit); err != nil || len(raw) != limit {
+		t.Errorf("a payload at the caller's limit: len %d, err %v", len(raw), err)
+	}
+	if _, err := UnmarshalMax(at, limit-1); !errors.Is(err, ErrTooLarge) {
+		t.Errorf("a payload past the caller's limit: err = %v, want ErrTooLarge", err)
+	}
+}
+
 func TestBadGzipIsAnError(t *testing.T) {
 	if _, err := Unmarshal([]byte("not gzip")); err == nil {
 		t.Error("bad gzip opened")

@@ -26,9 +26,10 @@ import (
 	"github.com/nkramber/decktome/go/internal/users"
 )
 
-// maxUpload bounds an uploaded file. A 2,500-row ManaBox export is
-// about 470 KB. Ten times that is generous.
-const maxUpload = 5 << 20
+// maxUpload bounds an uploaded file. A ManaBox export takes about 185
+// bytes a row, so 10 MiB holds about 56,000 rows, past MaxEntries
+// (D-1110).
+const maxUpload = 10 << 20
 
 // MaxNameBytes caps a collection name.
 const MaxNameBytes = 200
