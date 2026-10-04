@@ -173,6 +173,11 @@ func (c *Case) check() error {
 				return fmt.Errorf("case %q step %s: no measure named %q", c.Name, s.Name, m.ID)
 			}
 		}
+		for _, m := range s.Deck {
+			if _, ok := measures[m.ID]; !ok && !slices.Contains(deckMeasures, m.ID) {
+				return fmt.Errorf("case %q step %s: no deck measure named %q", c.Name, s.Name, m.ID)
+			}
+		}
 	}
 	return nil
 }
@@ -182,6 +187,9 @@ const (
 	shortlist      = "shortlist"
 	unmatchedWords = "unmatched_words"
 )
+
+// deckMeasures are the ids that read a whole deck, not one card.
+var deckMeasures = []string{"lands", "unique_names", "quality_grade", "kept_from_build_1"}
 
 // Tagged answers whether the card holds a tag of the snapshot.
 type Tagged func(tag, oracleID string) bool
@@ -231,6 +239,42 @@ func Count(list []*mtgv1.Card, unmatched []string, tagged Tagged) map[string]flo
 			}
 		}
 		out[id] = float64(n)
+	}
+	return out
+}
+
+// DeckCount measures one deck that reached the user: each card measure,
+// the lands, the distinct names, the grade, and the names it kept from
+// the deck of the step before (D-1124). It answers counts alone.
+func DeckCount(d, prev *mtgv1.Deck, card func(oracleID string) (*mtgv1.Card, bool), tagged Tagged) map[string]float64 {
+	ids := map[string]bool{}
+	var picked []*mtgv1.Card
+	lands := 0.0
+	for _, dc := range d.GetCards() {
+		ids[dc.GetOracleId()] = true
+		c, ok := card(dc.GetOracleId())
+		if !ok {
+			continue
+		}
+		picked = append(picked, c)
+		if slices.Contains(c.GetCardTypes(), "Land") {
+			lands += float64(dc.GetCount())
+		}
+	}
+	out := Count(picked, nil, tagged)
+	delete(out, shortlist)
+	delete(out, unmatchedWords)
+	out["lands"] = lands
+	out["unique_names"] = float64(len(ids))
+	out["quality_grade"] = float64(d.GetQuality().GetScore())
+	if prev != nil {
+		kept := 0
+		for _, dc := range prev.GetCards() {
+			if ids[dc.GetOracleId()] {
+				kept++
+			}
+		}
+		out["kept_from_build_1"] = float64(kept)
 	}
 	return out
 }

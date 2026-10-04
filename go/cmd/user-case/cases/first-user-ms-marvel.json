@@ -46,7 +46,7 @@
       "There's a lot of \"Artifacts matter\" cards. I'd prefer to play around handsize matters, to increase Marvels' power. Also should be heavy on the cantrips",
       "voltron, evasioin, protection,  handsize matters."
     ],
-    "limits": "chat-probe sends text alone. It sends no option index and no pool rule, so turns 2 to 4 are typed answers and the pool rule comes from the classifier. It prints the last deck alone, with no card list and no grade, so the deck measures of step 1 and the kept count of step 2 need a manual read."
+    "limits": "chat-probe sends text alone. It sends no option index and no pool rule, so turns 2 to 4 are typed answers and the pool rule comes from the classifier. It writes each deck that reaches the user to a local decks file, and user-case -decks reads the deck measures of each step from it."
   },
   "steps": [
     {

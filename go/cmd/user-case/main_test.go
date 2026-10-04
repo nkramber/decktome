@@ -154,3 +154,55 @@ func TestEmbeddedCaseLoads(t *testing.T) {
 		}
 	}
 }
+
+// TestDeckCountReadsTheDeck counts the copies of a land, each card
+// measure, the distinct names, the grade, and the names kept from the
+// deck of the step before (D-1124).
+func TestDeckCountReadsTheDeck(t *testing.T) {
+	cards := append(fixture(), &mtgv1.Card{OracleId: "isl", TypeLine: "Basic Land — Island", CardTypes: []string{"Land"}})
+	byID := map[string]*mtgv1.Card{}
+	for _, c := range cards {
+		byID[c.GetOracleId()] = c
+	}
+	card := func(id string) (*mtgv1.Card, bool) { c, ok := byID[id]; return c, ok }
+	prev := &mtgv1.Deck{Cards: []*mtgv1.DeckCard{{OracleId: "cs", Count: 1}, {OracleId: "eq", Count: 1}, {OracleId: "gone", Count: 1}}}
+	d := &mtgv1.Deck{
+		Cards:   []*mtgv1.DeckCard{{OracleId: "cs", Count: 1}, {OracleId: "eq", Count: 1}, {OracleId: "hs", Count: 1}, {OracleId: "isl", Count: 30}},
+		Quality: &mtgv1.DeckQuality{Score: 0.5},
+	}
+	got := DeckCount(d, prev, card, tagged)
+	want := map[string]float64{
+		"lands": 30, "unique_names": 4, "quality_grade": 0.5, "kept_from_build_1": 2,
+		"counterspells": 1, "cantrips": 1, "equipment": 1, "hand_size": 1,
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s = %v, want %v", k, got[k], v)
+		}
+	}
+	if _, ok := got[shortlist]; ok {
+		t.Error("a deck count holds the shortlist size")
+	}
+	if _, ok := DeckCount(d, nil, card, tagged)["kept_from_build_1"]; ok {
+		t.Error("the first deck has no deck before it to keep from")
+	}
+}
+
+// TestReadDecksByTurn reads the decks file of chat-probe, and deckAt
+// answers the newest deck by a turn.
+func TestReadDecksByTurn(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "decks.jsonl")
+	body := `{"turn":4,"deck":{"id":"a"}}` + "\n\n" + `{"turn":6,"deck":{"id":"b"}}` + "\n"
+	if err := os.WriteFile(path, []byte(body), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	decks, err := readDecks(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for turn, want := range map[int]string{3: "", 4: "a", 5: "a", 6: "b", 9: "b"} {
+		if got := deckAt(decks, turn).GetId(); got != want {
+			t.Errorf("deckAt(%d) = %q, want %q", turn, got, want)
+		}
+	}
+}

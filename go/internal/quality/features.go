@@ -157,8 +157,30 @@ func Features(in Input, fm *FormatModel) map[string]float64 {
 		out[KeyCEDHSignal] = sig.CEDH
 		out[KeyHighBracket] = sig.HighBracket
 		out[KeyCommanderDecks] = math.Log1p(float64(sig.Decks))
+		// The top-cut share in cEDH events is the signal of bracket 5
+		// alone, and a lower bracket reads the deck count (D-1123). A deck
+		// that names bracket 1 to 4 reads the mean of the model, so the
+		// signal moves no grade and names no reason. A deck with no
+		// bracket, such as a list of the corpus, keeps the signal.
+		if b := in.Deck.GetPower().GetBracket(); b >= 1 && b <= 4 {
+			out[KeyCEDHSignal] = fm.mean(KeyCEDHSignal)
+		}
 	}
 	return out
+}
+
+// mean answers the mean of a feature over the fitted lists, 0 for a key
+// the model does not hold.
+func (fm *FormatModel) mean(key string) float64 {
+	if fm == nil {
+		return 0
+	}
+	for i, k := range fm.Keys {
+		if k == key && i < len(fm.Means) {
+			return fm.Means[i]
+		}
+	}
+	return 0
 }
 
 // vector reads the model's keys out of a feature map, standardized.

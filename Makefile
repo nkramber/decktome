@@ -376,6 +376,7 @@ chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real provid
 USER_CASE ?= first-user-ms-marvel
 USER_CASE_ARGS ?=
 USER_CASE_CHAT_OUT ?= .local/probes/user-case-$(USER_CASE).txt
+USER_CASE_DECKS_OUT ?= $(USER_CASE_CHAT_OUT:.txt=.decks.jsonl)
 
 user-case: ## Replay the shortlists of a real user session and read the bars (D-1124). Free, no model calls
 	@echo "tree: $$(git rev-parse --short HEAD), $$(git status --porcelain | wc -l | tr -d ' ') changed paths"
@@ -385,13 +386,15 @@ user-case-chat: ## Drive chat-probe through the turns of a user case (D-1124). C
 	@[ "$(CONFIRM)" = 1 ] || { echo "user-case-chat: this calls the real providers and costs money. Set CONFIRM=1."; exit 1; }
 	@[ -f .env ] || { echo "user-case-chat: .env is absent."; exit 1; }
 	@test ! -f $(USER_CASE_CHAT_OUT) || { echo "$(USER_CASE_CHAT_OUT) exists. Set USER_CASE_CHAT_OUT to a new file."; exit 1; }
+	@test ! -f $(USER_CASE_DECKS_OUT) || { echo "$(USER_CASE_DECKS_OUT) exists. Set USER_CASE_CHAT_OUT to a new file."; exit 1; }
 	@mkdir -p $(dir $(USER_CASE_CHAT_OUT))
 	@coll="$$($(GO) run ./cmd/user-case -case $(USER_CASE) -print collection)" && \
 		msgs="$$($(GO) run ./cmd/user-case -case $(USER_CASE) -print messages)" && \
 		set -a && . ./.env && set +a && \
 		CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/user-cases/store/scryfall \
-		$(GO) run ./cmd/chat-probe -collection "$$coll" -messages "$$msgs" > $(USER_CASE_CHAT_OUT)
-	@echo "wrote $(USER_CASE_CHAT_OUT)"
+		$(GO) run ./cmd/chat-probe -collection "$$coll" -messages "$$msgs" -decks-out $(abspath $(USER_CASE_DECKS_OUT)) > $(USER_CASE_CHAT_OUT)
+	@echo "wrote $(USER_CASE_CHAT_OUT) and $(USER_CASE_DECKS_OUT)"
+	@$(GO) run ./cmd/user-case -case $(USER_CASE) -decks $(abspath $(USER_CASE_DECKS_OUT))
 
 api-build: ## Build one deck over the deployed API, with no GUI (D-778). CAUTION: the deployed API calls the real providers and costs money
 	@[ -f .env ] || { echo "api-build: .env is absent. It holds API_BUILD_EMAIL and API_BUILD_PASSWORD."; exit 1; }

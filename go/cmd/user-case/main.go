@@ -5,7 +5,9 @@
 // The free lane builds each step's shortlist with candidates.Build and
 // costs nothing. It prints counts alone, never a card name, so the output
 // can be pasted in a public place (D-639). The paid lane is chat-probe,
-// and the case file holds its messages.
+// and the case file holds its messages. chat-probe writes each deck that
+// reached the user to a local file, and -decks reads the deck bars from
+// it.
 //
 // The collection sits in a private object. The command downloads it with
 // gcloud, refuses it when the sha256 differs from the case, and keeps it
@@ -17,14 +19,17 @@
 //
 //	CLOUDSDK_CORE_ACCOUNT=<account> go -C go run ./cmd/user-case
 //	go -C go run ./cmd/user-case -print messages
+//	go -C go run ./cmd/user-case -decks ../.local/probes/<case>.decks.jsonl
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -34,6 +39,8 @@ import (
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/candidates"
@@ -59,8 +66,8 @@ func main() {
 }
 
 type opts struct {
-	caseArg, local, store, snapshot, model, print string
-	noFetch                                       bool
+	caseArg, local, store, snapshot, model, print, decks string
+	noFetch                                              bool
 }
 
 func run() error {
@@ -72,6 +79,7 @@ func run() error {
 	flag.StringVar(&o.model, "model", "", "a quality model version, or none (default: the version of the case)")
 	flag.StringVar(&o.print, "print", "", "print one value and exit: messages, or collection (fetch the pinned files, print the CSV path)")
 	flag.BoolVar(&o.noFetch, "no-fetch", false, "refuse a missing file in place of a download")
+	flag.StringVar(&o.decks, "decks", "", "the decks file of chat-probe -decks-out: read the deck bars of each step")
 	flag.Parse()
 
 	c, err := LoadCase(o.caseArg)
@@ -172,10 +180,40 @@ func replay(c *Case, o opts, csvPath string) error {
 			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", r.Step, r.ID, num(r.Baseline), num(r.Now), r.Bar, r.Verdict)
 		}
 	}
-	if err := tw.Flush(); err != nil {
-		return err
+	if o.decks == "" {
+		if err := tw.Flush(); err != nil {
+			return err
+		}
+		fmt.Printf("deck measures: the paid lane (%s). Not measured here.\n", c.Paid.Target)
+	} else {
+		decks, err := readDecks(o.decks)
+		if err != nil {
+			return err
+		}
+		var prev *mtgv1.Deck
+		for i, step := range c.Steps {
+			d := deckAt(decks, step.AfterTurn)
+			if i > 0 && d == deckAt(decks, c.Steps[i-1].AfterTurn) {
+				d = nil
+			}
+			if d == nil {
+				return fmt.Errorf("%w: no deck reached the user by turn %d of step %s", errFail, step.AfterTurn, step.Name)
+			}
+			for _, r := range Judge(Step{Name: step.Name + "-deck", Measures: step.Deck}, DeckCount(d, prev, idx.ByOracleID, tagged)) {
+				switch r.Verdict {
+				case Fail:
+					failed++
+				case Todo:
+					todo++
+				}
+				_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", r.Step, r.ID, num(r.Baseline), num(r.Now), r.Bar, r.Verdict)
+			}
+			prev = d
+		}
+		if err := tw.Flush(); err != nil {
+			return err
+		}
 	}
-	fmt.Printf("deck measures: the paid lane (%s). Not measured here.\n", c.Paid.Target)
 	fmt.Printf("bars: %d failed, %d not set.\n", failed, todo)
 	if failed > 0 {
 		return fmt.Errorf("%w: %d of the measures", errFail, failed)
@@ -357,6 +395,50 @@ func gcloudCopy(src, dst string, recursive bool) error {
 	cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("gcloud storage cp %s: %w", src, err)
+	}
+	return nil
+}
+
+// turnDeck is one line of the decks file of chat-probe: the turn, and
+// the deck that reached the user on it.
+type turnDeck struct {
+	Turn int             `json:"turn"`
+	Deck json.RawMessage `json:"deck"`
+}
+
+// readDecks reads the decks file of chat-probe, by turn.
+func readDecks(path string) (map[int]*mtgv1.Deck, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+	out := map[int]*mtgv1.Deck{}
+	sc := bufio.NewScanner(f)
+	sc.Buffer(make([]byte, 0, 1<<20), 16<<20)
+	for sc.Scan() {
+		if len(bytes.TrimSpace(sc.Bytes())) == 0 {
+			continue
+		}
+		var td turnDeck
+		if err := json.Unmarshal(sc.Bytes(), &td); err != nil {
+			return nil, fmt.Errorf("%s: %w", path, err)
+		}
+		d := &mtgv1.Deck{}
+		if err := protojson.Unmarshal(td.Deck, d); err != nil {
+			return nil, fmt.Errorf("%s turn %d: %w", path, td.Turn, err)
+		}
+		out[td.Turn] = d
+	}
+	return out, sc.Err()
+}
+
+// deckAt answers the newest deck that reached the user by the turn.
+func deckAt(decks map[int]*mtgv1.Deck, turn int) *mtgv1.Deck {
+	for t := turn; t > 0; t-- {
+		if d, ok := decks[t]; ok {
+			return d
+		}
 	}
 	return nil
 }

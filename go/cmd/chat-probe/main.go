@@ -13,10 +13,14 @@
 //
 //	CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
 //	  go run ./cmd/chat-probe -messages "Build me a lifegain Commander deck.|Karlov of the Ghost Council, bracket 3."
+//
+// -decks-out writes each deck that reaches the user, one JSON line per
+// deck with its turn, so user-case can read the deck bars (D-1124).
 package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"net/http"
@@ -28,6 +32,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/gen/mtg/v1/mtgv1connect"
@@ -115,6 +120,7 @@ func main() {
 func run() error {
 	collPath := flag.String("collection", "", "a ManaBox CSV, which puts the session in an owned mode")
 	msgs := flag.String("messages", "Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.", "the user's turns, separated by |")
+	decksOut := flag.String("decks-out", "", "a new file for each deck that reaches the user, one JSON line per deck")
 	flag.Parse()
 
 	if err := gatekit.SpendGuard("CHAT_PROBE"); err != nil {
@@ -176,6 +182,15 @@ func run() error {
 	defer hs.Close()
 	c := mtgv1connect.NewAgentServiceClient(hs.Client(), hs.URL)
 
+	var decks *os.File
+	if *decksOut != "" {
+		decks, err = os.OpenFile(*decksOut, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		if err != nil {
+			return err
+		}
+		defer func() { _ = decks.Close() }()
+	}
+
 	var sessionID string
 	var deck *mtgv1.Deck
 	start := time.Now()
@@ -205,6 +220,11 @@ func run() error {
 				fmt.Printf("  text: %s\n", e.TextDelta)
 			case *mtgv1.ChatResponse_Deck:
 				deck = e.Deck
+				if decks != nil {
+					if err := writeDeck(decks, i+1, deck); err != nil {
+						return err
+					}
+				}
 			case *mtgv1.ChatResponse_Slots:
 				var open []string
 				for k, v := range e.Slots.GetSlotStates() {
@@ -214,6 +234,9 @@ func run() error {
 				}
 				sort.Strings(open)
 				fmt.Printf("  slots: %d asked and unanswered: %v\n", len(open), open)
+				if th, av := e.Slots.GetTheme(), e.Slots.GetAvoid(); th != "" || av != "" {
+					fmt.Printf("  theme: %q. avoid: %q.\n", th, av)
+				}
 			case *mtgv1.ChatResponse_Failure:
 				fmt.Printf("  FAILURE: %s\n", e.Failure.GetMessage())
 			}
@@ -237,6 +260,9 @@ func report(d *mtgv1.Deck, took time.Duration) {
 		d.GetFormat().GetId(), len(d.GetCommanderOracleIds()), gatekit.CountCards(d), gatekit.CountSideboard(d))
 	fmt.Printf("cost: $%.2f to buy, $%.2f the whole deck.\n", generate.BuyCost(d), generate.DeckCost(d))
 	fmt.Printf("summary: %s\n", d.GetSummary())
+	if q := d.GetQuality(); q != nil {
+		fmt.Printf("grade: %s, score %.3f.\n", q.GetTier(), q.GetScore())
+	}
 	for _, f := range d.GetValidation().GetFindings() {
 		fmt.Printf("  [%s] %s: %s\n", strings.TrimPrefix(f.GetSeverity().String(), "SEVERITY_"), f.GetCode(), f.GetMessage())
 	}
@@ -244,6 +270,23 @@ func report(d *mtgv1.Deck, took time.Duration) {
 	if claims := generate.LintSummary(d.GetSummary()); len(claims) > 0 {
 		fmt.Printf("summary rules claims (F-26): %v\n", claims)
 	}
+}
+
+// writeDeck writes one line of the decks file: the turn and the deck.
+func writeDeck(f *os.File, turn int, d *mtgv1.Deck) error {
+	raw, err := protojson.Marshal(d)
+	if err != nil {
+		return err
+	}
+	line, err := json.Marshal(struct {
+		Turn int             `json:"turn"`
+		Deck json.RawMessage `json:"deck"`
+	}{turn, raw})
+	if err != nil {
+		return err
+	}
+	_, err = f.Write(append(line, '\n'))
+	return err
 }
 
 // The sessions list of D-433 is not part of a probe. The store answers
