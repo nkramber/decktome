@@ -26,11 +26,11 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes after the merge of #278. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** Gitar found two items, and `a5583df` fixed both. The first Codex review asked for changes: P2-1, the cap of each instance, and P2-2, a link with no read. `docs/reviews/pr-277-response.md` answers both. The repeat Codex review of `b6906dd` read `Blocked` only for the old name of D-1108. The merge of #278 ends that block. The state is pending the auto-merge (D-828).
+**The review.** Gitar approves `8d9737c`, and both earlier threads are resolved. The Codex review requires changes at effective head `8d9737c0468336f8587dc83c34223ccf12a2c777`: P2-3 and P2-4, both about the one-hour read record of D-1107. See `docs/reviews/pr-277.md`.
 
 **The open work.**
 
-1. Do the Gitar pass and the Codex review of the merge, then get the owner confirmation of the merge.
+1. Fix P2-3 and P2-4, run their regression checks, then get a new Gitar pass and Codex review.
 2. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
 3. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
