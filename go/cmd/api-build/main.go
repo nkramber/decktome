@@ -43,6 +43,11 @@ const (
 	defaultCSV     = "internal/collections/testdata/manabox_collection.csv"
 )
 
+// defaultPool is the pool rule of the web app for a chosen collection
+// (D-1011). The run always imports a collection, so it sends the same
+// rule as a reader by default (D-1161).
+const defaultPool = "owned-only"
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "api-build: "+err.Error())
@@ -343,15 +348,21 @@ func envOr(name, fallback string) string {
 
 // flagSet declares every flag and parses the command line.
 func flagSet(o *options) {
-	flag.StringVar(&o.base, "base", envOr("API_BASE_URL", defaultBaseURL), "the API origin. decktome.com serves the web app alone, and it rewrites nothing to the API")
-	flag.StringVar(&o.csv, "collection", defaultCSV, "the ManaBox CSV to import")
-	flag.StringVar(&o.name, "name", "api-build check", "the name of the imported collection")
-	flag.StringVar(&o.prompt, "prompt", "Build me a lifegain Commander deck from the cards I own.", "the first message")
-	flag.StringVar(&o.answers, "answers", "", "the prepared answers: slot=text;slot=#2;slot=decline. A slot with no entry takes the first option of a closed question, and declines the rest")
-	flag.StringVar(&o.poolRule, "pool", "owned-first", "the card pool: owned-first, owned-only, any, or ask")
-	flag.IntVar(&o.maxTurns, "max-turns", 8, "the turns the run takes before it gives up")
-	flag.DurationVar(&o.timeout, "timeout", 15*time.Minute, "the limit of one streamed turn")
-	flag.DurationVar(&o.ready, "ready", 3*time.Minute, "how long to wait for the API to load the card snapshot")
-	flag.BoolVar(&o.cleanup, "cleanup", false, "delete the deck, the session, and the collection at the end (D-780)")
+	register(flag.CommandLine, o)
 	flag.Parse()
+}
+
+// register declares every flag on fs. A test reads the defaults of the
+// same set that the command line parses.
+func register(fs *flag.FlagSet, o *options) {
+	fs.StringVar(&o.base, "base", envOr("API_BASE_URL", defaultBaseURL), "the API origin. decktome.com serves the web app alone, and it rewrites nothing to the API")
+	fs.StringVar(&o.csv, "collection", defaultCSV, "the ManaBox CSV to import")
+	fs.StringVar(&o.name, "name", "api-build check", "the name of the imported collection")
+	fs.StringVar(&o.prompt, "prompt", "Build me a lifegain Commander deck from the cards I own.", "the first message")
+	fs.StringVar(&o.answers, "answers", "", "the prepared answers: slot=text;slot=#2;slot=decline. A slot with no entry takes the first option of a closed question, and declines the rest")
+	fs.StringVar(&o.poolRule, "pool", defaultPool, "the card pool: owned-only, owned-first, any, or ask")
+	fs.IntVar(&o.maxTurns, "max-turns", 8, "the turns the run takes before it gives up")
+	fs.DurationVar(&o.timeout, "timeout", 15*time.Minute, "the limit of one streamed turn")
+	fs.DurationVar(&o.ready, "ready", 3*time.Minute, "how long to wait for the API to load the card snapshot")
+	fs.BoolVar(&o.cleanup, "cleanup", false, "delete the deck, the session, and the collection at the end (D-780)")
 }

@@ -6,32 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04e)
+## RESUME HERE (2026-10-04f)
 
-**Branch `fix/power-card-counters`: PR-128 is #286, the power cards of a reader verdict (F-224, D-1159, D-1160).** It is pending the auto-merge.
+**Branch `fix/pr123-checks`: PR-129 is #287, `make api-build` sends the pool rule of the web app (D-1161).** It is pending the auto-merge.
 
 Author provider: Claude Code
 
-**The base.** PR-126 merged as #284, so the branch sits on `main` at `42982d0`.
+**The base.** PR-128 merged as #286, so the branch sits on `main` at `a7731f5`.
 
-**The verdict.** On 2026-10-04 at 19:26 UTC a reader wrote verdict `x5JGF0zyIE3DcID7QB5c`. The reader named Barbed Sextant and Springleaf Drum in a mono-green deck of bracket 4, and said that Hurricane is no win condition. A later deck of the reader held the same three cards.
+**The checks on the deploy of `42982d0` passed.**
 
-**The cause.** Two counters of `go/internal/profile` gave weak cards a power mark, and the floors of bracket 4 asked the model for them.
+- The `deploy-api` and `deploy-web` builds of `42982d0` ended SUCCESS at 17:37 and 17:38 UTC. The revision `mtg-api-00121-mrq` serves it, and `/readyz` and `/version.json` name it.
+- The TTL policy of `docs/setup-gcp.md` section 6 reads `ACTIVE` on `deck_reads.expire_at` (D-1113). The owner approved the command.
+- An Archidekt link read into the import form, and the deck page links back to `https://archidekt.com/decks/7031486` (PR-123).
+- A proof link of a new account opened the app with no screen between, in WebKit with the iPhone 15 profile (D-1147). The session then deleted the account and its invite.
+- The test account saw no session id and no spend, and an admin account saw both (D-1148).
+- `./start-live-evals --dry` listed five thumbs down and marked none (D-1149).
+- "Best possible deck" asked no bracket question, and the deck reads bracket 5 (D-1154).
+- The snapshot job logs "snapshot current" each hour (PR-120). Two users who made nothing have a record (PR-119, D-1092).
 
-- Fast mana counted each nonland, noncreature mana source of mana value 1 or less. A filter pays mana for mana, and Springleaf Drum taps a creature.
-- The finisher count read the tag `burn-player-each`. Its cards also hit the caster, such as Hurricane.
+**The code.** `go/cmd/api-build` sends `owned-only` by default (D-1161). The run of "best possible deck" held five cards that the collection does not hold.
 
-**The code.**
+**The checks of the code.** `make verify` passed on `8489cfd`. CI passed every verify job, `pr-contract`, and Gitar. `review-gate` still reads the prior review record.
 
-- `isFastMana` needs one mana ability that pays no mana and taps no creature (D-1159).
-- The finisher slugs lose `burn-player-each` (D-1160).
-- The deck shape block states the new fast mana rule, and the generate prompt reads version 19.
+**The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`. The review record is on the branch.
 
-**The checks.** The Go tests pass. A local replay of the two stored decks reads 1 and 2 fast mana, not 3 and 4. It reads 0 finishers, not 2.
-
-**The review.** Codex found no defect at effective head `7fbd0e047e4629e75c7bd3b8e263c64ae1544cbf`. The verdict is Ready for owner merge, with no open finding. Gitar, `pr-contract`, `review-gate`, and all active verify checks passed after the record push. `make verify` passed with Node 22.
-
-After the deploy, one check follows: a new owned-only deck of bracket 4 holds no filter as fast mana and no Hurricane as a finisher.
+**Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
 
 ## How to resume
 
@@ -68,7 +68,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - A background shell command starts in the directory the session left. On 2026-09-12 a `make` target ran in `go/` and found no rule, so head every command with an absolute `cd`.
 - A live check of a web change reads the stored session and the deployed chunk, and not the screen alone. The service worker served the old shell for one load after a deploy (F-122). The protobuf-es code holds each field name in base64, so search a chunk for a property name such as `noDecline`.
 - The hook `.claude/hooks/session_bind.py` binds a session to the first branch that it creates, pushes, or opens a pull request for. A command on a second branch exits with "Blocked". Start a new clean session. The owner alone removes a binding under `.git/decktome-session-bind/`.
-- A read under `users/` fails in the sandbox of a session, because that path holds the verified email (D-638). A field mask that fetches no field fails too. A replay reads a local collection export instead (D-756), and the export never enters git.
+- The path `users/` holds the verified email (D-638). On 2026-10-04 the Admin SDK read the dates and the counters, with the permission of the owner. A replay still reads a local collection export (D-756), and the export never enters git.
 - A stored session can be gone. `z1hshyY6Npig1FN2NuV7` no longer exists in `decktome-prod`, so `scripts/read-session.sh` finds nothing. M-17 recorded the request of that session, so the replay needed no session read.
 - The Edit tool and a Bash heredoc can write the rune in place of the six characters `\u2014`. Write the backslash as `chr(92)` in a Python script, and read the bytes with `ascii()`.
 - The `review-gate` check and the job `verify:skip` read their rules from `main`. A pull request that changes `review_gate.py` or `ci_skip.py` runs the old rule on its own head, so prove a change in the tests (D-816, D-820).
@@ -105,13 +105,11 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-128: the power cards of a reader verdict** (F-224, D-1159, D-1160). The resume section holds the open work.
-0. **The checks of PR-126** (D-1147 to D-1154). It merged as #284. After the deploy, the owner opens a new proof link in iOS Safari. The test account sees no session id and no spend. `./start-live-evals --dry` lists the five old thumbs down, and "best possible deck" gets no bracket question.
+0. **The check of PR-128** (D-1159, D-1160). It merged as #286. After the deploy, read a new owned-only deck of bracket 4. It holds no filter as fast mana and no Hurricane as a finisher.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
-0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
+0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
-0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
-0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
+0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
 10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
@@ -136,19 +134,19 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-04d: the checks of PR-124, and PR-126
-
-**The deploy of `50878de` and the API log passed.** The API runs the merge of PR-125, and each `rpc` line holds a uid and no email.
-
-**The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
-
-**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, the commander offer, and the power of "best" (D-1148 to D-1154). The owner narrowed the power words to the superlatives (D-1154).
-
 ### 2026-10-04e: the power cards of a reader verdict, PR-128
 
 **The owner asked for an analysis of verdict `x5JGF0zyIE3DcID7QB5c`, and a fix.** The session read the verdict, the two decks of the reader, and the profile of each. It found the two counters.
 
 **The owner chose the fast mana rule that drops the filters and Springleaf Drum (D-1159).** The owner first chose a lifegain condition for the finisher tag. The measurement showed that the lists seldom pair the tag with lifegain, and the owner then chose the removal (D-1160).
+
+### 2026-10-04f: the checks of PR-126 and PR-123, and PR-129
+
+**The checks of the deploy of `42982d0` passed, and the owner approved the TTL command.** The owner then asked the session to run its own checks of the owner with Playwright.
+
+**The session made a throwaway account for the proof link and the admin line.** It wrote the proof code itself, and then deleted the account and its invite.
+
+**The `make api-build` run of "best possible deck" held cards that the collection does not hold.** The owner chose the fix of the default pool rule (D-1161).
 
 ## The archive
 

@@ -47,7 +47,7 @@ Add `-keep <absolute path of an earlier rejudge run file>` to judge again only t
 
 `make quality-judge` asks the judge role for the tier of every graded deck of a deck gate document (PR-14B). It costs a few cents a deck, and it has the guard `QUALITY_JUDGE=1` and a verdict check on `QUALITY_JUDGE_OUT`. Ask the owner before every run.
 
-`make api-build` builds one deck over the deployed API, with no browser and no GUI (D-778). It signs in with an email and a password, and it imports a ManaBox CSV. It then answers every question of the agent, and it reads the built deck back out of storage. It costs about $0.10 to $0.20, because the deployed API calls the real providers.
+`make api-build` builds one deck over the deployed API, with no browser and no GUI (D-778). It signs in with an email and a password, and it imports a ManaBox CSV. It then answers every question of the agent, and it reads the built deck back out of storage. It costs about $0.10 to $0.20, because the deployed API calls the real providers. It sends the pool rule of the web app, the owned cards alone, and `API_BUILD_ARGS="-pool owned-first"` selects the old rule (D-1161).
 
 The guards are `API_BUILD=1` and a check on `API_BUILD_OUT`. `API_BUILD_EMAIL` and `API_BUILD_PASSWORD` name the check account of D-779, and `.env` holds both. The run keeps the deck, the chat, and the collection. `API_BUILD_ARGS=-cleanup` deletes all three (D-780). `API_BUILD_ANSWERS="power=#3"` asks for a bracket 3 deck, and an empty plan builds a bracket 1 deck. `docs/reference/api-deck-build-2026-09-20.md` holds the method, the result, and the limits.
 

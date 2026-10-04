@@ -3407,6 +3407,17 @@ Gate:
 
 > *In plain English:* the app no longer calls a card that costs a mana to make a mana "fast mana". A card that hits every player, the caster too, no longer counts as a way to win.
 
+**PR-129: `make api-build` sends the pool rule of the web app (D-1161).** ✅ merged as #287. The mark comes before any review (D-822). On 2026-10-04 the checks of PR-126 ran `make api-build` with "best possible deck". The deck held five cards that the collection does not hold.
+
+- **The cause.** The flag `-pool` sent `owned-first` by default. Since D-1011 the web app sends `POOL_RULE_OWNED_ONLY` for each chosen collection, and the run always imports one.
+- **The change.** `go/cmd/api-build` sends `owned-only` by default. The flag `-pool owned-first` still selects the old rule.
+
+Gate:
+- The tool tests prove that the registered default of `-pool` parses as `POOL_RULE_OWNED_ONLY`.
+- The same test fails when the registered default is `owned-first`.
+
+> *In plain English:* the build check now uses only the cards of the collection, as the app does.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3826,6 +3837,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 120. **PR-125** the live evals of each new deck and revision (D-1132 to D-1146).
 121. **PR-126** five owner changes after the proof link (D-1147 to D-1154).
 123. **PR-128** the power cards of a reader verdict (F-224, D-1159, D-1160).
+124. **PR-129** `make api-build` sends the pool rule of the web app (D-1161).
 
 ## 9. Open questions
 

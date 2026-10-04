@@ -15,6 +15,41 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04e, PR-128
+
+**Branch `fix/power-card-counters`: PR-128 is #286, the power cards of a reader verdict (F-224, D-1159, D-1160).** It is pending the auto-merge.
+
+Author provider: Claude Code
+
+**The base.** PR-126 merged as #284, so the branch sits on `main` at `42982d0`.
+
+**The verdict.** On 2026-10-04 at 19:26 UTC a reader wrote verdict `x5JGF0zyIE3DcID7QB5c`. The reader named Barbed Sextant and Springleaf Drum in a mono-green deck of bracket 4, and said that Hurricane is no win condition. A later deck of the reader held the same three cards.
+
+**The cause.** Two counters of `go/internal/profile` gave weak cards a power mark, and the floors of bracket 4 asked the model for them.
+
+- Fast mana counted each nonland, noncreature mana source of mana value 1 or less. A filter pays mana for mana, and Springleaf Drum taps a creature.
+- The finisher count read the tag `burn-player-each`. Its cards also hit the caster, such as Hurricane.
+
+**The code.**
+
+- `isFastMana` needs one mana ability that pays no mana and taps no creature (D-1159).
+- The finisher slugs lose `burn-player-each` (D-1160).
+- The deck shape block states the new fast mana rule, and the generate prompt reads version 19.
+
+**The checks.** The Go tests pass. A local replay of the two stored decks reads 1 and 2 fast mana, not 3 and 4. It reads 0 finishers, not 2.
+
+**The review.** Codex found no defect at effective head `7fbd0e047e4629e75c7bd3b8e263c64ae1544cbf`. The verdict is Ready for owner merge, with no open finding. Gitar, `pr-contract`, `review-gate`, and all active verify checks passed after the record push. `make verify` passed with Node 22.
+
+After the deploy, one check follows: a new owned-only deck of bracket 4 holds no filter as fast mana and no Hurricane as a finisher.
+
+### 2026-10-04d: the checks of PR-124, and PR-126
+
+**The deploy of `50878de` and the API log passed.** The API runs the merge of PR-125, and each `rpc` line holds a uid and no email.
+
+**The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
+
+**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, the commander offer, and the power of "best" (D-1148 to D-1154). The owner narrowed the power words to the superlatives (D-1154).
+
 ## The resume section of 2026-10-04d, PR-126
 
 **Branch `fix/proof-link-ios-direct`: PR-126 is #284, five changes (D-1147 to D-1154).** It is pending the auto-merge. The owner put them in one pull request (D-1150).

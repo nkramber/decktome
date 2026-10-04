@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"strings"
 	"testing"
 
@@ -169,6 +170,24 @@ func TestParsePoolRule(t *testing.T) {
 	}
 	if _, err := parsePoolRule("everything"); err == nil {
 		t.Error("an unknown pool rule was allowed")
+	}
+}
+
+// The default sends the rule that the web app sends with a chosen
+// collection (D-1011, D-1161).
+func TestDefaultPoolIsTheRuleOfTheWebApp(t *testing.T) {
+	var o options
+	fs := flag.NewFlagSet("api-build", flag.ContinueOnError)
+	register(fs, &o)
+	if err := fs.Parse(nil); err != nil {
+		t.Fatal(err)
+	}
+	got, err := parsePoolRule(o.poolRule)
+	if err != nil {
+		t.Fatalf("parsePoolRule(%q): %v", o.poolRule, err)
+	}
+	if got != mtgv1.PoolRule_POOL_RULE_OWNED_ONLY {
+		t.Errorf("the default pool rule is %v, want %v", got, mtgv1.PoolRule_POOL_RULE_OWNED_ONLY)
 	}
 }
 
