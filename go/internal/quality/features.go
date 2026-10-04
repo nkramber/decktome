@@ -119,8 +119,12 @@ func Features(in Input, fm *FormatModel) map[string]float64 {
 		out[KeySourceSpread] = (best - worst) / lands
 	}
 
-	// The shape and the jobs, from the profile.
+	// The shape and the jobs, from the profile. The fit reads the lands
+	// against Karsten's need of the deck's curve, because the need moves
+	// with the curve and the raw count does not (D-1123). KeyLand stays
+	// for a stored model fitted on it.
 	out[KeyLand] = rows[profile.KeyLand]
+	out[KeyLandNeed] = rows[profile.KeyLand] - landNeed(commander, rows[profile.KeyAvgManaValue], cheapCount(in.Deck, in.Cards))
 	out[KeyAvgManaValue] = rows[profile.KeyAvgManaValue]
 	out[KeyColorSources] = rows[profile.KeyColorSources]
 	if lands := rows[profile.KeyLand]; lands > 0 {

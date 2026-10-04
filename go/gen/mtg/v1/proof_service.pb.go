@@ -154,7 +154,11 @@ type OpenLinkResponse struct {
 	// email of that account is proved when the answer comes (D-1082). It
 	// is empty when the server can not sign a token: the email is still
 	// proved, and the person signs in with the password.
-	CustomToken   string `protobuf:"bytes,1,opt,name=custom_token,json=customToken,proto3" json:"custom_token,omitempty"`
+	CustomToken string `protobuf:"bytes,1,opt,name=custom_token,json=customToken,proto3" json:"custom_token,omitempty"`
+	// already_proved is true when the link worked before and the email of
+	// its account is proved (D-1119). The answer then carries no token,
+	// and the person signs in with the password.
+	AlreadyProved bool `protobuf:"varint,2,opt,name=already_proved,json=alreadyProved,proto3" json:"already_proved,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -196,6 +200,13 @@ func (x *OpenLinkResponse) GetCustomToken() string {
 	return ""
 }
 
+func (x *OpenLinkResponse) GetAlreadyProved() bool {
+	if x != nil {
+		return x.AlreadyProved
+	}
+	return false
+}
+
 var File_mtg_v1_proof_service_proto protoreflect.FileDescriptor
 
 const file_mtg_v1_proof_service_proto_rawDesc = "" +
@@ -205,9 +216,10 @@ const file_mtg_v1_proof_service_proto_rawDesc = "" +
 	"\x10SendLinkResponse\x12%\n" +
 	"\x0ealready_proved\x18\x01 \x01(\bR\ralreadyProved\"%\n" +
 	"\x0fOpenLinkRequest\x12\x12\n" +
-	"\x04code\x18\x01 \x01(\tR\x04code\"5\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\"\\\n" +
 	"\x10OpenLinkResponse\x12!\n" +
-	"\fcustom_token\x18\x01 \x01(\tR\vcustomToken2\x90\x01\n" +
+	"\fcustom_token\x18\x01 \x01(\tR\vcustomToken\x12%\n" +
+	"\x0ealready_proved\x18\x02 \x01(\bR\ralreadyProved2\x90\x01\n" +
 	"\fProofService\x12?\n" +
 	"\bSendLink\x12\x17.mtg.v1.SendLinkRequest\x1a\x18.mtg.v1.SendLinkResponse\"\x00\x12?\n" +
 	"\bOpenLink\x12\x17.mtg.v1.OpenLinkRequest\x1a\x18.mtg.v1.OpenLinkResponse\"\x00B2Z0github.com/nkramber/decktome/go/gen/mtg/v1;mtgv1b\x06proto3"

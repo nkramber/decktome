@@ -13,6 +13,7 @@
   "budget_usd": 0,
   "budget_scope": "unknown",
   "house_rules": "",
+  "avoid": "",
   "closed_keys": [],
   "declined_keys": [],
   "facts": {

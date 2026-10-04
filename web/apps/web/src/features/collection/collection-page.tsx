@@ -67,6 +67,10 @@ export function CollectionPage() {
   const removeCollection = useMutation({
     mutationFn: (id: string) => collectionClient.deleteCollection({ collectionId: id }),
     onSuccess: (_res, id) => {
+      // The head and the binder of the deleted id leave the cache before
+      // the refetch, so no read of a collection that is gone goes out.
+      queryClient.removeQueries({ queryKey: ["collection", "head", id] });
+      queryClient.removeQueries({ queryKey: ["collection", "binder", id] });
       if (id === collectionId) clearCollection();
       setResult(null);
       void notify("success", "Collection deleted", "A deck built from it keeps its cards.");

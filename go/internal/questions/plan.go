@@ -148,10 +148,14 @@ type Context struct {
 	// nothing has settled its role yet. Such a card fixes the deck's
 	// color identity when it leads, so the color row waits (D-388).
 	NamedLeader bool `json:"named_leader"`
-	// ThemeUnmatched says the theme holds words, and no word matches a
-	// card of the format and the colors. The theme row asks for the theme
-	// again before the build (D-725, D-728).
+	// ThemeUnmatched says the theme holds a word that matches no card of
+	// the format and the colors. The theme row asks for the theme again
+	// before the build (D-725, D-1116).
 	ThemeUnmatched bool `json:"theme_unmatched"`
+	// ThemeMissing lists the words of the theme that match no card. The
+	// theme row names them, and the build names the ones it can not use
+	// (D-1116).
+	ThemeMissing []string `json:"theme_missing,omitempty"`
 	// ThemeChanged says the theme differs from the one that row named
 	// last, the D-210 rule for that row.
 	ThemeChanged bool `json:"theme_changed"`

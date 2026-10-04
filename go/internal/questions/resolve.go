@@ -83,10 +83,10 @@ type FactSource interface {
 // words "opponent milling cards" reached the build, and the shortlist
 // held staple roles alone (F-142, F-143).
 type ThemeSource interface {
-	// ThemeUnmatched reports whether the theme holds words and no word
-	// matches a card of the format and the colors. It answers false when
-	// it can not tell.
-	ThemeUnmatched(theme string) bool
+	// ThemeUnmatched returns the words of the theme that match no card of
+	// the format and the colors (D-1116). It returns nil when every word
+	// matches a card, and when it can not tell.
+	ThemeUnmatched(theme string) []string
 }
 
 // SetResolver maps the words a reader wrote onto a set family. A hint
@@ -322,6 +322,11 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	var offered []string
 	if theme != "" {
 		rep["{theme}"] = theme
+	}
+	// The theme row names the words that match no card, so a reader whose
+	// other words match knows which ones to change (D-1116).
+	if s := quotedList(st.Ctx.ThemeMissing, "or"); s != "" {
+		rep["{unmatched}"] = s
 	}
 	if len(st.NamedCards) > 0 {
 		rep["{card}"] = st.NamedCards[0]
@@ -648,6 +653,18 @@ func orList(items []string) string {
 
 func englishList(items []string) string {
 	return joinList(items, "and")
+}
+
+// quotedList joins words in quotes, so a reader tells the words of the
+// theme from the words of the question (D-1116).
+func quotedList(items []string, word string) string {
+	var q []string
+	for _, s := range items {
+		if s = strings.TrimSpace(s); s != "" {
+			q = append(q, `"`+s+`"`)
+		}
+	}
+	return joinList(q, word)
 }
 
 func joinList(items []string, word string) string {

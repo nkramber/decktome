@@ -180,7 +180,10 @@ func pinPower(cs []Candidate, pw powerScan) {
 }
 
 // capRole keeps the n best cards of one role, in score order. A pinned
-// power card skips the cap and does not count against it (D-710).
+// power card skips the cap and does not count against it (D-710). A card
+// of the staple floor that the score order leaves out joins after the n
+// best, so the floor takes no place from an on-theme card of the role
+// (D-1121).
 func capRole(cs []Candidate, n int) []Candidate {
 	out := make([]Candidate, 0, n)
 	for _, c := range cs {
@@ -190,6 +193,8 @@ func capRole(cs []Candidate, n int) []Candidate {
 		case n > 0:
 			out = append(out, c)
 			n--
+		case c.Floor:
+			out = append(out, c)
 		}
 	}
 	return out

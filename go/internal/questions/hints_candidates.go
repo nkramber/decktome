@@ -70,7 +70,7 @@ type CandidateHints struct {
 	thinCount map[string]int
 	// The theme match of D-725 runs the whole PR-6 build too, so it runs
 	// once per key and the answer is kept.
-	unmatched map[string]bool
+	unmatched map[string][]string
 	// The mana count of D-382 walks the index, so it runs once per key
 	// and the answer is kept. The key carries the sets, the format, and
 	// the colors.
@@ -448,18 +448,19 @@ func (h *CandidateHints) cacheThin(key string, thin bool, count int) {
 	h.thinDone[key], h.thin[key], h.thinCount[key] = true, thin, count
 }
 
-// ThemeUnmatched reports whether the theme holds words and no word matches
-// a card of the format and the colors (D-725). It answers the ThemeSource
-// contract.
+// ThemeUnmatched returns the words of the theme that match no card of the
+// format and the colors (D-725, D-1116). It answers the ThemeSource
+// contract. It returns nil when every word matches a card, and when it
+// can not tell.
 //
 // It reads every card, owned or not. A word the card database does not
 // know is the miss the theme row asks about, and a thin collection is the
 // thin-theme row's to report (D-63). Build counts a card on theme before
 // the set limit and the collection cut the pool, so neither one changes
 // the answer.
-func (h *CandidateHints) ThemeUnmatched(theme string) bool {
+func (h *CandidateHints) ThemeUnmatched(theme string) []string {
 	if h == nil || h.Index == nil || h.Builder == nil || strings.TrimSpace(theme) == "" {
-		return false
+		return nil
 	}
 	key := h.key(theme)
 	if v, ok := h.unmatched[key]; ok {
@@ -473,11 +474,18 @@ func (h *CandidateHints) ThemeUnmatched(theme string) bool {
 	})
 	if err != nil {
 		h.warn("theme match", err)
-		return false
+		return nil
 	}
-	missed := len(list.Theme.Words) > 0 && list.Stats.OnTheme == 0
+	// One word that matches no card is a miss, though another word
+	// matches (D-1116). The build would drop that word in silence.
+	missed := append([]string(nil), list.Theme.Unmatched...)
+	// A theme with no card on it is a miss of every word (D-725), though
+	// a word fired on a card that the shortlist does not count.
+	if len(missed) == 0 && len(list.Theme.Words) > 0 && list.Stats.OnTheme == 0 {
+		missed = append(missed, list.Theme.Words...)
+	}
 	if h.unmatched == nil {
-		h.unmatched = map[string]bool{}
+		h.unmatched = map[string][]string{}
 	}
 	h.unmatched[key] = missed
 	return missed

@@ -865,7 +865,8 @@ func TestTotalCapDropsTheLowestScore(t *testing.T) {
 		t.Fatalf("too few candidates to cut: %v", names(full.Candidates))
 	}
 	total := len(full.Candidates) - 2
-	req.Limits = Limits{Total: total}
+	// The staple floor of D-1121 is off, so the cut reads the score alone.
+	req.Limits = Limits{Total: total, floor: map[mtgv1.CardRole]int{}}
 	cut, err := b.Build(idx, req)
 	if err != nil {
 		t.Fatal(err)

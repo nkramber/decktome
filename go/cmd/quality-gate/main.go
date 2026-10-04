@@ -327,8 +327,9 @@ func report(w io.Writer, idx *cards.Index, model *quality.Model, rep *quality.Fi
 			p("## The %s model\n\n", word)
 			p("Tiers, worst first: %s. Train counts: %s. Holdout counts: %s.\n\n",
 				strings.Join(fm.Tiers, ", "), countWords(fm.TrainCounts), countWords(fm.HoldoutCounts))
-			p("Cards with a rate: %d. Pairs that lift: %d. Commanders with a signal: %d. Top lists shape: %.1f lands at %.2f over %d lists.\n\n",
-				len(fm.CardRates), len(fm.Pairs), len(fm.Commanders), fm.Shape.Lands, fm.Shape.AvgManaValue, fm.Shape.Lists)
+			p("Cards with a rate: %d. Pairs that lift: %d. Commanders with a signal: %d. Top lists shape: %.1f lands at %.2f over %d lists. Typical lists shape: %.1f lands at %.2f over %d lists.\n\n",
+				len(fm.CardRates), len(fm.Pairs), len(fm.Commanders), fm.Shape.Lands, fm.Shape.AvgManaValue, fm.Shape.Lists,
+				fm.TypicalShape.Lands, fm.TypicalShape.AvgManaValue, fm.TypicalShape.Lists)
 			if len(fr.Dropped) > 0 {
 				p("Features with no spread, dropped: %s.\n\n", strings.Join(fr.Dropped, ", "))
 			}

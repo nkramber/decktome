@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -548,4 +551,91 @@ func TestAVerifiedCallIsRecorded(t *testing.T) {
 	if got := call(t, "nope", listed); len(got) != 0 {
 		t.Errorf("a bad token recorded %q", got)
 	}
+}
+
+// TestCallLog is D-1117: a verified call writes one line with the
+// procedure, the code, the latency, the uid, and the trace, and a
+// refused call writes one with the uid the token named. No line holds
+// the email.
+func TestCallLog(t *testing.T) {
+	trace := func(h http.Header) slog.Attr {
+		if v := h.Get("X-Trace"); v != "" {
+			return slog.String("trace", v)
+		}
+		return slog.Attr{}
+	}
+	listed := WithAllowlist(fakeList{emails: map[string]bool{"ann@example.com": true}})
+	lines := func(t *testing.T, buf *bytes.Buffer) []map[string]any {
+		t.Helper()
+		if strings.Contains(buf.String(), "ann@example.com") {
+			t.Errorf("a log line holds the email: %s", buf.String())
+		}
+		var rows []map[string]any
+		for _, l := range strings.Split(strings.TrimSpace(buf.String()), "\n") {
+			var row map[string]any
+			if err := json.Unmarshal([]byte(l), &row); err != nil {
+				t.Fatalf("not JSON: %v: %s", err, l)
+			}
+			rows = append(rows, row)
+		}
+		return rows
+	}
+	want := func(t *testing.T, row map[string]any, fields map[string]any) {
+		t.Helper()
+		for k, v := range fields {
+			if row[k] != v {
+				t.Errorf("%s = %v, want %v in %v", k, row[k], v, row)
+			}
+		}
+		if _, ok := row["latency_ms"]; !ok {
+			t.Errorf("no latency in %v", row)
+		}
+	}
+
+	t.Run("verified unary and stream", func(t *testing.T) {
+		var buf bytes.Buffer
+		health, agent := newServer(t, listed, WithCallLog(slog.New(slog.NewJSONHandler(&buf, nil)), trace))
+		req := connect.NewRequest(&mtgv1.CheckRequest{})
+		req.Header().Set("Authorization", "Bearer good")
+		req.Header().Set("X-Trace", "t-1")
+		if _, err := health.Check(context.Background(), req); err != nil {
+			t.Fatal(err)
+		}
+		sreq := connect.NewRequest(&mtgv1.ChatRequest{Message: "hi"})
+		sreq.Header().Set("Authorization", "Bearer good")
+		stream, err := agent.Chat(context.Background(), sreq)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for stream.Receive() {
+		}
+		_ = stream.Close()
+		rows := lines(t, &buf)
+		if len(rows) != 2 {
+			t.Fatalf("got %d lines, want 2: %s", len(rows), buf.String())
+		}
+		want(t, rows[0], map[string]any{"msg": "rpc", "procedure": mtgv1connect.HealthServiceCheckProcedure, "code": "ok", "uid": "u-42", "trace": "t-1"})
+		want(t, rows[1], map[string]any{"msg": "rpc", "procedure": mtgv1connect.AgentServiceChatProcedure, "code": "ok", "uid": "u-42"})
+		if _, ok := rows[1]["trace"]; ok {
+			t.Errorf("a call with no trace header logged one: %v", rows[1])
+		}
+	})
+
+	t.Run("refusals", func(t *testing.T) {
+		var buf bytes.Buffer
+		health, _ := newServer(t, listed, WithCallLog(slog.New(slog.NewJSONHandler(&buf, nil)), nil))
+		for _, token := range []string{"unproved", "nope"} {
+			req := connect.NewRequest(&mtgv1.CheckRequest{})
+			req.Header().Set("Authorization", "Bearer "+token)
+			if _, err := health.Check(context.Background(), req); err == nil {
+				t.Fatalf("token %s got in", token)
+			}
+		}
+		rows := lines(t, &buf)
+		if len(rows) != 2 {
+			t.Fatalf("got %d lines, want 2: %s", len(rows), buf.String())
+		}
+		want(t, rows[0], map[string]any{"msg": "rpc refused", "code": "permission_denied", "uid": "u-42", "refusal": RefusalUnverified})
+		want(t, rows[1], map[string]any{"msg": "rpc refused", "code": "unauthenticated", "uid": ""})
+	})
 }

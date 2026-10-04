@@ -35,4 +35,8 @@ message OpenLinkResponse {
   // is empty when the server can not sign a token: the email is still
   // proved, and the person signs in with the password.
   string custom_token = 1;
+  // already_proved is true when the link worked before and the email of
+  // its account is proved (D-1119). The answer then carries no token,
+  // and the person signs in with the password.
+  bool already_proved = 2;
 }

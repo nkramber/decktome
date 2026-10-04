@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -270,6 +271,8 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		OutsideRoles:       outsideRoles,
 		ExcludeOracleIDs:   excludedIDs,
 		BudgetUSD:          slots.GetBudgetUsd(),
+		// What the user wants less of ranks lower (D-1122).
+		Avoid: slots.GetAvoid(),
 	}
 	list, err := s.builder.Build(idx, req)
 	if err != nil {
@@ -513,14 +516,37 @@ func deckColors(format mtgv1.FormatId, chosen []mtgv1.Color, commanders []*mtgv1
 
 // plan is the deck the user asked for, in the user's own words. The
 // first message carries the request, and the slots carry what the
-// questions settled.
+// questions settled. The later messages carry what the user said of the
+// deck since, such as "too many artifacts", so the model reads them too
+// (D-1122).
 func plan(session *mtgv1.Session, slots *mtgv1.Slots) string {
 	var b strings.Builder
-	if turns := session.GetTurns(); len(turns) > 0 {
+	turns := session.GetTurns()
+	if len(turns) > 0 {
 		b.WriteString(strings.TrimSpace(turns[0].GetUserMessage()))
+	}
+	var later []string
+	for _, t := range turns[min(1, len(turns)):] {
+		if m := strings.TrimSpace(t.GetUserMessage()); m != "" {
+			later = append(later, m)
+		}
+	}
+	// The newest messages count most, and a long chat must not crowd out
+	// the request.
+	if len(later) > planLaterTurns {
+		later = later[len(later)-planLaterTurns:]
+	}
+	if len(later) > 0 {
+		b.WriteString("\nLater messages, oldest first:")
+		for _, m := range later {
+			fmt.Fprintf(&b, "\n- %s", truncateRunes(m, planMessageRunes))
+		}
 	}
 	if t := slots.GetTheme(); t != "" {
 		fmt.Fprintf(&b, "\nTheme: %s", t)
+	}
+	if v := slots.GetAvoid(); v != "" {
+		fmt.Fprintf(&b, "\nLess of: %s", v)
 	}
 	if p := slots.GetPower(); p != nil {
 		if br := p.GetBracket(); br > 0 {
@@ -535,6 +561,22 @@ func plan(session *mtgv1.Session, slots *mtgv1.Slots) string {
 	return b.String()
 }
 
+// planLaterTurns caps the later messages the plan carries, and
+// planMessageRunes caps each one (D-1122).
+const (
+	planLaterTurns   = 6
+	planMessageRunes = 400
+)
+
+// truncateRunes cuts s to n runes at most.
+func truncateRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + "..."
+}
+
 // sendOrLog sends one event after a paid call. A client that left
 // mid-build can not receive it, and the build must still end and store
 // its deck, so a failed send is logged and the turn goes on (D-303).
@@ -547,9 +589,13 @@ func (s *Server) sendOrLog(ctx context.Context, stream *connect.ServerStream[mtg
 // sendDeck builds the deck and streams it. A build failure must not lose
 // the turn: the questions are already stored and already sent, so the
 // user reads a status line and can ask again.
+//
+// base is the last deck of the session on a rebuild after a change of a
+// setting, and nil on a first build. A rebuild with the format and the
+// commander of base revises it (D-1118).
 func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Session, st *questions.State,
 	snap questions.Snapshot, version int64, owned map[string]int32, acc *llm.Accumulator, usageBefore *mtgv1.Usage,
-	stream *connect.ServerStream[mtgv1.ChatResponse]) error {
+	stream *connect.ServerStream[mtgv1.ChatResponse], base *mtgv1.Deck) error {
 	if s.decks == nil {
 		return stream.Send(&mtgv1.ChatResponse{
 			Event: &mtgv1.ChatResponse_Status{Status: "every slot is filled, and no generator is wired"},
@@ -605,6 +651,12 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 			Event: &mtgv1.ChatResponse_Status{Status: "every slot is filled, and no generator is wired"},
 		})
 	}
+	// A rebuild that keeps the format and the commander is a revision of
+	// the last deck. The record counts it as one, and the web app shows
+	// the change against that deck (D-1118).
+	if sameDeckShape(base, res.Deck) && res.Deck.GetRevisedFromDeckId() == "" {
+		res.Deck.RevisedFromDeckId = base.GetId()
+	}
 	// The deck is kept before it is sent, so a user who reads it can ask
 	// for it again (D-245).
 	s.storeDeck(ctx, uid, session, snap, version, res.Deck)
@@ -615,6 +667,23 @@ func (s *Server) sendDeck(ctx context.Context, uid string, session *mtgv1.Sessio
 	}
 	s.sendOrLog(ctx, stream, session, &mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Deck{Deck: res.Deck}})
 	return nil
+}
+
+// sameDeckShape reports whether two decks share the format and the
+// commanders, in any order (D-1118). A deck with no commander matches a
+// deck with no commander.
+func sameDeckShape(base, d *mtgv1.Deck) bool {
+	if base == nil || d == nil || base.GetId() == "" || base.GetId() == d.GetId() {
+		return false
+	}
+	if base.GetFormat().GetId() != d.GetFormat().GetId() {
+		return false
+	}
+	a := append([]string(nil), base.GetCommanderOracleIds()...)
+	b := append([]string(nil), d.GetCommanderOracleIds()...)
+	slices.Sort(a)
+	slices.Sort(b)
+	return slices.Equal(a, b)
 }
 
 // deckName is what the user sees the deck called. The theme names it,

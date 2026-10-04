@@ -14,6 +14,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 	"github.com/nkramber/decktome/go/internal/cardname"
@@ -114,10 +115,18 @@ type Limits struct {
 	// bracket 5 request with a commander rate sets it, because the rate
 	// leads the score (D-843).
 	landsByScore bool
+	// floor is the count of each staple role that its most popular cards
+	// hold, theme or not (D-1121). Build sets it from the role targets.
+	floor map[mtgv1.CardRole]int
 }
 
 // staplePenalty halves the score of a card with no theme signal.
 const staplePenalty = 0.5
+
+// avoidPenalty is the factor on the score of a card that matches what the
+// user wants less of (D-1122). The card stays in the pool, so a deck that
+// needs it can still take it.
+const avoidPenalty = 0.25
 
 // DefaultLimits follows the roadmap numbers: about 300 candidates by role,
 // about 50 upgrades. The role caps sum to more than Total on purpose: a
@@ -133,10 +142,13 @@ var DefaultLimits = Limits{
 		mtgv1.CardRole_CARD_ROLE_REMOVAL:     30,
 		mtgv1.CardRole_CARD_ROLE_WIPE:        12,
 		mtgv1.CardRole_CARD_ROLE_INTERACTION: 20,
-		mtgv1.CardRole_CARD_ROLE_WINCON:      15,
-		mtgv1.CardRole_CARD_ROLE_THREAT:      50,
-		mtgv1.CardRole_CARD_ROLE_SYNERGY:     80,
-		mtgv1.CardRole_CARD_ROLE_OTHER:       10,
+		// A permanent that protects a creature has a cap of its own, so
+		// equipment no longer fills the interaction cap (D-1120).
+		mtgv1.CardRole_CARD_ROLE_PROTECTION: 15,
+		mtgv1.CardRole_CARD_ROLE_WINCON:     15,
+		mtgv1.CardRole_CARD_ROLE_THREAT:     50,
+		mtgv1.CardRole_CARD_ROLE_SYNERGY:    80,
+		mtgv1.CardRole_CARD_ROLE_OTHER:      10,
 	},
 }
 
@@ -177,6 +189,13 @@ type Candidate struct {
 	// ManaHalf marks a land of the mana half of the land cap. The total
 	// cut keeps it, so the half of D-450 holds past the cut (F-165).
 	ManaHalf bool
+	// Floor marks one of the most popular cards of a staple role, inside
+	// the floor of that role. The role cap and the total cut keep it
+	// (D-1121).
+	Floor bool
+	// Avoided marks a card that matches what the user wants less of. Its
+	// score carries avoidPenalty (D-1122).
+	Avoided bool
 	// Partner is the second commander of a pair, and nil for every other
 	// candidate. The pair carries the union of the two color identities,
 	// which is what lets a request reach four colors (D-154).
@@ -230,6 +249,8 @@ type Stats struct {
 	// Outside counts the cards the fill took from outside the sets
 	// (D-382).
 	Outside int
+	// Avoided counts the pool cards that took avoidPenalty (D-1122).
+	Avoided int
 }
 
 // ThemeFloor is the on-theme owned count under which a collection is too
@@ -306,7 +327,21 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && req.Owned == nil {
 		return nil, fmt.Errorf("candidates: pool rule %s needs a collection", mode)
 	}
-	theme := b.themes.matchIn(req.Theme, idx)
+	// A commander whose own trigger names a row adds that row, with no
+	// word of the user (F-212).
+	var commanders []*mtgv1.Card
+	for _, id := range req.CommanderOracleIDs {
+		if c, ok := idx.ByOracleID(id); ok {
+			commanders = append(commanders, c)
+		}
+	}
+	theme := b.themes.matchIn(req.Theme, idx, b.themes.commanderRows(commanders, idx.Tags())...)
+	avoid := b.themes.avoidMatch(req.Avoid, idx)
+	// A caller that names its own floors keeps them, and an empty map
+	// turns the floor off.
+	if lim.floor == nil {
+		lim.floor = stapleFloors(req)
+	}
 	roleTags := b.themes.roleSets(idx.Tags())
 	// The finishers of the curated count of M-17: the parent tags with no
 	// child tag, the child tag blood-artist-ability, and the evasive
@@ -454,12 +489,24 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 				stats.OnThemeOwned++
 			}
 		}
+		avoided := avoid.hits(c)
+		if avoided {
+			signals = append(signals, "avoid")
+		}
 		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Rate: rate, Fix: fixCount(c, colorSet),
-			LandRank: landRank(req, c, colorSet, owned), Themed: lead > 0, Owned: owned, Outside: outside, Signals: signals})
+			LandRank: landRank(req, c, colorSet, owned), Themed: lead > 0, Owned: owned, Outside: outside, Avoided: avoided, Signals: signals})
 	}
-	sortCandidates(scored)
 	// A pinned power card skips the cap of its role (F-131, D-710).
 	pinPower(scored, pw)
+	// A card the user wants less of ranks lower, unless it is pinned
+	// (D-1122). The commanders never reach this list.
+	for i := range scored {
+		if scored[i].Avoided && !scored[i].Pinned {
+			scored[i].Score *= avoidPenalty
+			stats.Avoided++
+		}
+	}
+	sortCandidates(scored)
 	// The best finishers take the wincon role and the pin, up to the
 	// target of the bracket (D-726, D-741).
 	promoteFinishers(scored, req, mode, FinisherTarget(req.Bracket), finishers)
@@ -488,8 +535,11 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	}
 	stats.Returned = len(main)
 	stats.UpgradeSize = len(upgrades)
-	// A theme with no signal is no theme, so it is never thin (F-196).
-	stats.ThinTheme = mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && !theme.Empty() && stats.OnThemeOwned < ThemeFloor(req.Format)
+	// A theme with no signal is no theme, so it is never thin (F-196). A
+	// row of the commander adds no word, so a theme with no word stays
+	// no theme (F-212).
+	stats.ThinTheme = mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && len(theme.Words) > 0 && !theme.Empty() &&
+		stats.OnThemeOwned < ThemeFloor(req.Format)
 	return &List{Candidates: main, Upgrades: upgrades, Reserve: topReserve(reserve, pw.of), Theme: theme, Stats: stats}, nil
 }
 
@@ -515,6 +565,7 @@ var roleOrder = []mtgv1.CardRole{
 	mtgv1.CardRole_CARD_ROLE_REMOVAL,
 	mtgv1.CardRole_CARD_ROLE_WIPE,
 	mtgv1.CardRole_CARD_ROLE_INTERACTION,
+	mtgv1.CardRole_CARD_ROLE_PROTECTION,
 	mtgv1.CardRole_CARD_ROLE_WINCON,
 	mtgv1.CardRole_CARD_ROLE_THREAT,
 	mtgv1.CardRole_CARD_ROLE_SYNERGY,
@@ -529,14 +580,27 @@ var roleOrder = []mtgv1.CardRole{
 // A pinned power card skips the cap of its role and adds to the total, so
 // the caps can not block a bracket 4 or 5 list from its power floors, and
 // a pin never drops another card (F-131, F-132, D-710, D-712).
+//
+// Each staple role keeps a floor of its most popular cards, theme or not
+// (D-1121). The floor never exceeds the cap of the role. A floor card
+// that the cap leaves out joins the role, so a role holds at most its cap
+// plus its floor, and the total cut keeps the floor after the pins and
+// the mana half. A floor inside the cap took the places of on-theme
+// removal, and a zombies list lost Overseer of the Damned (F-144).
 func capByRole(in []Candidate, lim Limits) []Candidate {
 	byRole := map[mtgv1.CardRole][]Candidate{}
 	for _, c := range in {
+		c.Floor = false
 		byRole[c.Role] = append(byRole[c.Role], c)
 	}
 	var out []Candidate
 	for _, r := range roleOrder {
 		cs := byRole[r]
+		f := lim.floor[r]
+		if n := lim.PerRole[r]; n > 0 {
+			f = min(f, n)
+		}
+		markFloor(cs, f)
 		if n := lim.PerRole[r]; n > 0 && len(cs) > n {
 			if r == mtgv1.CardRole_CARD_ROLE_LAND {
 				cs = capPinnedLands(cs, n, lim.landsByScore)
@@ -549,13 +613,15 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 	// A pinned card adds to the total and takes no place from another
 	// card, so a pin never drops a land or an on-theme card (F-132).
 	pinned := 0
-	var mana []Candidate
+	var mana, floor []Candidate
 	for _, c := range out {
 		switch {
 		case c.Pinned:
 			pinned++
 		case c.ManaHalf:
 			mana = append(mana, c)
+		case c.Floor:
+			floor = append(floor, c)
 		}
 	}
 	if len(out)-pinned <= lim.Total {
@@ -573,6 +639,17 @@ func capByRole(in []Candidate, lim Limits) []Candidate {
 	// cut dropped 11 of the 20 duals of a deck of five colors (F-165).
 	sortLands(mana, lim.landsByScore)
 	for _, c := range mana {
+		if room <= 0 {
+			break
+		}
+		keep[c.Card] = true
+		room--
+	}
+	// The staple floor goes before the score cut too. A staple with no
+	// theme signal carries the staple penalty, and the score cut drops it
+	// first (D-1121).
+	sortCandidates(floor)
+	for _, c := range floor {
 		if room <= 0 {
 			break
 		}
@@ -803,10 +880,17 @@ func ownedFirst(in []Candidate, lim Limits) []Candidate {
 	for _, c := range owned {
 		used[c.Role]++
 	}
-	left := Limits{Total: room, PerRole: map[mtgv1.CardRole]int{}, landsByScore: lim.landsByScore}
+	left := Limits{Total: room, PerRole: map[mtgv1.CardRole]int{}, landsByScore: lim.landsByScore,
+		floor: map[mtgv1.CardRole]int{}}
 	for role, n := range lim.PerRole {
 		if free := n - used[role]; free > 0 {
 			left.PerRole[role] = free
+		}
+	}
+	// The fill holds the part of a floor the collection left open (D-1121).
+	for role, n := range lim.floor {
+		if open := n - used[role]; open > 0 {
+			left.floor[role] = open
 		}
 	}
 	fill := capByRole(filterOwned(in, false), left)
@@ -1062,13 +1146,81 @@ func CommanderLegal(c *mtgv1.Card) bool {
 		hasPaperPrinting(c)
 }
 
+// stapleRole reports whether a card of the role stays with no theme
+// signal. A protection permanent was interaction before D-1120, and it
+// stays a staple.
 func stapleRole(r mtgv1.CardRole) bool {
 	switch r {
 	case mtgv1.CardRole_CARD_ROLE_LAND, mtgv1.CardRole_CARD_ROLE_RAMP, mtgv1.CardRole_CARD_ROLE_DRAW,
-		mtgv1.CardRole_CARD_ROLE_REMOVAL, mtgv1.CardRole_CARD_ROLE_WIPE, mtgv1.CardRole_CARD_ROLE_INTERACTION:
+		mtgv1.CardRole_CARD_ROLE_REMOVAL, mtgv1.CardRole_CARD_ROLE_WIPE, mtgv1.CardRole_CARD_ROLE_INTERACTION,
+		mtgv1.CardRole_CARD_ROLE_PROTECTION:
 		return true
 	}
 	return false
+}
+
+// floorRoles are the staple roles that keep a floor of their most popular
+// cards, keyed by the role key of the band table (D-1121). The land role
+// has the mana half of D-450, and protection has no target.
+var floorRoles = map[string]mtgv1.CardRole{
+	profile.KeyRamp:        mtgv1.CardRole_CARD_ROLE_RAMP,
+	profile.KeyDraw:        mtgv1.CardRole_CARD_ROLE_DRAW,
+	profile.KeyRemoval:     mtgv1.CardRole_CARD_ROLE_REMOVAL,
+	profile.KeyWipe:        mtgv1.CardRole_CARD_ROLE_WIPE,
+	profile.KeyInteraction: mtgv1.CardRole_CARD_ROLE_INTERACTION,
+}
+
+// fallbackFloors are the Commander role targets the generator falls back
+// to when the band table does not load (D-1121).
+var fallbackFloors = map[string]int{
+	profile.KeyRamp: 10, profile.KeyDraw: 10, profile.KeyRemoval: 8, profile.KeyWipe: 3, profile.KeyInteraction: 6,
+}
+
+var floorBands = sync.OnceValues(profile.LoadBands)
+
+// stapleFloors is the floor of each staple role: the role target of the
+// deck, the middle of its band, as the generator reads it (D-1121).
+func stapleFloors(req Request) map[mtgv1.CardRole]int {
+	targets := fallbackFloors
+	if b, err := floorBands(); err == nil {
+		power := &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: req.Bracket}}
+		targets = b.Midpoints(req.Format, power)
+	}
+	out := map[mtgv1.CardRole]int{}
+	for key, role := range floorRoles {
+		if n := targets[key]; n > 0 {
+			out[role] = n
+		}
+	}
+	return out
+}
+
+// markFloor marks the n most popular cards of one role as its floor. The
+// top-list rate leads, then the play share, then the name. A pinned card
+// already skips the cap, so it takes no floor place (D-1121).
+func markFloor(cs []Candidate, n int) {
+	if n <= 0 {
+		return
+	}
+	order := make([]int, 0, len(cs))
+	for i := range cs {
+		if !cs[i].Pinned {
+			order = append(order, i)
+		}
+	}
+	sort.SliceStable(order, func(a, b int) bool {
+		x, y := cs[order[a]], cs[order[b]]
+		if x.Rate != y.Rate {
+			return x.Rate > y.Rate
+		}
+		if x.Pop != y.Pop {
+			return x.Pop > y.Pop
+		}
+		return x.Card.Name < y.Card.Name
+	})
+	for _, i := range order[:min(n, len(order))] {
+		cs[i].Floor = true
+	}
 }
 
 // RoleName is the short lowercase role name for logs and the gate doc.

@@ -152,7 +152,10 @@ func (s *Server) SendLink(ctx context.Context, _ *connect.Request[mtgv1.SendLink
 // account, and it answers a custom token that signs in to the account.
 // The link works one time, also when a later step refuses. A token that
 // can not be signed leaves the email proved, and the answer carries no
-// token, so the person signs in with the password.
+// token, so the person signs in with the password. A second open of a
+// link whose account is proved answers already_proved and no token, so
+// a mail scanner that opens the link first leaves the person a clear
+// next step (D-1119).
 func (s *Server) OpenLink(ctx context.Context, req *connect.Request[mtgv1.OpenLinkRequest]) (*connect.Response[mtgv1.OpenLinkResponse], error) {
 	code := req.Msg.GetCode()
 	if !prooflink.Valid(code) {
@@ -160,6 +163,8 @@ func (s *Server) OpenLink(ctx context.Context, req *connect.Request[mtgv1.OpenLi
 	}
 	link, err := s.links.Take(ctx, code, s.now())
 	switch {
+	case errors.Is(err, prooflink.ErrUsed):
+		return s.usedLink(ctx, link.UID)
 	case errors.Is(err, prooflink.ErrUnknown):
 		return nil, connect.NewError(connect.CodeNotFound, errUnknown)
 	case errors.Is(err, prooflink.ErrExpired):
@@ -207,6 +212,24 @@ func (s *Server) OpenLink(ctx context.Context, req *connect.Request[mtgv1.OpenLi
 		token = ""
 	}
 	return connect.NewResponse(&mtgv1.OpenLinkResponse{CustomToken: token}), nil
+}
+
+// usedLink answers the second open of a link (D-1119). A proved account
+// gets already_proved and no token. Any other state gets the answer of
+// an unknown code, as before.
+func (s *Server) usedLink(ctx context.Context, uid string) (*connect.Response[mtgv1.OpenLinkResponse], error) {
+	acct, err := s.accounts.Account(ctx, uid)
+	if errors.Is(err, ErrNoAccount) {
+		return nil, connect.NewError(connect.CodeNotFound, errUnknown)
+	}
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	if !acct.Proved {
+		return nil, connect.NewError(connect.CodeNotFound, errUnknown)
+	}
+	s.logger.Info("a used proof link opened again", "uid", uid)
+	return connect.NewResponse(&mtgv1.OpenLinkResponse{AlreadyProved: true}), nil
 }
 
 // Message writes the email of one link with the text of the owner

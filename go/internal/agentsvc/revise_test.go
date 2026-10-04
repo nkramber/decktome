@@ -210,8 +210,9 @@ func TestSlotChangeAfterBuildRebuilds(t *testing.T) {
 	if !strings.Contains(strings.Join(third.statuses, "|"), "a deck setting changed") {
 		t.Errorf("statuses = %v", third.statuses)
 	}
-	if third.deck == nil || third.deck.GetRevisedFromDeckId() != "" {
-		t.Errorf("deck = %v", third.deck)
+	// TestARebuildKeepsTheDeckItRevises reads revised_from (D-1118).
+	if third.deck == nil {
+		t.Errorf("no deck: %v", third.order)
 	}
 }
 

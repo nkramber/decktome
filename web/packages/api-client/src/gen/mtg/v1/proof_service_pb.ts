@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file mtg/v1/proof_service.proto.
  */
 export const file_mtg_v1_proof_service: GenFile = /*@__PURE__*/
-  fileDesc("ChptdGcvdjEvcHJvb2Zfc2VydmljZS5wcm90bxIGbXRnLnYxIhEKD1NlbmRMaW5rUmVxdWVzdCIqChBTZW5kTGlua1Jlc3BvbnNlEhYKDmFscmVhZHlfcHJvdmVkGAEgASgIIh8KD09wZW5MaW5rUmVxdWVzdBIMCgRjb2RlGAEgASgJIigKEE9wZW5MaW5rUmVzcG9uc2USFAoMY3VzdG9tX3Rva2VuGAEgASgJMpABCgxQcm9vZlNlcnZpY2USPwoIU2VuZExpbmsSFy5tdGcudjEuU2VuZExpbmtSZXF1ZXN0GhgubXRnLnYxLlNlbmRMaW5rUmVzcG9uc2UiABI/CghPcGVuTGluaxIXLm10Zy52MS5PcGVuTGlua1JlcXVlc3QaGC5tdGcudjEuT3BlbkxpbmtSZXNwb25zZSIAQjJaMGdpdGh1Yi5jb20vbmtyYW1iZXIvZGVja3RvbWUvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z");
+  fileDesc("ChptdGcvdjEvcHJvb2Zfc2VydmljZS5wcm90bxIGbXRnLnYxIhEKD1NlbmRMaW5rUmVxdWVzdCIqChBTZW5kTGlua1Jlc3BvbnNlEhYKDmFscmVhZHlfcHJvdmVkGAEgASgIIh8KD09wZW5MaW5rUmVxdWVzdBIMCgRjb2RlGAEgASgJIkAKEE9wZW5MaW5rUmVzcG9uc2USFAoMY3VzdG9tX3Rva2VuGAEgASgJEhYKDmFscmVhZHlfcHJvdmVkGAIgASgIMpABCgxQcm9vZlNlcnZpY2USPwoIU2VuZExpbmsSFy5tdGcudjEuU2VuZExpbmtSZXF1ZXN0GhgubXRnLnYxLlNlbmRMaW5rUmVzcG9uc2UiABI/CghPcGVuTGluaxIXLm10Zy52MS5PcGVuTGlua1JlcXVlc3QaGC5tdGcudjEuT3BlbkxpbmtSZXNwb25zZSIAQjJaMGdpdGh1Yi5jb20vbmtyYW1iZXIvZGVja3RvbWUvZ28vZ2VuL210Zy92MTttdGd2MWIGcHJvdG8z");
 
 /**
  * @generated from message mtg.v1.SendLinkRequest
@@ -77,6 +77,15 @@ export type OpenLinkResponse = Message<"mtg.v1.OpenLinkResponse"> & {
    * @generated from field: string custom_token = 1;
    */
   customToken: string;
+
+  /**
+   * already_proved is true when the link worked before and the email of
+   * its account is proved (D-1119). The answer then carries no token,
+   * and the person signs in with the password.
+   *
+   * @generated from field: bool already_proved = 2;
+   */
+  alreadyProved: boolean;
 };
 
 /**

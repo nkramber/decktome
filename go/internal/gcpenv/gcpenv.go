@@ -12,8 +12,10 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"cloud.google.com/go/storage"
 
@@ -110,6 +112,53 @@ func cloudLoggingAttr(groups []string, a slog.Attr) slog.Attr {
 		return slog.String("message", a.Value.String())
 	}
 	return a
+}
+
+// TraceKey is the field that Cloud Logging reads to join a log line to
+// the request log and the trace of the same request (D-1117). The logger
+// of NewLogger keeps it at the top level, unchanged.
+const TraceKey = "logging.googleapis.com/trace"
+
+// TraceAttr returns a reader of the trace of a request in project. The
+// attribute holds "projects/<project>/traces/<id>" under TraceKey. The
+// id comes from X-Cloud-Trace-Context, else from traceparent. With no
+// valid id, the attribute is empty, and slog drops it.
+func TraceAttr(project string) func(http.Header) slog.Attr {
+	return func(h http.Header) slog.Attr {
+		id := traceID(h)
+		if project == "" || id == "" {
+			return slog.Attr{}
+		}
+		return slog.String(TraceKey, "projects/"+project+"/traces/"+id)
+	}
+}
+
+// traceID reads the trace id of "TRACE_ID/SPAN_ID;o=1", or of the W3C
+// form "00-TRACE_ID-SPAN_ID-FLAGS". An id that is not 32 hex digits is
+// refused, so a client cannot write free text into the field.
+func traceID(h http.Header) string {
+	if v := h.Get("X-Cloud-Trace-Context"); v != "" {
+		id, _, _ := strings.Cut(v, "/")
+		if id, _, _ = strings.Cut(id, ";"); isTraceID(id) {
+			return id
+		}
+	}
+	if parts := strings.Split(h.Get("traceparent"), "-"); len(parts) == 4 && isTraceID(parts[1]) {
+		return parts[1]
+	}
+	return ""
+}
+
+func isTraceID(s string) bool {
+	if len(s) != 32 || strings.Trim(s, "0") == "" {
+		return false
+	}
+	for _, r := range s {
+		if !strings.ContainsRune("0123456789abcdefABCDEF", r) {
+			return false
+		}
+	}
+	return true
 }
 
 func severity(l slog.Level) string {

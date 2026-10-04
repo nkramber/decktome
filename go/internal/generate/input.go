@@ -201,13 +201,14 @@ func (b *Builder) repairInput(req Request, returned *mtgv1.Deck, misses []Miss, 
 			}
 			fmt.Fprintf(&s, "- %s: %d\n", k, targets[k])
 		}
-		// The format shape is what the top lists of the format look
-		// like: their land count, their curve, and the cards they hold
-		// most (PR-14B). It is a description, and the bands above are
+		// The format shape is what the published lists of the request's
+		// power look like: the average decks for brackets 1 to 3, and the
+		// top lists with the cards they hold most for brackets 4 and 5
+		// (PR-14B, D-1123). It is a description, and the bands above are
 		// the limits.
 		if b.scorer != nil {
-			if lines := b.scorer.ShapeLines(req.Format); len(lines) > 0 {
-				s.WriteString("\n## Format shape\n\nThe published top lists of the format look like this.\n\n")
+			if lines := b.scorer.ShapeLines(req.Format, req.Power); len(lines) > 0 {
+				s.WriteString("\n## Format shape\n\nThe published lists of the format at this power look like this.\n\n")
 				for _, line := range lines {
 					s.WriteString(line + "\n")
 				}
