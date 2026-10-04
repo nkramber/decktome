@@ -26,6 +26,8 @@ Author provider: Claude Code
 
 **The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merge of PR-128 made the branch conflict, so the session moved it onto `a7731f5`. The effective head is `6ae7de4`. The later review fixed P2-1, and `docs/reviews/pr-285-response.md` holds the answer. The current review found P2-2, provider attribution in the pull request metadata. Gitar approved the code head after the review-record push. The record needs an author correction before approval.
 
+**Open work.** Answer P2-2 of `docs/reviews/pr-285.md` with the `pr-review` skill, in `docs/reviews/pr-285-response.md`. Test it against hard rule 6 and D-811, the `## Review` section of `.github/pull_request_template.md`, and the bodies of merged pull requests such as #284. Then do the Gitar pass, and run Codex round 4. This is the third effective head, so an open finding there stops the loop for the owner (D-826).
+
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
 ## How to resume
