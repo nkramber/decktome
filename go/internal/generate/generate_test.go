@@ -351,8 +351,8 @@ func TestShortlistOmitsTheCommander(t *testing.T) {
 			t.Errorf("%s: the pool lost the commander", tc.format)
 		}
 	}
-	if PromptVersion != 18 {
-		t.Errorf("PromptVersion = %d, want 18", PromptVersion)
+	if PromptVersion != 19 {
+		t.Errorf("PromptVersion = %d, want 19", PromptVersion)
 	}
 }
 

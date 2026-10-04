@@ -1,6 +1,7 @@
 package profile
 
 import (
+	"regexp"
 	"slices"
 	"strings"
 
@@ -130,9 +131,45 @@ func isColorlessLand(c *mtgv1.Card) bool {
 
 // isFastMana reports a nonland, noncreature mana producer of mana value
 // one or less: Sol Ring, a ritual, a Mox. A signet costs two and a dork
-// is a creature, so neither counts.
+// is a creature, so neither counts. A card whose every mana ability pays
+// mana or taps a creature counts neither, because it makes no deck
+// faster: Barbed Sextant, the Eggs, Springleaf Drum (D-1159).
 func isFastMana(c *mtgv1.Card) bool {
-	return !isLand(c) && !isCreature(c) && c.GetManaValue() <= 1 && producesMana(c)
+	return !isLand(c) && !isCreature(c) && c.GetManaValue() <= 1 && producesMana(c) && freeManaAbility(c)
+}
+
+// manaSymbol matches a mana symbol of a cost: a generic number, a color,
+// colorless, X, snow, or a hybrid. The tap and untap symbols are not
+// mana.
+var manaSymbol = regexp.MustCompile(`\{(\d+|[wubrgcxs]|[wubrg2]/[wubrgp])\}`)
+
+// addClause matches the instruction that adds mana, and not a word such
+// as "additional".
+var addClause = regexp.MustCompile(`\badds? `)
+
+// freeManaAbility reports a card with one way to add mana that costs no
+// mana and taps no creature. A spell, a trigger, or a static ability
+// that adds mana has no cost of its own, so it counts. A card with no
+// "add" in its text, such as one whose mana Scryfall alone lists, counts
+// too.
+func freeManaAbility(c *mtgv1.Card) bool {
+	found := false
+	for _, line := range strings.Split(strings.ToLower(c.GetOracleText()), "\n") {
+		loc := addClause.FindStringIndex(line)
+		if loc == nil {
+			continue
+		}
+		found = true
+		colon := strings.LastIndex(line[:loc[0]], ":")
+		if colon < 0 {
+			return true
+		}
+		cost := line[:colon]
+		if !manaSymbol.MatchString(cost) && !strings.Contains(cost, "untapped creature") {
+			return true
+		}
+	}
+	return !found
 }
 
 // searchClause is the lower-case text of a library search up to the card
