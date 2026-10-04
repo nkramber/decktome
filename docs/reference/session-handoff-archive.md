@@ -15,6 +15,41 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04a, PR-123
+
+**Branch `feat/archidekt-url-import`: PR-123, a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** The pull request is #277. The owner renamed it two times (D-1108, D-1115).
+
+Author provider: Claude Code
+
+**The base.** `main` is `bebee78`, from #281. The branch merged `main` after #278, and again after #281. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
+
+**The owner choices.** An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1113 answer the Codex reviews. `make codex-review` accepts the new Gitar reply "Running a review on this PR now" (D-1114).
+
+**The code.**
+
+- `go/internal/archidekt` reads one deck and writes its Arena text. `go/internal/decklink` sorts a link and holds the steps of each site.
+- `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
+- `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
+- The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
+- `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1113).
+
+**The checks.** `make verify` passed on `8e577ef`, with 555 web tests under Node 22. Codex ran `make store-check` against the emulator on `8e577ef`, and it passed.
+
+**The review.** The record `docs/reviews/pr-277.md` reads `Ready for owner merge` at effective head `8e577ef`, with no open finding. Gitar approved `8e577ef` at 01:54 UTC on 2026-10-04, with no open thread. The state is pending the auto-merge (D-828).
+
+**The open work.**
+
+1. The owner confirms the merge, and the auto-merge merges the pull request (D-828, D-834).
+2. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1113).
+3. After the deploy, read an Archidekt link on `decktome.com`, and import it.
+4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+
+### 2026-10-03g: a collection of 50,000 rows, PR-121
+
+**A user wrote "Collection limit too small".** The log showed a refused import of about 2.3 MB, past the limit of 9,000 rows.
+
+**The owner chose 50,000 rows and a file of 10 MiB.** The session first gave the request size as the file size. The web app sends base64, so the session corrected the estimate and the request cap before the code.
+
 ## The resume section of 2026-10-03h, PR-122
 
 **Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #281.

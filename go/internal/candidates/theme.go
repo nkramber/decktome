@@ -892,6 +892,19 @@ var stopWords = map[string]bool{
 	// cantrips" and "a good protection suite": no row or alias holds one
 	// of these words, and each one became a dead text needle (F-212).
 	"matters": true, "matter": true, "heavy": true, "lots": true, "suite": true,
+	// The fifth group is the filler that question gate run 58 met in
+	// "reanimate one big creature", "the best deck under budget", and
+	// "for someone who has never played before". Since D-1116 the theme
+	// question names each unmatched word, so a filler word must never
+	// reach it. The words of the avoid slot stay out of this list.
+	"one": true, "two": true, "three": true, "has": true, "have": true, "had": true, "never": true,
+	"someone": true, "anyone": true, "who": true, "played": true, "playing": true, "before": true,
+	"new": true, "player": true, "players": true, "beginner": true, "beginners": true, "budget": true,
+	"under": true, "over": true, "cheap": true, "money": true, "dollars": true, "dollar": true,
+	"are": true, "was": true, "were": true, "been": true, "its": true, "they": true, "them": true,
+	"their": true, "our": true, "but": true, "from": true, "into": true, "about": true, "around": true,
+	"more": true, "much": true, "many": true, "lot": true, "focus": true, "focused": true,
+	"theme": true, "themed": true, "style": true, "based": true, "wants": true,
 }
 
 // singularIE lists plurals in -ies whose singular ends in -ie. The rule

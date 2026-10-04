@@ -3,6 +3,7 @@ package candidates
 import (
 	"fmt"
 	"slices"
+	"strings"
 	"testing"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -278,6 +279,26 @@ func TestF212CommanderTriggerAddsHeroic(t *testing.T) {
 		}
 		if c, ok := find(with.Candidates, name); !ok || !c.Themed {
 			t.Errorf("the heroic commander must pull %s in: %+v, %v", name, c, ok)
+		}
+	}
+}
+
+// TestFillerNeverReachesTheThemeQuestion: the theme strings of question
+// gate run 58 keep their content words alone, so the question of D-1116
+// never names a filler word.
+func TestFillerNeverReachesTheThemeQuestion(t *testing.T) {
+	tt, err := loadThemes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for theme, want := range map[string]string{
+		"Reanimate one big creature":              "reanimate big creature",
+		"the best deck under budget":              "",
+		"for someone who has never played before": "",
+		"dino stompy":                             "dino stompy",
+	} {
+		if got := strings.Join(tt.words(theme), " "); got != want {
+			t.Errorf("words(%q) = %q, want %q", theme, got, want)
 		}
 	}
 }
