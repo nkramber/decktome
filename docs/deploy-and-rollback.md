@@ -290,6 +290,7 @@ A revision older than PR-115 has no request for beta access and no admin screen.
 CAUTION: a revision older than PR-121 can not read a collection in parts (D-1110). After a rollback to it, each read of a collection over about 10,000 rows fails. A smaller collection stays in one document, and it reads as before.
 
 CAUTION: a revision older than PR-124 can not read a session snapshot of version 7 (D-1129). After a rollback to it, each session that a newer revision wrote fails to load. A session that the older revision wrote reads as before. The older web app also opens a proof link on load, so a mail scanner can use the link first (D-1119).
+CAUTION: a revision older than PR-125 drops the eval mark of a deck when it renames, shares, or marks that deck (D-1132). After a rollback to it, `./start-live-evals` evaluates such a deck again.
 
 ### 8.2 The jobs
 

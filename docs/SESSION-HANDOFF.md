@@ -6,33 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04b)
+## RESUME HERE (2026-10-04c)
 
-**Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-220, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).
+**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1139).** The pull request is #282.
 
 Author provider: Claude Code
 
-**The base.** `main` is `b308a71`, from #277.
+**The base.** The branch stacks on `fix/first-user-feedback` at `5a862a5`, PR-124 (#283). `main` is `b308a71`, from #277.
+
+**The owner choices.** On 2026-10-03 the session watched the first outside user build two decks, and the owner asked to automate that read (D-1132). The first run marks the waiting decks read (D-1133). Each session can spend $3.00, and the live-test lanes stay closed (D-1134). Every account gets an eval (D-1135). One session runs at a time, at most three live-eval pull requests stay open, and each starts from the newest one (D-1138). The owner kept `bypassPermissions` and asked for notices before all user text (D-1139).
 
 **The code.**
 
-- `go/internal/candidates`: the rows `hand-size`, `cantrips`, and `heroic`, the unmatched words, the roles, the staple floor, and `avoid`.
-- `go/internal/questions` and `go/internal/agentsvc`: a question for each dead word, the classifier field `avoid`, the revision rule, and snapshot version 7 (D-1129).
-- Prompts: generate 18, questions 21, and summary judge 3.
-- `go/internal/quality` and `go/internal/profile`: the feature `land_need`, no reason inside a band, and the shape of the bracket.
-- `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
-- `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
+- `go/internal/decks` holds `has_been_evaluated` and `evaluated_at`. `keepStored` keeps them on each rewrite. `Unevaluated` and `MarkEvaluated` read and write them.
+- `go/cmd/live-evals` holds `pending`, `summary`, `bundle`, `mark`, `ready`, and `notify`. Each bundle file carries the untrusted-data notice.
+- `scripts/live-evals.sh` is the loop, and `./start-live-evals` starts it. `scripts/live-evals/` holds the eval, continue, and restack prompts.
 
-**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Question gate run 57 failed on one flaky classifier miss. Ten plays of that conversation met each slot. Run 58 reads PASS for $0.0661. Its theme question named filler words, so a fifth group of stop words came after it. Run 59 reads that group: PASS for $0.1036. Its two invented questions are in other slots. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of the chat built a deck of grade typical.
+**The checks.** `make verify` passed on `00ade53`, with the web tests under Node 22. `make store-check` passed against the emulator. `./start-live-evals --dry` read the six decks of 2026-10-03, and it marked nothing.
 
-**The review.** The review applies to effective head `d1c6ce5`. Verdict: Changes required, with open finding P2-1. Gitar approved the current head with no review threads. The owner knows of D-1126 and of the cEDH rate in a bracket 3 grade. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
+**The review.** The owner renumbered this pull request, because `fix/first-user-feedback` holds its first ids. The Gitar pass runs again, and no Codex review ran yet.
 
 **The open work.**
 
-1. Do the Gitar pass, then run `make codex-review PR=283`.
-2. After the deploy, run `make user-case-chat CONFIRM=1` to a new output file.
-3. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
-4. The owner tells the user about the fixes.
+1. Add the two changes that the owner asked for on 2026-10-04, in this pull request:
+   - A Pushover notice for each new deck and each revision, and for each eval that finds a fix.
+   - Replay the user session with the fix, and prove an improvement. After two more failed tries, send a notice that the fix failed.
+2. Run `make pr-check`, then do the Gitar pass with the `gitar-review` skill, then `make codex-review PR=282`.
+3. The merge of the owner (D-828, D-834).
+4. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
 
 ## How to resume
 
@@ -56,7 +57,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
-- Eighteen targets and two loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, and `scripts/feedback-loop.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
+- Eighteen targets and three loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, `scripts/feedback-loop.sh`, and `scripts/live-evals.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate document names the commit of `HEAD`, and never the tree. Deck gate run 29 ran over uncommitted work, so its header names the parent commit `5fd8085`. Commit the change before a paid run.
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -106,7 +107,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-124: the findings of the first outside user** (F-212 to F-220, D-1116 to D-1131). The resume section holds the open work.
+0. **PR-124: the findings of the first outside user** (F-212 to F-220, D-1116 to D-1131). The resume section of 2026-10-04b in the archive holds its open work.
+0. **PR-125: the live evals** (D-1132 to D-1139). It stacks on PR-124. The resume section holds the open work.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -135,12 +137,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03h: the sender `mail@decktome.com`, PR-122
-
-**The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
-
-**The owner chose the root domain as the sender over a reply-to.** The Resend documents and the domain limit of the key showed that a change of the code alone stops each email. So the steps of the owner come before the merge.
-
 ### 2026-10-03i: a deck import from a link, PR-123
 
 **The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites (`docs/reference/deck-links-2026-10-03.md`), and Moxfield answered 403 again.
@@ -157,6 +153,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **Two gates failed on one item each.** A probe proved the question miss a flake. The owner chose a fix of the summary judge and a rejudge (D-1130).
 
+### 2026-10-04c: the live evals, PR-125
+
+**The owner asked the session to watch the traffic of other users.** The logs name no user, so the session read the record of D-638 each minute. The first outside user built two decks, and the session found nine faults by hand.
+
+**The owner asked to automate that read, and chose D-1133 to D-1138.** The classifier refused the launcher as an unsafe agent, and the owner asked for the notices of D-1139.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04a, the records of 2026-08-31 to 2026-10-03g, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04b, the records of 2026-08-31 to 2026-10-03h, and 104 more sections, word for word. Read it for the detail behind a decision.
