@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-03 correction pass 259 (PR-121, F-211, D-1110): a collection passed the limit of 9,000 distinct rows. The store writes parts now, and a collection holds 50,000 rows. Changes: the Firestore row, REV-026, F-211, PR-121, sequencing step 116.
 2026-10-03 correction pass 258 (PR-26, PR-120, D-1090, D-1091, D-1095): the owner chose the new-cards event as the third event of PR-26, before the email digest. The digest holds the new cards of each deck, so this event comes first. Changes: PR-26, PR-120, sequencing steps 99 and 115.
 2026-10-03 correction pass 257 (PR-119, F-210, D-1092 to D-1094): an invited user who signed in and made nothing had no user record. The first verified call writes it now. `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat. Changes: the `users` record row, F-210, PR-119, sequencing step 114.
 
@@ -412,7 +413,7 @@ Three structural facts drive the plan:
 - **LLM.** One deck-build session runs 2 to 4 question turns on the small model, at about 2k tokens each. It then runs 1 to 3 generation turns on the strong model, at about 15k input with the candidate card list and 3k output. Estimate: under $0.10 per session on 2026 list prices. Unknown until M-1 measures it. Prompt caching of the format rules and the candidate list cuts the input cost. The role layer must expose the provider's caching knob (D-1, D-21).
 - **Card data.** Scryfall bulk: 24.5 MB compressed per day for Oracle cards, 77.5 MB for all English printings. Free. Images hotlinked (D-6), zero storage. GCS: one snapshot per day, about 100 MB, cheap lifecycle to 30 days.
 - **Meta data.** The source terms passed the legal check (D-5). MTGO decklists are official and free, and one event page is about 330 KB. A year holds about 3,600 events, so the raw pages are about 1.2 GB, and the normalized lists are a few megabytes. A fit runs in seconds in Go and costs no LLM call.
-- **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, D-16), sessions, decks. Low. A measure of 2026-09-25 stored about 90 gzip bytes for each distinct row, so one document holds about 10,000 rows. The import refuses a collection over 9,000 distinct rows, and the message names the limit (D-910).
+- **Firestore.** Per user: one collection doc set (PR-4 decided one gzip document per collection, D-16), sessions, decks. Low. A measure of 2026-09-25 stored about 90 gzip bytes for each distinct row, so one document holds about 10,000 rows. A larger payload goes into parts. The import refuses a collection over 50,000 distinct rows, and the message names the limit (D-910, D-1110).
 - **Cloud Run.** One service, `mtg-api`, and two jobs, `mtg-snapshot` and `mtg-meta`, read 2026-09-25. Each one scales to zero. Low until users exist. REFUTED 2026-09-25 by PR-80: "two services plus a worker".
 - **Eval.** Deterministic checks are free. Judge runs cost per deck. Cap per run as connector-syncer does ($5 cap in its bake-off).
 - **Deck import (PR-70, 2026-09-23).** One judge read on each Commander import, about $0.014 to $0.017 from bracket gate runs 9 and 12. The floor and the profile call Commander Spellbook up to three times. REFUTED 2026-09-23 by PR-71: "a 60-card import calls no model". A 60-card import makes one judge read, about $0.022 from `make sixty-gate` run 2.
@@ -611,6 +612,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-208 | **The email that proves an address has a long link that did not open on an iPhone.** Firebase sent it from its own domain, with its own text. Its template permits no change of the message (D-1081). | ✅ PR-116 (#273): the API sends the email through Resend, with a link of 33 characters. |
 | F-207 | **On a phone, the "Back to top" button covers the first question.** PR-114 put the first question at the top of the view (D-1071). The fixed button under the header then sat on the question text (D-1072). | ✅ PR-115: on a phone, the anchor also leaves the band of the button, 52 pixels. |
 | F-210 | **An invited user who signed in and made nothing had no user record.** Only a creation wrote the record of D-638. The user proved the email and opened two pages on 2026-10-03 (D-1092). | ✅ PR-119 (#276): the first verified call writes the record. |
+| F-211 | **A collection passed the limit of 9,000 distinct rows.** At 2026-10-04 00:07 UTC a user wrote "Collection limit too small". The API refused an upload of about 12,400 to 18,900 rows of that user 30 seconds before (D-1110). | ✅ PR-121: the store writes parts, and a collection holds 50,000 rows. |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -2345,7 +2347,7 @@ The owner asked for as many corrections as one session can finish, and then for 
 - **REV-021, REV-022, REV-027, and REV-028, the pages.** The share page names its commander and waits for the index. The import offers Commander, and the deck pages credit TopDeck.gg (D-914).
 - **REV-023, the feedback dialog.** A thumbs down or a problem report no longer sends the chat form around it.
 - **REV-024 and REV-025, the questions.** A new commander name replaces the old one, and a mention of cEDH is no request (D-913).
-- **REV-026, the collection size.** An import over 9,000 distinct rows fails with the limit in its message (D-910).
+- **REV-026, the collection size.** An import over 50,000 distinct rows fails with the limit in its message (D-910, D-1110).
 - **REV-017, the colorless commander.** A colorless deck gets a colorless shortlist and Wastes. The offer holds a colorless commander on request alone (D-915).
 - **REV-019, the repair turn.** The repair input holds the deck of the first turn (D-916).
 - **Seven P3 findings.** REV-034, REV-040, REV-041, REV-047, REV-053, REV-058, and REV-067 (D-916).
@@ -3216,6 +3218,28 @@ The replay of 2026-10-03 cost nothing. It joined the 268 first printings of Real
 UNVERIFIED: the tag file of that snapshot holds no tag of a new card, so no tag signal fired in the replay. The tag file of a release day can also lack the new cards. The live check after the deploy waits for Star Trek on 2026-11-13 (Scryfall, read 2026-10-03).
 > *In plain English:* when a new set comes out, the app looks for new cards that fit each of your decks. Your phone tells you, and the deck shows the cards with a button to revise the deck. A dismiss hides the panel.
 
+**PR-121: A collection of 50,000 rows, in parts (F-211, D-1110).** ✅ merged as #PRNUM. The mark comes before any review (D-822).
+
+- **The report (F-211).** At 2026-10-04 00:07 UTC a user wrote "Collection limit too small". The API refused an upload of that user 30 seconds before, with ResourceExhausted. The request held 3,069,541 bytes of Connect JSON. So the file held about 12,400 ManaBox rows or 18,900 Moxfield rows.
+- **The limits (D-1110).** A collection holds 50,000 distinct rows (`collections.MaxEntries`). An upload holds 10 MiB, in the service and in the web app. The API reads a request of up to 16 MiB, because base64 makes 10 MiB about 13.4 MiB.
+- **The parts.** A payload over 900 KiB goes into parts under `parts` of the collection document. Each part holds at most 900 KiB. The document keeps the summary and the count of each kind of part. A smaller payload stays in the document, as before.
+- **The write.** One transaction writes the document and each part, and it deletes each older part. Firestore caps one request at 10 MiB, so `Put` refuses a payload over 8 MiB. A delete removes the parts in its transaction.
+- **The read.** A read of the parts reads the document again in a read-only transaction. So a replace between the two reads can not mix two files. A collection read inflates at most 32 MiB (`gzstore.UnmarshalMax`).
+- **The measure.** A scratch test of 2026-10-03 packed real printings of the snapshot of 2026-09-04 as `Put` does. 10,000 rows took 897,198 gzip bytes, and D-910 read 895,882. 50,000 rows took 4,146,949 bytes, and their entries inflated to 13,906,176 bytes.
+
+Gate:
+- The tests of `go/internal/gzstore` read the limit of the caller.
+- The tests of `go/internal/collections` read the split, and the refusal of a payload over 8 MiB.
+- An emulator test stores 20,000 rows in parts and reads them back. A small replace and a delete leave no part.
+- An emulator test stores and reads 50,000 rows. On 2026-10-03 the store took 0.33 seconds, and the read took 73 ms.
+- The web test reads the refusal of a file over 10 MiB.
+- `make store-check` passes, and `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+The live check after the deploy: an upload of a large export stores all its rows. Section 8.1 of `docs/deploy-and-rollback.md` holds the limit of a rollback.
+> *In plain English:* the app now takes a collection of up to 50,000 different printings, and a file of up to 10 MB. Before, the limit was 9,000.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3628,6 +3652,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 113. **PR-118** the push of a legality change, the second event of PR-26 (D-1087 to D-1089).
 114. **PR-119** a user record for each user who signs in (F-210, D-1092 to D-1094).
 115. **PR-120** the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).
+116. **PR-121** a collection of 50,000 rows, in parts (F-211, D-1110).
 
 ## 9. Open questions
 
