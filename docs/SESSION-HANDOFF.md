@@ -23,15 +23,15 @@ Author provider: Claude Code
 - `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
 - `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
 
-**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate runs 25 and 26 read PASS. Run 26 decks name no bracket. Question gate run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Rejudge run 40 of deck gate run 39 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar, and the stored decks of the user fail 9 deck bars. A free rescore of the replay decks after F-223 keeps both grades above their bars.
+**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate runs 25, 26, and 27 read PASS. Run 26 decks name no bracket. Run 27 on `944ce24` holds F-223 and keeps each number of run 26. Question gate run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Rejudge run 40 of deck gate run 39 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar, and the stored decks of the user fail 9 deck bars. A free rescore of the replay decks after F-223 keeps both grades above their bars.
 
-**The review.** Codex round 2 approves effective head `c712e844`. P2-1 is fixed in `a078bb5`. Gitar found that absent deck-bar values passed as zero. Commit `1f1b0f4` fixes it. Gitar resolved the thread. The owner knows of D-1126. PR #282 renumbers its ids (D-1131).
+**The review.** Codex round 2 approves effective head `c712e844`. P2-1 is fixed in `a078bb5`. Gitar found that absent deck-bar values passed as zero. Commit `1f1b0f4` fixes it. Gitar resolved the thread. The Codex record says that no quality source file changed after `0216e65`. That is not true: F-221 and F-223 changed `features.go`. Run 27 measures the head. The owner knows of D-1126. PR #282 renumbers its ids (D-1131).
 
 **The open work.**
 
-1. Push the review record and hand-off. Verify the branch head and required checks. Then ask the owner to confirm the merge.
-3. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
-4. The owner tells the user about the fixes.
+1. Do the Gitar pass on the commit of quality gate run 27. Then ask the owner to confirm the merge.
+2. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
+3. The owner tells the user about the fixes.
 
 ## How to resume
 
