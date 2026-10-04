@@ -20,13 +20,13 @@ Author provider: Claude Code
 - Each tick moves the full clone `$LIVE_EVALS_HOME/main` to origin/main, and runs `start-live-evals --once` there. Git refuses a linked worktree as the reference of a clone.
 - `go/internal/feedback` reads the general notes with no eval mark. `go/cmd/live-evals` adds each note with the key `n-`, and its bundle holds `note.json` (D-1156).
 - The prompt holds the scope rule. An item with no fault in scope ends `out-of-scope`, and the owner gets the reason (D-1157).
-- `live-evals guard` reads the changed files of a pull request on GitHub. A protected path holds it as `blocked` (D-1158).
+- `live-evals guard` reads the changed files of a pull request on GitHub. A protected path holds it as `blocked` (D-1158). The protected paths hold the paid-run gates and the provider cost meter (D-1162).
 
 **The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar approved the moved head `bec0e573`, and both Gitar threads are closed. Review round 4 fixed P2-1 and P2-2, then found P2-3: the guard leaves paid-run controls outside its protected paths. `docs/reviews/pr-285.md` records `Changes required` for `bec0e573`, with P2-3 open. `make verify` passed on the current head. `review-gate` failed because this record was absent from the branch.
+**The review.** Gitar approved the moved head `bec0e573`, and both Gitar threads are closed. Review round 4 fixed P2-1 and P2-2, then found P2-3: the guard left `go/internal/gatekit/` and `go/internal/llm/` open. The guard now holds both, with a test. The owner kept the user cap of D-1109 open (D-1162). `docs/reviews/pr-285-response.md` holds the three answers.
 
-**Open work.** The author must fix P2-3 and run the next Gitar pass. Then run review round 5. If it finds an open item, follow D-826. Ask the owner to confirm the merge only after an approval.
+**Open work.** Do the Gitar pass of the P2-3 fix, then run review round 5. A finding stops the loop for the owner at its third open round (D-826). Ask the owner to confirm the merge only after an approval.
 
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 

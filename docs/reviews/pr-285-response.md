@@ -25,3 +25,13 @@ The body. Full merit. The `## Review` section of `.github/pull_request_template.
 The comments. No merit. The three comments of the author name the command `make codex-review PR=285`. They name no reviewer. The command is a technical name of hard rule 10 of `CLAUDE.md`. A command name does not make a provider the author of the work.
 
 Regression check: read the body with `gh pr view 285 --json body`, and run `git log --format=%B c8a70af..HEAD`. Neither holds "Codex", "OpenAI", or a co-author line. The body names "Claude" only in the paths `CLAUDE.md` and `.claude/`.
+
+## P2-3: The guard allows changes to paid-run controls
+
+Result: full merit.
+
+Evidence: `protectedPrefixes` of `go/cmd/live-evals/guard.go` held neither path. `go/internal/gatekit/` holds the permission and the spend cap of each paid target. `go/internal/llm/` holds the cost meter, `prices.json`, and `roles.json`. D-1158 names the spend as a protected area.
+
+Correction: the guard holds `go/internal/gatekit/` and `go/internal/llm/`. The caution of `scripts/live-evals/eval-prompt.md` names the spend controls. The user cap of D-1109 sits in `go/cmd/api/main.go` and `go/internal/agentsvc/service.go`. The owner chose to keep those files open, because a product fix often changes them (D-1162).
+
+Regression check: `TestProtectedOfHoldsTheSpendControls` gives four spend paths and a deck path. It fails on the old list, which returned no path. `go test ./cmd/live-evals` passes.

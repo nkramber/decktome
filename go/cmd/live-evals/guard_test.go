@@ -45,6 +45,16 @@ func TestProtectedOfHoldsTheFeedbackStore(t *testing.T) {
 	}
 }
 
+// The paid-run gates and the provider cost meter are spend paths (D-1158, D-1162).
+func TestProtectedOfHoldsTheSpendControls(t *testing.T) {
+	files := []string{"go/internal/gatekit/spendcap.go", "go/internal/llm/prices.json",
+		"go/internal/llm/roles.json", "go/internal/llm/usage.go", "go/internal/generate/generate.go"}
+	want := files[:4]
+	if got := protectedOf(files); !reflect.DeepEqual(got, want) {
+		t.Fatalf("protectedOf = %v, want %v", got, want)
+	}
+}
+
 // A prefix matches a folder, and never a longer name that shares it.
 func TestProtectedOfMatchesWholeFolders(t *testing.T) {
 	if got := protectedOf([]string{"go/internal/authority/x.go", "go/internal/usagestats/x.go", "scripts/live-evals-notes.md"}); len(got) != 0 {

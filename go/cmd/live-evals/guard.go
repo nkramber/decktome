@@ -9,7 +9,7 @@ import (
 )
 
 // protectedPrefixes and protectedFiles are the paths that a live-eval
-// pull request never changes (D-1158): access, accounts, spend, the rules
+// pull request never changes (D-1158): access, accounts, spend (D-1162), the rules
 // and the deploy, the agent rules, the feedback store that holds the eval
 // marks, and the live evals themselves. The
 // scope rule of the prompt (D-1157) keeps a session away from them, and
@@ -27,7 +27,9 @@ var protectedPrefixes = []string{
 	"go/internal/authblock/",
 	"go/internal/feedback/",
 	"go/internal/feedbacksvc/",
+	"go/internal/gatekit/",
 	"go/internal/invitesvc/",
+	"go/internal/llm/",
 	"go/internal/prooflink/",
 	"go/internal/proofsvc/",
 	"go/internal/ratelimit/",
