@@ -6,15 +6,15 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03g)
+## RESUME HERE (2026-10-03i)
 
-**Branch `feat/archidekt-url-import`: PR-123, a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** The pull request is #277. The owner renamed it two times, because #278 took PR-120 (D-1108) and #280 took PR-121 (D-1115).
+**Branch `feat/archidekt-url-import`: PR-123, a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** The pull request is #277. The owner renamed it two times (D-1108, D-1115).
 
 Author provider: Claude Code
 
-**The base.** `main` is `d0b8498`, from #278. The branch merged `main` after #278. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
+**The base.** `main` is `bebee78`, from #281. The branch merged `main` after #278, and again after #281. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
 
-**The owner choices.** The owner asked for a workshop of an Archidekt and a Moxfield link. An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1113 answer the Codex reviews. `make codex-review` accepts the new Gitar reply "Running a review on this PR now" (D-1114).
+**The owner choices.** An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1113 answer the Codex reviews. `make codex-review` accepts the new Gitar reply "Running a review on this PR now" (D-1114).
 
 **The code.**
 
@@ -24,16 +24,16 @@ Author provider: Claude Code
 - The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
 - `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1113).
 
-**The checks.** `make verify` passed on `d64a08f`. The commit of the new ids and of D-1114 needs its own run. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
+**The checks.** `make verify` passed on `d64a08f`, and the merge of #281 needs a new run. `make store-check` passes with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** Gitar found two items, and `a5583df` fixed both. Codex round 1 found P2-1 and P2-2, and round 2 read `Blocked` only for the old name of D-1108. Round 3 at `8d9737c` found P2-3, a cap of 20 reads, and P2-4, an expired read that stays. `docs/reviews/pr-277-response.md` answers each one. Gitar approved `d64a08f` at 00:34 UTC on 2026-10-04. The state is pending the auto-merge (D-828).
+**The review.** `docs/reviews/pr-277-response.md` answers each finding of Codex rounds 1 to 3. Round 3 at `8d9737c` found P2-3 and P2-4. Gitar approved `d64a08f` at 00:34 UTC on 2026-10-04. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
 1. Do the Gitar pass of the head, and answer each Gitar note.
 2. Run `make codex-review PR=277` for round 4, then get the owner confirmation.
 3. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1113).
-4. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
+4. After the deploy, read an Archidekt link on `decktome.com`, and import it.
 5. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
@@ -108,8 +108,10 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job: an hour with no new version logs "snapshot current". Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 0. **PR-123: a deck import from a link** (D-1100 to D-1108, D-1113 to D-1115). The resume section holds the open work.
+0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
+0. **The check of PR-121** (F-211, D-1110). It merged as #280. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page. The owner can tell the user that the limit is 50,000 rows now.
+0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
@@ -135,24 +137,26 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03e: the spend cap of $2, D-1109
+### 2026-10-03g: a collection of 50,000 rows, PR-121
 
-**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
+**A user wrote "Collection limit too small".** The log showed a refused import of about 2.3 MB, past the limit of 9,000 rows.
 
-### 2026-10-03f: the push of new cards, PR-120
+**The owner chose 50,000 rows and a file of 10 MiB.** The session first gave the request size as the file size. The web app sends base64, so the session corrected the estimate and the request cap before the code.
 
-**The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
+### 2026-10-03h: the sender `mail@decktome.com`, PR-122
 
-**The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
+**The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
 
-### 2026-10-03g: a deck import from a link, PR-123
+**The owner chose the root domain as the sender over a reply-to.** The Resend documents and the domain limit of the key showed that a change of the code alone stops each email. So the steps of the owner come before the merge.
 
-**The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites on 2026-10-03 (`docs/reference/deck-links-2026-10-03.md`). Archidekt answered, and Moxfield answered 403 again. The owner amended D-845 for Archidekt, and kept D-493 and D-889.
+### 2026-10-03i: a deck import from a link, PR-123
 
-**The owner asked for a headless browser or a false agent for Moxfield.** The session declined, because of D-502 and the block of Moxfield. The owner chose the steps, the access request, and a bookmarklet test (D-1102).
+**The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites (`docs/reference/deck-links-2026-10-03.md`), and Moxfield answered 403 again.
 
-**The owner renamed the item PR-121 and then PR-123 (D-1115), and answered the Codex reviews.** The cap counts on each instance (D-1106). A link needs a read (D-1107), and a TTL policy deletes it (D-1113).
+**The owner asked for a headless browser for Moxfield.** The session declined (D-502), and the owner chose the steps (D-1102).
+
+**The owner renamed the item two times (D-1108, D-1115).** D-1106, D-1107, D-1113, and D-1114 answer the reviews and the gate.
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03e, the records of 2026-08-31 to 2026-10-03c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03g, the records of 2026-08-31 to 2026-10-03e, and 104 more sections, word for word. Read it for the detail behind a decision.

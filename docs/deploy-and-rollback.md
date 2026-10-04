@@ -218,6 +218,13 @@ gcloud run services update mtg-api --region us-central1 \
   --update-secrets=RESEND_API_KEY=resend-api-key:1
 ```
 
+A new key needs a new mount. The mount names a version number, so the service keeps the old version until this step. Section 8.1 of `docs/setup-gcp.md` adds the version with the second command. Then mount it, with the number that the command printed:
+
+```
+gcloud run services update mtg-api --region us-central1 \
+  --update-secrets=RESEND_API_KEY=resend-api-key:2
+```
+
 Each later deploy keeps it. The API log reads `the approval email is on` at start when the key is set. Without it, an approval adds the email to the invite list and sends no email. Section 15.2 of `docs/setup-gcp.md` opens the admin screen with `make grant-admin`.
 
 From PR-116, the log also reads `the proof email is on` (D-1081). A rollback to a revision before PR-116 brings back the email of Firebase. The web app of that revision has no page for a link of the new email.
@@ -279,6 +286,8 @@ CAUTION: during the pin, `/readyz` names the commit of the old revision. So the 
 A revision older than `mtg-api-00077-vwp` holds no Pushover secret, so a rollback to it sends no notice of a verdict. The store still keeps each verdict.
 
 A revision older than PR-115 has no request for beta access and no admin screen. A rollback to it keeps each stored request, and the admin claim of each account.
+
+CAUTION: a revision older than PR-121 can not read a collection in parts (D-1110). After a rollback to it, each read of a collection over about 10,000 rows fails. A smaller collection stays in one document, and it reads as before.
 
 ### 8.2 The jobs
 

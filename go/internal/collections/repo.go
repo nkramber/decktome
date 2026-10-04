@@ -17,10 +17,11 @@ import (
 
 // Repo stores collections in Firestore under
 // users/{uid}/collections/{id}. One document per collection (D-16):
-// metadata, a gzip JSON entry array, and a gzip count map. A 5,000-card
-// binder stays far under the 1 MiB document limit. Put refuses a payload
-// near that limit (ErrTooLarge). Sharding across documents is a later
-// step.
+// metadata, a gzip JSON entry array, a gzip count map, and the summary.
+// A payload over the size of one document goes into parts under
+// {id}/parts, and the collection document keeps the summary and the
+// count of each kind of part (D-1110). Put refuses a payload over
+// MaxPayloadBytes (ErrTooLarge).
 type Repo struct {
 	client *firestore.Client
 	// index answers the card index of the day, or nil before the first
@@ -31,17 +32,27 @@ type Repo struct {
 }
 
 // MaxEntries is the stated limit of one collection: the distinct rows
-// by printing, finish, condition, and language (REV-026). A measure of
-// real printings on 2026-09-25 stored about 90 gzip bytes a row, so
-// 10,000 rows filled 895,882 of the 921,600 bytes. 9,000 leaves room.
-const MaxEntries = 9000
+// by printing, finish, condition, and language (REV-026, D-1110). A
+// measure of real printings stored 50,000 rows in 4,146,949 gzip bytes,
+// and their entries inflated to 13,906,176 bytes.
+const MaxEntries = 50000
+
+// MaxPayloadBytes bounds the gzip payload of one collection. Put writes
+// the document and every part in one commit, and Firestore caps one
+// request at 10 MiB.
+const MaxPayloadBytes = 8 << 20
+
+// maxInflatedBytes bounds the inflated read of one payload of a
+// collection. The entries of MaxEntries rows inflate past the shared
+// limit of gzstore.
+const maxInflatedBytes = 32 << 20
 
 // ErrTooManyEntries refuses a collection over MaxEntries before the
 // write.
 var ErrTooManyEntries = fmt.Errorf("a collection holds at most %d distinct rows (by printing, finish, condition, and language)", MaxEntries)
 
-// ErrTooLarge reports a collection that does not fit one document.
-var ErrTooLarge = fmt.Errorf("the collection does not fit one document: a collection holds at most about %d distinct rows", MaxEntries)
+// ErrTooLarge reports a collection over MaxPayloadBytes.
+var ErrTooLarge = fmt.Errorf("the collection is too large to store: a collection holds at most about %d distinct rows", MaxEntries)
 
 // NewRepo wraps a Firestore client. The caller owns the client.
 func NewRepo(client *firestore.Client) *Repo { return &Repo{client: client} }
@@ -79,13 +90,46 @@ type storedCollection struct {
 	// SummaryGz holds the counts the binder head shows, so the head reads
 	// no entry (D-392). A collection stored before schema version 2 holds
 	// none, and GetHead computes it from the entries that one time.
-	SummaryGz     []byte `firestore:"summary_gz"`
-	SchemaVersion int64  `firestore:"schema_version"`
+	SummaryGz []byte `firestore:"summary_gz"`
+	// EntryParts and CountParts count the parts that hold the entries and
+	// the counts of a payload over one document (D-1110). Zero means the
+	// payload is in EntriesGz and OracleCntGz.
+	EntryParts    int64 `firestore:"entry_parts"`
+	CountParts    int64 `firestore:"count_parts"`
+	SchemaVersion int64 `firestore:"schema_version"`
 }
 
-// schemaVersion 2 adds the stored summary (D-392). A version 1 document
-// still reads: its summary is absent, and the head computes one.
-const schemaVersion = 2
+// storedPart is one part of a payload over one document (D-1110).
+type storedPart struct {
+	Data []byte `firestore:"data"`
+}
+
+// schemaVersion 2 adds the stored summary (D-392). Version 3 adds the
+// parts (D-1110). A version 1 or 2 document still reads: it holds no
+// part, and a version 1 head computes its summary.
+const schemaVersion = 3
+
+// Part ids: "e" and the index for the entries, "c" and the index for
+// the counts.
+const (
+	partsName     = "parts"
+	entryPartKind = "e"
+	countPartKind = "c"
+)
+
+func partRef(col *firestore.DocumentRef, kind string, i int) *firestore.DocumentRef {
+	return col.Collection(partsName).Doc(fmt.Sprintf("%s%d", kind, i))
+}
+
+// split cuts a payload into parts of at most gzstore.MaxStoredBytes.
+func split(payload []byte) [][]byte {
+	var out [][]byte
+	for len(payload) > gzstore.MaxStoredBytes {
+		out = append(out, payload[:gzstore.MaxStoredBytes])
+		payload = payload[gzstore.MaxStoredBytes:]
+	}
+	return append(out, payload)
+}
 
 func (r *Repo) doc(uid, id string) *firestore.DocumentRef {
 	return r.client.Collection("users").Doc(uid).Collection("collections").Doc(id)
@@ -93,7 +137,7 @@ func (r *Repo) doc(uid, id string) *firestore.DocumentRef {
 
 // Put stores a collection and returns its id. A collection with no id
 // takes the id its content hash derives, so two identical uploads that
-// race land on one document (D-16), and Put never needs a lookup first.
+// race land on one document (D-16).
 func (r *Repo) Put(ctx context.Context, uid string, col *mtgv1.Collection) (string, error) {
 	entriesGz, err := gzstore.MarshalJSON(col.Entries)
 	if err != nil {
@@ -107,7 +151,8 @@ func (r *Repo) Put(ctx context.Context, uid string, col *mtgv1.Collection) (stri
 	if err != nil {
 		return "", err
 	}
-	if size := len(entriesGz) + len(countsGz) + len(summaryGz); size > gzstore.MaxStoredBytes {
+	size := len(entriesGz) + len(countsGz) + len(summaryGz)
+	if size > MaxPayloadBytes {
 		return "", fmt.Errorf("%w: %d bytes", ErrTooLarge, size)
 	}
 	stored := storedCollection{
@@ -117,45 +162,90 @@ func (r *Repo) Put(ctx context.Context, uid string, col *mtgv1.Collection) (stri
 		ContentHash:   col.ContentHash,
 		CardCount:     int64(col.CardCount),
 		EntryCount:    int64(len(col.Entries)),
-		EntriesGz:     entriesGz,
-		OracleCntGz:   countsGz,
 		SummaryGz:     summaryGz,
 		SchemaVersion: schemaVersion,
 	}
-	ref := r.client.Collection("users").Doc(uid).Collection("collections").NewDoc()
-	switch {
-	case col.Id != "":
-		ref = r.doc(uid, col.Id)
-	case col.ContentHash != "":
-		// The derived id belongs to its hash alone (D-399). A Replace
-		// keeps an id whose hash moved on, so a later upload of the old
-		// file must not land on it. Create refuses an existing document,
-		// and the upload then takes a fresh id unless the document holds
-		// this same hash, which is the identical re-upload of D-16.
-		derived := r.doc(uid, DocID(col.ContentHash))
-		_, err := derived.Create(ctx, stored)
-		if err == nil {
-			return derived.ID, nil
-		}
-		if status.Code(err) != codes.AlreadyExists {
-			return "", fmt.Errorf("store collection: %w", err)
-		}
-		snap, err := derived.Get(ctx)
-		if err != nil {
-			return "", fmt.Errorf("store collection: %w", err)
-		}
-		var have storedCollection
-		if err := snap.DataTo(&have); err != nil {
-			return "", fmt.Errorf("collection %s: %w", derived.ID, err)
-		}
-		if have.ContentHash == col.ContentHash {
-			ref = derived
-		}
+	var entryParts, countParts [][]byte
+	if size <= gzstore.MaxStoredBytes {
+		stored.EntriesGz, stored.OracleCntGz = entriesGz, countsGz
+	} else {
+		entryParts, countParts = split(entriesGz), split(countsGz)
+		stored.EntryParts, stored.CountParts = int64(len(entryParts)), int64(len(countParts))
 	}
-	if _, err := ref.Set(ctx, stored); err != nil {
+	// One transaction writes the document and its parts, and deletes each
+	// older part, so no read sees a part of another file (D-1110).
+	var id string
+	err = r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		ref, err := r.target(tx, uid, col)
+		if err != nil {
+			return err
+		}
+		old, err := tx.Documents(ref.Collection(partsName)).GetAll()
+		if err != nil {
+			return err
+		}
+		if err := tx.Set(ref, stored); err != nil {
+			return err
+		}
+		keep := map[string]bool{}
+		for kind, parts := range map[string][][]byte{entryPartKind: entryParts, countPartKind: countParts} {
+			for i, data := range parts {
+				part := partRef(ref, kind, i)
+				keep[part.ID] = true
+				if err := tx.Set(part, storedPart{Data: data}); err != nil {
+					return err
+				}
+			}
+		}
+		for _, snap := range old {
+			if !keep[snap.Ref.ID] {
+				if err := tx.Delete(snap.Ref); err != nil {
+					return err
+				}
+			}
+		}
+		id = ref.ID
+		return nil
+	})
+	if err != nil {
 		return "", fmt.Errorf("store collection: %w", err)
 	}
-	return ref.ID, nil
+	return id, nil
+}
+
+// target names the document Put writes. A collection with no id takes
+// the id its content hash derives, so two identical uploads that race
+// land on one document (D-16).
+//
+// The derived id belongs to its hash alone (D-399). A Replace keeps an
+// id whose hash moved on, so a later upload of the old file must not
+// land on it. The upload takes a fresh id unless the derived document is
+// absent or holds this same hash, which is the identical re-upload of
+// D-16.
+func (r *Repo) target(tx *firestore.Transaction, uid string, col *mtgv1.Collection) (*firestore.DocumentRef, error) {
+	if col.Id != "" {
+		return r.doc(uid, col.Id), nil
+	}
+	fresh := r.client.Collection("users").Doc(uid).Collection("collections").NewDoc()
+	if col.ContentHash == "" {
+		return fresh, nil
+	}
+	derived := r.doc(uid, DocID(col.ContentHash))
+	snap, err := tx.Get(derived)
+	if status.Code(err) == codes.NotFound {
+		return derived, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var have storedCollection
+	if err := snap.DataTo(&have); err != nil {
+		return nil, fmt.Errorf("collection %s: %w", derived.ID, err)
+	}
+	if have.ContentHash == col.ContentHash {
+		return derived, nil
+	}
+	return fresh, nil
 }
 
 // GetHead loads one collection without its entries (D-392). The binder
@@ -165,13 +255,9 @@ func (r *Repo) Put(ctx context.Context, uid string, col *mtgv1.Collection) (stri
 // reads its entries that one time and computes one, so an old
 // collection still draws a head. A later Put stores the summary.
 func (r *Repo) GetHead(ctx context.Context, uid, id string) (*mtgv1.Collection, error) {
-	snap, err := r.doc(uid, id).Get(ctx)
+	stored, _, _, err := r.load(ctx, uid, id, false, false)
 	if err != nil {
 		return nil, err
-	}
-	var stored storedCollection
-	if err := snap.DataTo(&stored); err != nil {
-		return nil, fmt.Errorf("collection %s: %w", id, err)
 	}
 	col := storedToProto(id, stored)
 	if len(stored.SummaryGz) > 0 {
@@ -182,8 +268,12 @@ func (r *Repo) GetHead(ctx context.Context, uid, id string) (*mtgv1.Collection, 
 		col.Summary = &sum
 		return col, nil
 	}
+	_, entriesGz, _, err := r.load(ctx, uid, id, true, false)
+	if err != nil {
+		return nil, err
+	}
 	var entries []*mtgv1.CollectionEntry
-	if err := gzstore.UnmarshalJSON(stored.EntriesGz, &entries); err != nil {
+	if err := gzstore.UnmarshalJSONMax(entriesGz, &entries, maxInflatedBytes); err != nil {
 		return nil, fmt.Errorf("collection %s entries: %w", id, err)
 	}
 	col.Summary = Summarize(entries, r.cardSource())
@@ -192,17 +282,13 @@ func (r *Repo) GetHead(ctx context.Context, uid, id string) (*mtgv1.Collection, 
 
 // Get loads one collection with its entries.
 func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Collection, error) {
-	snap, err := r.doc(uid, id).Get(ctx)
+	stored, entriesGz, _, err := r.load(ctx, uid, id, true, false)
 	if err != nil {
 		return nil, err
 	}
-	var stored storedCollection
-	if err := snap.DataTo(&stored); err != nil {
-		return nil, fmt.Errorf("collection %s: %w", id, err)
-	}
 	col := storedToProto(id, stored)
 	var entries []*mtgv1.CollectionEntry
-	if err := gzstore.UnmarshalJSON(stored.EntriesGz, &entries); err != nil {
+	if err := gzstore.UnmarshalJSONMax(entriesGz, &entries, maxInflatedBytes); err != nil {
 		return nil, fmt.Errorf("collection %s entries: %w", id, err)
 	}
 	col.Entries = entries
@@ -216,6 +302,74 @@ func (r *Repo) Get(ctx context.Context, uid, id string) (*mtgv1.Collection, erro
 		col.Summary = Summarize(entries, r.cardSource())
 	}
 	return col, nil
+}
+
+// load reads one collection document, and the entries or the counts
+// payload when asked. A payload in parts reads in a read-only
+// transaction with the document again, so a Put between the two reads
+// can not mix two files (D-1110).
+func (r *Repo) load(ctx context.Context, uid, id string, entries, counts bool) (storedCollection, []byte, []byte, error) {
+	ref := r.doc(uid, id)
+	var stored storedCollection
+	snap, err := ref.Get(ctx)
+	if err != nil {
+		return stored, nil, nil, err
+	}
+	if err := snap.DataTo(&stored); err != nil {
+		return stored, nil, nil, fmt.Errorf("collection %s: %w", id, err)
+	}
+	inParts := (entries && stored.EntryParts > 0) || (counts && stored.CountParts > 0)
+	if !inParts {
+		return stored, stored.EntriesGz, stored.OracleCntGz, nil
+	}
+	var entriesGz, countsGz []byte
+	err = r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		snap, err := tx.Get(ref)
+		if err != nil {
+			return err
+		}
+		stored = storedCollection{}
+		if err := snap.DataTo(&stored); err != nil {
+			return fmt.Errorf("collection %s: %w", id, err)
+		}
+		entriesGz, countsGz = stored.EntriesGz, stored.OracleCntGz
+		if entries && stored.EntryParts > 0 {
+			if entriesGz, err = readParts(tx, ref, entryPartKind, stored.EntryParts); err != nil {
+				return err
+			}
+		}
+		if counts && stored.CountParts > 0 {
+			if countsGz, err = readParts(tx, ref, countPartKind, stored.CountParts); err != nil {
+				return err
+			}
+		}
+		return nil
+	}, firestore.ReadOnly)
+	return stored, entriesGz, countsGz, err
+}
+
+// readParts joins the n parts of one kind, in order.
+func readParts(tx *firestore.Transaction, col *firestore.DocumentRef, kind string, n int64) ([]byte, error) {
+	refs := make([]*firestore.DocumentRef, n)
+	for i := range refs {
+		refs[i] = partRef(col, kind, i)
+	}
+	snaps, err := tx.GetAll(refs)
+	if err != nil {
+		return nil, err
+	}
+	var out []byte
+	for i, snap := range snaps {
+		if !snap.Exists() {
+			return nil, fmt.Errorf("collection %s: part %s is missing", col.ID, refs[i].ID)
+		}
+		var part storedPart
+		if err := snap.DataTo(&part); err != nil {
+			return nil, fmt.Errorf("collection %s part %s: %w", col.ID, refs[i].ID, err)
+		}
+		out = append(out, part.Data...)
+	}
+	return out, nil
 }
 
 // OwnedPrintings maps each Oracle id of a collection to the printing ids
@@ -243,16 +397,12 @@ func (r *Repo) PrintingCounts(ctx context.Context, uid, id string) (map[string]i
 // It inflates only the count payload, not the entries (D-37 ownership
 // check in DeckService.Validate).
 func (r *Repo) OracleCounts(ctx context.Context, uid, id string) (map[string]int32, error) {
-	snap, err := r.doc(uid, id).Get(ctx)
+	_, _, countsGz, err := r.load(ctx, uid, id, false, true)
 	if err != nil {
 		return nil, err
 	}
-	var stored storedCollection
-	if err := snap.DataTo(&stored); err != nil {
-		return nil, fmt.Errorf("collection %s: %w", id, err)
-	}
 	var counts map[string]int32
-	if err := gzstore.UnmarshalJSON(stored.OracleCntGz, &counts); err != nil {
+	if err := gzstore.UnmarshalJSONMax(countsGz, &counts, maxInflatedBytes); err != nil {
 		return nil, fmt.Errorf("collection %s counts: %w", id, err)
 	}
 	return counts, nil
@@ -260,13 +410,24 @@ func (r *Repo) OracleCounts(ctx context.Context, uid, id string) (map[string]int
 
 // Delete removes one collection for good (D-347). A deck built from it
 // keeps every card it holds, and its chat builds from the whole card
-// database from then on.
+// database from then on. Its parts go in the same transaction (D-1110).
 func (r *Repo) Delete(ctx context.Context, uid, id string) error {
-	if _, err := r.doc(uid, id).Get(ctx); err != nil {
-		return err
-	}
-	_, err := r.doc(uid, id).Delete(ctx)
-	return err
+	ref := r.doc(uid, id)
+	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
+		if _, err := tx.Get(ref); err != nil {
+			return err
+		}
+		parts, err := tx.Documents(ref.Collection(partsName)).GetAll()
+		if err != nil {
+			return err
+		}
+		for _, snap := range parts {
+			if err := tx.Delete(snap.Ref); err != nil {
+				return err
+			}
+		}
+		return tx.Delete(ref)
+	})
 }
 
 // Rename writes the name of one collection and returns it without its

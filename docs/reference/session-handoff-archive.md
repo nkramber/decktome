@@ -15,6 +15,70 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03h, PR-122
+
+**Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #281.
+
+Author provider: Claude Code
+
+**The base.** `main` is `41746b0`, from #280. The branch merged it on 2026-10-04. This session did not read the deploy of `41746b0`.
+
+**The owner choice.** The owner made an inbox for `mail@decktome.com` in iCloud Mail. The owner chose it as the sender over a reply-to (D-1112), and D-1112 amends the subdomain of D-1077.
+
+**The code.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`, and `TestDefaultFromIsTheRootInbox` reads it. Sections 8.1 and 8.2 of `docs/setup-gcp.md` and section 4 of `docs/deploy-and-rollback.md` hold the new steps and the records of the inbox.
+
+**The steps of the owner before the merge.** Resend refuses a sender on a domain that it did not verify. So a merge before these steps stops each email of the app.
+
+1. In Resend, add the domain `decktome.com`, and add its three records at GoDaddy.
+2. Edit the domain of the key to all domains, with More options and Edit API key. The old revision then keeps its email.
+
+The owner did both steps on 2026-10-03, and Resend read the domain as verified.
+
+**The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
+
+**The review.** The record `docs/reviews/pr-281.md` reads Ready for owner merge at effective head `94cf257`. Gitar passed with no open finding.
+
+**The open work.**
+
+1. The owner confirms the merge, and the pull request is pending the auto-merge (D-828, D-834).
+2. After the deploy, send one approval email, and read the sender and a reply in the inbox.
+
+### 2026-10-03f: the push of new cards, PR-120
+
+**The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
+
+**The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
+
+## The resume section of 2026-10-03g, PR-121
+
+**Branch `feat/collection-limit-50k`: PR-121, a collection of 50,000 rows, in parts (F-211, D-1110).** The pull request is #280.
+
+Author provider: Claude Code
+
+**The base.** `main` is `d0b8498`, from #278. This session did not read the deploy of `d0b8498`.
+
+**The report.** At 2026-10-04 00:07 UTC a user wrote "Collection limit too small". The API refused an import of that user 30 seconds before. The file held about 12,400 ManaBox rows or 18,900 Moxfield rows. The owner chose 50,000 rows and a file of 10 MiB (D-1110). The owner also permits each read under `users/` in production (D-1111).
+
+**The code.**
+
+- `go/internal/collections`: `MaxEntries` is 50,000. A payload over 900 KiB goes into parts, in one transaction. A read of parts runs in a read-only transaction.
+- `go/internal/gzstore`: `UnmarshalMax` and `UnmarshalJSONMax` take the limit of the caller.
+- `go/internal/collectionsvc` and the web app: the upload cap is 10 MiB. `go/cmd/api`: the request cap is 16 MiB.
+
+**The checks.** `make store-check` passed each store on a new emulator. `make verify` on `7640013` passed each step through shellcheck, with 544 of 544 web tests under Node 22. The Docker daemon was off, so the two image builds did not run here. This diff changes no Dockerfile, and the docker job of CI builds both images.
+
+**The review.** Gitar approved `3e7142d` with no finding. The Codex record read `Blocked` at `3e7142d` with no finding, because `make store-check` failed in the unchanged sessions store on old data of the local emulator. A new emulator then passed each package on `c8c87a9`. `docs/reviews/pr-280-response.md` holds the answer, and the repeat review follows.
+
+**The open work.**
+
+1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
+2. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page.
+3. The owner can tell the user that the limit is 50,000 rows now.
+
+### 2026-10-03e: the spend cap of $2, D-1109
+
+**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
+
 ## The resume section of 2026-10-03f, PR-120
 
 **Branch `feat/push-third-event`: PR-120, the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).** The pull request is #278.
