@@ -47,6 +47,14 @@ Author provider: Claude Code
 
 **The owner renamed the item two times (D-1108, D-1115).** D-1106, D-1107, D-1113, and D-1114 answer the reviews and the gate.
 
+### 2026-10-04b: the findings of the first outside user, PR-124
+
+**The owner watched the first outside user and listed nine findings.** The session read the session and both decks, and replayed the shortlist for free.
+
+**The owner overrode the one concern of the skill (D-1125).** The owner answered twelve questions, and five workers changed the code by package.
+
+**Two gates failed on one item each.** A probe proved the question miss a flake. The owner chose a fix of the summary judge and a rejudge (D-1130).
+
 ## The resume section of 2026-10-04b, PR-124
 
 **Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-220, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).

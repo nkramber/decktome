@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04d)
 
-**Branch `fix/proof-link-ios-direct`: PR-126, the proof page on iOS, the spend for the admin alone, and a live eval for each thumbs down (D-1147 to D-1150).** The pull request is #PRNUM. The owner put the three changes into one pull request (D-1150).
+**Branch `fix/proof-link-ios-direct`: PR-126, four changes (D-1147 to D-1151).** No pull request is open yet. The owner put the four into one pull request (D-1150).
 
 Author provider: Claude Code
 
@@ -17,7 +17,7 @@ Author provider: Claude Code
 **The checks of PR-124 passed on the deploy of `50878de` (D-1117, D-1119).**
 
 - The `deploy-api` build of `50878de` ended at 14:50 UTC with SUCCESS. The revision `mtg-api-00120-77r` serves it, and `/readyz` names it.
-- PR-125 changed no path of the web trigger. So `/version.json` names `8bd442f`, the merge of PR-124.
+- PR-125 changed no web path, so `/version.json` names `8bd442f`, the merge of PR-124.
 - The owner signed up through a new proof link at 15:28 UTC. The log holds the refusal `email-unverified`, then `SendLink` with code ok.
 - Three calls of the same uid then ended with code ok, so the link signed in the account.
 - Each `rpc` line of the new revision holds a uid. No log line since 06:25 UTC holds an email.
@@ -28,9 +28,18 @@ Author provider: Claude Code
 - `go/internal/spendmask` clears the spend of each agent and deck answer for a caller with no admin claim. The chat page shows the session id and the spend to the admin alone (D-1148).
 - `go/internal/feedback` holds the eval mark of a verdict. `go/cmd/live-evals` puts each down verdict in the queue with the key `v-` and its id (D-1149).
 
-**The checks.** CHECKS
+**The checks.** `make verify` and `make store-check` passed on `a774ef5`. That commit holds the first three changes.
 
-**The open work.** The Gitar pass, the Codex review, and the merge question of D-834. After the deploy, three checks follow:
+**The open work: the commander offer of D-1151.** The session stopped at the checkpoint of D-946, before the code.
+
+1. In `go/internal/candidates/candidates.go`, score the unthemed fill on depth and popularity, half each.
+2. Count the depth over the owned commander-legal nonbasic cards that `req.Owned` holds, by color identity.
+3. In `go/internal/questions/hints_candidates.go`, read the whole ranked pool, not `3+len(skip)` names.
+4. With no colors, keep a mono-colored and a multicolor name in each offer of three.
+5. Add the tests, the roadmap entry, and the rows of the draft body in `.local/pr126/body.md`.
+6. Push, open the pull request, and mark the roadmap item. Then do the reviews.
+
+After the deploy, three checks follow:
 
 - The owner opens a new proof link in iOS Safari, and the app opens with no screen between.
 - The test account sees no session id and no spend, and the owner sees both.
@@ -108,7 +117,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-126: the proof page, the spend, and the thumbs down** (D-1147 to D-1150). The resume section holds the open work.
+0. **PR-126: the proof page, the spend, the thumbs down, and the offer** (D-1147 to D-1151). The resume section holds the open work.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -138,14 +147,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-04b: the findings of the first outside user, PR-124
-
-**The owner watched the first outside user and listed nine findings.** The session read the session and both decks, and replayed the shortlist for free.
-
-**The owner overrode the one concern of the skill (D-1125).** The owner answered twelve questions, and five workers changed the code by package.
-
-**Two gates failed on one item each.** A probe proved the question miss a flake. The owner chose a fix of the summary judge and a rejudge (D-1130).
-
 ### 2026-10-04c: the live evals, PR-125
 
 **The owner asked the session to watch the traffic of other users.** The logs name no user, so the session read the record of D-638 each minute. The first outside user built two decks, and the session found nine faults by hand.
@@ -160,8 +161,8 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
 
-**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change and the thumbs-down eval (D-1148 to D-1150).
+**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, and the commander offer (D-1148 to D-1151).
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04c, the records of 2026-08-31 to 2026-10-03i, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04c, the records of 2026-08-31 to 2026-10-04b, and 104 more sections, word for word. Read it for the detail behind a decision.
