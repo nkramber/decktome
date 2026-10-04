@@ -8,6 +8,7 @@ Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/
 
 2026-10-04 correction pass 266 (PR-130, F-225, D-1162): the check of PR-128 built a deck that marked Astral Cornucopia as fast mana. Fast mana now needs no X and no multikicker in the cost. Changes: F-225, PR-130, sequencing step 125.
 2026-10-04 correction pass 265 (PR-128, F-224, D-1159, D-1160): a reader verdict named Barbed Sextant, Springleaf Drum, and Hurricane in a mono-green deck. Fast mana now needs a mana ability that pays no mana and taps no creature. The finisher count drops the tag `burn-player-each`. Changes: F-224, PR-128, sequencing step 123.
+2026-10-04 correction pass 264 (PR-127, D-1155 to D-1158): the owner asked that the live evals start with no open terminal, as the night fixer of what-you-carry does. A launchd agent now runs one pass every five minutes from a clone of origin/main. The "Leave feedback" notes join the queue, and a scope rule keeps each fix to the product. Changes: PR-127, sequencing step 122.
 2026-10-04 correction pass 263 (PR-126, D-1147 to D-1154): the owner signed up through a new proof link. iOS Safari now goes on to the app at once. The session id and the spend show to the admin alone, and each thumbs down starts a live eval. The commander offer reads the depth of the collection and a color spread, and "best possible" fills bracket 5 in Commander. Changes: PR-116, PR-125, PR-126, sequencing step 121.
 2026-10-04 correction pass 262 (PR-125, D-1132 to D-1146): the owner asked to automate the read of each new deck. `./start-live-evals` reads each new deck and each revision in a headless session in a Seatbelt profile. The session proves each fix on a replay of the chat, and the owner merges each fix. Changes: PR-125, sequencing step 120.
 2026-10-04 correction pass 261 (PR-124, F-212 to F-223, D-1116 to D-1131): the first outside user built a deck on 2026-10-04, and the owner read the traffic. The owner put each finding of that session into one pull request (D-1125). Changes: F-212 to F-223, PR-124, sequencing step 119.
@@ -3394,6 +3395,23 @@ Gate:
 
 > *In plain English:* an iPhone opens the app at once after the email link. Only the owner sees the session id and the cost. Each thumbs down now gets the same robot review as a new deck.
 
+**PR-127: The live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).** ✅ merged as #285. The mark comes before any review (D-822). On 2026-10-04 the owner asked if the live evals run with no open terminal. They did not. The owner approved this plan, as one pull request.
+
+- **The agent (D-1155).** `make live-evals-install` writes the launchd agent `com.decktome.live-evals`. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs one pass.
+- **The notes (D-1156).** `go/internal/feedback` reads the general notes with no eval mark. `go/cmd/live-evals` adds each note to `pending` and `summary` with the key `n-`, and it writes `note.json`.
+- **The scope rule (D-1157).** The prompt lists the product areas that a session can fix. Each other item ends `out-of-scope`, with no pull request, and the owner gets the reason.
+- **The guard (D-1158, D-1163).** `live-evals guard` reads the changed files of a pull request on GitHub. A change of a protected path holds the pull request for the owner. The protected paths hold the paid-run gates and the provider cost meter.
+
+Gate:
+- The feedback tests prove that a note waits until its mark, and that the index file serves the note query.
+- The tool tests prove that the key of a note reads back.
+- The tool tests prove that the summary of a note prints no text of the reader.
+- The guard tests prove that the guard holds a change of auth, the rules, CI, the feedback store, the spend, or the live evals.
+- The same tests prove that a deck change passes.
+- A tick under the environment of launchd clones origin/main and runs `--dry` to its end.
+- `./start-live-evals --dry` on the branch lists the notes that wait, and their bundles hold `note.json`.
+
+> *In plain English:* the robot that reads each new deck now starts by itself every five minutes. It also reads the "Leave feedback" notes, and it fixes only problems with the deck builder itself.
 **PR-128: The power cards of a reader verdict (F-224, D-1159, D-1160).** ✅ merged as #286. The mark comes before any review (D-822). On 2026-10-04 a reader wrote that Barbed Sextant and Springleaf Drum do nothing in a mono-green deck, and that Hurricane is no win condition. Bracket 4 holds a fast mana floor of 3 and a finisher floor of 2, and two counters gave these cards a power mark.
 
 - **Fast mana (D-1159).** `isFastMana` in `go/internal/profile` needs one mana ability that pays no mana and taps no creature. The rule drops 20 cards of the snapshot, such as the filters and the Eggs.
@@ -3852,6 +3870,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 119. **PR-124** the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).
 120. **PR-125** the live evals of each new deck and revision (D-1132 to D-1146).
 121. **PR-126** five owner changes after the proof link (D-1147 to D-1154).
+122. **PR-127** the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).
 123. **PR-128** the power cards of a reader verdict (F-224, D-1159, D-1160).
 124. **PR-129** `make api-build` sends the pool rule of the web app (D-1161).
 125. **PR-130** fast mana needs no X and no multikicker (F-225, D-1162).

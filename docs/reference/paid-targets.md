@@ -4,7 +4,7 @@ This file holds the cost, the flags, and the guards of each `make` target and lo
 
 ## The paid targets
 
-Eighteen targets and three loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, `scripts/feedback-loop.sh`, and `scripts/live-evals.sh`. Ask the owner before every run, except a round of `make codex-review` (D-831).
+Nineteen targets and three loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `make live-evals-install`, `scripts/autotune.sh`, `scripts/feedback-loop.sh`, and `scripts/live-evals.sh`. Ask the owner before every run, except a round of `make codex-review` (D-831).
 
 ## Each target
 
@@ -89,7 +89,7 @@ The ledger charges the judge of the triage first. Each gate then gets the room l
 
 With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). It refuses a changed tree, and it stops when the branch moves (D-923). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
 
-`./start-live-evals` runs `scripts/live-evals.sh`, the live evals (D-1132 to D-1145). It polls every five minutes for a new deck, a revision, or a thumbs down (D-1149). For each one, it starts one headless Claude Code session with `--permission-mode bypassPermissions`. Each session spends the Claude plan and the Codex plan of the owner. It also spends at most $3.00 of provider money on paid targets (D-1134).
+`./start-live-evals` runs `scripts/live-evals.sh`, the live evals (D-1132 to D-1158). It polls every five minutes for a new deck, a revision, a thumbs down (D-1149), or a "Leave feedback" note (D-1156). For each one, it starts one headless Claude Code session with `--permission-mode bypassPermissions`. Each session spends the Claude plan and the Codex plan of the owner. It also spends at most $3.00 of provider money on paid targets (D-1134).
 
 The cap is the rule of the prompt, and `spend.jsonl` of the bundle records each run. No provider key holds the cap. The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
 
@@ -97,7 +97,13 @@ The cap includes the replay (D-1144). The session replays the chat of the reader
 
 Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, Codex login, and GitHub token. The header of `scripts/live-evals.sh` names the one-time setup of the owner.
 
-The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `ready`, `notify`, and `replay-input` call no model and cost nothing.
+The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `ready`, `guard`, `notify`, and `replay-input` call no model and cost nothing.
+
+A session fixes a product fault alone (D-1157). For each other item, it writes `out-of-scope` and makes no pull request. The script holds a pull request that changes a protected path, and the owner gets no ready notice (D-1158).
+
+`make live-evals-install CONFIRM=1` loads the launchd agent `com.decktome.live-evals` (D-1155). It runs one pass every five minutes, with no open terminal, so the install is the approval of each session that it starts. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs `start-live-evals --once` there. The install refuses to start before the setup in the header of `scripts/live-evals.sh`.
+
+`make live-evals-status` prints the state and the end of the log `~/Library/Logs/decktome-live-evals.log`. `make live-evals-uninstall` stops the agent and a session that runs. Both cost nothing.
 
 `make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It counts a revision and an imported deck apart from a first build (D-861). It never lowers a count. It calls no model and costs nothing.
 

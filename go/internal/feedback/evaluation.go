@@ -11,30 +11,48 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
-// Pending is one down verdict that no live eval read (D-1149).
+// Pending is one down verdict (D-1149) or one general note (D-1156) that
+// no live eval read.
 type Pending struct {
 	UID       string
 	ID        string
 	Kind      string
 	SessionID string
 	DeckID    string
+	Screen    string
 	CreatedAt time.Time
 }
 
-// evalFields are the flat fields UnevaluatedDown reads. It never reads a
+// evalFields are the flat fields the two queues read. They never read a
 // snapshot of a session or a deck.
-var evalFields = []string{"uid", "kind", "verdict", "session_id", "deck_id", "created_at", "has_been_evaluated"}
+var evalFields = []string{"uid", "kind", "verdict", "session_id", "deck_id", "screen", "created_at", "has_been_evaluated"}
 
 // UnevaluatedDown lists every down verdict of every user that holds no
 // true eval mark, oldest first (D-1149). The index "verdict ascending,
 // created_at descending" serves the query, as it serves Since.
 func (r *Repo) UnevaluatedDown(ctx context.Context) ([]Pending, error) {
-	it := r.client.CollectionGroup("feedback").
+	return unevaluated(ctx, r.client.CollectionGroup("feedback").
 		Where("verdict", "==", "down").
-		OrderBy("created_at", firestore.Desc).
-		Select(evalFields...).Documents(ctx)
+		OrderBy("created_at", firestore.Desc))
+}
+
+// UnevaluatedNotes lists every general note of every user that holds no
+// true eval mark, oldest first (D-1156). A note stores the verdict "".
+// The index "kind ascending, verdict ascending, created_at descending"
+// serves the query.
+func (r *Repo) UnevaluatedNotes(ctx context.Context) ([]Pending, error) {
+	return unevaluated(ctx, r.client.CollectionGroup("feedback").
+		Where("kind", "==", KindName(mtgv1.FeedbackKind_FEEDBACK_KIND_GENERAL)).
+		Where("verdict", "==", "").
+		OrderBy("created_at", firestore.Desc))
+}
+
+func unevaluated(ctx context.Context, q firestore.Query) ([]Pending, error) {
+	it := q.Select(evalFields...).Documents(ctx)
 	defer it.Stop()
 	var out []Pending
 	for {
@@ -58,7 +76,7 @@ func (r *Repo) UnevaluatedDown(ctx context.Context) ([]Pending, error) {
 			s.UID = snap.Ref.Parent.Parent.ID
 		}
 		out = append(out, Pending{UID: s.UID, ID: snap.Ref.ID, Kind: s.Kind, SessionID: s.SessionID,
-			DeckID: s.DeckID, CreatedAt: s.CreatedAt})
+			DeckID: s.DeckID, Screen: s.Screen, CreatedAt: s.CreatedAt})
 	}
 	sort.SliceStable(out, func(i, j int) bool { return out[i].CreatedAt.Before(out[j].CreatedAt) })
 	return out, nil

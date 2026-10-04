@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# The live evals (D-1132 to D-1145). `./start-live-evals` runs this file.
+# The live evals (D-1132 to D-1158). `./start-live-evals` runs this file.
 #
-# It prints a summary of every deck and every thumbs down that no live
-# eval read. Then it polls every five minutes. The owner gets a Pushover
-# notice for each new deck, each revision, and each thumbs down (D-1143,
-# D-1149). For each one, the script starts one headless Claude Code
-# session in its own clone. That session reads the deck against the
+# It prints a summary of every deck, every thumbs down, and every "Leave
+# feedback" note that no live eval read. Then it polls every five
+# minutes. The owner gets a Pushover notice for each new deck, each
+# revision, and each thumbs down (D-1143, D-1149). A note sent its own
+# notice when the reader sent it (D-1156). For each item, the script
+# starts one headless Claude Code session in its own clone. That session reads the deck against the
 # prompt and the answers of the reader, and the verdict first. It chooses the
 # most important new fault, and the owner gets a notice. It replays the
 # chat of the reader on the base code and on its fix, and it tries the
@@ -13,6 +14,17 @@
 # through Gitar and the Codex review. When GitHub shows the pull request
 # ready, this script sends the owner a notice. The owner merges. No
 # session merges, deploys, or pushes main.
+#
+# A session fixes a product fault alone: the collection, the deck, the
+# build, the questions, the chat, and the screens of these (D-1157). It
+# answers `out-of-scope` for anything else, such as a new language,
+# access, or a change to a user. The owner gets a notice with the
+# reason. A pull request that changes a protected path, such as auth,
+# the rules, the deploy, or the live evals, waits for the owner as
+# blocked (D-1158).
+#
+# A launchd agent can run one pass every five minutes from a checkout of
+# origin/main: `make live-evals-install` (D-1155).
 #
 #   ./start-live-evals                    poll until Ctrl-C
 #   ./start-live-evals --once             one pass, then stop
@@ -33,7 +45,9 @@
 # GitHub token, and a .env with the provider keys alone (D-1142).
 #
 # The first run marks every deck that waits as read, after the summary,
-# and starts no session for it (D-1133). --evaluate-backlog changes that.
+# and starts no session for it (D-1133). The first run with the notes of
+# D-1156 marks the notes that wait in the same way. --evaluate-backlog
+# changes both.
 #
 # Each new session branches from the newest open live-eval pull request,
 # or from main when none is open (D-1138). At most three live-eval pull
@@ -87,7 +101,7 @@ for arg in "$@"; do
     --once) once=1 ;;
     --dry) dry=1 ;;
     --evaluate-backlog) backlog=1 ;;
-    -h|--help) sed -n '2,58p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,73p' "$0"; exit 0 ;;
     *) echo "live-evals: unknown flag $arg"; exit 2 ;;
   esac
 done
@@ -213,6 +227,9 @@ if [ "$dry" = 0 ]; then
     die "the session Codex has no login. Before the first run: CODEX_HOME=$CODEX_DIR codex login (D-833)"
   fi
   [ -d "$CARDS/scryfall" ] || die "no card store at $CARDS. A replay needs it."
+  # The checkout of the launchd agent links .local to the checkout of the
+  # owner (D-1155), and the profile reads real paths.
+  CARDS=$(cd "$CARDS" && pwd -P)
   REPO_URL=$(gh repo view --json url --jq .url).git
 
   # The tools of a session: Node 22 for the web tests, and the pnpm of
@@ -439,6 +456,15 @@ finish() { # deck run -> act on result.json
       dset "$deck" status waiting pr "$pr" waiting_since "$(date +%s)"
       check_ready "$deck"
       ;;
+    out-of-scope)
+      # The item asks for no product fix (D-1157). The owner decides on it.
+      say "deck $deck: out of scope. $(result "$deck" reason)"
+      dset "$deck" status out-of-scope
+      mark "$uid" "$deck"
+      runfs rm "$HOME_DIR" "$deck" repo
+      notify "decktome live eval: item $deck is out of scope" "$(result "$deck" reason)
+No fix and no pull request. The owner decides."
+      ;;
     no-new-issues)
       say "deck $deck: no new fault. $(result "$deck" findings)"
       dset "$deck" status "done"
@@ -481,6 +507,20 @@ check_ready() { # deck -> notify once when GitHub shows the pull request ready
   pr=$(dget "$deck" pr)
   [ -n "$pr" ] || return 0
   check_sum "$TOOL" "$TOOL_SUM"
+  # GitHub names the changed files, and never the session (D-1158).
+  out=$("$TOOL" guard -pr "$pr" 2>&1)
+  case $? in
+    0) ;;
+    4)
+      dset "$deck" status blocked guard yes
+      mark "$(dget "$deck" uid)" "$deck"
+      notify "decktome live eval: PR #$pr changes a protected path" "${out#live-evals: }
+The pull request waits for the owner, and no ready notice follows."
+      say "PR #$pr changes a protected path, so it waits for the owner"
+      return 0
+      ;;
+    *) say "PR #$pr: the guard did not read: $out"; return 0 ;;
+  esac
   if out=$("$TOOL" ready -pr "$pr" 2>&1); then
     dset "$deck" status ready
     mark "$(dget "$deck" uid)" "$deck"
@@ -596,7 +636,7 @@ cleanup_pass() { # remove the clone of a merged or closed pull request, once
   done
 }
 
-announce_pass() { # one notice for each new deck, revision, and thumbs down (D-1143, D-1149)
+announce_pass() { # one notice for each new deck, revision, and thumbs down (D-1143, D-1149, D-1156)
   local line deck kind who
   while IFS= read -r line; do
     [ -n "$line" ] || continue
@@ -605,6 +645,8 @@ announce_pass() { # one notice for each new deck, revision, and thumbs down (D-1
     kind=$(jq -r .kind <<<"$line")
     who=$(jq -r .who <<<"$line")
     dset "$deck" announced "$(date +%s)"
+    # The API sent the notice of a note when the reader sent it.
+    [ "$kind" != note ] || continue
     if [ "$kind" = thumbs-down ]; then
       notify "decktome: a thumbs down of a $who account" "On a $(jq -r .target <<<"$line"). Item $deck. A live eval reads it next."
       continue
@@ -622,7 +664,7 @@ eval_pass() {
     kind=$(jq -r .kind <<<"$line")
     who=$(jq -r .who <<<"$line")
     status=$(dget "$deck" status)
-    case "$status" in waiting|ready|blocked|done|restacking|fix-failed) continue ;; esac
+    case "$status" in waiting|ready|blocked|done|restacking|fix-failed|out-of-scope) continue ;; esac
     if [ "$status" = failed ] && [ "$(dnum "$deck" attempts)" -ge "$MAX_ATTEMPTS" ]; then continue; fi
     if [ "$status" = checkpoint ] && [ "$(dnum "$deck" continues)" -gt "$MAX_CONTINUES" ]; then
       dset "$deck" status failed attempts "$MAX_ATTEMPTS"
@@ -649,14 +691,37 @@ if [ "$dry" = 1 ]; then
   exit 0
 fi
 
-if [ ! -f "$STATE/initialized" ] && [ "$backlog" = 0 ]; then
-  say "first run: every deck above is marked read, and no session starts for it (D-1133)"
-  tool pending | while IFS= read -r line; do
+# A first run marks each item that waits read, and starts no session for
+# it. A flag is set only after the read and each mark pass. Else the next
+# tick of the launchd agent starts a paid session for each old item
+# (D-1155).
+first_run() { # jq filter -> 0 when the read and each mark passed
+  local list=$STATE/first-run.jsonl line deck ok=0
+  tool pending > "$list" || return 1
+  while IFS= read -r line; do
     deck=$(jq -r .deck <<<"$line")
-    tool mark -uid "$(jq -r .uid <<<"$line")" -deck "$deck" && dset "$deck" status backlog announced backlog
-  done
+    if tool mark -uid "$(jq -r .uid <<<"$line")" -deck "$deck"; then
+      dset "$deck" status backlog announced backlog
+    else
+      ok=1
+    fi
+  done < <(jq -c "$1" "$list")
+  return "$ok"
+}
+
+if [ ! -f "$STATE/initialized" ] && [ "$backlog" = 0 ]; then
+  say "first run: every item above is marked read, and no session starts for it (D-1133)"
+  first_run . || die "the first run did not read or mark each item. The next run tries again."
 fi
 touch "$STATE/initialized"
+
+# The notes join the queue with D-1156. The notes that wait at that time
+# get the same first run as the decks of D-1133.
+if [ ! -f "$STATE/initialized-notes" ] && [ "$backlog" = 0 ]; then
+  say "first run with the notes: every note that waits is marked read, and no session starts for it (D-1156)"
+  first_run 'select(.kind == "note")' || die "the first run of the notes did not read or mark each note. The next run tries again."
+fi
+touch "$STATE/initialized-notes"
 
 while true; do
   cleanup_pass
