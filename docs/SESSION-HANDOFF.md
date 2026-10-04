@@ -22,7 +22,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on the rebase onto `c712e84`, with one deck flag. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. It also proves that `clear` removes a folder that an interrupted clone left.
 
-**The review.** The Gitar review of `8e4ab24` closed three findings and opened one: an interrupted clone blocked each retry. With no `branch` in the deck state, `prepare` now removes the folder with `runfs clear` before the clone. The rebase onto `c712e84` brought a second deck flag to `chat-probe`, and the owner kept `-decks-out` alone (D-1146). No Codex review ran yet.
+**The review.** The Gitar review of `ef3db2b` passed with all four threads resolved. The Codex review of effective head `6d65fd5` is Ready for owner merge with no findings. The local `make verify` passed.
 
 **The open work.** The session stopped at the checkpoint (D-946).
 
