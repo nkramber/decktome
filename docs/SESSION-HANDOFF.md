@@ -31,10 +31,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `b41a32c` with Node 22 on the PATH. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
 
-**The open work.**
+**The review.** Codex reviewed effective head `b6d76b90f8e91425b2b863ee17b6603961de9681`. The review found no defect. `make verify` passed. The record waits for publication and the fresh `review-gate` check.
 
-1. Do the Gitar pass on #284, and answer each finding.
-2. Run `make codex-review PR=284`, then ask the owner for the merge.
+**The open work.** After the review record and this hand-off reach the branch, confirm that `review-gate` passes. Then ask the owner for the merge.
 
 After the deploy, four checks follow:
 
