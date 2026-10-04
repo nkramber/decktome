@@ -27,7 +27,7 @@ The owner did both steps on 2026-10-03, and Resend read the domain as verified.
 
 **The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
 
-**The review.** The Gitar pass and the Codex review wait for the push.
+**The review.** Gitar passed on `d880ffc`, with no open finding. The Codex review approves effective head `d880ffc`.
 
 **The open work.**
 
