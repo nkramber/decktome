@@ -22,11 +22,11 @@ Author provider: Claude Code
 - The prompt holds the scope rule. An item with no fault in scope ends `out-of-scope`, and the owner gets the reason (D-1157).
 - `live-evals guard` reads the changed files of a pull request on GitHub. A protected path holds it as `blocked` (D-1158). The protected paths hold the paid-run gates and the provider cost meter (D-1163).
 
-**The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
+**The checks.** `make verify` passed on `1c47456`, and CI passed every verify job, `pr-contract`, and Gitar there. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar approved effective head `1c474564`, and both review threads are closed. Round 5 verified P2-3 fixed in `4e5447a`. The guard protects `go/internal/gatekit/` and `go/internal/llm/`. The review record says `Ready for owner merge` for `1c474564dc4e41ed78263e947a4b4c47c04e680c`, with no open findings (D-827).
+**The review.** Gitar approved effective head `1c47456`, and no review thread stays open. Round 2 found P2-1, the feedback store. Round 3 found P2-2, provider names in a commit message and the body, and the owner permitted a rebase for it. Round 4 found P2-3, the spend paths, and the owner kept the user cap of D-1109 open (D-1163). PR-130 took D-1162 first. The record reads `Ready for owner merge` for `1c474564dc4e41ed78263e947a4b4c47c04e680c`, with all three findings fixed.
 
-**Open work.** The author asks the owner to confirm the merge, with the four-section summary of D-836.
+**Open work.** The pull request is pending the owner's confirmation and the auto-merge (D-828, D-834).
 
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
