@@ -27,7 +27,7 @@ The owner did both steps on 2026-10-03, and Resend read the domain as verified.
 
 **The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
 
-**The review.** Gitar passed on `d880ffc`, with no open finding, and the record `docs/reviews/pr-281.md` approved `d880ffc`. The merge of `41746b0` moves the effective head, so both reviews read it again.
+**The review.** The record `docs/reviews/pr-281.md` reads Ready for owner merge at effective head `94cf257`. Gitar passed with no open finding.
 
 **The open work.**
 
