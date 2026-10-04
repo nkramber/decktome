@@ -19,32 +19,31 @@ Author provider: Claude Code
 - The `deploy-api` build of `50878de` ended at 14:50 UTC with SUCCESS. The revision `mtg-api-00120-77r` serves it, and `/readyz` names it.
 - PR-125 changed no web path, so `/version.json` names `8bd442f`, the merge of PR-124.
 - The owner signed up through a new proof link at 15:28 UTC. The log holds the refusal `email-unverified`, then `SendLink` with code ok.
-- Three calls of the same uid then ended with code ok, so the link signed in the account.
 - Each `rpc` line holds a uid, and no log line since 06:25 UTC holds an email.
 
 **The code.**
 
 - The proof page has no iOS state, and `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp` (D-1147).
-- `go/internal/spendmask` clears the spend of each agent and deck answer for a caller with no admin claim. The chat page shows the session id and the spend to the admin alone (D-1148).
-- `go/internal/feedback` holds the eval mark of a verdict. `go/cmd/live-evals` puts each down verdict in the queue with the key `v-` and its id (D-1149).
+- `go/internal/spendmask` clears the spend of each answer for a caller with no admin claim. The chat page shows the session id and the spend to the admin alone (D-1148).
+- `go/cmd/live-evals` puts each down verdict in the queue with the key `v-` and its id (D-1149).
+- With no theme and an owned pool rule, the commander fill ranks half on the depth of the collection. With no colors, each offer of three holds a mono-colored and a multicolor name (D-1151).
+- In Commander, a superlative such as "best possible deck" fills bracket 5 with no question. "Competitive" still asks the bracket (D-1153, D-1154).
 
-**The checks.** `make verify` and `make store-check` passed on `a774ef5`. That commit holds the first three changes.
+**The checks.** The Go tests of `go/internal` pass on the code commits. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
 
-**The open work: the commander offer of D-1151.** The session stopped at the checkpoint of D-946, before the code.
+**The open work.**
 
-1. In `go/internal/candidates/candidates.go`, score the unthemed fill half on depth, half on popularity.
-2. Count the depth over the owned commander-legal nonbasic cards that `req.Owned` holds, by color identity.
-3. In `go/internal/questions/hints_candidates.go`, read the whole ranked pool.
-4. With no colors, keep a mono-colored and a multicolor name in each offer of three.
-5. Add the tests, the roadmap entry, and the rows of `.local/pr126/body.md`.
-6. Build D-1153: "best" fills bracket 5 in Commander.
-7. Push, open the pull request, and mark the roadmap item. Then do the reviews.
+1. Run `make verify` on the head.
+2. Push, and open the pull request with `.local/pr126/body.md`.
+3. Mark the roadmap item with the number of the pull request.
+4. Do the Gitar pass and the Codex review, then ask the owner for the merge.
 
-After the deploy, three checks follow:
+After the deploy, four checks follow:
 
 - The owner opens a new proof link in iOS Safari, and the app opens with no screen between.
 - The test account sees no session id and no spend, and the owner sees both.
 - `./start-live-evals --dry` lists the five old thumbs down, and marks nothing.
+- A Commander request for the "best possible deck" gets no bracket question.
 
 ## How to resume
 
@@ -118,7 +117,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-126: the proof page, the spend, the thumbs down, and the offer** (D-1147 to D-1151). The resume section holds the open work.
+0. **PR-126: the proof page, the spend, the thumbs down, the offer, and the power of "best"** (D-1147 to D-1154). The resume section holds the open work.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -162,7 +161,7 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
 
-**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, and the commander offer (D-1148 to D-1151).
+**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, the commander offer, and the power of "best" (D-1148 to D-1154). The owner narrowed the power words to the superlatives (D-1154).
 
 ## The archive
 

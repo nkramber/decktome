@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-10-04 correction pass 263 (PR-126, D-1147 to D-1150): the owner signed up through a new proof link. iOS Safari now goes on to the app at once. The session id and the spend show to the admin alone, and each thumbs down starts a live eval. Changes: PR-116, PR-125, PR-126, sequencing step 121.
+2026-10-04 correction pass 263 (PR-126, D-1147 to D-1154): the owner signed up through a new proof link. iOS Safari now goes on to the app at once. The session id and the spend show to the admin alone, and each thumbs down starts a live eval. The commander offer reads the depth of the collection and a color spread, and "best possible" fills bracket 5 in Commander. Changes: PR-116, PR-125, PR-126, sequencing step 121.
 2026-10-04 correction pass 262 (PR-125, D-1132 to D-1146): the owner asked to automate the read of each new deck. `./start-live-evals` reads each new deck and each revision in a headless session in a Seatbelt profile. The session proves each fix on a replay of the chat, and the owner merges each fix. Changes: PR-125, sequencing step 120.
 2026-10-04 correction pass 261 (PR-124, F-212 to F-223, D-1116 to D-1131): the first outside user built a deck on 2026-10-04, and the owner read the traffic. The owner put each finding of that session into one pull request (D-1125). Changes: F-212 to F-223, PR-124, sequencing step 119.
 
@@ -3360,13 +3360,17 @@ Gate:
 
 > *In plain English:* each time someone builds or revises a deck, a robot reads it against what they asked. It fixes the worst new problem, and the owner gets a ping when the fix is ready.
 
-**PR-126: The proof page on iOS, the spend for the admin alone, and a live eval for each thumbs down (D-1147 to D-1150).** 🔧 in review. On 2026-10-04 the owner signed up through a new proof link. The owner then asked for three changes in one pull request (D-1150).
+**PR-126: Five owner changes after the proof link (D-1147 to D-1154).** 🔧 in review. On 2026-10-04 the owner signed up through a new proof link. The owner then asked for five changes in one pull request (D-1150).
 
 - **The page (D-1147).** The proof page has no iOS state. After the click, each browser goes on to the app, iOS Safari too.
 - **The spend (D-1148).** `go/internal/spendmask` clears each `Usage` message of an agent or deck answer for a caller with no admin claim. It clears a copy, so storage keeps the spend.
 - **The chat page (D-1148).** The page shows the session id and the spend to the admin alone. The pool line stays for each user.
 - **The thumbs down (D-1149).** `go/internal/feedback` holds the eval mark of a verdict and the queue of the down verdicts. `go/cmd/live-evals` adds each one to `pending` and `summary`, and it writes its bundle and its mark.
 - **The code.** `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp`, because no other file reads them.
+- **The commander offer (D-1151).** Session `wBrsxouAndrjDXEJ8dDw` asked for a Marvel deck of owned cards, and both offers held mono-colored names alone.
+- **The depth.** With no theme and an owned pool rule, `go/internal/candidates` ranks the fill half on popularity. The other half is the share of the owned cards that the identity can use.
+- **The spread.** With no colors, `go/internal/questions` reads the whole ranked pool, and each offer of three holds a mono-colored and a multicolor name.
+- **The power of "best" (D-1153, D-1154).** In Commander, a superlative such as "best possible deck" fills bracket 5 with no question, and the plan states it. "Competitive" still asks the bracket.
 
 Gate:
 - The page tests prove that an iPhone browser goes on to the app, and that no text names the home screen.
@@ -3378,6 +3382,11 @@ Gate:
 - The emulator test proves that a down verdict waits until its mark, and that an up verdict never waits.
 - The tool tests prove that the key of a verdict reads back.
 - The tool tests prove that a bundle with no deck holds no verdict of another reader.
+- The candidate tests prove that a deep two-color legend leads an owned pool, and that a basic land adds no depth.
+- The offer tests prove that each offer of three holds both kinds, on test cards and on the card snapshot.
+- A local replay of the Marvel session with its own collection offered two multicolor names and one mono-colored name three times.
+- The power tests prove that "best possible deck" fills bracket 5 in Commander, also on the turn after the format.
+- The same tests prove that "competitive Commander" fills no bracket, and that a named bracket wins.
 
 > *In plain English:* an iPhone opens the app at once after the email link. Only the owner sees the session id and the cost. Each thumbs down now gets the same robot review as a new deck.
 
@@ -3798,7 +3807,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 118. **PR-123** a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).
 119. **PR-124** the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).
 120. **PR-125** the live evals of each new deck and revision (D-1132 to D-1146).
-121. **PR-126** the proof page on iOS, the spend of the admin, and the eval of a thumbs down (D-1147 to D-1150).
+121. **PR-126** five owner changes after the proof link (D-1147 to D-1154).
 
 ## 9. Open questions
 
