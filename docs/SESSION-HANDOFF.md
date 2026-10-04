@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03g)
 
-**Branch `feat/collection-limit-50k`: PR-121, a collection of 50,000 rows, in parts (F-211, D-1110).** The pull request is #PRNUM.
+**Branch `feat/collection-limit-50k`: PR-121, a collection of 50,000 rows, in parts (F-211, D-1110).** The pull request is #280.
 
 Author provider: Claude Code
 
@@ -22,9 +22,9 @@ Author provider: Claude Code
 - `go/internal/gzstore`: `UnmarshalMax` and `UnmarshalJSONMax` take the limit of the caller.
 - `go/internal/collectionsvc` and the web app: the upload cap is 10 MiB. `go/cmd/api`: the request cap is 16 MiB.
 
-**The checks.** `make store-check` passed each store on a new emulator. VERIFY_LINE
+**The checks.** `make store-check` passed each store on a new emulator. `make verify` on `7640013` passed each step through shellcheck, with 544 of 544 web tests under Node 22. The Docker daemon was off, so the two image builds did not run here. This diff changes no Dockerfile, and the docker job of CI builds both images.
 
-**The review.** REVIEW_LINE
+**The review.** Gitar and the Codex review follow the push.
 
 **The open work.**
 
