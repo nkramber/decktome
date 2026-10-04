@@ -31,7 +31,8 @@ The owner did both steps on 2026-10-03, and Resend read the domain as verified.
 
 **The open work.**
 
-1. After the deploy, send one approval email, and read the sender and a reply in the inbox.
+1. The owner confirms the merge, and the pull request is pending the auto-merge (D-828, D-834).
+2. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 
 ## How to resume
 
