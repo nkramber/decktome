@@ -42,6 +42,14 @@ Author provider: Claude Code
 
 After the deploy, one check follows: a new owned-only deck of bracket 4 holds no filter as fast mana and no Hurricane as a finisher.
 
+### 2026-10-04d: the checks of PR-124, and PR-126
+
+**The deploy of `50878de` and the API log passed.** The API runs the merge of PR-125, and each `rpc` line holds a uid and no email.
+
+**The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
+
+**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, the commander offer, and the power of "best" (D-1148 to D-1154). The owner narrowed the power words to the superlatives (D-1154).
+
 ## The resume section of 2026-10-04d, PR-126
 
 **Branch `fix/proof-link-ios-direct`: PR-126 is #284, five changes (D-1147 to D-1154).** It is pending the auto-merge. The owner put them in one pull request (D-1150).
