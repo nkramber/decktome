@@ -44,6 +44,7 @@ coverage/
 /go/feedback-triage
 /go/users-backfill
 /go/user-case
+/go/live-evals
 /go/deck-gate
 /go/eval
 /go/bracket-gate

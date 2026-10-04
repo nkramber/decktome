@@ -239,6 +239,10 @@ GENERATE_PROBE_OUT ?= .local/probes/generate-probe.txt
 SUMMARY_JUDGE_IN ?= $(DECK_GATE_OUT)
 SUMMARY_JUDGE_OUT ?= .local/probes/summary-judge.txt
 # CHAT_PROBE_MESSAGES are the user's turns, separated by |.
+# CHAT_PROBE_ARGS passes flags to the probe, for example the replay
+# files of a live eval: -messages-json, -collection-json, and -decks-out
+# (D-1144, D-1146).
+CHAT_PROBE_ARGS ?=
 CHAT_PROBE_MESSAGES ?= Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.
 API_BUILD_OUT ?= .local/probes/api-build.txt
 API_BUILD_PROMPT ?= Build me a lifegain Commander deck from the cards I own.
@@ -367,7 +371,7 @@ chat-probe: ## Drive the real Chat RPC to a deck. CAUTION: calls the real provid
 	@mkdir -p $(dir $(CHAT_PROBE_OUT))
 	@set -o pipefail; set -a && . ./.env && set +a && \
 		CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/gcs/mtg-local-cards/scryfall \
-		$(GO) run ./cmd/chat-probe -messages "$(CHAT_PROBE_MESSAGES)" | tee $(CHAT_PROBE_OUT)
+		$(GO) run ./cmd/chat-probe -messages "$(CHAT_PROBE_MESSAGES)" $(CHAT_PROBE_ARGS) | tee $(CHAT_PROBE_OUT)
 	@echo "wrote $(CHAT_PROBE_OUT)"
 
 # USER_CASE names a case of go/cmd/user-case/cases (D-1124). The files it
