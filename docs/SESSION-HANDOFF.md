@@ -24,13 +24,13 @@ Author provider: Claude Code
 - The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
 - `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1110).
 
-**The checks.** `make verify` passes after the merge of #278. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
+**The checks.** `make verify` passes on `d64a08f`. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
 **The review.** Gitar found two items, and `a5583df` fixed both. Codex round 1 found P2-1 and P2-2, and round 2 read `Blocked` only for the old name of D-1108. Round 3 at `8d9737c` found P2-3, a cap of 20 reads, and P2-4, an expired read that stays. `docs/reviews/pr-277-response.md` answers each one. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
-1. Do the Gitar pass and the Codex review of round 3, then get the owner confirmation.
+1. `d64a08f` holds the correction of round 3, and `make verify` passed on it. Do its Gitar pass, answer each Gitar note, run `make codex-review PR=277`, then get the owner confirmation.
 2. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1110).
 3. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
 4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
