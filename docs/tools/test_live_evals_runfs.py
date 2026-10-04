@@ -107,6 +107,19 @@ class RunFSTest(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.owner, "x")))
         self.assertEqual(self.call("mkdir", self.home, "deck1", "logs", "replay")[0], 0)
 
+    def test_clear_removes_a_left_run_folder(self):
+        os.makedirs(os.path.join(self.run, "repo", ".git"))
+        self.assertEqual(self.call("clear", self.home, "deck1")[0], 0)
+        self.assertFalse(os.path.exists(self.run))
+        self.assertEqual(self.call("clear", self.home, "deck1")[0], 0)
+
+    def test_clear_removes_a_linked_run_folder_and_never_its_target(self):
+        os.symlink(self.owner, os.path.join(self.home, "deck2"))
+        self.assertEqual(self.call("clear", self.home, "deck2")[0], 0)
+        self.assertFalse(os.path.lexists(os.path.join(self.home, "deck2")))
+        self.assertTrue(os.path.isfile(self.secret))
+        self.assertEqual(self.call("clear", self.home, "..")[0], 1)
+
     def test_paths_with_a_parent_part_are_refused(self):
         self.assertEqual(self.call("get", self.home, "deck1", "../deck1/bundle/x", "10")[0], 1)
         self.assertEqual(self.call("rm", self.home, "..", "x")[0], 1)

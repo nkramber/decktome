@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The base.** The branch stacks on `fix/first-user-feedback` at `5a862a5`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
+**The base.** The branch stacks on `fix/first-user-feedback` at `63bf6c7`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
 
 **The code.**
 
@@ -20,19 +20,16 @@ Author provider: Claude Code
 - `go/cmd/chat-probe` takes `-messages-json`, `-collection-json`, and `-deck-out`.
 - `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
 
-**The checks.** `make verify` passed on `8e4ab24`. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script.
+**The checks.** `make verify` passed on `8e4ab24`. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. It also proves that `clear` removes a folder that an interrupted clone left.
 
-**The review.** The Gitar review of `8e4ab24` closed three findings and opened one. CI ran no `verify` and no `pr-contract` on `70bf357` or `8e4ab24`, because #282 conflicts with its base. No Codex review ran yet.
+**The review.** The Gitar review of `8e4ab24` closed three findings and opened one: an interrupted clone blocked each retry. With no `branch` in the deck state, `prepare` now removes the folder with `runfs clear` before the clone. No Codex review ran yet.
 
 **The open work.** The session stopped at the checkpoint (D-946).
 
-1. Rebase onto `origin/fix/first-user-feedback`, now `63bf6c7`. Expect a conflict here. Keep this file under 24,000 bytes.
-2. Fix the Gitar thread on `scripts/live-evals.sh:403`. An interrupted clone leaves the run folder, and `mkdir "$run"` then fails on each retry. With no `branch` in the deck state, no session ran there, so remove it and clone again.
-3. Run `make verify`, push one time, and confirm that `verify` and `pr-contract` run on the head. Do the Gitar pass, then `make codex-review PR=282`.
-4. The merge question of the owner (D-828, D-834).
-5. Remove the probe folder `/Volumes/SSD-1TB/decktome-live-evals-probe`.
-6. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
-7. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
+1. Confirm that `verify` and `pr-contract` run on the head. Do the Gitar pass, then `make codex-review PR=282`.
+2. The merge question of the owner (D-828, D-834).
+3. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
+4. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
 
 ## How to resume
 

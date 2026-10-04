@@ -3353,6 +3353,7 @@ Gate:
 - The tool tests prove that `replay-input` joins the answers and the messages of each turn. The `chat-probe` tests prove that the JSON turns keep a "|".
 - A probe of the profile gives the expected result for each of 27 reads, writes, and commands.
 - The tests of `docs/tools/live_evals_runfs.py` prove that a link in the run folder stops each read, write, and removal of the script.
+- The same tests prove that `clear` removes a run folder that an interrupted clone left, and that it never follows a link.
 - `./start-live-evals --dry` prints the summary of the six decks of 2026-10-03, and it marks nothing.
 
 > *In plain English:* each time someone builds or revises a deck, a robot reads it against what they asked. It fixes the worst new problem, and the owner gets a ping when the fix is ready.
