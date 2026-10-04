@@ -24,9 +24,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar approved the moved head `bec0e573`, and both Gitar threads are closed. Review round 4 fixed P2-1 and P2-2, then found P2-3: the guard left `go/internal/gatekit/` and `go/internal/llm/` open. The guard now holds both, with a test. The owner kept the user cap of D-1109 open (D-1163). PR-130 (#288) took D-1162 first, so this decision reads D-1163. The merge of `fb66b5c` into the branch moved no code of this pull request. `docs/reviews/pr-285-response.md` holds the three answers.
+**The review.** Gitar approved effective head `1c474564`, and both review threads are closed. Round 5 verified P2-3 fixed in `4e5447a`. The guard protects `go/internal/gatekit/` and `go/internal/llm/`. The review record says `Ready for owner merge` for `1c474564dc4e41ed78263e947a4b4c47c04e680c`, with no open findings (D-827).
 
-**Open work.** Do the Gitar pass of the P2-3 fix, then run review round 5. A finding stops the loop for the owner at its third open round (D-826). Ask the owner to confirm the merge only after an approval.
+**Open work.** The author asks the owner to confirm the merge, with the four-section summary of D-836.
 
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
