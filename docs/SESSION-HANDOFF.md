@@ -25,7 +25,7 @@ Author provider: Claude Code
 
 **The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Question gate run 57 failed on one flaky classifier miss. Ten plays of that conversation met each slot. Run 58 reads PASS for $0.0661. Its theme question named filler words, so a fifth group of stop words came after it. Run 59 reads that group: PASS for $0.1036. Its two invented questions are in other slots. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of the chat built a deck of grade typical.
 
-**The review.** The pull request is #283. `make verify` passes. Gitar approved `5a862a5`, and Codex reviews the head next. The owner knows of D-1126 and of the cEDH rate in a bracket 3 grade. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
+**The review.** The review applies to effective head `d1c6ce5`. Verdict: Changes required, with open finding P2-1. Gitar approved the current head with no review threads. The owner knows of D-1126 and of the cEDH rate in a bracket 3 grade. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
 
 **The open work.**
 
