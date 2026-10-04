@@ -23,18 +23,16 @@ Author provider: Claude Code
 - `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
 - `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
 
-**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Question gate run 57 failed on one flaky classifier miss. Ten plays of that conversation met each slot. Run 58 reads PASS for $0.0661. Its theme question named filler words, so a fifth group of stop words came after it, and no gate run reads that group. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of the chat built a deck of grade typical.
+**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Question gate run 57 failed on one flaky classifier miss. Ten plays of that conversation met each slot. Run 58 reads PASS for $0.0661. Its theme question named filler words, so a fifth group of stop words came after it. Run 59 reads that group, and it reads PASS for $0.1036, with 73 of 75. Its two invented questions are in the pool slot and the power slot, not in the theme slot. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of the chat built a deck of grade typical.
 
-**The review.** The pull request is #283. `make verify` passes. Gitar and Codex review the head next. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
+**The review.** The pull request is #283. `make verify` passes. Gitar approved `5a862a5`, and Codex reviews the head next. The owner knows that D-1126 changed a code that D-910 named. The owner also knows that the grade of a bracket 3 deck still reads the cEDH rate of its commander. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
 
 **The open work.**
 
 1. Do the Gitar pass, then run `make codex-review PR=283`.
-2. Ask the owner about a question gate run for the stop words of the fifth group, about $0.07.
-3. Tell the owner two things. D-1126 changed a code that D-910 named. The grade of a bracket 3 deck still reads the cEDH rate of its commander.
-4. After the deploy, run `make user-case-chat CONFIRM=1` to a new output file.
-5. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
-6. The owner tells the user about the fixes.
+2. After the deploy, run `make user-case-chat CONFIRM=1` to a new output file.
+3. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
+4. The owner tells the user about the fixes.
 
 ## How to resume
 
