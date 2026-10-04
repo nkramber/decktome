@@ -19,3 +19,22 @@ The author answers the Codex record of `docs/reviews/pr-277.md`. That record rea
 ## The other changes of this round
 
 - The branch merged `main` after #276, and the owner renamed the item PR-121 (D-1108).
+
+## Round 3: the review of `8d9737c`
+
+The repeat record read `Changes required` at head `8d9737c`, with two findings of the record of D-1107.
+
+### P2-3: A valid read expires after twenty newer reads
+
+- The result: full merit.
+- The evidence: `Keep` kept the newest 20 reads of one document. One user can make 10 reads a minute on each instance (D-1106). So the 21st read in one hour removed a read that was still valid.
+- The correction: each read is one document of `deck_reads` now, keyed by a hash of the user, the deck, and the text. No count of reads drops a read. `Has` reads one document by its key.
+- The regression check: `TestReadRoundTrip` adds 25 newer reads, and the first read still matches. It passes against a fresh Firestore emulator through `make store-check`. `TestEachReadHasItsOwnKey` reads the keys.
+
+### P2-4: Expired read hashes stay in Firestore
+
+- The result: full merit.
+- The evidence: `Add` pruned old reads only at the next read of the user. With no later read, the document stayed.
+- The correction: the owner chose a Firestore TTL policy (D-1110). Each document holds `expire_at`, one hour after the read. `docs/setup-gcp.md` section 6 holds the command, and it runs once on production. Firestore deletes an expired document typically within 24 hours (docs.cloud.google.com/firestore/native/docs/ttl, read 2026-10-04). `Has` refuses an expired read before the delete.
+- The regression check: `TestReadRoundTrip` reads `expire_at` of a stored read. No local test runs the policy itself. The live check after the deploy runs the command.
+

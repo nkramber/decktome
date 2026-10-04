@@ -38,7 +38,7 @@ const archidektDeck = `{"name":"Karlov Lifegain","categories":[
 // fail makes each call fail.
 type fakeReads struct {
 	mu    sync.Mutex
-	reads map[string][]deckreads.Read
+	reads map[string]deckreads.Read
 	fail  error
 }
 
@@ -49,9 +49,9 @@ func (f *fakeReads) Add(_ context.Context, uid string, deckID int64, text string
 		return f.fail
 	}
 	if f.reads == nil {
-		f.reads = map[string][]deckreads.Read{}
+		f.reads = map[string]deckreads.Read{}
 	}
-	f.reads[uid] = deckreads.Keep(f.reads[uid], &deckreads.Read{DeckID: deckID, TextHash: deckreads.Hash(text), ReadAt: now}, now)
+	f.reads[deckreads.Key(uid, deckID, text)] = deckreads.New(uid, deckID, text, now)
 	return nil
 }
 
@@ -61,7 +61,7 @@ func (f *fakeReads) Has(_ context.Context, uid string, deckID int64, text string
 	if f.fail != nil {
 		return false, f.fail
 	}
-	return deckreads.Matches(f.reads[uid], deckID, text, now), nil
+	return f.reads[deckreads.Key(uid, deckID, text)].Matches(uid, deckID, text, now), nil
 }
 
 // fetchServer wires an agent server to a fake Archidekt that answers

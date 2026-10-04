@@ -26,8 +26,10 @@ func emulatorRepo(t *testing.T) *Repo {
 	return NewRepo(client)
 }
 
-// TestReadRoundTrip is D-1107: a user with no read has none, a read
-// matches its deck and text for that user alone, and two reads both stay.
+// TestReadRoundTrip is D-1107 and D-1110: a user with no read has none,
+// a read matches its deck and text for that user alone, a read stays
+// after many newer reads, and each document holds the field of the TTL
+// policy.
 func TestReadRoundTrip(t *testing.T) {
 	r := emulatorRepo(t)
 	ctx := t.Context()
@@ -40,8 +42,10 @@ func TestReadRoundTrip(t *testing.T) {
 	if err := r.Add(ctx, uid, 42, "Deck\n4 Lightning Bolt\n", now); err != nil {
 		t.Fatal(err)
 	}
-	if err := r.Add(ctx, uid, 7, "Deck\n4 Shock\n", now); err != nil {
-		t.Fatal(err)
+	for i := range 25 {
+		if err := r.Add(ctx, uid, int64(100+i), "Deck\n4 Shock\n", now.Add(time.Second)); err != nil {
+			t.Fatal(err)
+		}
 	}
 	for _, tc := range []struct {
 		uid  string
@@ -50,7 +54,7 @@ func TestReadRoundTrip(t *testing.T) {
 		want bool
 	}{
 		{uid, 42, "Deck\n4 Lightning Bolt\n", true},
-		{uid, 7, "Deck\n4 Shock\n", true},
+		{uid, 124, "Deck\n4 Shock\n", true},
 		{uid, 42, "Deck\n4 Shock\n", false},
 		{uid + "-other", 42, "Deck\n4 Lightning Bolt\n", false},
 	} {
@@ -61,5 +65,13 @@ func TestReadRoundTrip(t *testing.T) {
 	}
 	if ok, err := r.Has(ctx, uid, 42, "Deck\n4 Lightning Bolt\n", now.Add(Life)); err != nil || ok {
 		t.Errorf("after Life: ok = %v, err = %v", ok, err)
+	}
+	snap, err := r.client.Collection(Collection).Doc(Key(uid, 42, "Deck\n4 Lightning Bolt\n")).Get(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	at, err := snap.DataAt(TTLField)
+	if got, ok := at.(time.Time); err != nil || !ok || !got.Equal(now.Add(Life)) {
+		t.Errorf("%s = %v (%v), want %v", TTLField, at, err, now.Add(Life))
 	}
 }

@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-10-03 correction pass 259 (PR-70, PR-121, D-1100 to D-1108): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-121, sequencing step 115.
+2026-10-03 correction pass 259 (PR-70, PR-121, D-1100 to D-1108, D-1110): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-121, sequencing step 115.
 
 2026-10-03 correction pass 258 (PR-26, PR-120, D-1090, D-1091, D-1095): the owner chose the new-cards event as the third event of PR-26, before the email digest. The digest holds the new cards of each deck, so this event comes first. Changes: PR-26, PR-120, sequencing steps 99 and 115.
 2026-10-03 correction pass 257 (PR-119, F-210, D-1092 to D-1094): an invited user who signed in and made nothing had no user record. The first verified call writes it now. `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat. Changes: the `users` record row, F-210, PR-119, sequencing step 114.
@@ -3218,13 +3218,13 @@ The replay of 2026-10-03 cost nothing. It joined the 268 first printings of Real
 UNVERIFIED: the tag file of that snapshot holds no tag of a new card, so no tag signal fired in the replay. The tag file of a release day can also lack the new cards. The live check after the deploy waits for Star Trek on 2026-11-13 (Scryfall, read 2026-10-03).
 > *In plain English:* when a new set comes out, the app looks for new cards that fit each of your decks. Your phone tells you, and the deck shows the cards with a button to revise the deck. A dismiss hides the panel.
 
-**PR-121: A deck import from a link (D-1100 to D-1108).** ✅ merged as #277. The mark comes before any review (D-822). The owner asked for a workshop of an Archidekt and a Moxfield link on 2026-10-03, and then chose this scope. `docs/reference/deck-links-2026-10-03.md` holds each source fact.
+**PR-121: A deck import from a link (D-1100 to D-1108, D-1110).** ✅ merged as #277. The mark comes before any review (D-822). The owner asked for a workshop of an Archidekt and a Moxfield link on 2026-10-03, and then chose this scope. `docs/reference/deck-links-2026-10-03.md` holds each source fact.
 
 - **The field (D-1103).** The import dialog gets a field "Deck link" and a button "Read". The field names no site, as D-889 asks.
 - **Archidekt (D-1100).** `FetchDeckList` reads a public deck through `go/internal/archidekt` and answers its list as Arena text. The form shows the list, and the user selects Import as for a pasted list.
 - **The safety of the read (D-1100).** The server makes the API URL again from the deck id. It follows no redirect, caps the answer at 4 MiB, and allows each user 10 reads a minute on each API instance (D-1106).
 - **The link back (D-1101).** The deck keeps `source_url`, and the deck page and the share page link to the Archidekt deck.
-- **The record of a read (D-1107).** `go/internal/deckreads` keeps each read for one hour in `deck_reads/<uid>`: the deck id and a hash of the text. `ImportDeck` keeps a link only after such a read.
+- **The record of a read (D-1107, D-1110).** `go/internal/deckreads` keeps each read as one document of `deck_reads`: the user, the deck id, a hash of the text, and `expire_at`. `ImportDeck` keeps a link only after such a read in the last hour. A Firestore TTL policy deletes an expired read.
 - **Moxfield (D-1102, D-1103).** The app asks Moxfield for nothing. A Moxfield link gets the exact steps: More, then Export, then Copy for Arena.
 - **Any other site (D-1104).** The link gets the general steps. The page files an import report of the host, and the owner gets a notice. The triage class I2 writes a defect row.
 
@@ -3237,12 +3237,12 @@ Gate:
 - The parser reads the real Moxfield export of the owner, with its name and its commander.
 - The tests of the web form cover the read, the exact steps, the general steps with the report, and the error of the server.
 - The share page links to the Archidekt deck. A list that the user edits after the read keeps no link, as a revision keeps none.
-- An import refuses a link with no read of the same deck and text. A fault of the record fails the read and the import. `make store-check` runs the store against the emulator.
+- An import refuses a link with no read of the same deck and text. A fault of the record fails the read and the import. A read still matches after 25 newer reads. `make store-check` runs the store against the emulator.
 - `make verify` passes.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).
 
-The live check after the deploy: read an Archidekt link on `decktome.com`, and import it. UNVERIFIED before the merge: an answer of Archidekt to Cloud Run, and the answer to a private deck.
+The live check after the deploy: run the TTL command of `docs/setup-gcp.md` section 6 one time. Then read an Archidekt link on `decktome.com`, and import it. UNVERIFIED before the merge: an answer of Archidekt to Cloud Run, and the answer to a private deck.
 > *In plain English:* paste the link of a public Archidekt deck, and the app fills in the list for you. Moxfield blocks other sites, so a Moxfield link shows the three clicks that copy the list. Any other site shows general steps, and the app tells the owner about that site.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
@@ -3657,7 +3657,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 113. **PR-118** the push of a legality change, the second event of PR-26 (D-1087 to D-1089).
 114. **PR-119** a user record for each user who signs in (F-210, D-1092 to D-1094).
 115. **PR-120** the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).
-116. **PR-121** a deck import from a link (D-1100 to D-1108).
+116. **PR-121** a deck import from a link (D-1100 to D-1108, D-1110).
 
 ## 9. Open questions
 

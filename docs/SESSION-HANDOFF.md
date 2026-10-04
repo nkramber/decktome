@@ -8,13 +8,13 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-03g)
 
-**Branch `feat/archidekt-url-import`: PR-121, a deck import from a link (D-1100 to D-1108).** The pull request is #277. The owner renamed it, because #278 took its old name (D-1108).
+**Branch `feat/archidekt-url-import`: PR-121, a deck import from a link (D-1100 to D-1108, D-1110).** The pull request is #277. The owner renamed it, because #278 took its old name (D-1108).
 
 Author provider: Claude Code
 
 **The base.** `main` is `d0b8498`, from #278. The branch merged `main` after #278. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
 
-**The owner choices.** The owner asked for a workshop of an Archidekt and a Moxfield link. An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). After the first Codex review, the owner chose a cap of 10 reads a minute on each API instance (D-1106). The server records each read, and an import keeps a link only after a read of the same deck and text (D-1107).
+**The owner choices.** The owner asked for a workshop of an Archidekt and a Moxfield link. An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1110 answer the Codex reviews.
 
 **The code.**
 
@@ -22,17 +22,18 @@ Author provider: Claude Code
 - `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
 - `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
 - The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
-- `go/internal/deckreads` records each read for one hour: the deck id and a hash of the text. `ImportDeck` refuses a link with no such read.
+- `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1110).
 
 **The checks.** `make verify` passes after the merge of #278. `make store-check` passes against the emulator, with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
 
-**The review.** Gitar approves `8d9737c`, and both earlier threads are resolved. The Codex review requires changes at effective head `8d9737c0468336f8587dc83c34223ccf12a2c777`: P2-3 and P2-4, both about the one-hour read record of D-1107. See `docs/reviews/pr-277.md`.
+**The review.** Gitar found two items, and `a5583df` fixed both. Codex round 1 found P2-1 and P2-2, and round 2 read `Blocked` only for the old name of D-1108. Round 3 at `8d9737c` found P2-3, a cap of 20 reads, and P2-4, an expired read that stays. `docs/reviews/pr-277-response.md` answers each one. The state is pending the auto-merge (D-828).
 
 **The open work.**
 
-1. Fix P2-3 and P2-4, run their regression checks, then get a new Gitar pass and Codex review.
-2. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
-3. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+1. Do the Gitar pass and the Codex review of round 3, then get the owner confirmation.
+2. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1110).
+3. After the deploy, read an Archidekt link on `decktome.com`, and import it. This proves the read from Cloud Run and the record of the read.
+4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
 
@@ -107,7 +108,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job: an hour with no new version logs "snapshot current". Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
-0. **PR-121: a deck import from a link** (D-1100 to D-1108). The resume section holds the open work.
+0. **PR-121: a deck import from a link** (D-1100 to D-1108, D-1110). The resume section holds the open work.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
@@ -149,7 +150,7 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for a headless browser or a false agent for Moxfield.** The session declined, because of D-502 and the block of Moxfield. The owner chose the steps, the access request, and a bookmarklet test (D-1102).
 
-**The owner renamed the item PR-121, and answered the first Codex review.** The cap counts on each instance (D-1106), and an import keeps a link only after a read (D-1107).
+**The owner renamed the item PR-121, and answered the Codex reviews.** The cap counts on each instance (D-1106). A link needs a read (D-1107), and a TTL policy deletes it (D-1110).
 
 ## The archive
 

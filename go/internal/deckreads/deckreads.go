@@ -3,12 +3,17 @@
 // read of the same deck and the same text, so a stored link always names
 // the list that the server read. The store keeps the deck id and a hash
 // of the text, and no list.
+//
+// Each read is one document, so no count of reads drops a read before
+// its hour ends. A Firestore TTL policy on expire_at deletes a document
+// after its hour, typically within 24 hours (D-1110).
 package deckreads
 
 import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"strconv"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -16,28 +21,23 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Collection is the top-level collection of the reads, one document for
-// each user. No harvest reads it.
+// Collection is the top-level collection of the reads. No harvest reads
+// it.
 const Collection = "deck_reads"
 
-const (
-	// Life is how long a read lets an import keep its link.
-	Life = time.Hour
-	// MaxReads bounds the reads of one document. The oldest read goes
-	// first.
-	MaxReads = 20
-)
+// TTLField is the field of the TTL policy of Collection (D-1110).
+const TTLField = "expire_at"
+
+// Life is how long a read lets an import keep its link.
+const Life = time.Hour
 
 // Read is one deck read of a user.
 type Read struct {
+	UID      string    `firestore:"uid"`
 	DeckID   int64     `firestore:"deck_id"`
 	TextHash string    `firestore:"text_hash"`
 	ReadAt   time.Time `firestore:"read_at"`
-}
-
-// record is the document of one user.
-type record struct {
-	Reads []Read `firestore:"reads"`
+	ExpireAt time.Time `firestore:"expire_at"`
 }
 
 // Hash is the hash of a list text.
@@ -46,34 +46,22 @@ func Hash(text string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-// Keep answers the reads younger than Life, and a new read when add is
-// not nil. It keeps the newest MaxReads.
-func Keep(reads []Read, add *Read, now time.Time) []Read {
-	out := make([]Read, 0, len(reads)+1)
-	for _, r := range reads {
-		if now.Sub(r.ReadAt) < Life {
-			out = append(out, r)
-		}
-	}
-	if add != nil {
-		out = append(out, *add)
-	}
-	if len(out) > MaxReads {
-		out = out[len(out)-MaxReads:]
-	}
-	return out
+// Key is the document id of one read: a hash of the user, the deck, and
+// the text. A second read of the same list replaces the first one.
+func Key(uid string, deckID int64, text string) string {
+	sum := sha256.Sum256([]byte(uid + "\x00" + strconv.FormatInt(deckID, 10) + "\x00" + Hash(text)))
+	return hex.EncodeToString(sum[:])
 }
 
-// Matches answers whether a read younger than Life has the deck and the
-// text.
-func Matches(reads []Read, deckID int64, text string, now time.Time) bool {
-	hash := Hash(text)
-	for _, r := range Keep(reads, nil, now) {
-		if r.DeckID == deckID && r.TextHash == hash {
-			return true
-		}
-	}
-	return false
+// New is the read of a deck and a text by a user at a time.
+func New(uid string, deckID int64, text string, now time.Time) Read {
+	return Read{UID: uid, DeckID: deckID, TextHash: Hash(text), ReadAt: now, ExpireAt: now.Add(Life)}
+}
+
+// Matches answers whether a read has the user, the deck, and the text,
+// and its hour has not ended.
+func (r Read) Matches(uid string, deckID int64, text string, now time.Time) bool {
+	return r.UID == uid && r.DeckID == deckID && r.TextHash == Hash(text) && now.Before(r.ExpireAt)
 }
 
 // Repo is the Firestore store of the reads.
@@ -84,39 +72,26 @@ type Repo struct {
 // NewRepo builds the store.
 func NewRepo(client *firestore.Client) *Repo { return &Repo{client: client} }
 
-// Add records one read of a user. It removes each read older than Life.
+// Add records one read of a user.
 func (r *Repo) Add(ctx context.Context, uid string, deckID int64, text string, now time.Time) error {
-	ref := r.client.Collection(Collection).Doc(uid)
-	read := Read{DeckID: deckID, TextHash: Hash(text), ReadAt: now}
-	return r.client.RunTransaction(ctx, func(_ context.Context, tx *firestore.Transaction) error {
-		var rec record
-		snap, err := tx.Get(ref)
-		switch {
-		case status.Code(err) == codes.NotFound:
-		case err != nil:
-			return err
-		default:
-			if err := snap.DataTo(&rec); err != nil {
-				return err
-			}
-		}
-		return tx.Set(ref, record{Reads: Keep(rec.Reads, &read, now)})
-	})
+	_, err := r.client.Collection(Collection).Doc(Key(uid, deckID, text)).Set(ctx, New(uid, deckID, text, now))
+	return err
 }
 
 // Has answers whether a user read the deck with the text less than Life
-// ago.
+// ago. A read whose hour ended answers false before the TTL policy
+// deletes it.
 func (r *Repo) Has(ctx context.Context, uid string, deckID int64, text string, now time.Time) (bool, error) {
-	snap, err := r.client.Collection(Collection).Doc(uid).Get(ctx)
+	snap, err := r.client.Collection(Collection).Doc(Key(uid, deckID, text)).Get(ctx)
 	if status.Code(err) == codes.NotFound {
 		return false, nil
 	}
 	if err != nil {
 		return false, err
 	}
-	var rec record
-	if err := snap.DataTo(&rec); err != nil {
+	var read Read
+	if err := snap.DataTo(&read); err != nil {
 		return false, err
 	}
-	return Matches(rec.Reads, deckID, text, now), nil
+	return read.Matches(uid, deckID, text, now), nil
 }
