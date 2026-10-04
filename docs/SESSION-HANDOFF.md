@@ -29,6 +29,8 @@ Author provider: Claude Code
 
 **The checks of the code.** `make verify` passed on `7f8fcb1`, before the rebase onto `a7731f5`, and each CI job of that head passed but `review-gate`. Gitar approved `7f8fcb1`.
 
+**The review.** Gitar passed at `7f8fcb1`, and its D-1161 thread is resolved. Codex requires changes at `7f8fcb1649ca9895756d53354516c240a8901f2f`: P2-1, the test does not check the registered `-pool` default.
+
 **Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
 
 ## How to resume
