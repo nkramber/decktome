@@ -89,7 +89,7 @@ func TestBandLinesAndMidpoints(t *testing.T) {
 	four := strings.Join(b.Lines(mtgv1.FormatId_FORMAT_ID_COMMANDER, bracket(4)), "\n")
 	for _, want := range []string{
 		`tutors, cards that search the library for a card: 2 or more, and the shortlist marks each one "tutor"`,
-		`fast mana, nonland mana producers of mana value one or less that add mana for no mana and tap no creature: 3 or more, and the shortlist marks each one "fast mana"`,
+		`fast mana, nonland mana producers of mana value one or less that add mana for no mana, tap no creature, and need no X or multikicker: 3 or more, and the shortlist marks each one "fast mana"`,
 		`Game Changers, cards on the official Game Changers list: 4 or more, and the shortlist marks each one "Game Changer"`,
 	} {
 		if !strings.Contains(four, want) {

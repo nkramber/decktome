@@ -6,32 +6,27 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04f)
+## RESUME HERE (2026-10-04g)
 
-**Branch `fix/pr123-checks`: PR-129 is #287, `make api-build` sends the pool rule of the web app (D-1161).** It is pending the auto-merge.
+**Branch `fix/x-cost-fast-mana`: PR-130 is #288, fast mana needs no X and no multikicker (F-225, D-1162).**
 
 Author provider: Claude Code
 
-**The base.** PR-128 merged as #286, so the branch sits on `main` at `a7731f5`.
+**The base.** PR-129 merged as #287, so the branch sits on `main` at `c8a70af`.
 
-**The checks on the deploy of `42982d0` passed.**
+**The deploy of `a7731f5` passed.** The `deploy-api` build ended SUCCESS at 20:29 UTC. After a cold start, `/readyz` read `ok` with `a7731f5`. PR-128 changed no web file, so no `deploy-web` build ran.
 
-- The `deploy-api` and `deploy-web` builds of `42982d0` ended SUCCESS at 17:37 and 17:38 UTC. The revision `mtg-api-00121-mrq` serves it, and `/readyz` and `/version.json` name it.
-- The TTL policy of `docs/setup-gcp.md` section 6 reads `ACTIVE` on `deck_reads.expire_at` (D-1113). The owner approved the command.
-- An Archidekt link read into the import form, and the deck page links back to `https://archidekt.com/decks/7031486` (PR-123).
-- A proof link of a new account opened the app with no screen between, in WebKit with the iPhone 15 profile (D-1147). The session then deleted the account and its invite.
-- The test account saw no session id and no spend, and an admin account saw both (D-1148).
-- `./start-live-evals --dry` listed five thumbs down and marked none (D-1149).
-- "Best possible deck" asked no bracket question, and the deck reads bracket 5 (D-1154).
-- The snapshot job logs "snapshot current" each hour (PR-120). Two users who made nothing have a record (PR-119, D-1092).
+**The check of PR-128 passed.** `make api-build` built deck `HpWYMR9DrNN2YbHNBoWt` of session `KeGnDO4SLj0cxKBuDqTg` for $0.0570. The deck is red and green, bracket 4, with the owned cards alone. Its profile marks no filter or Springleaf Drum as fast mana, and no card that hits its caster as a finisher. The model took neither Springleaf Drum nor Earthquake, and the test collection holds no Hurricane.
 
-**The code.** `go/cmd/api-build` sends `owned-only` by default (D-1161). The run of "best possible deck" held five cards that the collection does not hold.
+**The fault (F-225).** The same profile marked Astral Cornucopia as fast mana. Its cost {X}{X}{X} gives a mana value of 0, but one mana costs 3.
 
-**The checks of the code.** `make verify` passed on `8489cfd`. CI passed every verify job, `pr-contract`, and Gitar. `review-gate` still reads the prior review record.
+**The code.** `isFastMana` in `go/internal/profile` counts no card with an X or a multikicker in its cost (D-1162). The deck shape block states the rule, and the generate prompt reads version 20.
 
-**The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`. The review record is on the branch.
+**The checks.** The Go tests of `profile`, `generate`, and `candidates` pass. A replay of the snapshot of 2026-09-04 drops Astral Cornucopia, Mana Bloom, and Everflowing Chalice alone, from 77 to 74. `docs/reference/hidden-cost-fast-mana-2026-10-04.md` holds the counts.
 
-**Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
+**The review.** Gitar approved effective head `5881231`, and no review thread stays open. Codex reviewed `58812319b19e0ee120ac03556796ce2e7cfff8cc`. The verdict is `Ready for owner merge`. No finding stays open. CI passed every verify job, `pr-contract`, and Gitar on `5881231`.
+
+**Open.** The pull request is pending the auto-merge (D-828). After the deploy, read `/readyz` for the merge commit.
 
 ## How to resume
 
@@ -105,7 +100,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The check of PR-128** (D-1159, D-1160). It merged as #286. After the deploy, read a new owned-only deck of bracket 4. It holds no filter as fast mana and no Hurricane as a finisher.
+0. **PR-130: fast mana needs no X and no multikicker** (F-225, D-1162). The resume section holds the open work.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -148,6 +143,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The `make api-build` run of "best possible deck" held cards that the collection does not hold.** The owner chose the fix of the default pool rule (D-1161).
 
+### 2026-10-04g: the checks of PR-128, and PR-130
+
+**The deploy of `a7731f5` and the check of PR-128 passed.** The test collection holds no Hurricane. So the owner chose a red and green deck, where Earthquake of the same tag can show.
+
+**The deck marked Astral Cornucopia as fast mana.** The owner asked for the fix in this pull request, and chose the X costs and the multikicker (D-1162).
+
+**The checks of PR-126 needed no run.** PR-129 ran them on the deploy of `42982d0`.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04d, the records of 2026-08-31 to 2026-10-04c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04f, the records of 2026-08-31 to 2026-10-04c, and 104 more sections, word for word. Read it for the detail behind a decision.

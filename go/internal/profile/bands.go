@@ -298,7 +298,7 @@ var promptWords = map[string]string{
 	KeyTappedLand:    "lands that enter tapped",
 	KeyColorlessLand: "nonbasic lands that make only colorless mana",
 	KeyTutor:         "tutors, cards that search the library for a card",
-	KeyFastMana:      "fast mana, nonland mana producers of mana value one or less that add mana for no mana and tap no creature",
+	KeyFastMana:      "fast mana, nonland mana producers of mana value one or less that add mana for no mana, tap no creature, and need no X or multikicker",
 	KeyGameChanger:   "Game Changers, cards on the official Game Changers list",
 	KeyFinisher:      "finishers, cards that can win the game, and evasive creatures of power 5 or more",
 }

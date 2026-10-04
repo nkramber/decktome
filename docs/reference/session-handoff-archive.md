@@ -15,6 +15,34 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04f, PR-129
+
+
+**Branch `fix/pr123-checks`: PR-129 is #287, `make api-build` sends the pool rule of the web app (D-1161).** It is pending the auto-merge.
+
+Author provider: Claude Code
+
+**The base.** PR-128 merged as #286, so the branch sits on `main` at `a7731f5`.
+
+**The checks on the deploy of `42982d0` passed.**
+
+- The `deploy-api` and `deploy-web` builds of `42982d0` ended SUCCESS at 17:37 and 17:38 UTC. The revision `mtg-api-00121-mrq` serves it, and `/readyz` and `/version.json` name it.
+- The TTL policy of `docs/setup-gcp.md` section 6 reads `ACTIVE` on `deck_reads.expire_at` (D-1113). The owner approved the command.
+- An Archidekt link read into the import form, and the deck page links back to `https://archidekt.com/decks/7031486` (PR-123).
+- A proof link of a new account opened the app with no screen between, in WebKit with the iPhone 15 profile (D-1147). The session then deleted the account and its invite.
+- The test account saw no session id and no spend, and an admin account saw both (D-1148).
+- `./start-live-evals --dry` listed five thumbs down and marked none (D-1149).
+- "Best possible deck" asked no bracket question, and the deck reads bracket 5 (D-1154).
+- The snapshot job logs "snapshot current" each hour (PR-120). Two users who made nothing have a record (PR-119, D-1092).
+
+**The code.** `go/cmd/api-build` sends `owned-only` by default (D-1161). The run of "best possible deck" held five cards that the collection does not hold.
+
+**The checks of the code.** `make verify` passed on `8489cfd`. CI passed every verify job, `pr-contract`, and Gitar. `review-gate` still reads the prior review record.
+
+**The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`. The review record is on the branch.
+
+**Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
+
 ## The resume section of 2026-10-04e, PR-128
 
 **Branch `fix/power-card-counters`: PR-128 is #286, the power cards of a reader verdict (F-224, D-1159, D-1160).** It is pending the auto-merge.
