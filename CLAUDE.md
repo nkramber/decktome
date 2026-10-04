@@ -79,7 +79,7 @@ Read `docs/SESSION-HANDOFF.md` next. It is the resume point.
 
 ## Commands that cost money
 
-Eighteen targets and three loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, `scripts/feedback-loop.sh`, and `scripts/live-evals.sh`. Ask the owner before every run, except a round of `make codex-review`, which spends the Codex plan (D-831). A rerun writes to a new `*_OUT` file, and a guard refuses a document that holds a result (D-65).
+Nineteen targets and three loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `make live-evals-install`, `scripts/autotune.sh`, `scripts/feedback-loop.sh`, and `scripts/live-evals.sh`. Ask the owner before every run, except a round of `make codex-review`, which spends the Codex plan (D-831). A rerun writes to a new `*_OUT` file, and a guard refuses a document that holds a result (D-65).
 
 `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each paid target, and every free target (D-749). Read it before you run or change a target.
 

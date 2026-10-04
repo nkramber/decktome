@@ -375,3 +375,44 @@ func TestUnevaluatedDownWaitsUntilTheMark(t *testing.T) {
 		t.Fatalf("a lost verdict = %v, want ErrNotFound", err)
 	}
 }
+
+// D-1156: each general note waits for a live eval until its mark, and a
+// down verdict never joins the note queue.
+func TestUnevaluatedNotesWaitUntilTheMark(t *testing.T) {
+	r := emulatorRepo(t)
+	ctx := context.Background()
+	uid := "u-note-" + time.Now().UTC().Format("150405.000000")
+	at := time.Now().UTC().Add(-time.Hour)
+	note, err := r.Add(ctx, uid, Item{Kind: "general", Text: "the deck page shows no mana curve", Screen: "deck",
+		DeckID: "d1", CreatedAt: at})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.Add(ctx, uid, Item{Kind: "deck", Verdict: "down", DeckID: "d1", CreatedAt: at}); err != nil {
+		t.Fatal(err)
+	}
+	mine := func() []Pending {
+		t.Helper()
+		all, err := r.UnevaluatedNotes(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var out []Pending
+		for _, p := range all {
+			if p.UID == uid {
+				out = append(out, p)
+			}
+		}
+		return out
+	}
+	got := mine()
+	if len(got) != 1 || got[0].ID != note || got[0].Screen != "deck" || got[0].DeckID != "d1" || got[0].Kind != "general" {
+		t.Fatalf("pending = %+v, want the note alone", got)
+	}
+	if err := r.MarkEvaluated(ctx, uid, note, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if got := mine(); len(got) != 0 {
+		t.Fatalf("pending after the mark = %+v", got)
+	}
+}

@@ -73,3 +73,36 @@ func TestIndexFileCoversDown(t *testing.T) {
 		t.Error("no collection-group index for Down with no verdict: created_at descending")
 	}
 }
+
+// TestIndexFileCoversNotes: UnevaluatedNotes filters kind and verdict
+// and orders by created_at, over the collection group (D-1156). The
+// emulator enforces no index, so this test reads the file.
+func TestIndexFileCoversNotes(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "firestore.indexes.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var file struct {
+		Indexes []struct {
+			CollectionGroup string `json:"collectionGroup"`
+			QueryScope      string `json:"queryScope"`
+			Fields          []struct {
+				FieldPath string `json:"fieldPath"`
+				Order     string `json:"order"`
+			} `json:"fields"`
+		} `json:"indexes"`
+	}
+	if err := json.Unmarshal(raw, &file); err != nil {
+		t.Fatal(err)
+	}
+	for _, ix := range file.Indexes {
+		if ix.CollectionGroup != "feedback" || ix.QueryScope != "COLLECTION_GROUP" || len(ix.Fields) != 3 {
+			continue
+		}
+		f := ix.Fields
+		if f[0].FieldPath == "kind" && f[1].FieldPath == "verdict" && f[2].FieldPath == "created_at" && f[2].Order == "DESCENDING" {
+			return
+		}
+	}
+	t.Error("no composite index for UnevaluatedNotes: kind, verdict, then created_at descending")
+}

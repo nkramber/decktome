@@ -8,30 +8,25 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04f)
 
-**Branch `fix/pr123-checks`: PR-129 is #287, `make api-build` sends the pool rule of the web app (D-1161).** It is pending the auto-merge.
+**Branch `feat/live-evals-launchd`: PR-127 is #285, the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).** The owner approved the plan as one pull request.
 
 Author provider: Claude Code
 
 **The base.** PR-128 merged as #286, so the branch sits on `main` at `a7731f5`.
 
-**The checks on the deploy of `42982d0` passed.**
-
-- The `deploy-api` and `deploy-web` builds of `42982d0` ended SUCCESS at 17:37 and 17:38 UTC. The revision `mtg-api-00121-mrq` serves it, and `/readyz` and `/version.json` name it.
-- The TTL policy of `docs/setup-gcp.md` section 6 reads `ACTIVE` on `deck_reads.expire_at` (D-1113). The owner approved the command.
-- An Archidekt link read into the import form, and the deck page links back to `https://archidekt.com/decks/7031486` (PR-123).
-- A proof link of a new account opened the app with no screen between, in WebKit with the iPhone 15 profile (D-1147). The session then deleted the account and its invite.
-- The test account saw no session id and no spend, and an admin account saw both (D-1148).
-- `./start-live-evals --dry` listed five thumbs down and marked none (D-1149).
-- "Best possible deck" asked no bracket question, and the deck reads bracket 5 (D-1154).
-- The snapshot job logs "snapshot current" each hour (PR-120). Two users who made nothing have a record (PR-119, D-1092).
-
-**The code.** `go/cmd/api-build` sends `owned-only` by default (D-1161). The run of "best possible deck" held five cards that the collection does not hold.
-
 **The checks of the code.** `make verify` passed on `8489cfd`. CI passed every verify job, `pr-contract`, and Gitar. `review-gate` still reads the prior review record.
 
-**The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`. The review record is on the branch.
+- `scripts/live-evals-launchd.sh` writes and loads the launchd agent `com.decktome.live-evals` (D-1155). `make live-evals-install CONFIRM=1` runs it, and `make live-evals-status` reads it.
+- Each tick moves the full clone `$LIVE_EVALS_HOME/main` to origin/main, and runs `start-live-evals --once` there. Git refuses a linked worktree as the reference of a clone.
+- `go/internal/feedback` reads the general notes with no eval mark. `go/cmd/live-evals` adds each note with the key `n-`, and its bundle holds `note.json` (D-1156).
+- The prompt holds the scope rule. An item with no fault in scope ends `out-of-scope`, and the owner gets the reason (D-1157).
+- `live-evals guard` reads the changed files of a pull request on GitHub. A protected path holds it as `blocked` (D-1158).
 
-**Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
+**The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
+
+**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. Codex found no defect at `3f6c1ff`. The merge of PR-128 made the branch conflict, so the session moved it onto `a7731f5`. A new Gitar pass and a new Codex round read the moved head.
+
+**After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
 ## How to resume
 
@@ -55,7 +50,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - A singular creature-type word keeps the generic rule, and its plural reads the type row (D-731). So "zombie" and "zombies" read two different lists, and F-144 records why.
 - A stored deck records the size of its shortlist and no card of it. So a card that never reached the shortlist and a card that the model dropped look the same. Replay the shortlist for free before a prompt fix (M-17). `.local/m17/zz_scratch_m17_test.go` holds the method, and `list.Theme` names the theme words that matched no card.
 - `make bracket-gate` runs its tool in `go/`, through `go -C go`. A relative `-rejudge` path then points inside `go/`, so pass an absolute path.
-- Eighteen targets and three loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `scripts/autotune.sh`, `scripts/feedback-loop.sh`, and `scripts/live-evals.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
+- Nineteen targets and three loop scripts spend money: `make codex-review`, `make questions-gate`, `make questions-eval`, `make eval-calibrate`, `make deck-gate`, `make bracket-gate`, `make sixty-gate`, `make revise-gate`, `make chat-probe`, `make generate-probe`, `make summary-judge`, `make quality-judge`, `make test-smoke`, `make feedback-triage`, `make api-build`, `make live-web`, `make live-sweep`, `make user-case-chat`, `make live-evals-install`, `scripts/autotune.sh`, `scripts/feedback-loop.sh`, and `scripts/live-evals.sh`. Ask the owner before each run. `docs/reference/paid-targets.md` holds the cost and the guard of each. `make autotune`, `make feedback-loop`, `make feedback-loop-dry`, `make feedback-triage-dry`, `eval sweep -dry`, and `go run ./cmd/bracket-gate -sweep` are free.
 - A rerun writes to a new file. Every `*_OUT` variable refuses a document that holds a result (D-65).
 - A gate document names the commit of `HEAD`, and never the tree. Deck gate run 29 ran over uncommitted work, so its header names the parent commit `5fd8085`. Commit the change before a paid run.
 - A gate run takes about 20 minutes and an eval about 13. A foreground command stops at 10 minutes, so run both in the background.
@@ -105,17 +100,14 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The check of PR-128** (D-1159, D-1160). It merged as #286. After the deploy, read a new owned-only deck of bracket 4. It holds no filter as fast mana and no Hurricane as a finisher.
-0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
-0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
+0. **PR-127: the live evals with no terminal, the notes, and a scope rule** (D-1155 to D-1158). The resume section holds the open work.
+0. **The check of PR-128** (F-224, D-1159, D-1160). It merged as #286. After the deploy, a new owned-only deck of bracket 4 holds no filter as fast mana and no Hurricane as a finisher.
+0. **The checks of PR-126** (D-1147 to D-1154). It merged as #284. After the deploy, the owner opens a new proof link in iOS Safari. The test account sees no session id and no spend. A Commander request for the "best possible deck" gets no bracket question.
+0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. After PR-127, `make live-evals-install CONFIRM=1` starts the agent, and the first tick marks each item that waits read.
+0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
-9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
-10. **PR-102: the registration of the blocking function** (F-69, D-991, D-993). The live check passed on both paths, and the trigger stays on. It merged as #254.
-11. **PR-103: read the verdict of 2026-09-24 20:45, and close F-49** (F-49, D-994). The verdict was a test of the owner. It merged as #255.
-12. **PR-104: deck gate run 35, and `jsdom` 30.1.1** (F-33, D-995, D-997). It reads PASS for $3.1278. This pull request is #256.
-13. **PR-105: move the model roles, and measure each move** (D-996, D-998 to D-1003). Each move reads PASS on its gate. This pull request is #257.
 14. **The open items of the roadmap.** No register row reads 🔧. F-49 reads ✅ (PR-103, D-994). F-183 reads ✅ (PR-100, D-989). F-179 reads ✅ (PR-99, D-987), and the run `mtg-meta-b56rq` left 9 older months empty (D-989). F-185 reads ✅ (PR-98, D-985). F-184 reads ✅ (PR-97, D-983). F-182 reads ✅ (#242, #243, D-970). F-181 reads ✅ (#241, D-968). F-174 reads ✅ (#234, D-951). F-176 reads ✅ (#235, D-952). PR-73 ran the live cycle of F-49 (D-880). F-166 reads ✅ (#217, D-839). F-168 and F-169 read ✅ (#219, D-843, D-844). F-170 and F-172 read ✅ (#221, D-870). F-171 reads ✅ (#220, D-861). OQ-85 waits for a shape score of the shortlist (D-773). F-157 reads ✅ (D-762, D-763). D-805 retires the power pass after the build (D-704). F-137 stays a record (D-718). A wider theme guard than D-535 waits for evidence (D-783). Bracket gate runs 9 to 11 read the fixing floor and prompt version 16 on prompts 10 to 15 alone. Run 11 read prompts 13 to 15 with the commander rate. Deck gate run 35 measured them as a whole run (PR-104, D-995).
 5. **The next collection platform, when the owner names one** (F-91). Five are left: Archidekt, Deckbox, Delver Lens, TCGplayer, and Helvault. Each one takes a real export and never a column list. `docs/reference/pr34-collection-formats-2026-09-10.md` holds the shape.
 6. **Deck gate run 19 is the decks baseline** (D-686). Its grades read the local stored model `20260910T012734Z`, and the deployed app reads a newer one. Run 35 of 2026-09-29 cost $3.1278 in 1993 seconds, and it reads PASS (D-995). Ask the owner before the next whole run.
@@ -140,14 +132,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose the fast mana rule that drops the filters and Springleaf Drum (D-1159).** The owner first chose a lifegain condition for the finisher tag. The measurement showed that the lists seldom pair the tag with lifegain, and the owner then chose the removal (D-1160).
 
-### 2026-10-04f: the checks of PR-126 and PR-123, and PR-129
+### 2026-10-04f: the live evals with no terminal, PR-127
 
-**The checks of the deploy of `42982d0` passed, and the owner approved the TTL command.** The owner then asked the session to run its own checks of the owner with Playwright.
+**The owner asked if the live evals run with no open terminal.** They did not, because the script ran in the foreground until Ctrl-C.
 
-**The session made a throwaway account for the proof link and the admin line.** It wrote the proof code itself, and then deleted the account and its invite.
-
-**The `make api-build` run of "best possible deck" held cards that the collection does not hold.** The owner chose the fix of the default pool rule (D-1161).
+**The owner asked for the launch of the night fixer of what-you-carry, the notes, and a scope rule.** The research found a launchd agent with `StartInterval` 900 that runs the scripts of origin/main. The owner chose one pass for each tick, a notice for each `out-of-scope` item, and the guard of protected paths.
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04d, the records of 2026-08-31 to 2026-10-04c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04e, the records of 2026-08-31 to 2026-10-04c, and 104 more sections, word for word. Read it for the detail behind a decision.

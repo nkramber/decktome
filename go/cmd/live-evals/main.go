@@ -1,8 +1,10 @@
 // Command live-evals serves scripts/start-live-evals (D-1132 to D-1139).
-// It reads the decks and the thumbs down that no live eval read (D-1149),
-// writes the data of one item for an eval session, marks an item read, checks that a pull request is
-// ready for the owner, and sends the owner a Pushover notice. It calls no
-// model, and it costs nothing.
+// It reads the decks, the thumbs down (D-1149), and the general notes
+// (D-1156) that no live eval read. It writes the data of one item for an
+// eval session, marks an item read, checks that a pull request is ready
+// for the owner, holds a pull request that changes a protected path
+// (D-1158), and sends the owner a Pushover notice. It calls no model, and
+// it costs nothing.
 //
 // Usage:
 //
@@ -11,10 +13,11 @@
 //	PROJECT_ID=decktome-prod go run ./cmd/live-evals bundle -uid U -deck D -out DIR
 //	PROJECT_ID=decktome-prod go run ./cmd/live-evals mark -uid U -deck D
 //	go run ./cmd/live-evals ready -pr N
+//	go run ./cmd/live-evals guard -pr N
 //	go run ./cmd/live-evals notify -title T -message M
 //
 // For a thumbs down, -deck takes the key of its row: "v-" and the id of
-// the verdict.
+// the verdict. For a general note, it takes "n-" and the id of the note.
 //
 // LIVE_EVALS_OWNER_EMAIL and LIVE_EVALS_TEST_EMAIL name the two accounts
 // that the summary labels "owner" and "test". The tool reads the email of
@@ -56,7 +59,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|ready|notify|replay-input [flags]")
+		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|ready|guard|notify|replay-input [flags]")
 		os.Exit(2)
 	}
 	if err := run(context.Background(), os.Args[1], os.Args[2:], os.Stdout); err != nil {
@@ -64,6 +67,10 @@ func main() {
 		var nr notReady
 		if errors.As(err, &nr) {
 			os.Exit(3)
+		}
+		var g guarded
+		if errors.As(err, &g) {
+			os.Exit(4)
 		}
 		os.Exit(1)
 	}
@@ -88,6 +95,11 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 			return errors.New("ready: set -pr")
 		}
 		return ready(ctx, ghRunner, *pr, out)
+	case "guard":
+		if *pr <= 0 {
+			return errors.New("guard: set -pr")
+		}
+		return guard(ctx, ghRunner, *pr, out)
 	case "notify":
 		p := notify.FromEnv(os.Getenv)
 		if p == nil {
@@ -128,14 +140,17 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 			*nonce = newNonce()
 		}
 		if id, ok := verdictOf(*deck); ok {
-			return st.verdictBundle(ctx, *uid, id, *dir, *nonce)
+			return st.verdictBundle(ctx, *uid, id, *dir, *nonce, thumbsDown)
+		}
+		if id, ok := noteOf(*deck); ok {
+			return st.verdictBundle(ctx, *uid, id, *dir, *nonce, note)
 		}
 		return st.bundle(ctx, *uid, *deck, *dir, *nonce)
 	case "mark":
 		if *uid == "" || *deck == "" {
 			return errors.New("mark: set -uid and -deck")
 		}
-		if id, ok := verdictOf(*deck); ok {
+		if id, ok := feedbackOf(*deck); ok {
 			return st.feedback.MarkEvaluated(ctx, *uid, id, time.Now())
 		}
 		return st.decks.MarkEvaluated(ctx, *uid, *deck, time.Now())
@@ -161,10 +176,14 @@ type pendingRow struct {
 	RevisedFrom string `json:"revised_from,omitempty"`
 	// Verdict, Target, and TargetDeck name a thumbs down: its id, the
 	// kind of thing it names, and the deck it names (D-1149).
-	Verdict    string    `json:"verdict,omitempty"`
-	Target     string    `json:"target,omitempty"`
-	TargetDeck string    `json:"target_deck,omitempty"`
-	CreatedAt  time.Time `json:"created_at"`
+	Verdict    string `json:"verdict,omitempty"`
+	Target     string `json:"target,omitempty"`
+	TargetDeck string `json:"target_deck,omitempty"`
+	// Note and Screen name a general note: its id and its screen
+	// (D-1156). TargetDeck names its deck.
+	Note      string    `json:"note,omitempty"`
+	Screen    string    `json:"screen,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func kind(p decks.Pending) string {
@@ -186,14 +205,21 @@ func (st store) pending(ctx context.Context, out io.Writer) error {
 	if err != nil {
 		return err
 	}
+	notes, err := st.feedback.UnevaluatedNotes(ctx)
+	if err != nil {
+		return err
+	}
 	who := st.labels(ctx)
-	rows := make([]pendingRow, 0, len(list)+len(downs))
+	rows := make([]pendingRow, 0, len(list)+len(downs)+len(notes))
 	for _, p := range list {
 		rows = append(rows, pendingRow{UID: p.UID, Deck: p.ID, Session: p.SessionID, Who: who(p.UID), Kind: kind(p),
 			RevisedFrom: p.RevisedFrom, CreatedAt: p.CreatedAt})
 	}
 	for _, p := range downs {
 		rows = append(rows, verdictRow(p, who(p.UID)))
+	}
+	for _, p := range notes {
+		rows = append(rows, noteRow(p, who(p.UID)))
 	}
 	// The loop reads the rows in order, so the oldest item goes first.
 	sort.SliceStable(rows, func(i, j int) bool { return rows[i].CreatedAt.Before(rows[j].CreatedAt) })
@@ -243,8 +269,12 @@ func (st store) summary(ctx context.Context, out io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if len(list) == 0 && len(downs) == 0 {
-		_, err := fmt.Fprintln(out, "No deck and no thumbs down waits for a live eval.")
+	notes, err := st.feedback.UnevaluatedNotes(ctx)
+	if err != nil {
+		return err
+	}
+	if len(list) == 0 && len(downs) == 0 && len(notes) == 0 {
+		_, err := fmt.Fprintln(out, "No deck, no thumbs down, and no note waits for a live eval.")
 		return err
 	}
 	who := st.labels(ctx)
@@ -257,7 +287,7 @@ func (st store) summary(ctx context.Context, out io.Writer) error {
 			fmt.Fprintf(&b, "note: the verdicts did not read: %v\n", err)
 		}
 	}
-	fmt.Fprintf(&b, "%d decks and %d thumbs down wait for a live eval.\n", len(list), len(downs))
+	fmt.Fprintf(&b, "%d decks, %d thumbs down, and %d notes wait for a live eval.\n", len(list), len(downs), len(notes))
 	for i, p := range list {
 		d, err := st.decks.Get(ctx, p.UID, p.ID)
 		if err != nil {
@@ -279,6 +309,15 @@ func (st store) summary(ctx context.Context, out io.Writer) error {
 			continue
 		}
 		b.WriteString(describeVerdict(len(list)+i+1, p, who(p.UID), v))
+	}
+	for i, p := range notes {
+		n := len(list) + len(downs) + i + 1
+		v, err := st.feedback.Get(ctx, p.UID, p.ID)
+		if err != nil {
+			fmt.Fprintf(&b, "\n[%d] note %s: the note did not read: %v\n", n, p.ID, err)
+			continue
+		}
+		b.WriteString(describeNote(n, p, who(p.UID), v))
 	}
 	_, err = io.WriteString(out, b.String())
 	return err

@@ -53,12 +53,13 @@ type verdictView struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
-// verdictBundle writes the bundle of one thumbs down. A live deck gives
+// verdictBundle writes the bundle of one thumbs down, or of one general
+// note when kind is note (D-1156). A live deck gives
 // the whole deck bundle. A verdict with no deck, or on a deck that the
 // reader deleted, gives the session part alone. The snapshot of the
 // verdict holds the object as the reader saw it (D-635), so it goes in
 // too, and it stands in for a session that the reader deleted.
-func (st store) verdictBundle(ctx context.Context, uid, id, dir, nonce string) error {
+func (st store) verdictBundle(ctx context.Context, uid, id, dir, nonce, kind string) error {
 	v, err := st.feedback.Get(ctx, uid, id)
 	if err != nil {
 		return fmt.Errorf("verdict: %w", err)
@@ -79,7 +80,7 @@ func (st store) verdictBundle(ctx context.Context, uid, id, dir, nonce string) e
 		if err := writeReadme(dir, nonce); err != nil {
 			return err
 		}
-		meta := map[string]any{"user": short(uid), "kind": thumbsDown, "session": v.SessionID}
+		meta := map[string]any{"user": short(uid), "kind": kind, "session": v.SessionID}
 		if v.SessionID != "" {
 			if err := st.writeSession(ctx, uid, v.SessionID, "", dir, nonce, meta); err != nil {
 				if !errors.Is(err, sessions.ErrNotFound) {
@@ -113,6 +114,10 @@ func (st store) verdictBundle(ctx context.Context, uid, id, dir, nonce string) e
 		if err := writeProto(filepath.Join(dir, "verdict-import.json"), v.Import); err != nil {
 			return err
 		}
+	}
+	if kind == note {
+		return writeJSON(filepath.Join(dir, "note.json"), noteView{ID: v.ID, Screen: v.Screen, Text: v.Text,
+			DeckID: v.DeckID, SessionID: v.SessionID, CreatedAt: v.CreatedAt})
 	}
 	return writeJSON(filepath.Join(dir, "verdict.json"), verdictView{ID: v.ID, Target: v.Kind, Reasons: v.Reasons,
 		Text: v.Text, QuestionText: v.QuestionText, AnswerText: v.AnswerText, DeckID: v.DeckID, OracleID: v.OracleID,

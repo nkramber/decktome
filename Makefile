@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat live-evals-install live-evals-uninstall live-evals-status
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -385,6 +385,16 @@ USER_CASE_DECKS_OUT ?= $(USER_CASE_CHAT_OUT:.txt=.decks.jsonl)
 user-case: ## Replay the shortlists of a real user session and read the bars (D-1124). Free, no model calls
 	@echo "tree: $$(git rev-parse --short HEAD), $$(git status --porcelain | wc -l | tr -d ' ') changed paths"
 	@$(GO) run ./cmd/user-case -case $(USER_CASE) $(USER_CASE_ARGS)
+
+live-evals-install: ## Load the launchd agent that runs one live-eval pass every five minutes (D-1155). CAUTION: each new item starts a paid session. Needs CONFIRM=1
+	@[ "$(CONFIRM)" = 1 ] || { echo "live-evals-install: each new item starts a paid session with no one at the terminal (D-1134). Set CONFIRM=1."; exit 1; }
+	@scripts/live-evals-launchd.sh install
+
+live-evals-uninstall: ## Stop and remove the launchd agent of the live evals (D-1155). Free
+	@scripts/live-evals-launchd.sh uninstall
+
+live-evals-status: ## Print the state of the launchd agent of the live evals, and the end of its log (D-1155). Free
+	@scripts/live-evals-launchd.sh status
 
 user-case-chat: ## Drive chat-probe through the turns of a user case (D-1124). CAUTION: calls the real providers and costs money. Needs CONFIRM=1
 	@[ "$(CONFIRM)" = 1 ] || { echo "user-case-chat: this calls the real providers and costs money. Set CONFIRM=1."; exit 1; }

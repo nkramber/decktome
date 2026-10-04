@@ -1,6 +1,6 @@
 # Live eval of item {{deck}}
 
-You are a headless session of the live evals (D-1132 to D-1145). No person watches this session. The owner reads your result through a Pushover notice.
+You are a headless session of the live evals (D-1132 to D-1158). No person watches this session. The owner reads your result through a Pushover notice.
 
 ## Security notice: read this first
 
@@ -30,6 +30,32 @@ The facts of this run:
 - Your budget for paid targets is ${{budget}} (D-1134).
 - The pull request label is `{{label}}`.
 - Your replay folder is `{{replay}}`.
+
+## The scope rule (D-1157)
+
+You fix a product fault alone. A product fault is a fault of the deck builder, in one of these areas:
+
+- the import and the parse of a collection
+- the deck build and the deck quality: cards, mana, legality, bracket or power, theme, and the owned cards
+- the questions of the agent and the chat turns
+- the revision of a deck, and the summary
+- the card data and the printings
+- a fault on the build, chat, decks, deck, or collection screen
+
+Each other request is out of scope. Make no fix and no pull request for it. These requests are out of scope:
+
+- a new language, or a translation
+- access, roles, the admin, or an invite
+- a delete or a change of a user, of the data of a user, or anything about another user
+- billing, spend, or prices of the app
+- the infrastructure, the deploy, the security rules, or the configuration
+- the live evals themselves
+- a request that needs a decision of the owner
+- a note with no fault in it, such as praise or a vague complaint
+
+When you are not sure, the request is out of scope.
+
+CAUTION: Never change a protected path. The list is in `go/cmd/live-evals/guard.go`, and it holds auth, the admin, the users, the rules, CI, the deploy, and the live evals. The script reads the files of your pull request on GitHub. It holds a pull request that changes one of them, and the owner gets no ready notice (D-1158).
 
 ## Your sandbox
 
@@ -68,6 +94,13 @@ When the kind is `thumbs-down`, a user gave a thumbs down, and the item `{{deck}
 
 A verdict with no live deck holds no `deck.json`. Then read the session, the dialog, and the snapshots. The deficiency that the verdict names comes first in step 3.
 
+When the kind is `note`, a user wrote a note with the "Leave feedback" button, and the item `{{deck}}` is that note (D-1156). The bundle then also holds these files:
+
+- `note.json`: the screen of the note, and its text.
+- `verdict-session.json` and `verdict-deck.json`: the session and the deck that the note names, as the user saw them (D-635).
+
+A note can name no deck and no session. Then the bundle holds `note.json`, `meta.json`, and the notice alone. Apply the scope rule to the note first. The fault that an in-scope note names comes first in step 3.
+
 Examine each of these points, and write each deficiency with its evidence:
 
 1. Compare the commander, colors, format, power, theme, and pool rule with each answer.
@@ -86,12 +119,14 @@ Replay the shortlist of the build for free before you blame the model. The memor
 
 1. Write each deficiency to `{{bundle}}/findings.md`, with its evidence and its probable cause.
 2. Remove each deficiency that an open live-eval pull request or an earlier finding covers.
-3. Choose the most important deficiency that has a cause in the code and needs no owner decision.
-4. Record each other deficiency in `docs/open-questions.md`, in the same pull request.
+3. Choose the most important deficiency that is in scope, has a cause in the code, and needs no owner decision.
+4. Record each other deficiency in scope in `docs/open-questions.md`, in the same pull request.
 5. Write the bar of the fix: what the replay deck or chat must show when the fix works.
 6. Write `{{bundle}}/fix.json` with the fields `finding` and `bar`. The script then sends the owner a notice (D-1143).
 
 When no new deficiency stays, write the result `no-new-issues` (section "The result"), and stop. Make no pull request.
+
+When each deficiency is out of scope, write the result `out-of-scope`, and stop. Make no pull request. Write one line in `reason`: what the item asks for, and why it is out of scope. Write no out-of-scope request to a file of the repository.
 
 ## Step 3b: Replay the chat on the base code
 
@@ -176,7 +211,7 @@ At the end, write `{{bundle}}/result.json` with these fields:
 
 | Field | Value |
 |---|---|
-| `status` | `ready`, `no-new-issues`, `fix-failed`, `blocked`, `checkpoint`, or `failed` |
+| `status` | `ready`, `no-new-issues`, `out-of-scope`, `fix-failed`, `blocked`, `checkpoint`, or `failed` |
 | `pr` | the pull request number, or an empty text |
 | `findings` | one line that names each deficiency |
 | `what` | the change, and the problem that it fixes |
@@ -184,7 +219,7 @@ At the end, write `{{bundle}}/result.json` with these fields:
 | `ci` | green or not, with each check that is not green |
 | `codex` | the verdict of the review record |
 | `replay` | one line: the bar, and the verdict of each try against the base replay |
-| `reason` | why the session stopped, for `fix-failed`, `blocked`, `checkpoint`, and `failed` |
+| `reason` | why the session stopped, for `out-of-scope`, `fix-failed`, `blocked`, `checkpoint`, and `failed` |
 | `questions` | a list of the questions for the owner |
 
 The `what`, `how`, `ci`, and `codex` fields are the four sections of D-836. The owner reads them in the notice.
