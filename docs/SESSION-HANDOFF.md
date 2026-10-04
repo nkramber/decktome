@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merge of PR-128 made the branch conflict, so the session moved it onto `a7731f5`. The effective head is `6ae7de4`. The later review fixed P2-1, and `docs/reviews/pr-285-response.md` holds the answer. The current review found P2-2, provider attribution in the pull request metadata. The record needs an author correction before approval.
+**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merge of PR-128 made the branch conflict, so the session moved it onto `a7731f5`. The effective head is `6ae7de4`. The later review fixed P2-1, and `docs/reviews/pr-285-response.md` holds the answer. The current review found P2-2, provider attribution in the pull request metadata. Gitar approved the code head after the review-record push. The record needs an author correction before approval.
 
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
