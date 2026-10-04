@@ -40,7 +40,7 @@ async function confirm() {
 
 // D-1081 to D-1083: the short link of the email proves the address and
 // signs in the browser that opens it. D-1119: the page uses the link on
-// a click alone.
+// a click alone. D-1147: iOS Safari goes on to the app as well.
 describe("ProofLinkPage", () => {
   it("uses the link on the click alone", async () => {
     await renderAt("/v/Load000001");
@@ -58,14 +58,13 @@ describe("ProofLinkPage", () => {
     expect(vi.mocked(signInWithCustomToken)).toHaveBeenCalledWith(expect.anything(), "tok");
   });
 
-  it("tells an iPhone browser to open the installed app", async () => {
+  it("goes on to the app in an iPhone browser too", async () => {
     vi.spyOn(navigator, "userAgent", "get").mockReturnValue(iPhone);
     const { router } = await renderAt("/v/Ios0000001");
     await confirm();
-    expect(await screen.findByText(/Open Deck Tome from your home screen/)).toBeInTheDocument();
-    expect(router.state.location.pathname).toBe("/v/Ios0000001");
-    expect(vi.mocked(signInWithCustomToken)).toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Continue in the browser" })).toBeInTheDocument();
+    await vi.waitFor(() => expect(router.state.location.pathname).not.toBe("/v/Ios0000001"));
+    expect(vi.mocked(signInWithCustomToken)).toHaveBeenCalledWith(expect.anything(), "tok");
+    expect(screen.queryByText(/home screen/i)).not.toBeInTheDocument();
   });
 
   it("sends the person to sign in when the answer carries no token", async () => {
@@ -97,11 +96,11 @@ describe("ProofLinkPage", () => {
   });
 
   it("has no axe violations", async () => {
-    vi.spyOn(navigator, "userAgent", "get").mockReturnValue(iPhone);
+    openLink.mockResolvedValue({ customToken: "" });
     const { container } = await renderAt("/v/Axe0000001");
     expect(await axe(container)).toHaveNoViolations();
     await confirm();
-    await screen.findByText(/Open Deck Tome from your home screen/);
+    await screen.findByText(/Your email is verified/);
     expect(await axe(container)).toHaveNoViolations();
   });
 });

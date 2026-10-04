@@ -15,6 +15,38 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04c, PR-125
+
+**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1146).** The pull request is #282.
+
+Author provider: Claude Code
+
+**The base.** PR-124 merged as #283, so the branch sits on `main` at `8bd442f` (D-1140).
+
+**The code.**
+
+- `go/internal/decks` holds the mark `has_been_evaluated`, and `go/cmd/live-evals` serves the loop. `replay-input` writes the inputs of a replay (D-1144).
+- `go/cmd/chat-probe` takes `-messages-json` and `-collection-json`. The replay reads the last line of `-decks-out` (D-1146).
+- `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
+
+**The checks.** `make verify` passed on the rebase onto `c712e84`, with one deck flag. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. It also proves that `clear` removes a folder that an interrupted clone left.
+
+**The review.** The Gitar review of `ef3db2b` passed with all four threads resolved. The Codex review of effective head `6d65fd5` is Ready for owner merge with no findings. The local `make verify` passed.
+
+**The open work.** Every check passed, and the pull request waits for the owner, then the auto-merge (D-828).
+
+1. Ask the owner to confirm the merge (D-834). Then turn on the auto-merge.
+2. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
+3. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
+
+### 2026-10-03i: a deck import from a link, PR-123
+
+**The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites (`docs/reference/deck-links-2026-10-03.md`), and Moxfield answered 403 again.
+
+**The owner asked for a headless browser for Moxfield.** The session declined (D-502), and the owner chose the steps (D-1102).
+
+**The owner renamed the item two times (D-1108, D-1115).** D-1106, D-1107, D-1113, and D-1114 answer the reviews and the gate.
+
 ## The resume section of 2026-10-04b, PR-124
 
 **Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-220, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).

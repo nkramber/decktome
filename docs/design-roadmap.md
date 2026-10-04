@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-04 correction pass 263 (PR-126, D-1147): the owner signed up through a new proof link. The owner asked to remove the line about the home screen. iOS Safari now goes on to the app at once. Changes: PR-116, PR-126, sequencing step 121.
 2026-10-04 correction pass 262 (PR-125, D-1132 to D-1146): the owner asked to automate the read of each new deck. `./start-live-evals` reads each new deck and each revision in a headless session in a Seatbelt profile. The session proves each fix on a replay of the chat, and the owner merges each fix. Changes: PR-125, sequencing step 120.
 2026-10-04 correction pass 261 (PR-124, F-212 to F-223, D-1116 to D-1131): the first outside user built a deck on 2026-10-04, and the owner read the traffic. The owner put each finding of that session into one pull request (D-1125). Changes: F-212 to F-223, PR-124, sequencing step 119.
 
@@ -3134,7 +3135,7 @@ The approval email needs the Resend account, its DNS records at GoDaddy, and the
 - **The approval email (D-1080).** The footer line is gone. Each email of the API carries an HTML part, and each URL of its text is a real link.
 - **The proof email (F-208, D-1081).** `ProofService.SendLink` sends the text of the owner from `beta@mail.decktome.com`. The link is `https://decktome.com/v/` and a random code of 10 characters. `proof_links` keeps a hash of the code, one link for each account, and a cooldown of one minute.
 - **The open of the link (D-1082).** `ProofService.OpenLink` needs no sign-in, and a limit for each client address bounds it. The link works one time, for 3 days. The API reads the invite list and the closed mark, proves the email, and answers a custom token. The page `/v/:code` signs in with the token.
-- **A phone (D-1083).** Android opens the link in the installed app. iOS opens it in Safari. The page then tells the user to open the app from the home screen. The screen that asks for the proof reads the account again each time it becomes visible.
+- **A phone (D-1083, D-1147).** Android opens the link in the installed app. iOS opens it in Safari, and Safari goes on to the app at once. The screen that asks for the proof reads the account again each time it becomes visible.
 - **A fallback.** With no Resend key, or with a failed send, the web app sends the email of Firebase. A token that the API can not sign leaves the email proved, and the page asks for a sign-in.
 
 Gate:
@@ -3357,6 +3358,17 @@ Gate:
 - `./start-live-evals --dry` prints the summary of the six decks of 2026-10-03, and it marks nothing.
 
 > *In plain English:* each time someone builds or revises a deck, a robot reads it against what they asked. It fixes the worst new problem, and the owner gets a ping when the fix is ready.
+
+**PR-126: iOS Safari goes on to the app after the proof (D-1147).** 🔧 in review. On 2026-10-04 the owner signed up through a new proof link, and asked to remove the line about the home screen.
+
+- **The page (D-1147).** The proof page has no iOS state. After the click, each browser goes on to the app, iOS Safari too.
+- **The code.** `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp`, because no other file reads them.
+
+Gate:
+- The page tests prove that an iPhone browser goes on to the app, and that no text names the home screen.
+- The page tests prove that the screen "Your email is verified" has no axe violations.
+
+> *In plain English:* after the tap on the email link, an iPhone opens the app at once, with no extra step.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -3775,6 +3787,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 118. **PR-123** a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).
 119. **PR-124** the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).
 120. **PR-125** the live evals of each new deck and revision (D-1132 to D-1146).
+121. **PR-126** iOS Safari goes on to the app after the proof (D-1147).
 
 ## 9. Open questions
 

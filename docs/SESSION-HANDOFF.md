@@ -6,29 +6,27 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04c)
+## RESUME HERE (2026-10-04d)
 
-**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1146).** The pull request is #282.
+**Branch `fix/proof-link-ios-direct`: PR-126, iOS Safari goes on to the app after the proof (D-1147).** The pull request is #PRNUM.
 
 Author provider: Claude Code
 
-**The base.** PR-124 merged as #283, so the branch sits on `main` at `8bd442f` (D-1140).
+**The base.** PR-125 merged as #282, so the branch sits on `main` at `50878de`.
 
-**The code.**
+**The checks of PR-124 passed on the deploy of `50878de` (D-1117, D-1119).**
 
-- `go/internal/decks` holds the mark `has_been_evaluated`, and `go/cmd/live-evals` serves the loop. `replay-input` writes the inputs of a replay (D-1144).
-- `go/cmd/chat-probe` takes `-messages-json` and `-collection-json`. The replay reads the last line of `-decks-out` (D-1146).
-- `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
+- The `deploy-api` build of `50878de` ended at 14:50 UTC with SUCCESS. The revision `mtg-api-00120-77r` serves it, and `/readyz` names it.
+- PR-125 changed no path of the web trigger. So `/version.json` names `8bd442f`, the merge of PR-124.
+- The owner signed up through a new proof link at 15:28 UTC. The log holds the refusal `email-unverified`, then `SendLink` with code ok.
+- Three calls of the same uid then ended with code ok, so the link signed in the account.
+- Each `rpc` line of the new revision holds a uid. No log line since 06:25 UTC holds an email.
 
-**The checks.** `make verify` passed on the rebase onto `c712e84`, with one deck flag. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. It also proves that `clear` removes a folder that an interrupted clone left.
+**The code.** The proof page has no iOS state, and `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp`. A test proves that an iPhone browser goes on to the app.
 
-**The review.** The Gitar review of `ef3db2b` passed with all four threads resolved. The Codex review of effective head `6d65fd5` is Ready for owner merge with no findings. The local `make verify` passed.
+**The checks.** CHECKS
 
-**The open work.** Every check passed, and the pull request waits for the owner, then the auto-merge (D-828).
-
-1. Ask the owner to confirm the merge (D-834). Then turn on the auto-merge.
-2. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
-3. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
+**The open work.** The Gitar pass, the Codex review, and the merge question of D-834. After the deploy, the owner opens a new proof link in iOS Safari.
 
 ## How to resume
 
@@ -102,8 +100,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The checks of PR-124** (D-1126). It merged as #283. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log. The owner tells the user about the fixes.
-0. **PR-125: the live evals** (D-1132 to D-1146). The resume section holds the open work.
+0. **PR-126: iOS Safari goes on to the app** (D-1147). The resume section holds the open work.
+0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -132,14 +130,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03i: a deck import from a link, PR-123
-
-**The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites (`docs/reference/deck-links-2026-10-03.md`), and Moxfield answered 403 again.
-
-**The owner asked for a headless browser for Moxfield.** The session declined (D-502), and the owner chose the steps (D-1102).
-
-**The owner renamed the item two times (D-1108, D-1115).** D-1106, D-1107, D-1113, and D-1114 answer the reviews and the gate.
-
 ### 2026-10-04b: the findings of the first outside user, PR-124
 
 **The owner watched the first outside user and listed nine findings.** The session read the session and both decks, and replayed the shortlist for free.
@@ -156,6 +146,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for a rebase onto PR-124, and chose D-1140 to D-1145.** Gitar found a path from the session to the gcloud config, so a Seatbelt profile now holds the session.
 
+### 2026-10-04d: the checks of PR-124, and PR-126
+
+**The deploy of `50878de` and the API log passed.** The API runs the merge of PR-125, and each `rpc` line holds a uid and no email.
+
+**The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
+
+**The owner chose no screen over a short screen (D-1147).** iOS Safari goes on to the app, as each other browser does.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04b, the records of 2026-08-31 to 2026-10-03h, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04c, the records of 2026-08-31 to 2026-10-03i, and 104 more sections, word for word. Read it for the detail behind a decision.
