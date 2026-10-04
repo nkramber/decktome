@@ -180,15 +180,15 @@ The project holds six active versions with these two and the Cloud Build connect
 
 ### 8.1 The approval email
 
-An approval on the admin screen sends an email through Resend (PR-115, D-1077). The email that proves the address of a new account uses the same key (PR-116, D-1081). The sender is `beta@mail.decktome.com`, and `MAIL_FROM` can name another. Without the key, an approval adds the email to the invite list and sends no email. Without the key, the web app sends the email of Firebase to prove an address. Do these steps one time:
+An approval on the admin screen sends an email through Resend (PR-115, D-1077). The email that proves the address of a new account uses the same key (PR-116, D-1081). The sender is `mail@decktome.com`, and `MAIL_FROM` can name another (D-1112). Without the key, an approval adds the email to the invite list and sends no email. Without the key, the web app sends the email of Firebase to prove an address. Do these steps one time:
 
 1. Make an account at `resend.com`.
-2. On the Domains page, add the domain `mail.decktome.com`.
+2. On the Domains page, add the domain `decktome.com`.
 3. Resend shows an MX record and a TXT record named `send`, and a TXT record named `resend._domainkey`.
 4. In the DNS of `decktome.com` at GoDaddy, add each record with its type, name, and value from Resend.
-5. Enter each name without `.decktome.com`, for example `send.mail`. Give the MX record the priority `10`.
+5. Enter each name without `.decktome.com`, for example `send`. Give the MX record the priority `10`.
 6. On Resend, push Verify DNS Records, and wait for the state Verified.
-7. Make an API key with the permission "Sending access", and limit it to `mail.decktome.com`.
+7. Make an API key with the permission "Sending access" for all domains. The dashboard can edit the domain of a key later.
 8. Put the key in `RESEND_API_KEY` of the shell, never in a file (D-639).
 
 Resend shows the key one time. Then run these two commands:
@@ -199,6 +199,21 @@ printf '%s' "$RESEND_API_KEY" | gcloud secrets versions add resend-api-key --dat
 ```
 
 Section 9 gives the API access to the secret, and section 4 of `docs/deploy-and-rollback.md` mounts it.
+
+The MX record of `send` takes the bounce reports of Resend. The MX records of the root domain take the replies, so the two sets use different names.
+
+### 8.2 The inbox of the root domain
+
+The address `mail@decktome.com` receives mail in iCloud Mail of the owner (D-1112). An iCloud+ plan holds the custom domain. On 2026-10-03 the DNS of `decktome.com` read these records:
+
+| Type | Name | Value |
+|---|---|---|
+| MX | `@` | `mx01.mail.icloud.com` and `mx02.mail.icloud.com`, priority `10` |
+| TXT | `@` | `apple-domain=` and the code of Apple |
+| TXT | `@` | `v=spf1 include:icloud.com ~all` |
+| CNAME | `sig1._domainkey` | `sig1.dkim.decktome.com.at.icloudmailadmin.com` |
+
+The root domain holds one SPF record. Resend keeps its SPF record on `send`, and its DKIM record on `resend._domainkey`. So the two providers share no record name.
 
 ## 9. Create the service accounts
 

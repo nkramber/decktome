@@ -6,35 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03f)
+## RESUME HERE (2026-10-03g)
 
-**Branch `feat/push-third-event`: PR-120, the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).** The pull request is #278.
+**Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #PRNUM.
 
 Author provider: Claude Code
 
-**The base.** `main` is `a083208`, from #279. The branch merged `fbbcd60` of #276 and then `a083208` on 2026-10-03. #276 took PR-119 and D-1092, so this item is PR-120, and its panel decision is D-1095. This session did not read the deploy of `fbbcd60`. Before the merge, `main` was `e135aab`, from #275. Cloud Build `4dffc8c5` of `deploy-api` and `afd93b41` of `deploy-web` built `e135aab`, and both read SUCCESS. `/version.json` and `/readyz` name `e135aab`. The run `mtg-snapshot-p2t6g` of 20:00 UTC ran `worker:e135aab`, and it logged "cards refresh: snapshot current".
+**The base.** `main` is `d0b8498`, from #278. This session did not read the deploy of `d0b8498`.
 
-**The owner choices.** The new-cards event comes before the email digest (D-1090). The pass reads the theme of the chat, and the cards of the deck when the chat holds none. The push uses the toggle of D-1005, and a tap opens the deck with a panel (D-1091). A dismiss or the next pass clears the panel (D-1095).
+**The owner choice.** The owner made an inbox for `mail@decktome.com` in iCloud Mail. The owner chose it as the sender over a reply-to (D-1112), and D-1112 amends the subdomain of D-1077.
 
-**The code.**
+**The code.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`, and `TestDefaultFromIsTheRootInbox` reads it. Sections 8.1 and 8.2 of `docs/setup-gcp.md` and section 4 of `docs/deploy-and-rollback.md` hold the new steps and the records of the inbox.
 
-- `go/internal/cards`: `NewlyLegal`, `CompareVersions`, the marker `new_cards.json`, and `PendingNewCards`.
-- `go/internal/candidates`: `ThemeScores`, `DeckTheme`, and `FitFloor`.
-- `go/internal/newcards`: the pass, and the pick of each deck.
-- `go/internal/push`: `Notifier.NewCards` and `NewCardsMessage`.
-- `go/cmd/worker`: the refresh writes the marker, and the new pass runs after the stale pass.
-- The deck proto holds `new_oracle_ids` and `new_cards_version`, and `UpdateDeck` takes `dismiss_new_cards`. A rerun of a marker skips each deck that holds its version (D-1095). The list of decks carries the field.
-- The web app: the panel "New cards for this deck", and the mark "New cards" in the list.
+**The steps of the owner before the merge.** Resend refuses a sender on a domain that it did not verify. So a merge before these steps stops each email of the app.
 
-**The checks.** `make verify` reads "every check passed" on `c3f5878`, with 544 of 544 web tests under Node 22. Each CI check of `c3f5878` passed. `make pr-check` reads 0 contract errors. `make store-check` passed `go/internal/decks` and `go/internal/push`. It failed `go/internal/sessions` and `go/internal/collections` on old data of the running local emulator, and this diff does not change them.
+1. In Resend, add the domain `decktome.com`, and add its three records at GoDaddy.
+2. Edit the domain of the key to all domains, with More options and Edit API key. The old revision then keeps its email.
 
-**The review.** Gitar approved effective head `7938370`, and both finding threads are closed. The earlier Codex review found P2-1: a later marker had left an earlier failed marker pending. The author fixed it in `82b9089` and `c3f5878`. The repeat review confirmed the fix. `make verify` passed on `7938370`. The record is `docs/reviews/pr-278.md`, and its verdict is Ready for owner merge.
+The owner did both steps on 2026-10-03, and Resend read the domain as verified.
+
+**The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
+
+**The review.** The Gitar pass and the Codex review wait for the push.
 
 **The open work.**
 
-1. The owner confirmed the merge on 2026-10-03. The first auto-merge met a conflict with #279, so the branch merged `a083208`. The pull request is pending the auto-merge.
-2. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
-3. Star Trek releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
+1. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 
 ## How to resume
 
@@ -108,7 +105,9 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-120: the push of new cards that fit a deck** (D-1090, D-1091, D-1095). The resume section holds the open work.
+0. **PR-122: the sender `mail@decktome.com`** (D-1112). The resume section holds the open work.
+0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job. An hour with no new version logs "snapshot current".
+0. **The new cards of Star Trek** (D-1091). The set releases on 2026-11-13. Read the line "new cards pass ended", and check the push and the panel on the phone of the owner.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
 9. **PR-101: the blocking function of the invite list** (F-69, D-990, D-991). It answers OQ-77. It merged as #253.
@@ -134,12 +133,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03d: a user record for each user who signs in, PR-119
-
-**The owner asked why an invited user had no user record.** The logs showed a sign-in and two page reads, and no creation. Only a creation wrote the record.
-
-**The owner chose a write at each verified call, and two times.** `last_seen_at` is the newest activity, and `last_creation_at` is the newest deck or chat (D-1092 to D-1094).
-
 ### 2026-10-03e: the spend cap of $2, D-1109
 
 **The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
@@ -150,6 +143,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose the new-cards event, the theme of the chat first, one toggle, and a panel with a dismiss.** A Scryfall read showed that a preview card is legal in no format until its release. So the session corrected its own rule of a new card in D-1091 before the code.
 
+### 2026-10-03g: the sender `mail@decktome.com`, PR-122
+
+**The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
+
+**The owner chose the root domain as the sender over a reply-to.** The Resend documents and the domain limit of the key showed that a change of the code alone stops each email. So the steps of the owner come before the merge.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03e, the records of 2026-08-31 to 2026-10-03c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03f, the records of 2026-08-31 to 2026-10-03d, and 104 more sections, word for word. Read it for the detail behind a decision.
