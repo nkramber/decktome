@@ -6,35 +6,19 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03i)
+## RESUME HERE (2026-10-04a)
 
 **Branch `feat/archidekt-url-import`: PR-123, a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** The pull request is #277. The owner renamed it two times (D-1108, D-1115).
 
 Author provider: Claude Code
 
-**The base.** `main` is `bebee78`, from #281. The branch merged `main` after #278, and again after #281. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
+**The base.** `main` is `bebee78`, from #281. The branch merged main after #278 and #281. `Deck.source_url` uses field 35.
 
-**The owner choices.** An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1113 answer the Codex reviews. `make codex-review` accepts the new Gitar reply "Running a review on this PR now" (D-1114).
+**The review.** Codex reviewed head `8e577ef`. P2-3 and P2-4 are fixed in `fcfea7d`. The verdict is `Ready for owner merge`. Current Gitar approved the head at 01:54 UTC on 2026-10-04, with two closed findings and no open threads. All required checks pass except the stale `review-gate`, which must rerun after the review commit. The review state is pending the auto-merge (D-828).
 
-**The code.**
+**The checks.** `make verify`, 75 Codex-review tests, focused Go race tests, and the Firestore emulator `make store-check` passed on `8e577ef`.
 
-- `go/internal/archidekt` reads one deck and writes its Arena text. `go/internal/decklink` sorts a link and holds the steps of each site.
-- `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
-- `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
-- The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
-- `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1113).
-
-**The checks.** `make verify` passed on `d64a08f`, and the merge of #281 needs a new run. `make store-check` passes with `go/internal/deckreads`. A live read of three real Archidekt decks parsed with no bad line.
-
-**The review.** `docs/reviews/pr-277-response.md` answers each finding of Codex rounds 1 to 3. Round 3 at `8d9737c` found P2-3 and P2-4. Gitar approved `d64a08f` at 00:34 UTC on 2026-10-04. The state is pending the auto-merge (D-828).
-
-**The open work.**
-
-1. Do the Gitar pass of the head, and answer each Gitar note.
-2. Run `make codex-review PR=277` for round 4, then get the owner confirmation.
-3. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1113).
-4. After the deploy, read an Archidekt link on `decktome.com`, and import it.
-5. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
+**The open work.** Push the review record and this hand-off to `feat/archidekt-url-import`, then verify the branch head and required checks. After merge, enable the production TTL policy in `docs/setup-gcp.md` section 6 (D-1113), then read and import an Archidekt deck on `decktome.com`. The owner still needs to test a Moxfield bookmarklet and send the access request (OQ-95).
 
 ## How to resume
 
