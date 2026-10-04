@@ -1,0 +1,65 @@
+;; The Seatbelt profile of a live-eval session (D-1136, D-1141).
+;;
+;; scripts/live-evals.sh runs the pinned claude binary under
+;; `sandbox-exec -f` with this file. So every tool of the session, its
+;; hooks, and each process that it starts stay inside the profile.
+;; A later rule wins over an earlier one.
+;;
+;; Parameters, each a real path with no symlink:
+;;   HOME      the home folder of the owner
+;;   RUN       the run folder of the deck: the clone, the bundle, the logs
+;;   CACHE     the caches of the sessions: Go, npm, pnpm, and the npm prefix
+;;   CODEX     the CODEX_HOME of the sessions, with its own login
+;;   BIN       the folder of the pinned claude binary
+;;   CARDS     the local card store, read-only
+;;   NODE22    the folder of Node 22
+;;   NODE20    the folder of Node 20, for pnpm
+(version 1)
+(allow default)
+
+;; Reads. The session reads no file of the home folder or of an external
+;; volume, except the paths below. Metadata stays readable, because many
+;; tools stat a parent folder.
+(deny file-read-data (subpath (param "HOME")))
+(deny file-read-data (subpath "/Volumes"))
+(allow file-read-data
+  (literal (string-append (param "HOME") "/.gitconfig"))
+  (subpath (param "NODE22"))
+  (subpath (param "NODE20"))
+  (subpath (param "RUN"))
+  (subpath (param "CACHE"))
+  (subpath (param "CODEX"))
+  (subpath (param "BIN"))
+  (subpath (param "CARDS")))
+
+;; Writes. The session writes its run folder, the shared caches, its
+;; Codex home, and the system temporary folders alone. It never writes
+;; a file that the owner later runs.
+(deny file-write*)
+(allow file-write*
+  (subpath (param "RUN"))
+  (subpath (param "CACHE"))
+  (subpath (param "CODEX"))
+  (subpath "/private/var/folders")
+  (subpath "/dev"))
+(deny file-write* (subpath (param "BIN")) (subpath (param "CARDS")))
+
+;; Each of these runs code outside the profile, or reads a secret of the
+;; owner: the keychain, an app through Launch Services or Apple events,
+;; a launchd or cron job, sudo, and the Docker daemon.
+(deny mach-lookup (global-name "com.apple.SecurityServer"))
+(deny appleevent-send)
+(deny process-exec
+  (literal "/usr/bin/security")
+  (literal "/usr/bin/open")
+  (literal "/usr/bin/osascript")
+  (literal "/bin/launchctl")
+  (literal "/usr/bin/crontab")
+  (literal "/usr/bin/at")
+  (literal "/usr/bin/sudo")
+  (literal "/usr/bin/ssh")
+  (literal "/usr/local/bin/docker")
+  (literal "/opt/homebrew/bin/docker"))
+(deny network-outbound
+  (remote unix-socket (path-literal "/var/run/docker.sock"))
+  (remote unix-socket (path-literal (string-append (param "HOME") "/.docker/run/docker.sock"))))

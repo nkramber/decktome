@@ -15,6 +15,42 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04b, PR-124
+
+**Branch `fix/first-user-feedback`: PR-124, the findings of the first outside user (F-212 to F-220, D-1116 to D-1131).** The pull request is #283. The owner put each finding into one pull request (D-1125).
+
+Author provider: Claude Code
+
+**The base.** `main` is `b308a71`, from #277.
+
+**The code.**
+
+- `go/internal/candidates`: the rows `hand-size`, `cantrips`, and `heroic`, the unmatched words, the roles, the staple floor, and `avoid`.
+- `go/internal/questions` and `go/internal/agentsvc`: a question for each dead word, the classifier field `avoid`, the revision rule, and snapshot version 7 (D-1129).
+- Prompts: generate 18, questions 21, and summary judge 3.
+- `go/internal/quality` and `go/internal/profile`: the feature `land_need`, no reason inside a band, and the shape of the bracket.
+- `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
+- `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
+
+**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Question gate run 57 failed on one flaky classifier miss. Ten plays of that conversation met each slot. Run 58 reads PASS for $0.0661. Its theme question named filler words, so a fifth group of stop words came after it, and no gate run reads that group. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of the chat built a deck of grade typical.
+
+**The review.** The pull request is #283. `make verify` passes. Gitar and Codex review the head next. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
+
+**The open work.**
+
+1. Do the Gitar pass, then run `make codex-review PR=283`.
+2. Ask the owner about a question gate run for the stop words of the fifth group, about $0.07.
+3. Tell the owner two things. D-1126 changed a code that D-910 named. The grade of a bracket 3 deck still reads the cEDH rate of its commander.
+4. After the deploy, run `make user-case-chat CONFIRM=1` to a new output file.
+5. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
+6. The owner tells the user about the fixes.
+
+### 2026-10-03h: the sender `mail@decktome.com`, PR-122
+
+**The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
+
+**The owner chose the root domain as the sender over a reply-to.** The Resend documents and the domain limit of the key showed that a change of the code alone stops each email. So the steps of the owner come before the merge.
+
 ## The resume section of 2026-10-04a, PR-123
 
 **Branch `feat/archidekt-url-import`: PR-123, a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).** The pull request is #277. The owner renamed it two times (D-1108, D-1115).

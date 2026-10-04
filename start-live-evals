@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Start the live evals (D-1132). scripts/live-evals.sh holds the loop.
+exec "$(dirname "$0")/scripts/live-evals.sh" "$@"
