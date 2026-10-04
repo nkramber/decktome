@@ -6,39 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04d)
+## RESUME HERE (2026-10-04e)
 
-**Branch `fix/proof-link-ios-direct`: PR-126 is #284, five changes (D-1147 to D-1154).** It is pending the auto-merge. The owner put them in one pull request (D-1150).
+**Branch `fix/power-card-counters`: PR-128 is #286, the power cards of a reader verdict (F-224, D-1159, D-1160).** It is pending the auto-merge.
 
 Author provider: Claude Code
 
-**The base.** PR-125 merged as #282, so the branch sits on `main` at `50878de`.
+**The base.** PR-126 merged as #284, so the branch sits on `main` at `42982d0`.
 
-**The checks of PR-124 passed on the deploy of `50878de` (D-1117, D-1119).**
+**The verdict.** On 2026-10-04 at 19:26 UTC a reader wrote verdict `x5JGF0zyIE3DcID7QB5c`. The reader named Barbed Sextant and Springleaf Drum in a mono-green deck of bracket 4, and said that Hurricane is no win condition. A later deck of the reader held the same three cards.
 
-- The `deploy-api` build of `50878de` ended at 14:50 UTC with SUCCESS. The revision `mtg-api-00120-77r` serves it, and `/readyz` names it.
-- PR-125 changed no web path, so `/version.json` names `8bd442f`, the merge of PR-124.
-- The owner signed up through a new proof link at 15:28 UTC. The log holds the refusal `email-unverified`, then `SendLink` with code ok.
-- Each `rpc` line holds a uid, and no log line since 06:25 UTC holds an email.
+**The cause.** Two counters of `go/internal/profile` gave weak cards a power mark, and the floors of bracket 4 asked the model for them.
+
+- Fast mana counted each nonland, noncreature mana source of mana value 1 or less. A filter pays mana for mana, and Springleaf Drum taps a creature.
+- The finisher count read the tag `burn-player-each`. Its cards also hit the caster, such as Hurricane.
 
 **The code.**
 
-- The proof page has no iOS state, and `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp` (D-1147).
-- `go/internal/spendmask` clears the spend of each answer for a caller with no admin claim. The chat page shows the session id and the spend to the admin alone (D-1148).
-- `go/cmd/live-evals` puts each down verdict in the queue with the key `v-` and its id (D-1149).
-- With no theme and an owned pool rule, the commander fill ranks half on the depth of the collection. With no colors, each offer of three holds a mono-colored and a multicolor name (D-1151).
-- In Commander, a superlative such as "best possible deck" fills bracket 5 with no question. "Competitive" still asks the bracket (D-1153, D-1154).
+- `isFastMana` needs one mana ability that pays no mana and taps no creature (D-1159).
+- The finisher slugs lose `burn-player-each` (D-1160).
+- The deck shape block states the new fast mana rule, and the generate prompt reads version 19.
 
-**The checks.** `make verify` passed on `b41a32c` with Node 22 on the PATH. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
+**The checks.** The Go tests pass. A local replay of the two stored decks reads 1 and 2 fast mana, not 3 and 4. It reads 0 finishers, not 2.
 
-**The review.** Gitar approved `b6d76b9` with no finding, and the CI note has its answer. Codex found no defect at `b6d76b90f8e91425b2b863ee17b6603961de9681`. Local verify and fresh CI passed after the hand-off size fix.
+**The review.** Codex found no defect at effective head `7fbd0e047e4629e75c7bd3b8e263c64ae1544cbf`. The verdict is Ready for owner merge, with no open finding. Gitar, `pr-contract`, `review-gate`, and all active verify checks passed after the record push. `make verify` passed with Node 22.
 
-After the deploy, four checks follow:
-
-- The owner opens a new proof link in iOS Safari, and the app opens with no screen between.
-- The test account sees no session id and no spend, and the owner sees both.
-- `./start-live-evals --dry` lists the five old thumbs down, and marks nothing.
-- A Commander request for the "best possible deck" gets no bracket question.
+After the deploy, one check follows: a new owned-only deck of bracket 4 holds no filter as fast mana and no Hurricane as a finisher.
 
 ## How to resume
 
@@ -105,14 +98,15 @@ Twenty-two things a fresh session gets wrong without this file.
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 18 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 19 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-126: the proof page, the spend, the thumbs down, the offer, and the power of "best"** (D-1147 to D-1154). The resume section holds the open work.
+0. **PR-128: the power cards of a reader verdict** (F-224, D-1159, D-1160). The resume section holds the open work.
+0. **The checks of PR-126** (D-1147 to D-1154). It merged as #284. After the deploy, the owner opens a new proof link in iOS Safari. The test account sees no session id and no spend. `./start-live-evals --dry` lists the five old thumbs down, and "best possible deck" gets no bracket question.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -142,14 +136,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-04c: the live evals, PR-125
-
-**The owner asked the session to watch the traffic of other users.** The logs name no user, so the session read the record of D-638 each minute. The first outside user built two decks, and the session found nine faults by hand.
-
-**The owner asked to automate that read, and chose D-1133 to D-1138.** The classifier refused the launcher as an unsafe agent, and the owner asked for the notices of D-1139.
-
-**The owner asked for a rebase onto PR-124, and chose D-1140 to D-1145.** Gitar found a path from the session to the gcloud config, so a Seatbelt profile now holds the session.
-
 ### 2026-10-04d: the checks of PR-124, and PR-126
 
 **The deploy of `50878de` and the API log passed.** The API runs the merge of PR-125, and each `rpc` line holds a uid and no email.
@@ -158,6 +144,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, the commander offer, and the power of "best" (D-1148 to D-1154). The owner narrowed the power words to the superlatives (D-1154).
 
+### 2026-10-04e: the power cards of a reader verdict, PR-128
+
+**The owner asked for an analysis of verdict `x5JGF0zyIE3DcID7QB5c`, and a fix.** The session read the verdict, the two decks of the reader, and the profile of each. It found the two counters.
+
+**The owner chose the fast mana rule that drops the filters and Springleaf Drum (D-1159).** The owner first chose a lifegain condition for the finisher tag. The measurement showed that the lists seldom pair the tag with lifegain, and the owner then chose the removal (D-1160).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04c, the records of 2026-08-31 to 2026-10-04b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04d, the records of 2026-08-31 to 2026-10-04c, and 104 more sections, word for word. Read it for the detail behind a decision.

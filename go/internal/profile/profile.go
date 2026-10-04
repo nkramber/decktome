@@ -408,12 +408,14 @@ func PowerCards(list []*mtgv1.Card, tags *cards.TagIndex) (tutors, fastMana, gam
 // order a reader names them (D-704).
 var PowerKeys = []string{KeyTutor, KeyFastMana, KeyGameChanger, KeyFinisher}
 
-// finisherSlugs are the nine parent finisher tags of M-17 and the child
+// finisherSlugs are eight parent finisher tags of M-17 and the child
 // tag blood-artist-ability (D-726). The count reads each parent without
 // its children: the tree of mill-opponent holds Ragavan, Nimble Pilferer,
-// and 47 percent of the top-cut lists play it for no win.
+// and 47 percent of the top-cut lists play it for no win. The tag
+// burn-player-each is not a finisher: 131 of its 132 cards also hit the
+// caster, such as Hurricane, and the lists play them as removal (D-1160).
 var finisherSlugs = []string{
-	"alternate-win-condition", "burn-player-each", "drain-life", "mill-opponent",
+	"alternate-win-condition", "drain-life", "mill-opponent",
 	"poison-opponents", "extra-combat-phase", "gives-double-strike", "damage-multiplier",
 	"overrun", "blood-artist-ability",
 }

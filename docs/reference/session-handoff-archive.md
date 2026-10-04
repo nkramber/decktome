@@ -15,6 +15,48 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04d, PR-126
+
+**Branch `fix/proof-link-ios-direct`: PR-126 is #284, five changes (D-1147 to D-1154).** It is pending the auto-merge. The owner put them in one pull request (D-1150).
+
+Author provider: Claude Code
+
+**The base.** PR-125 merged as #282, so the branch sits on `main` at `50878de`.
+
+**The checks of PR-124 passed on the deploy of `50878de` (D-1117, D-1119).**
+
+- The `deploy-api` build of `50878de` ended at 14:50 UTC with SUCCESS. The revision `mtg-api-00120-77r` serves it, and `/readyz` names it.
+- PR-125 changed no web path, so `/version.json` names `8bd442f`, the merge of PR-124.
+- The owner signed up through a new proof link at 15:28 UTC. The log holds the refusal `email-unverified`, then `SendLink` with code ok.
+- Each `rpc` line holds a uid, and no log line since 06:25 UTC holds an email.
+
+**The code.**
+
+- The proof page has no iOS state, and `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp` (D-1147).
+- `go/internal/spendmask` clears the spend of each answer for a caller with no admin claim. The chat page shows the session id and the spend to the admin alone (D-1148).
+- `go/cmd/live-evals` puts each down verdict in the queue with the key `v-` and its id (D-1149).
+- With no theme and an owned pool rule, the commander fill ranks half on the depth of the collection. With no colors, each offer of three holds a mono-colored and a multicolor name (D-1151).
+- In Commander, a superlative such as "best possible deck" fills bracket 5 with no question. "Competitive" still asks the bracket (D-1153, D-1154).
+
+**The checks.** `make verify` passed on `b41a32c` with Node 22 on the PATH. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
+
+**The review.** Gitar approved `b6d76b9` with no finding, and the CI note has its answer. Codex found no defect at `b6d76b90f8e91425b2b863ee17b6603961de9681`. Local verify and fresh CI passed after the hand-off size fix.
+
+After the deploy, four checks follow:
+
+- The owner opens a new proof link in iOS Safari, and the app opens with no screen between.
+- The test account sees no session id and no spend, and the owner sees both.
+- `./start-live-evals --dry` lists the five old thumbs down, and marks nothing.
+- A Commander request for the "best possible deck" gets no bracket question.
+
+### 2026-10-04c: the live evals, PR-125
+
+**The owner asked the session to watch the traffic of other users.** The logs name no user, so the session read the record of D-638 each minute. The first outside user built two decks, and the session found nine faults by hand.
+
+**The owner asked to automate that read, and chose D-1133 to D-1138.** The classifier refused the launcher as an unsafe agent, and the owner asked for the notices of D-1139.
+
+**The owner asked for a rebase onto PR-124, and chose D-1140 to D-1145.** Gitar found a path from the session to the gcloud config, so a Seatbelt profile now holds the session.
+
 ## The resume section of 2026-10-04c, PR-125
 
 **Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1146).** The pull request is #282.

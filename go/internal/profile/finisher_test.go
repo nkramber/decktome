@@ -8,9 +8,10 @@ import (
 	"github.com/nkramber/decktome/go/internal/cards"
 )
 
-// The PR-53 tests of the finisher count (F-138, D-726). M-17 counts the
-// nine parent finisher tags with no child tag, the child tag
+// The PR-53 tests of the finisher count (F-138, D-726). M-17 counts
+// eight parent finisher tags with no child tag, the child tag
 // blood-artist-ability, and the evasive creatures of power 5 or more.
+// The tag burn-player-each is no finisher (D-1160).
 
 // finisherTags builds a tag index of two trees and the evasion tag.
 // drain-life holds the child blood-artist-ability, and mill-opponent
@@ -23,6 +24,7 @@ func finisherTags(t *testing.T) *cards.TagIndex {
 		`{"id":"t3","slug":"mill-opponent","child_ids":["t4"],"taggings":[{"oracle_id":"oid-miller"}]}`,
 		`{"id":"t4","slug":"mill-any","taggings":[{"oracle_id":"oid-pilferer"}]}`,
 		`{"id":"t5","slug":"evasion","taggings":[{"oracle_id":"oid-big-flier"},{"oracle_id":"oid-small-flier"},{"oracle_id":"oid-flying-rock"}]}`,
+		`{"id":"t6","slug":"burn-player-each","taggings":[{"oracle_id":"oid-hurricane"}]}`,
 	}, "\n")
 	idx, err := cards.LoadTags(strings.NewReader(lines), "tags")
 	if err != nil {
@@ -43,6 +45,14 @@ func TestFinisherSetReadsTheParentTagsAlone(t *testing.T) {
 	}
 	if set["oid-pilferer"] {
 		t.Error("the finisher set holds a card of a child tag")
+	}
+}
+
+// TestASymmetricBurnIsNoFinisher is D-1160. Hurricane also hits its
+// caster, and the lists play such cards as removal.
+func TestASymmetricBurnIsNoFinisher(t *testing.T) {
+	if FinisherSet(finisherTags(t))["oid-hurricane"] {
+		t.Error("the finisher set holds a card of burn-player-each")
 	}
 }
 

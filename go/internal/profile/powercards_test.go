@@ -27,6 +27,35 @@ func TestPowerCardsReadTheProfileRules(t *testing.T) {
 	}
 }
 
+// TestFastManaNeedsAFreeManaAbility is D-1159: a mana ability that pays
+// mana or taps a creature makes no deck faster. The texts are the Oracle
+// texts of the card snapshot of 2026-09-04.
+func TestFastManaNeedsAFreeManaAbility(t *testing.T) {
+	artifact := func(name, text string) *mtgv1.Card {
+		return &mtgv1.Card{OracleId: "o-" + name, Name: name, CardTypes: []string{"Artifact"}, ManaValue: 1,
+			ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_G}, OracleText: text}
+	}
+	for _, tt := range []struct {
+		c    *mtgv1.Card
+		want bool
+	}{
+		{artifact("Barbed Sextant", "{1}, {T}, Sacrifice this artifact: Add one mana of any color. Draw a card at the beginning of the next turn's upkeep."), false},
+		{artifact("Sungrass Egg", "{2}, {T}, Sacrifice this artifact: Add {G}{W}. Draw a card. (Activate only as an instant.)"), false},
+		{artifact("Springleaf Drum", "{T}, Tap an untapped creature you control: Add one mana of any color."), false},
+		{artifact("Lotus Petal", "{T}, Sacrifice this artifact: Add one mana of any color."), true},
+		{artifact("Mana Vault", "This artifact doesn't untap during your untap step.\nAt the beginning of your upkeep, you may pay {4}. If you do, untap this artifact.\nAt the beginning of your draw step, if this artifact is tapped, it deals 1 damage to you.\n{T}: Add {C}{C}{C}."), true},
+		{artifact("Pyramid of the Pantheon", "{2}, {T}: Add one mana of any color. Put a brick counter on this artifact.\n{T}: Add three mana of any one color. Activate only if there are three or more brick counters on this artifact."), true},
+		{&mtgv1.Card{OracleId: "o-ritual", Name: "Dark Ritual", CardTypes: []string{"Instant"}, ManaValue: 1,
+			ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_B}, OracleText: "Add {B}{B}{B}."}, true},
+		{&mtgv1.Card{OracleId: "o-growth", Name: "Wild Growth", CardTypes: []string{"Enchantment"}, ManaValue: 1,
+			ProducedMana: []mtgv1.Color{mtgv1.Color_COLOR_G}, OracleText: "Enchant land\nWhenever enchanted land is tapped for mana, its controller adds an additional {G}."}, true},
+	} {
+		if got := isFastMana(tt.c); got != tt.want {
+			t.Errorf("%s reads fast mana %v, want %v", tt.c.GetName(), got, tt.want)
+		}
+	}
+}
+
 // TestPowerOfNamesEveryFloorACardCounts is D-704: a card counts toward
 // each power floor it meets. A tutor with the Game Changer flag counts
 // toward two, and a land search is ramp and no tutor.
