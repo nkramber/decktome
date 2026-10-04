@@ -23,16 +23,15 @@ Author provider: Claude Code
 - `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
 - `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).
 
-**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Question gate run 57 failed on one flaky classifier miss. Ten plays of that conversation met each slot. Run 58 reads PASS for $0.0661. Its theme question named filler words, so a fifth group of stop words came after it. Run 59 reads that group: PASS for $0.1036. Its two invented questions are in other slots. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of the chat built a deck of grade typical.
+**The checks.** Every Go test passes. `make user-case` passes each bar. Quality gate run 25 reads PASS, as a control fit of `b308a71` does. Quality gate run 26 reads PASS on `6503306`, and its decks name no bracket. Question gate run 57 failed on one flaky classifier miss. Runs 58 and 59 read PASS. Run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75. Deck gate run 39 failed on one false rule that the judge misread. Rejudge run 40 reads PASS for $0.3743 on summary judge version 3 (D-1130). `make eval-check` reads PASS for each suite. The paid replay of `6503306` passes each shortlist bar and each deck bar. Its grade names no cEDH reason.
 
-**The review.** The review applies to effective head `d1c6ce5`. Verdict: Changes required, with open finding P2-1. Gitar approved the current head with no review threads. The owner knows of D-1126 and of the cEDH rate in a bracket 3 grade. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
+**The review.** Codex round 1 on `d1c6ce5` found P2-1, and `docs/reviews/pr-283-response.md` answers it. The owner then put F-221 and F-222 into this pull request. The owner knows of D-1126. PR #282 also used the ids PR-124 and D-1116 to D-1123, and the owner chose that PR #282 renumbers (D-1131).
 
 **The open work.**
 
 1. Do the Gitar pass, then run `make codex-review PR=283`.
-2. After the deploy, run `make user-case-chat CONFIRM=1` to a new output file.
-3. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
-4. The owner tells the user about the fixes.
+2. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log.
+3. The owner tells the user about the fixes.
 
 ## How to resume
 

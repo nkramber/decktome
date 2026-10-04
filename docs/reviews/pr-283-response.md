@@ -22,3 +22,11 @@ Regression checks:
 - `TestF212AvoidRanksLower` in `go/internal/candidates/shortlist_f212_test.go` reads the slot strings that the classifier writes: "artifacts", "artifacts; no creatures", and "creatures with flying; no artifacts". It passes. On the matcher of `63bf6c7`, it fails: "no creatures" made "artifacts" hard, and it lowered Swiftfoot Boots.
 - `go/internal/agentsvc/build.go` copies the slot to `Request.Avoid` with no change, so these two tests cover the path from the classifier to the ranking.
 - A question gate run on prompt version 22 reads the classifier on the real model (D-66).
+
+## Scope added after round 1
+
+The owner put two more findings into this pull request after round 1. Neither one answers a finding of the review.
+
+- F-221: a deck of bracket 1 to 4 reads the mean of the model for the cEDH signal. So that signal moves no grade and names no reason (D-1123). The roadmap gives that signal to bracket 5 alone. `TestCEDHSignalReadsBracketFiveAlone` fails on the old code. Quality gate run 26 reads PASS on `6503306`. Its decks name no bracket, so it shows that a deck with no bracket keeps its grade.
+- F-222: `chat-probe -decks-out` writes each deck that reached the user, and `user-case -decks` reads the deck bars of the case (D-1124). The paid replay of `6503306` passes each shortlist bar and each deck bar, and its grade names no cEDH reason.
+- Question gate run 60 reads PASS on prompt version 22 for $0.1043, with 75 of 75 conversations on catalog questions alone.
