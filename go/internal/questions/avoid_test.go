@@ -30,6 +30,23 @@ func TestAvoidReachesTheSlot(t *testing.T) {
 	}
 }
 
+// TestAvoidKeepsAHardRequest is D-1122. "No artifacts" asks for none of
+// the thing, so the slot keeps "no", and the build lowers every artifact.
+// "Less artifacts" from an earlier message stays a soft part of its own.
+func TestAvoidKeepsAHardRequest(t *testing.T) {
+	out := classifyOut{Format: "commander", Theme: "voltron", PoolRule: "unknown", Avoid: "no artifacts"}
+	a, _ := testAgentHints(t, &fakeHints{}, classifyStep(t, out),
+		fits(t, "power_commander", "colors"), askStep(t))
+	st := NewState(true)
+	applyAvoid(st, "artifacts")
+	if _, err := a.Turn(context.Background(), st, "A voltron deck, and I don't want any artifacts.", nil); err != nil {
+		t.Fatalf("turn: %v", err)
+	}
+	if got, want := st.Slots.GetAvoid(), "artifacts; no artifacts"; got != want {
+		t.Errorf("avoid = %q, want %q", got, want)
+	}
+}
+
 // TestAvoidAddsAndNeverRepeats is D-1122. A later message adds to the
 // slot, and a thing the slot holds in any case is not added twice. An
 // empty answer keeps the slot.

@@ -18,7 +18,7 @@ Author provider: Claude Code
 
 - `go/internal/candidates`: the rows `hand-size`, `cantrips`, and `heroic`, the unmatched words, the roles, the staple floor, and `avoid`.
 - `go/internal/questions` and `go/internal/agentsvc`: a question for each dead word, the classifier field `avoid`, the revision rule, and snapshot version 7 (D-1129).
-- Prompts: generate 18, questions 21, and summary judge 3.
+- Prompts: generate 18, questions 22, and summary judge 3.
 - `go/internal/quality` and `go/internal/profile`: the feature `land_need`, no reason inside a band, and the shape of the bracket.
 - `go/internal/auth`, `go/internal/prooflink`, and the web app: the call log, the proof link, and the size code (D-1126).
 - `go/cmd/user-case`: the replay case, with the collection in a private bucket (D-1124).

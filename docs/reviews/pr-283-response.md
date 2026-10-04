@@ -1,0 +1,24 @@
+# The author response to the review of #283
+
+Author provider: Claude Code.
+
+## P2-1: The classifier drops hard avoidance
+
+Result: full merit.
+
+Evidence: questions prompt version 21 told the classifier to write the thing to avoid "without less, fewer, or no". So "no artifacts" reached `Slots.avoid` as `artifacts`, and `avoidMatch` read it as a soft request. The test `TestF212AvoidRanksLower` gave "no artifacts" to the builder directly, so no test read the path from the classifier.
+
+The review also exposed a second gap in the same function. The slot joins the things of each message with ";". `avoidMatch` read one hard word for the whole slot, so "artifacts; no creatures" made "artifacts" hard too.
+
+Correction:
+
+- `go/internal/questions/prompts.go`: avoid keeps "no" when the user wants none of the thing, and `PromptVersion` reads 22 (D-1122). The owner chose a change of the prompt over a parser of the message.
+- `go/internal/candidates/theme.go`: `avoidMatch` reads each part of the slot alone, through the new function `avoidPart`.
+- `docs/decisions.md`: the row of D-1122 records the owner choice. `docs/design-roadmap.md` and `docs/SESSION-HANDOFF.md` name prompt version 22.
+
+Regression checks:
+
+- `TestAvoidKeepsAHardRequest` in `go/internal/questions/avoid_test.go`: the classifier output "no artifacts" reaches the slot beside an earlier soft "artifacts". It passes.
+- `TestF212AvoidRanksLower` in `go/internal/candidates/shortlist_f212_test.go` reads the slot strings that the classifier writes: "artifacts", "artifacts; no creatures", and "creatures with flying; no artifacts". It passes. On the matcher of `63bf6c7`, it fails: "no creatures" made "artifacts" hard, and it lowered Swiftfoot Boots.
+- `go/internal/agentsvc/build.go` copies the slot to `Request.Avoid` with no change, so these two tests cover the path from the classifier to the ranking.
+- A question gate run on prompt version 22 reads the classifier on the real model (D-66).

@@ -185,6 +185,21 @@ func TestF212AvoidRanksLower(t *testing.T) {
 	if hard.Stats.Avoided == 0 || soft.Stats.Avoided >= hard.Stats.Avoided {
 		t.Errorf("avoided %d soft and %d hard, want fewer soft", soft.Stats.Avoided, hard.Stats.Avoided)
 	}
+	// The classifier writes a soft thing alone and a hard thing with "no",
+	// and the slot joins the things of each message with ";". Each part
+	// is hard or soft alone.
+	if got := build("artifacts"); got.Stats.Avoided != soft.Stats.Avoided {
+		t.Errorf(`"artifacts" avoided %d, want %d as "less artifacts"`, got.Stats.Avoided, soft.Stats.Avoided)
+	}
+	if moved(build("artifacts; no creatures"), "Swiftfoot Boots") {
+		t.Error(`"no creatures" made "artifacts" hard, and it lowered Swiftfoot Boots`)
+	}
+	joined := build("creatures with flying; no artifacts")
+	for _, c := range base.Candidates {
+		if slices.Contains(c.Card.CardTypes, "Artifact") && !moved(joined, c.Card.Name) {
+			t.Errorf(`"no artifacts" after a soft thing must lower the artifact %s`, c.Card.Name)
+		}
+	}
 }
 
 // TestF212StapleFloorKeepsCounterspell is D-1121. Twenty-five on-theme

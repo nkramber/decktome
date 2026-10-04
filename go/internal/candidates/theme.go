@@ -275,8 +275,18 @@ func (a avoidSet) hits(c *mtgv1.Card) bool {
 // enabler signals of the row read every mana rock and every card whose
 // text names an artifact, such as Swiftfoot Boots in a voltron deck. A
 // word that names a card type reads the type when it finds no row, or
-// when the request is hard, as in "no artifacts".
+// when the request is hard, as in "no artifacts". The slot joins the
+// things of each message with ";", and each part is hard or soft alone.
 func (t *themeTable) avoidMatch(avoid string, idx *cards.Index) avoidSet {
+	var out avoidSet
+	for _, part := range strings.Split(avoid, ";") {
+		out = append(out, t.avoidPart(part, idx)...)
+	}
+	return out
+}
+
+// avoidPart reads one thing of the avoid slot (D-1122).
+func (t *themeTable) avoidPart(avoid string, idx *cards.Index) avoidSet {
 	f := func(r rune) bool {
 		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '-'
 	}

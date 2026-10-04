@@ -3301,7 +3301,7 @@ The live check after the deploy: run the TTL command of `docs/setup-gcp.md` sect
 
 - **The theme (F-213).** `themes.json` gets the rows `hand-size`, `cantrips`, and `heroic`. The generic rule also tries the singular slug. A word counts as unmatched only when its own signals find no card.
 - **The question (D-1116, D-1128).** The theme question asks when any word finds no card, and it names each such word. A reply ends the question. The build then names each word that it can not use.
-- **The avoid slot (D-1122).** The classifier writes what the user wants less of to `avoid`. A soft request ranks the payoff cards of the row lower, and "no artifacts" ranks each artifact lower. The plan of the build reads the later turns of the user.
+- **The avoid slot (D-1122).** The classifier writes what the user wants less of to `avoid`. A soft request ranks the payoff cards of the row lower, and "no artifacts" ranks each artifact lower. The slot keeps "no" for a request of none, and each part of the slot is hard or soft alone. The plan of the build reads the later turns of the user.
 - **The commander (F-212).** A commander with the text "whenever you cast a spell that targets" adds the row `heroic`. Such a row adds no word, so the question never names it.
 - **The roles (F-214, D-1120).** A protection permanent takes `CARD_ROLE_PROTECTION`. A creature never takes the wipe role, and Equipment never takes the removal role. The interaction row of the profile counts interaction alone.
 - **The staple floor (F-215, D-1121).** Each staple role keeps the middle of its band in popular staples, on top of its cap.
@@ -3320,7 +3320,7 @@ Gate:
 - The tests of `go/internal/quality` and `go/internal/profile` cover the band, the shape line, and the land need.
 - The tests of `go/internal/auth`, `go/internal/prooflink`, and the web app cover the call log, the proof link, and the delete.
 - `make quality-gate` passes with the new feature, at no cost.
-- A question gate run passes on prompt version 21 (D-725, D-1116).
+- A question gate run passes on prompt version 22 (D-725, D-1116, D-1122).
 - `make verify` passes.
 - A current Gitar review of this pull request, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).
