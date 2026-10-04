@@ -73,6 +73,12 @@ type storedDeck struct {
 	// NewOracleIDs are the new cards of the snapshot job, so the list
 	// marks a deck that new cards fit (D-1091).
 	NewOracleIDs []string `firestore:"new_oracle_ids"`
+	// HasBeenEvaluated marks a deck that a live eval read (D-1132). Put
+	// writes false, so each new deck and each revision starts unread.
+	// Every later write keeps the stored value, through keepStored.
+	HasBeenEvaluated bool `firestore:"has_been_evaluated"`
+	// EvaluatedAt is the time of that read. It is absent before the read.
+	EvaluatedAt *time.Time `firestore:"evaluated_at,omitempty"`
 }
 
 // listFields are the flat fields List reads. The list never inflates a
@@ -419,9 +425,8 @@ func (r *Repo) Update(ctx context.Context, uid, id string, name *string, favorit
 		updated := toStored(&d, payload)
 		// The stored document keeps the create time it already had. A
 		// rename must not move the deck to the top of the list, and it
-		// must not drop the share link (D-315).
-		updated.CreatedAt = sd.CreatedAt
-		updated.ShareTokenHash = sd.ShareTokenHash
+		// must not drop the share link (D-315) or the eval mark (D-1132).
+		keepStored(&updated, sd)
 		if err := tx.Set(doc, updated); err != nil {
 			return err
 		}

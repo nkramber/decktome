@@ -143,9 +143,9 @@ func readStored(tx *firestore.Transaction, doc *firestore.DocumentRef) (storedDe
 	return sd, d, nil
 }
 
-// restore packs a deck back into its stored row, with the create time
-// and the share hash the row already had, so a write moves nothing in
-// the list and drops no link.
+// restore packs a deck back into its stored row, with the fields that
+// the store alone holds, so a write moves nothing in the list and drops
+// no link and no eval mark.
 func restore(d *mtgv1.Deck, sd storedDeck) (storedDeck, error) {
 	payload, err := gzstore.MarshalProto(d)
 	if err != nil {
@@ -155,7 +155,16 @@ func restore(d *mtgv1.Deck, sd storedDeck) (storedDeck, error) {
 		return storedDeck{}, ErrTooLarge
 	}
 	updated := toStored(d, payload)
+	keepStored(&updated, sd)
+	return updated, nil
+}
+
+// keepStored copies the fields that the deck message does not carry from
+// the row that a write replaces: the create time, the share hash
+// (D-315), and the eval mark (D-1132).
+func keepStored(updated *storedDeck, sd storedDeck) {
 	updated.CreatedAt = sd.CreatedAt
 	updated.ShareTokenHash = sd.ShareTokenHash
-	return updated, nil
+	updated.HasBeenEvaluated = sd.HasBeenEvaluated
+	updated.EvaluatedAt = sd.EvaluatedAt
 }

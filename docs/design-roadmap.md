@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-04 correction pass 262 (PR-125, D-1132 to D-1139): the owner asked to automate the read of each new deck. `./start-live-evals` reads each new deck and each revision in a headless session, and the owner merges each fix. Changes: PR-125, sequencing step 120.
 2026-10-04 correction pass 261 (PR-124, F-212 to F-223, D-1116 to D-1131): the first outside user built a deck on 2026-10-04, and the owner read the traffic. The owner put each finding of that session into one pull request (D-1125). Changes: F-212 to F-223, PR-124, sequencing step 119.
 
 2026-10-03 correction pass 260 (PR-70, PR-123, D-1100 to D-1108, D-1113 to D-1115): the owner asked for a deck import from a link. An Archidekt link reads, a Moxfield link gets the exact steps of its export, and any other site gets the general steps and a report. Changes: PR-70, PR-123, sequencing step 118.
@@ -3331,6 +3332,26 @@ Gate:
 The live check after the deploy: run `make user-case`, and sign in through a new proof link. Read one `rpc` line of the API log with a uid.
 > *In plain English:* the app now reads "hand size" and "cantrips". It asks about each word that it does not know, and it ranks lower what the user wants less of. It keeps counterspells in the list, calls boots protection, and gives a normal land count no lower grade.
 
+**PR-125: The live evals (D-1132 to D-1139).** ✅ merged as #282. The mark comes before any review (D-822). On 2026-10-03 the session watched the first outside user build two decks, and it found nine faults by hand. The owner asked to automate that read, and approved this plan.
+
+- **The mark (D-1132).** Each deck holds `has_been_evaluated` and `evaluated_at`. Put writes false, and each rewrite keeps the mark through `keepStored`.
+- **The tool (D-1132, D-1135).** `go/cmd/live-evals` lists each unread deck, prints a summary, writes a bundle, marks a deck, checks a pull request, and sends a notice. It calls no model.
+- **The loop (D-1132, D-1138).** `./start-live-evals` runs `scripts/live-evals.sh`. It polls every five minutes and starts one session at a time in its own worktree.
+- **The first run (D-1133).** It marks each waiting deck read after the summary, and it starts no session for it.
+- **The session (D-1134, D-1136).** It reads a local bundle with no cloud credentials. It can spend $3.00 on paid targets, and the live-test lanes stay closed to it.
+- **The safety of user text (D-1139).** Each bundle file and each prompt carries an "UNTRUSTED DATA" notice. A random code marks the end of the user text.
+- **The stack (D-1138).** Each new branch starts from the newest open live-eval pull request, with at most three open. A restack session moves a child after its parent merges or changes.
+- **The notice (D-1137).** GitHub decides that a pull request is ready. Then the owner gets a Pushover notice with the four sections of D-836, and the owner merges.
+
+Gate:
+- The deck tests prove that a new deck and a revision start unread, and that a rename and a share keep the mark.
+- The tool tests prove that the summary shows the prompt, each question, and each answer, and that it holds no email.
+- The tool tests prove that `ready` names each fault, and that the newest run of a check decides.
+- The tool tests prove that each bundle file opens and closes with the notice.
+- `./start-live-evals --dry` prints the summary of the six decks of 2026-10-03, and it marks nothing.
+
+> *In plain English:* each time someone builds or revises a deck, a robot reads it against what they asked. It fixes the worst new problem, and the owner gets a ping when the fix is ready.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3747,6 +3768,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 117. **PR-122** the app sends its email from `mail@decktome.com` (D-1112).
 118. **PR-123** a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).
 119. **PR-124** the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).
+120. **PR-125** the live evals of each new deck and revision (D-1132 to D-1139).
 
 ## 9. Open questions
 
