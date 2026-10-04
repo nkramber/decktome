@@ -218,6 +218,13 @@ gcloud run services update mtg-api --region us-central1 \
   --update-secrets=RESEND_API_KEY=resend-api-key:1
 ```
 
+A new key needs a new mount. The mount names a version number, so the service keeps the old version until this step. Section 8.1 of `docs/setup-gcp.md` adds the version with the second command. Then mount it, with the number that the command printed:
+
+```
+gcloud run services update mtg-api --region us-central1 \
+  --update-secrets=RESEND_API_KEY=resend-api-key:2
+```
+
 Each later deploy keeps it. The API log reads `the approval email is on` at start when the key is set. Without it, an approval adds the email to the invite list and sends no email. Section 15.2 of `docs/setup-gcp.md` opens the admin screen with `make grant-admin`.
 
 From PR-116, the log also reads `the proof email is on` (D-1081). A rollback to a revision before PR-116 brings back the email of Firebase. The web app of that revision has no page for a link of the new email.

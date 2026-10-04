@@ -3240,6 +3240,22 @@ Gate:
 The live check after the deploy: an upload of a large export stores all its rows. Section 8.1 of `docs/deploy-and-rollback.md` holds the limit of a rollback.
 > *In plain English:* the app now takes a collection of up to 50,000 different printings, and a file of up to 10 MB. Before, the limit was 9,000.
 
+**PR-122: The app sends its email from `mail@decktome.com` (D-1112).** ✅ merged as #281. The mark comes before any review (D-822).
+
+- **The sender.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`. The approval email and the proof email use it. The old sender `beta@mail.decktome.com` had no inbox, so each reply failed.
+- **The inbox.** The root domain receives mail in iCloud Mail of the owner. Section 8.2 of `docs/setup-gcp.md` holds its records.
+- **The steps before the merge.** The owner verifies `decktome.com` in Resend, and edits the domain of the key to all domains. The secret keeps its version.
+- **The risk.** A merge before these steps stops each email, because Resend refuses the new sender. The proof email then falls back to the email of Firebase.
+
+Gate:
+- `TestDefaultFromIsTheRootInbox` reads the new sender.
+- The DNS of `decktome.com` reads the records of Resend, and the key sends from all domains.
+- `make verify` passes.
+- A current Gitar review of this pull request, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* the emails of the app come from `mail@decktome.com` now, and a reply reaches the owner.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
@@ -3653,6 +3669,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 114. **PR-119** a user record for each user who signs in (F-210, D-1092 to D-1094).
 115. **PR-120** the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).
 116. **PR-121** a collection of 50,000 rows, in parts (F-211, D-1110).
+117. **PR-122** the app sends its email from `mail@decktome.com` (D-1112).
 
 ## 9. Open questions
 

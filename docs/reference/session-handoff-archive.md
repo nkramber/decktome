@@ -15,6 +15,36 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-03g, PR-121
+
+**Branch `feat/collection-limit-50k`: PR-121, a collection of 50,000 rows, in parts (F-211, D-1110).** The pull request is #280.
+
+Author provider: Claude Code
+
+**The base.** `main` is `d0b8498`, from #278. This session did not read the deploy of `d0b8498`.
+
+**The report.** At 2026-10-04 00:07 UTC a user wrote "Collection limit too small". The API refused an import of that user 30 seconds before. The file held about 12,400 ManaBox rows or 18,900 Moxfield rows. The owner chose 50,000 rows and a file of 10 MiB (D-1110). The owner also permits each read under `users/` in production (D-1111).
+
+**The code.**
+
+- `go/internal/collections`: `MaxEntries` is 50,000. A payload over 900 KiB goes into parts, in one transaction. A read of parts runs in a read-only transaction.
+- `go/internal/gzstore`: `UnmarshalMax` and `UnmarshalJSONMax` take the limit of the caller.
+- `go/internal/collectionsvc` and the web app: the upload cap is 10 MiB. `go/cmd/api`: the request cap is 16 MiB.
+
+**The checks.** `make store-check` passed each store on a new emulator. `make verify` on `7640013` passed each step through shellcheck, with 544 of 544 web tests under Node 22. The Docker daemon was off, so the two image builds did not run here. This diff changes no Dockerfile, and the docker job of CI builds both images.
+
+**The review.** Gitar approved `3e7142d` with no finding. The Codex record read `Blocked` at `3e7142d` with no finding, because `make store-check` failed in the unchanged sessions store on old data of the local emulator. A new emulator then passed each package on `c8c87a9`. `docs/reviews/pr-280-response.md` holds the answer, and the repeat review follows.
+
+**The open work.**
+
+1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
+2. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page.
+3. The owner can tell the user that the limit is 50,000 rows now.
+
+### 2026-10-03e: the spend cap of $2, D-1109
+
+**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
+
 ## The resume section of 2026-10-03f, PR-120
 
 **Branch `feat/push-third-event`: PR-120, the push of new cards that fit a deck, the third event of PR-26 (D-1090, D-1091, D-1095).** The pull request is #278.

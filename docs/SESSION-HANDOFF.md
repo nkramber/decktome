@@ -6,31 +6,33 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-03g)
+## RESUME HERE (2026-10-03h)
 
-**Branch `feat/collection-limit-50k`: PR-121, a collection of 50,000 rows, in parts (F-211, D-1110).** The pull request is #280.
+**Branch `feat/mail-from-root`: PR-122, the app sends its email from `mail@decktome.com` (D-1112).** The pull request is #281.
 
 Author provider: Claude Code
 
-**The base.** `main` is `d0b8498`, from #278. This session did not read the deploy of `d0b8498`.
+**The base.** `main` is `41746b0`, from #280. The branch merged it on 2026-10-04. This session did not read the deploy of `41746b0`.
 
-**The report.** At 2026-10-04 00:07 UTC a user wrote "Collection limit too small". The API refused an import of that user 30 seconds before. The file held about 12,400 ManaBox rows or 18,900 Moxfield rows. The owner chose 50,000 rows and a file of 10 MiB (D-1110). The owner also permits each read under `users/` in production (D-1111).
+**The owner choice.** The owner made an inbox for `mail@decktome.com` in iCloud Mail. The owner chose it as the sender over a reply-to (D-1112), and D-1112 amends the subdomain of D-1077.
 
-**The code.**
+**The code.** `mail.DefaultFrom` is `Deck Tome <mail@decktome.com>`, and `TestDefaultFromIsTheRootInbox` reads it. Sections 8.1 and 8.2 of `docs/setup-gcp.md` and section 4 of `docs/deploy-and-rollback.md` hold the new steps and the records of the inbox.
 
-- `go/internal/collections`: `MaxEntries` is 50,000. A payload over 900 KiB goes into parts, in one transaction. A read of parts runs in a read-only transaction.
-- `go/internal/gzstore`: `UnmarshalMax` and `UnmarshalJSONMax` take the limit of the caller.
-- `go/internal/collectionsvc` and the web app: the upload cap is 10 MiB. `go/cmd/api`: the request cap is 16 MiB.
+**The steps of the owner before the merge.** Resend refuses a sender on a domain that it did not verify. So a merge before these steps stops each email of the app.
 
-**The checks.** `make store-check` passed each store on a new emulator. `make verify` on `7640013` passed each step through shellcheck, with 544 of 544 web tests under Node 22. The Docker daemon was off, so the two image builds did not run here. This diff changes no Dockerfile, and the docker job of CI builds both images.
+1. In Resend, add the domain `decktome.com`, and add its three records at GoDaddy.
+2. Edit the domain of the key to all domains, with More options and Edit API key. The old revision then keeps its email.
 
-**The review.** Gitar approved `3e7142d` with no finding. The Codex record read `Blocked` at `3e7142d` with no finding, because `make store-check` failed in the unchanged sessions store on old data of the local emulator. A new emulator then passed each package on `c8c87a9`. `docs/reviews/pr-280-response.md` holds the answer, and the repeat review follows.
+The owner did both steps on 2026-10-03, and Resend read the domain as verified.
+
+**The checks.** `make verify` passed each step before the docker step, with 544 of 544 web tests under Node 22. The Docker daemon did not start on this machine, so CI builds the two images. On 2026-10-03 the DNS of `decktome.com` read the MX record, the SPF record, and the DKIM record of Resend.
+
+**The review.** The record `docs/reviews/pr-281.md` reads Ready for owner merge at effective head `94cf257`. Gitar passed with no open finding.
 
 **The open work.**
 
-1. The owner confirms the merge, then the author turns on auto-merge (D-828, D-834).
-2. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page.
-3. The owner can tell the user that the limit is 50,000 rows now.
+1. The owner confirms the merge, and the pull request is pending the auto-merge (D-828, D-834).
+2. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 
 ## How to resume
 
@@ -104,7 +106,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-121: a collection of 50,000 rows, in parts** (F-211, D-1110). The resume section holds the open work.
+0. **PR-122: the sender `mail@decktome.com`** (D-1112). The resume section holds the open work.
+0. **The check of PR-121** (F-211, D-1110). It merged as #280. After the deploy, upload an export of more than 10,000 rows. Read its row count on the collection page. The owner can tell the user that the limit is 50,000 rows now.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The check of PR-119** (F-210, D-1092). It merged as #276. After the deploy, the owner reads `users/<uid>` of a user who only signs in (D-756).
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -131,10 +134,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03e: the spend cap of $2, D-1109
-
-**The owner asked for a cap of $2 a month on all usage of each user, with no limit for the owner's account.** The override of D-576 already held the owner's account. The session set the live cap first, then moved the code default (D-1109).
-
 ### 2026-10-03f: the push of new cards, PR-120
 
 **The deploy of `e135aab` read SUCCESS for both builds.** The job runs `worker:e135aab`, and its first run logged the skip line of an hour with no new version.
@@ -147,6 +146,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose 50,000 rows and a file of 10 MiB.** The session first gave the request size as the file size. The web app sends base64, so the session corrected the estimate and the request cap before the code.
 
+### 2026-10-03h: the sender `mail@decktome.com`, PR-122
+
+**The owner asked how to send and receive as `beta@mail.decktome.com`.** The DNS read no MX record for that name, so each reply failed. The owner made an inbox of iCloud Mail on the root domain.
+
+**The owner chose the root domain as the sender over a reply-to.** The Resend documents and the domain limit of the key showed that a change of the code alone stops each email. So the steps of the owner come before the merge.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03f, the records of 2026-08-31 to 2026-10-03d, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-03g, the records of 2026-08-31 to 2026-10-03e, and 104 more sections, word for word. Read it for the detail behind a decision.

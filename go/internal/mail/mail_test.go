@@ -58,6 +58,14 @@ func TestFromEnv(t *testing.T) {
 	}
 }
 
+// TestDefaultFromIsTheRootInbox is D-1112: the app sends from the root
+// domain, whose inbox takes each reply.
+func TestDefaultFromIsTheRootInbox(t *testing.T) {
+	if DefaultFrom != "Deck Tome <mail@decktome.com>" {
+		t.Errorf("DefaultFrom = %q", DefaultFrom)
+	}
+}
+
 // TestHTMLMakesEachURLALink is D-1080: the HTML part carries a real link,
 // so a mail app never decides whether the link works.
 func TestHTMLMakesEachURLALink(t *testing.T) {

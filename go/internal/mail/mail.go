@@ -21,9 +21,9 @@ import (
 // resend.com/docs/api-reference/emails/send-email.
 const ResendURL = "https://api.resend.com/emails"
 
-// DefaultFrom is the sender. Resend recommends a subdomain, so the root
-// domain keeps its own reputation (D-1077). MAIL_FROM overrides it.
-const DefaultFrom = "Deck Tome <beta@mail.decktome.com>"
+// DefaultFrom is the sender. The root domain sends, and its inbox takes
+// each reply (D-1112). MAIL_FROM overrides it.
+const DefaultFrom = "Deck Tome <mail@decktome.com>"
 
 // userAgent names the caller. Resend refuses a request with no
 // User-Agent header with 403 (read 2026-10-02).
