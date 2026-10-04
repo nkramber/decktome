@@ -20,7 +20,7 @@ Author provider: Claude Code
 - `go/cmd/chat-probe` takes `-messages-json`, `-collection-json`, and `-deck-out`.
 - `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
 
-**The checks.** The Go tests pass. A probe of the profile passed 27 checks. The pinned Claude Code starts in the profile and stops at "Not logged in", as designed.
+**The checks.** The Go tests pass. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. The pinned Claude Code starts in the profile and stops at "Not logged in", as designed.
 
 **The open work.**
 

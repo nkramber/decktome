@@ -103,9 +103,17 @@ STATE=$HOME_DIR/state
 BIN=$HOME_DIR/bin
 CACHE=$HOME_DIR/cache
 CODEX_DIR=$HOME_DIR/codex-home
+RUNS=$STATE/runs
 TOOL=$BIN/live-evals
 CLAUDE_BIN=$BIN/claude-$CLAUDE_VERSION
-mkdir -p "$STATE/decks" "$BIN" "$CACHE" "$CODEX_DIR" || die "can not make the folders under $HOME_DIR"
+mkdir -p "$STATE/decks" "$RUNS" "$BIN" "$CACHE" "$CODEX_DIR" || die "can not make the folders under $HOME_DIR"
+
+# A session writes its run folder, and it can put a link at any path in
+# it. So the script never reads or writes there by path. The helper opens
+# each part with no link (D-1141). Prompts, logs, and context stay in
+# $RUNS, where no session can write.
+runfs() { python3 "$ROOT/docs/tools/live_evals_runfs.py" "$@"; }
+rget() { runfs get "$HOME_DIR" "$1" "$2" "${3:-1048576}" 2>/dev/null; } # deck rel [max]
 
 # One copy at a time. mkdir is atomic, and a dead holder frees the lock.
 LOCK=$STATE/lock
@@ -198,8 +206,11 @@ if [ "$dry" = 0 ]; then
   [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Save a fine-grained GitHub token for decktome alone there."
   CLAUDE_TOKEN=$(cat "$SECRETS/claude-token")
   GH_SESSION_TOKEN=$(cat "$SECRETS/gh-token")
-  CODEX_HOME=$CODEX_DIR codex login status 2>&1 | grep -q "ChatGPT" \
-    || die "the session Codex is not signed in. Run: CODEX_HOME=$CODEX_DIR codex login (D-833)"
+  # A session can write the Codex home, so this script never runs Codex
+  # with it. It reads that the login file exists, and nothing more.
+  if [ ! -f "$CODEX_DIR/auth.json" ] || [ -L "$CODEX_DIR/auth.json" ]; then
+    die "the session Codex has no login. Before the first run: CODEX_HOME=$CODEX_DIR codex login (D-833)"
+  fi
   [ -d "$CARDS/scryfall" ] || die "no card store at $CARDS. A replay needs it."
   REPO_URL=$(gh repo view --json url --jq .url).git
 
@@ -266,10 +277,10 @@ mark() { # uid deck
 # --- the session --------------------------------------------------------
 
 render() { # template deck run -> prompt on stdout
-  python3 - "$1" "$2" "$3" "$BUDGET" <<'PY'
+  python3 - "$1" "$2" "$3" "$BUDGET" "$RUNS/$2/context.json" <<'PY'
 import json, sys, pathlib
-template, deck, run, budget = sys.argv[1:5]
-ctx = json.loads(pathlib.Path(run, "bundle", "context.json").read_text())
+template, deck, run, budget, context = sys.argv[1:6]
+ctx = json.loads(pathlib.Path(context).read_text())
 text = pathlib.Path(template).read_text()
 values = dict(ctx, deck=deck, run=run, bundle=str(pathlib.Path(run, "bundle")),
               replay=str(pathlib.Path(run, "replay")), budget=budget)
@@ -281,7 +292,7 @@ PY
 
 run_claude() { # deck run prompt-file log-file -> exit code
   local deck=$1 run=$2 prompt=$3 log=$4 started rc model_args=()
-  mkdir -p "$run/tmp" "$run/claude-config" "$run/gh-config" "$run/xdg-config" "$run/replay"
+  runfs mkdir "$HOME_DIR" "$deck" tmp claude-config gh-config xdg-config replay || return 1
   if [ -n "${LIVE_EVALS_MODEL:-}" ]; then model_args=(--model "$LIVE_EVALS_MODEL"); fi
   check_sum "$CLAUDE_BIN" "$CLAUDE_SUM"
   say "session starts in $run/repo, log $log"
@@ -305,7 +316,7 @@ run_claude() { # deck run prompt-file log-file -> exit code
   child=$!
   started=$(date +%s)
   while kill -0 "$child" 2>/dev/null; do
-    fix_notice "$deck" "$run"
+    fix_notice "$deck"
     if [ $(( $(date +%s) - started )) -ge "$TIMEOUT" ]; then
       say "the session passed $TIMEOUT seconds, and it stops"
       pkill -TERM -P "$child" 2>/dev/null
@@ -317,32 +328,31 @@ run_claude() { # deck run prompt-file log-file -> exit code
   wait "$child"
   rc=$?
   child=""
-  fix_notice "$deck" "$run"
+  fix_notice "$deck"
   return "$rc"
 }
 
-fix_notice() { # deck run -> notify once when the session chose a fix (D-1143)
-  local f=$2/bundle/fix.json
-  if [ -f "$f" ] && [ -z "$(dget "$1" fix_notice)" ]; then
-    dset "$1" fix_notice sent
-    notify "decktome live eval: deck $1 needs a fix" \
-      "$(jq -r '"Finding: \(.finding // "?")\nBar: \(.bar // "?")"' "$f" 2>/dev/null || echo "fix.json does not read")"
-  fi
+fix_notice() { # deck -> notify once when the session chose a fix (D-1143)
+  local fix
+  [ -z "$(dget "$1" fix_notice)" ] || return 0
+  fix=$(rget "$1" bundle/fix.json 65536) || return 0
+  dset "$1" fix_notice sent
+  notify "decktome live eval: deck $1 needs a fix" \
+    "$(jq -r '"Finding: \(.finding // "?")\nBar: \(.bar // "?")"' <<<"$fix" 2>/dev/null || echo "fix.json does not read")"
 }
 
-spent() { # run -> dollars the session wrote to spend.jsonl
-  local f=$1/bundle/spend.jsonl
-  if [ -f "$f" ]; then jq -s '[.[].usd // 0 | tonumber] | add // 0' "$f"; else echo 0; fi
+spent() { # deck -> dollars the session wrote to spend.jsonl
+  local s
+  s=$(rget "$1" bundle/spend.jsonl | jq -s '[.[].usd // 0 | tonumber] | add // 0' 2>/dev/null)
+  echo "${s:-0}"
 }
 
-result() { # run key -> value of result.json
-  local f=$1/bundle/result.json
-  if [ -f "$f" ]; then
-    jq -r --arg k "$2" '.[$k] // empty | if type == "array" then join("; ") else tostring end' "$f"
-  fi
+result() { # deck key -> value of result.json
+  rget "$1" bundle/result.json 262144 \
+    | jq -r --arg k "$2" '.[$k] // empty | if type == "array" then join("; ") else tostring end' 2>/dev/null
 }
 
-summary_text() { # run -> the four sections of D-836
+summary_text() { # deck -> the four sections of D-836
   printf 'What: %s\nHow: %s\nReplay: %s\nCI: %s\nCodex review: %s\nSpent: $%s of $%s' \
     "$(result "$1" what)" "$(result "$1" how)" "$(result "$1" replay)" "$(result "$1" ci)" \
     "$(result "$1" codex)" "$(spent "$1")" "$BUDGET"
@@ -373,10 +383,11 @@ clone() { # run branch base -> a clone of the base on a new branch
 }
 
 prepare() { # uid deck kind who -> 0 when the run folder is ready
-  local uid=$1 deck=$2 kind=$3 who=$4 run=$HOME_DIR/$2 branch base parent newest nonce keep f
+  local uid=$1 deck=$2 kind=$3 who=$4 run=$HOME_DIR/$2 logs=$RUNS/$2 build branch base parent newest nonce f
   branch=live-eval/$(echo "$deck" | tr '[:upper:]' '[:lower:]' | cut -c1-12)
   git fetch --quiet origin || return 1
-  if [ ! -d "$run/repo" ]; then
+  mkdir -p "$logs"
+  if [ -z "$(dget "$deck" branch)" ]; then
     newest=$(open_prs | tail -1)
     base=main
     parent=""
@@ -384,40 +395,41 @@ prepare() { # uid deck kind who -> 0 when the run folder is ready
       parent=${newest%%$'\t'*}
       base=${newest#*$'\t'}
     fi
-    mkdir -p "$run"
-    clone "$run" "$branch" "$base" || { rm -rf "$run/repo"; return 1; }
+    # A new run folder holds no file of a session yet, so the clone may
+    # use paths in it. mkdir fails when the folder exists.
+    mkdir "$run" || return 1
+    # No session ran in the folder yet, so a removal by path is safe.
+    if ! clone "$run" "$branch" "$base"; then rm -rf "${run:?}"; return 1; fi
     dset "$deck" uid "$uid" kind "$kind" who "$who" branch "$branch" base "$base" parent_pr "$parent" status running
   fi
-  # A continuation rebuilds the bundle, and it keeps what the earlier
-  # session wrote: its findings and its spend (D-1134).
-  keep=$run/keep
-  rm -rf "$keep" && mkdir -p "$keep"
-  for f in findings.md spend.jsonl fix.json; do
-    if [ -f "$run/bundle/$f" ]; then cp "$run/bundle/$f" "$keep/$f"; fi
-  done
-  rm -rf "$run/bundle"
+  # The bundle is built in $RUNS, where no session can write. A
+  # continuation keeps what the earlier session wrote: its findings, its
+  # spend, and its fix (D-1134). Then the helper copies the build in.
+  build=$logs/bundle
+  rm -rf "${build:?}"
   # The nonce marks where reader text ends. The prompt names it, and a
   # reader can not guess it (D-1139).
   nonce=$(python3 -c 'import secrets; print(secrets.token_hex(8))')
-  tool bundle -uid "$uid" -deck "$deck" -out "$run/bundle" -nonce "$nonce" || return 1
-  for f in "$keep"/*; do
-    if [ -f "$f" ]; then cp "$f" "$run/bundle/"; fi
+  tool bundle -uid "$uid" -deck "$deck" -out "$build" -nonce "$nonce" || return 1
+  for f in findings.md spend.jsonl fix.json; do
+    rget "$deck" "bundle/$f" > "$build/$f" || rm -f "${build:?}/${f:?}"
   done
-  open_prs | jq -R -s -c 'split("\n") | map(select(length > 0) | split("\t") | {number: .[0], branch: .[1]})' > "$run/bundle/open-prs.json"
-  cp "$STATE/findings-index.md" "$run/bundle/earlier-findings.md" 2>/dev/null || echo "No earlier finding." > "$run/bundle/earlier-findings.md"
+  open_prs | jq -R -s -c 'split("\n") | map(select(length > 0) | split("\t") | {number: .[0], branch: .[1]})' > "$build/open-prs.json"
+  cp "$STATE/findings-index.md" "$build/earlier-findings.md" 2>/dev/null || echo "No earlier finding." > "$build/earlier-findings.md"
+  runfs put "$HOME_DIR" "$deck" bundle "$build" || return 1
   jq -n --arg branch "$(dget "$deck" branch)" --arg base "$(dget "$deck" base)" --arg parent_pr "$(dget "$deck" parent_pr)" \
     --arg kind "$kind" --arg who "$who" --arg label "$LABEL" --arg nonce "$nonce" \
     '{branch: $branch, base: $base, parent_pr: (if $parent_pr == "" then "none" else $parent_pr end), kind: $kind, who: $who, label: $label, nonce: $nonce}' \
-    > "$run/bundle/context.json"
+    > "$logs/context.json"
 }
 
 finish() { # deck run -> act on result.json
   local deck=$1 run=$2 status pr uid n
   uid=$(dget "$deck" uid)
-  status=$(result "$run" status)
-  pr=$(result "$run" pr)
-  if [ -n "$(result "$run" findings)" ]; then
-    printf -- '- deck %s: %s\n' "$deck" "$(result "$run" findings)" >> "$STATE/findings-index.md"
+  status=$(result "$deck" status)
+  pr=$(result "$deck" pr)
+  if [ -n "$(result "$deck" findings)" ]; then
+    printf -- '- deck %s: %s\n' "$deck" "$(result "$deck" findings)" >> "$STATE/findings-index.md"
   fi
   case "$status" in
     ready)
@@ -425,25 +437,25 @@ finish() { # deck run -> act on result.json
       check_ready "$deck"
       ;;
     no-new-issues)
-      say "deck $deck: no new fault. $(result "$run" findings)"
+      say "deck $deck: no new fault. $(result "$deck" findings)"
       dset "$deck" status "done"
       mark "$uid" "$deck"
-      rm -rf "$run/repo"
+      runfs rm "$HOME_DIR" "$deck" repo
       ;;
     fix-failed)
       # Three tries of the fix did not beat the replay of the base code
       # (D-1144). The run folder stays for the owner.
       dset "$deck" status fix-failed
       mark "$uid" "$deck"
-      notify "decktome live eval: the fix failed on deck $deck" "$(result "$run" reason)
-Replay: $(result "$run" replay)
-Spent: \$$(spent "$run") of \$$BUDGET. Read $run"
+      notify "decktome live eval: the fix failed on deck $deck" "$(result "$deck" reason)
+Replay: $(result "$deck" replay)
+Spent: \$$(spent "$deck") of \$$BUDGET. Read $run and $RUNS/$deck"
       ;;
     blocked)
       dset "$deck" status blocked pr "$pr"
       mark "$uid" "$deck"
-      notify "decktome live eval: blocked on deck $deck" "$(result "$run" reason)
-Questions: $(result "$run" questions)
+      notify "decktome live eval: blocked on deck $deck" "$(result "$deck" reason)
+Questions: $(result "$deck" questions)
 $( [ -n "$pr" ] && echo "PR #$pr")"
       ;;
     checkpoint)
@@ -455,22 +467,21 @@ $( [ -n "$pr" ] && echo "PR #$pr")"
       dset "$deck" status failed attempts "$n"
       if [ "$n" -ge "$MAX_ATTEMPTS" ]; then
         mark "$uid" "$deck"
-        notify "decktome live eval: failed on deck $deck" "The session ended $n times with no result. Log: $run"
+        notify "decktome live eval: failed on deck $deck" "The session ended $n times with no result. Logs: $RUNS/$deck"
       fi
       ;;
   esac
 }
 
 check_ready() { # deck -> notify once when GitHub shows the pull request ready
-  local deck=$1 pr run out since
+  local deck=$1 pr out since
   pr=$(dget "$deck" pr)
-  run=$HOME_DIR/$deck
   [ -n "$pr" ] || return 0
   check_sum "$TOOL" "$TOOL_SUM"
   if out=$("$TOOL" ready -pr "$pr" 2>&1); then
     dset "$deck" status ready
     mark "$(dget "$deck" uid)" "$deck"
-    notify "decktome: PR #$pr is ready to merge" "$(summary_text "$run")
+    notify "decktome: PR #$pr is ready to merge" "$(summary_text "$deck")
 ${out#ready }"
     say "PR #$pr is ready, and the owner has the notice"
     return 0
@@ -484,7 +495,7 @@ ${out#ready }"
 }
 
 evaluate() { # uid deck kind who
-  local uid=$1 deck=$2 kind=$3 who=$4 run=$HOME_DIR/$2 template n status
+  local uid=$1 deck=$2 kind=$3 who=$4 run=$HOME_DIR/$2 logs=$RUNS/$2 template n status
   if ! prepare "$uid" "$deck" "$kind" "$who"; then
     n=$(( $(dnum "$deck" attempts) + 1 ))
     dset "$deck" status failed attempts "$n"
@@ -493,34 +504,34 @@ evaluate() { # uid deck kind who
   fi
   template=$PROMPTS/eval-prompt.md
   if [ "$(dget "$deck" status)" = checkpoint ]; then template=$PROMPTS/continue-prompt.md; fi
-  render "$template" "$deck" "$run" > "$run/prompt.md"
-  rm -f "$run/bundle/result.json"
+  render "$template" "$deck" "$run" > "$logs/prompt.md"
+  runfs rm "$HOME_DIR" "$deck" bundle/result.json
   n=$(( $(dnum "$deck" sessions) + 1 ))
   dset "$deck" sessions "$n" status running
-  run_claude "$deck" "$run" "$run/prompt.md" "$run/session-$n.log"
+  run_claude "$deck" "$run" "$logs/prompt.md" "$logs/session-$n.log"
   status=$?
-  say "deck $deck: the session ended with exit $status and result $(result "$run" status)"
+  say "deck $deck: the session ended with exit $status and result $(result "$deck" status)"
   finish "$deck" "$run"
 }
 
 restack() { # deck target -> rebase the pull request of deck onto target
-  local deck=$1 target=$2 run=$HOME_DIR/$1 n
+  local deck=$1 target=$2 run=$HOME_DIR/$1 logs=$RUNS/$1 n
   dset "$deck" restack_target "$target"
-  jq --arg t "$target" --arg pr "$(dget "$deck" pr)" '.restack_target = $t | .pr = $pr' "$run/bundle/context.json" > "$run/bundle/context.tmp" \
-    && mv "$run/bundle/context.tmp" "$run/bundle/context.json"
-  render "$PROMPTS/restack-prompt.md" "$deck" "$run" > "$run/restack-prompt.md"
-  rm -f "$run/bundle/result.json"
+  jq --arg t "$target" --arg pr "$(dget "$deck" pr)" '.restack_target = $t | .pr = $pr' "$logs/context.json" > "$logs/context.tmp" \
+    && mv "$logs/context.tmp" "$logs/context.json"
+  render "$PROMPTS/restack-prompt.md" "$deck" "$run" > "$logs/restack-prompt.md"
+  runfs rm "$HOME_DIR" "$deck" bundle/result.json
   n=$(( $(dnum "$deck" sessions) + 1 ))
   dset "$deck" sessions "$n" status restacking
-  run_claude "$deck" "$run" "$run/restack-prompt.md" "$run/session-$n.log"
-  if [ "$(result "$run" status)" = ready ]; then
+  run_claude "$deck" "$run" "$logs/restack-prompt.md" "$logs/session-$n.log"
+  if [ "$(result "$deck" status)" = ready ]; then
     local parent=""
     if [ "$target" != main ]; then parent=$(dget "$deck" parent_pr); fi
     dset "$deck" status waiting waiting_since "$(date +%s)" late_notice "" base "$target" parent_pr "$parent"
     check_ready "$deck"
   else
     dset "$deck" status blocked
-    notify "decktome live eval: the restack of PR #$(dget "$deck" pr) stopped" "$(result "$run" reason)"
+    notify "decktome live eval: the restack of PR #$(dget "$deck" pr) stopped" "$(result "$deck" reason)"
   fi
 }
 
@@ -565,18 +576,18 @@ waiting_pass() {
   done
 }
 
-cleanup_pass() { # remove the clone of a merged or closed pull request
+cleanup_pass() { # remove the clone of a merged or closed pull request, once
   local f deck pr state
   for f in "$STATE"/decks/*.json; do
     [ -f "$f" ] || continue
     deck=$(basename "$f" .json)
     pr=$(dget "$deck" pr)
-    if [ -z "$pr" ] || [ ! -d "$HOME_DIR/$deck/repo" ]; then continue; fi
+    if [ -z "$pr" ] || [ -n "$(dget "$deck" cleaned)" ]; then continue; fi
     state=$(gh pr view "$pr" --json state --jq .state 2>/dev/null)
     case "$state" in
       MERGED|CLOSED)
-        rm -rf "$HOME_DIR/$deck/repo" && say "removed the clone of PR #$pr ($state)"
-        dset "$deck" status "$(echo "$state" | tr '[:upper:]' '[:lower:]')"
+        runfs rm "$HOME_DIR" "$deck" repo && say "removed the clone of PR #$pr ($state)"
+        dset "$deck" status "$(echo "$state" | tr '[:upper:]' '[:lower:]')" cleaned yes
         ;;
     esac
   done
