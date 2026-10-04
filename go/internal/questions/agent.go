@@ -1443,24 +1443,38 @@ func ruleRefuseOffer(a *Agent, st *State, in turnWords) {
 		"session", st.SessionID)
 }
 
-// ruleInferPower infers the tournament step from a competitive request.
-// The slot ends with a value whatever the user answers, which D-90
-// requires. Commander keeps its bracket question, because bracket 4 and
-// bracket 5 are too far apart to infer (D-107).
+// ruleInferPower fills the top power step of the format from a request
+// for the strongest deck. The slot ends with a value whatever the user
+// answers, which D-90 requires.
+//
+// A 60-card format takes the tournament step from each competitive sign
+// (D-216). Commander takes bracket 5 from a superlative alone, such as
+// "best possible deck" (D-1153, D-1154). "Competitive" and "serious" still ask
+// the bracket there, because they name no bracket.
 //
 // A step the user named reaches the slot through the classify call, so
 // no inference runs (D-209). The agent states the step and asks nothing:
-// a user who asked for the strongest deck has given the answer (D-216).
+// a user who asked for the strongest deck has given the answer. The plan
+// reads the step from the slot.
 func ruleInferPower(a *Agent, st *State, _ turnWords) {
-	if !st.Ctx.PowerCompetitive || !sixtyCard(st.Ctx.Format) || st.Slots.GetPower() != nil {
+	if st.Slots.GetPower() != nil {
 		return
 	}
-	st.Slots.Power = &mtgv1.PowerLevel{
-		Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT},
+	switch {
+	case st.Ctx.PowerCompetitive && sixtyCard(st.Ctx.Format):
+		st.Slots.Power = &mtgv1.PowerLevel{
+			Level: &mtgv1.PowerLevel_SixtyStep{SixtyStep: mtgv1.SixtyStep_SIXTY_STEP_TOURNAMENT},
+		}
+		a.log.Info("the agent inferred the tournament step from a competitive request",
+			"session", st.SessionID)
+	case st.Ctx.PowerStrongest && st.Ctx.Format == mtgv1.FormatId_FORMAT_ID_COMMANDER:
+		st.Slots.Power = &mtgv1.PowerLevel{Level: &mtgv1.PowerLevel_Bracket{Bracket: cedhBracket}}
+		a.log.Info("the agent inferred bracket 5 from a request for the strongest deck",
+			"session", st.SessionID)
+	default:
+		return
 	}
 	st.Close("power")
-	a.log.Info("the agent inferred the tournament step from a competitive request",
-		"session", st.SessionID)
 }
 
 // lockedByWords names the card the user placed in the 99, or an empty
@@ -2300,6 +2314,7 @@ func (a *Agent) applyFacts(st *State, out classifyOut, message string) {
 	// the fact is sticky, so one read per message is enough (D-215,
 	// extends D-199).
 	st.Ctx.PowerCompetitive = st.Ctx.PowerCompetitive || competitiveRequest(message)
+	st.Ctx.PowerStrongest = st.Ctx.PowerStrongest || strongestRequest(message)
 	// The fact is not sticky. A user who asks for a Magic deck after the
 	// agent declines is back in scope. A user who asks for another game
 	// again hears the sentence again, so the key reopens (D-99).

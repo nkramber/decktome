@@ -23,6 +23,10 @@ vi.mock("./use-stick-to-bottom", async (importOriginal) => {
   return { ...real, useStickToBottom: vi.fn(real.useStickToBottom) };
 });
 vi.mock("firebase/auth");
+// Most tests read the session id line, so the reader is the admin unless
+// a test says not (D-1148).
+const admin = vi.hoisted(() => ({ on: true }));
+vi.mock("../../app/components/use-admin", () => ({ useAdmin: () => admin.on }));
 
 const chat = vi.fn();
 const getSession = vi.fn();
@@ -75,6 +79,7 @@ const deck = {
 };
 
 beforeEach(() => {
+  admin.on = true;
   state.user = fakeUser;
   localStorage.clear();
   useAppStore.setState({ collectionId: "", sessionId: "", poolMode: "any" });
@@ -91,6 +96,29 @@ beforeEach(() => {
 });
 
 describe("SessionPage", () => {
+  it("hides the session id and the spend from a reader who is not the admin", async () => {
+    admin.on = false;
+    chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("slots", { poolRule: PoolRule.ANY_CARD }), ev("usage", { calls: 1, inputTokens: 100n, outputTokens: 20n, costUsd: 0.001, priced: true })]));
+    const { router } = await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "Build me an elf deck");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(await screen.findByRole("group", { name: "Question: Which format?" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/session/s1");
+    expect(screen.getByTestId("pool-mode")).toHaveTextContent("Pool: any card");
+    expect(screen.queryByTestId("session-id")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("usage")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Session id|Session spend/)).not.toBeInTheDocument();
+  });
+
+  it("hides the session id from a reader while a stored session loads", async () => {
+    admin.on = false;
+    getSession.mockReturnValue(new Promise(() => {}));
+    await renderAt("/session/s1");
+    expect(await screen.findByText("Loading the session...")).toBeInTheDocument();
+    expect(screen.queryByTestId("session-id")).not.toBeInTheDocument();
+  });
+
   it("sends the first message, takes the session id, and shows the question with its options", async () => {
     chat.mockReturnValue(events([ev("sessionStarted", "s1"), ev("question", formatQuestion), ev("slots", { poolRule: PoolRule.ANY_CARD }), ev("usage", { calls: 1, inputTokens: 100n, outputTokens: 20n, costUsd: 0.001, priced: true })]));
     const { router } = await renderAt("/session/new");

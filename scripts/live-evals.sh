@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # The live evals (D-1132 to D-1145). `./start-live-evals` runs this file.
 #
-# It prints a summary of every deck that no live eval read. Then it
-# polls every five minutes. The owner gets a Pushover notice for each new
-# deck and each revision (D-1143). For each one, the script starts one
-# headless Claude Code session in its own clone. That session reads the
-# deck against the prompt and the answers of the reader. It chooses the
+# It prints a summary of every deck and every thumbs down that no live
+# eval read. Then it polls every five minutes. The owner gets a Pushover
+# notice for each new deck, each revision, and each thumbs down (D-1143,
+# D-1149). For each one, the script starts one headless Claude Code
+# session in its own clone. That session reads the deck against the
+# prompt and the answers of the reader, and the verdict first. It chooses the
 # most important new fault, and the owner gets a notice. It replays the
 # chat of the reader on the base code and on its fix, and it tries the
 # fix at most three times (D-1144). Then it takes one pull request
@@ -595,7 +596,7 @@ cleanup_pass() { # remove the clone of a merged or closed pull request, once
   done
 }
 
-announce_pass() { # one notice for each new deck and each revision (D-1143)
+announce_pass() { # one notice for each new deck, revision, and thumbs down (D-1143, D-1149)
   local line deck kind who
   while IFS= read -r line; do
     [ -n "$line" ] || continue
@@ -604,6 +605,10 @@ announce_pass() { # one notice for each new deck and each revision (D-1143)
     kind=$(jq -r .kind <<<"$line")
     who=$(jq -r .who <<<"$line")
     dset "$deck" announced "$(date +%s)"
+    if [ "$kind" = thumbs-down ]; then
+      notify "decktome: a thumbs down of a $who account" "On a $(jq -r .target <<<"$line"). Item $deck. A live eval reads it next."
+      continue
+    fi
     notify "decktome: a new $kind of a $who account" "Deck $deck. A live eval reads it next."
   done < "$STATE/pending.jsonl"
 }

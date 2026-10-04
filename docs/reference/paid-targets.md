@@ -89,7 +89,7 @@ The ledger charges the judge of the triage first. Each gate then gets the room l
 
 With `--here`, the cycle commits on the branch of the session and pushes nothing (D-877). `scripts/feedback-review.sh` then reads Gitar one time, runs `docs/tools/codex_review.py`, and lets the fixer answer each finding (D-878). It refuses a changed tree, and it stops when the branch moves (D-923). The cycle never merges. Ask the owner before every run. The first live cycle, on 2026-09-24, cost $0.0057 of triage and $0.2135 of two bracket gate runs of one case (D-880).
 
-`./start-live-evals` runs `scripts/live-evals.sh`, the live evals (D-1132 to D-1145). It polls every five minutes for a new deck or a revision. For each one, it starts one headless Claude Code session with `--permission-mode bypassPermissions`. Each session spends the Claude plan and the Codex plan of the owner. It also spends at most $3.00 of provider money on paid targets (D-1134).
+`./start-live-evals` runs `scripts/live-evals.sh`, the live evals (D-1132 to D-1145). It polls every five minutes for a new deck, a revision, or a thumbs down (D-1149). For each one, it starts one headless Claude Code session with `--permission-mode bypassPermissions`. Each session spends the Claude plan and the Codex plan of the owner. It also spends at most $3.00 of provider money on paid targets (D-1134).
 
 The cap is the rule of the prompt, and `spend.jsonl` of the bundle records each run. No provider key holds the cap. The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
 

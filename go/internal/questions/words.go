@@ -716,16 +716,29 @@ func offeredPick(message string) (int, bool) {
 // competitiveSigns ask for a strong deck without naming a power step.
 // The list carries the paraphrases the classifier used to catch, because
 // the fact now needs the user's own words behind it (D-215).
-var competitiveSigns = []string{
-	"strongest", "competitive", "serious", "best deck", "win the event",
-	"money is no object", "whatever is winning", "most powerful",
-	"as strong as possible", "tier one", "top tier", "tournament",
+var competitiveSigns = append([]string{
+	"competitive", "serious", "win the event",
+	"money is no object", "whatever is winning", "tournament",
+}, strongestSigns...)
+
+// strongestSigns ask for the strongest deck with a superlative. They
+// fill bracket 5 in Commander, and the other competitive signs do not
+// (D-1153, D-1154). "Competitive Commander" is three brackets from cEDH, and
+// "money is no object" answers the budget (D-168). "Best possible" is
+// the phrase of session wBrsxouAndrjDXEJ8dDw, which "best deck" missed.
+var strongestSigns = []string{
+	"strongest", "best deck", "best possible", "most powerful",
+	"as strong as possible", "tier one", "top tier",
 }
 
 // competitiveRequest reports whether the user asked for a strong deck.
-// The agent infers the tournament step from it in a 60-card format, and
-// asks the user to confirm (D-107).
+// The agent fills the tournament step from it in a 60-card format
+// (D-216).
 func competitiveRequest(text string) bool { return anyPhrase(text, competitiveSigns) }
+
+// strongestRequest reports whether the user asked for the strongest
+// deck. The agent fills bracket 5 from it in Commander (D-1153).
+func strongestRequest(text string) bool { return anyPhrase(text, strongestSigns) }
 
 // occasionSigns name a place or a happening, and not a power level. A
 // user who builds "for an event" has said nothing about how strong the

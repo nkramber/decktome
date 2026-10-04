@@ -80,9 +80,12 @@ type Context struct {
 	NamedCard        bool   `json:"named_card"`
 	Suggested        bool   `json:"suggested"`
 	PowerCompetitive bool   `json:"power_competitive"`
-	BuyList          bool   `json:"buy_list"`
-	BudgetAmbiguous  bool   `json:"budget_ambiguous"`
-	HouseFormat      bool   `json:"house_format"`
+	// PowerStrongest says the user asked for the strongest deck with a
+	// superlative. It fills bracket 5 in Commander (D-1153).
+	PowerStrongest  bool `json:"power_strongest"`
+	BuyList         bool `json:"buy_list"`
+	BudgetAmbiguous bool `json:"budget_ambiguous"`
+	HouseFormat     bool `json:"house_format"`
 	// AfterBuild says the session holds a built deck. agentsvc and
 	// cmd/questions-gate set it. No row reads it since PR-9 left the MVP
 	// (D-256), and it stays for the callers that set it.

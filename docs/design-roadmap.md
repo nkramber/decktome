@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-04 correction pass 263 (PR-126, D-1147 to D-1154): the owner signed up through a new proof link. iOS Safari now goes on to the app at once. The session id and the spend show to the admin alone, and each thumbs down starts a live eval. The commander offer reads the depth of the collection and a color spread, and "best possible" fills bracket 5 in Commander. Changes: PR-116, PR-125, PR-126, sequencing step 121.
 2026-10-04 correction pass 262 (PR-125, D-1132 to D-1146): the owner asked to automate the read of each new deck. `./start-live-evals` reads each new deck and each revision in a headless session in a Seatbelt profile. The session proves each fix on a replay of the chat, and the owner merges each fix. Changes: PR-125, sequencing step 120.
 2026-10-04 correction pass 261 (PR-124, F-212 to F-223, D-1116 to D-1131): the first outside user built a deck on 2026-10-04, and the owner read the traffic. The owner put each finding of that session into one pull request (D-1125). Changes: F-212 to F-223, PR-124, sequencing step 119.
 
@@ -3134,7 +3135,7 @@ The approval email needs the Resend account, its DNS records at GoDaddy, and the
 - **The approval email (D-1080).** The footer line is gone. Each email of the API carries an HTML part, and each URL of its text is a real link.
 - **The proof email (F-208, D-1081).** `ProofService.SendLink` sends the text of the owner from `beta@mail.decktome.com`. The link is `https://decktome.com/v/` and a random code of 10 characters. `proof_links` keeps a hash of the code, one link for each account, and a cooldown of one minute.
 - **The open of the link (D-1082).** `ProofService.OpenLink` needs no sign-in, and a limit for each client address bounds it. The link works one time, for 3 days. The API reads the invite list and the closed mark, proves the email, and answers a custom token. The page `/v/:code` signs in with the token.
-- **A phone (D-1083).** Android opens the link in the installed app. iOS opens it in Safari. The page then tells the user to open the app from the home screen. The screen that asks for the proof reads the account again each time it becomes visible.
+- **A phone (D-1083, D-1147).** Android opens the link in the installed app. iOS opens it in Safari, and Safari goes on to the app at once. The screen that asks for the proof reads the account again each time it becomes visible.
 - **A fallback.** With no Resend key, or with a failed send, the web app sends the email of Firebase. A token that the API can not sign leaves the email proved, and the page asks for a sign-in.
 
 Gate:
@@ -3337,6 +3338,7 @@ The live check after the deploy: run `make user-case`, and sign in through a new
 - **The mark (D-1132).** Each deck holds `has_been_evaluated` and `evaluated_at`. Put writes false, and each rewrite keeps the mark through `keepStored`.
 - **The tool (D-1132, D-1135).** `go/cmd/live-evals` lists each unread deck, prints a summary, writes a bundle, marks a deck, checks a pull request, and sends a notice. It calls no model.
 - **The loop (D-1132, D-1138).** `./start-live-evals` runs `scripts/live-evals.sh`. It polls every five minutes and starts one session at a time in its own clone.
+- **The thumbs down (D-1149).** PR-126 adds each thumbs down to the queue, as a new deck.
 - **The first run (D-1133).** It marks each waiting deck read after the summary, and it starts no session for it.
 - **The session (D-1134, D-1136, D-1142).** It reads a local bundle with no cloud credentials. It can spend $3.00 on paid targets, and the live-test lanes stay closed to it. The provider keys sit in the `.env` of its clone alone.
 - **The sandbox (D-1141, D-1145).** The pinned Claude Code 2.1.288 runs under `scripts/live-evals/sandbox.sb`. The session reads and writes its run folder, its caches, and the card store alone, and it uses its own logins.
@@ -3357,6 +3359,36 @@ Gate:
 - `./start-live-evals --dry` prints the summary of the six decks of 2026-10-03, and it marks nothing.
 
 > *In plain English:* each time someone builds or revises a deck, a robot reads it against what they asked. It fixes the worst new problem, and the owner gets a ping when the fix is ready.
+
+**PR-126: Five owner changes after the proof link (D-1147 to D-1154).** ✅ merged as #284. The mark comes before any review (D-822). On 2026-10-04 the owner signed up through a new proof link. The owner then asked for five changes in one pull request (D-1150).
+
+- **The page (D-1147).** The proof page has no iOS state. After the click, each browser goes on to the app, iOS Safari too.
+- **The spend (D-1148).** `go/internal/spendmask` clears each `Usage` message of an agent or deck answer for a caller with no admin claim. It clears a copy, so storage keeps the spend.
+- **The chat page (D-1148).** The page shows the session id and the spend to the admin alone. The pool line stays for each user.
+- **The thumbs down (D-1149).** `go/internal/feedback` holds the eval mark of a verdict and the queue of the down verdicts. `go/cmd/live-evals` adds each one to `pending` and `summary`, and it writes its bundle and its mark.
+- **The code.** `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp`, because no other file reads them.
+- **The commander offer (D-1151).** Session `wBrsxouAndrjDXEJ8dDw` asked for a Marvel deck of owned cards, and both offers held mono-colored names alone.
+- **The depth.** With no theme and an owned pool rule, `go/internal/candidates` ranks the fill half on popularity. The other half is the share of the owned cards that the identity can use.
+- **The spread.** With no colors, `go/internal/questions` reads the whole ranked pool, and each offer of three holds a mono-colored and a multicolor name.
+- **The power of "best" (D-1153, D-1154).** In Commander, a superlative such as "best possible deck" fills bracket 5 with no question, and the plan states it. "Competitive" still asks the bracket.
+
+Gate:
+- The page tests prove that an iPhone browser goes on to the app, and that no text names the home screen.
+- The page tests prove that the screen "Your email is verified" has no axe violations.
+- The `spendmask` tests prove that a reader gets no spend in a unary answer, a list, a deck, or a stream.
+- The same tests prove that the admin gets each spend.
+- The same tests prove that the message of the service keeps its spend, and that a stream skips an event of the spend alone.
+- The chat tests prove that a reader sees the pool line, and no session id and no spend.
+- The emulator test proves that a down verdict waits until its mark, and that an up verdict never waits.
+- The tool tests prove that the key of a verdict reads back.
+- The tool tests prove that a bundle with no deck holds no verdict of another reader.
+- The candidate tests prove that a deep two-color legend leads an owned pool, and that a basic land adds no depth.
+- The offer tests prove that each offer of three holds both kinds, on test cards and on the card snapshot.
+- A local replay of the Marvel session with its own collection offered two multicolor names and one mono-colored name three times.
+- The power tests prove that "best possible deck" fills bracket 5 in Commander, also on the turn after the format.
+- The same tests prove that "competitive Commander" fills no bracket, and that a named bracket wins.
+
+> *In plain English:* an iPhone opens the app at once after the email link. Only the owner sees the session id and the cost. Each thumbs down now gets the same robot review as a new deck.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
@@ -3775,6 +3807,7 @@ Gate: the good golden decks of the rules tests take a synthetic ban of each card
 118. **PR-123** a deck import from a link (D-1100 to D-1108, D-1113 to D-1115).
 119. **PR-124** the findings of the first outside user (F-212 to F-223, D-1116 to D-1131).
 120. **PR-125** the live evals of each new deck and revision (D-1132 to D-1146).
+121. **PR-126** five owner changes after the proof link (D-1147 to D-1154).
 
 ## 9. Open questions
 

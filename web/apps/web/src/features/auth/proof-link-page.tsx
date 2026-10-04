@@ -5,7 +5,7 @@ import { useNavigate, useParams } from "react-router";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { errorMessage } from "../../lib/errors";
-import { iosBrowser, openProofLink } from "../../lib/proof";
+import { openProofLink } from "../../lib/proof";
 
 // failure reads the sentence of a refusal. The API writes each sentence
 // for the user (D-1082).
@@ -17,7 +17,6 @@ function failure(err: unknown): string {
 type State =
   | { kind: "ready" }
   | { kind: "opening" }
-  | { kind: "ios" }
   | { kind: "proved" }
   | { kind: "already-proved" }
   | { kind: "failed"; message: string };
@@ -26,10 +25,8 @@ type State =
 // (D-1081). The link works one time, so the page uses it on a click
 // alone, and a mail scanner that loads the page leaves it unused
 // (D-1119). The API proves the email, and this browser signs in (D-1082).
-// A desktop browser and an installed Android app go on to the app at
-// once. iOS opens the link in Safari and never in the installed app, so
-// Safari tells the user where to go (D-1083). The installed app sees the
-// proof when it becomes visible again.
+// Each browser goes on to the app at once, iOS Safari too (D-1147). The
+// installed app sees the proof when it becomes visible again (D-1083).
 export function ProofLinkPage() {
   const { code = "" } = useParams();
   const navigate = useNavigate();
@@ -51,7 +48,6 @@ export function ProofLinkPage() {
         if (!live.current) return;
         if (outcome === "already-proved") setState({ kind: "already-proved" });
         else if (outcome === "proved") setState({ kind: "proved" });
-        else if (iosBrowser()) setState({ kind: "ios" });
         else void navigate("/", { replace: true });
       },
       (err: unknown) => live.current && setState({ kind: "failed", message: failure(err) }),
@@ -80,14 +76,6 @@ export function ProofLinkPage() {
                   Verifying your email…
                 </p>
               )}
-            </>
-          )}
-          {state.kind === "ios" && (
-            <>
-              <p role="status">Your email is verified. Open Deck Tome from your home screen to continue.</p>
-              <Button variant="outline" onClick={() => void navigate("/", { replace: true })}>
-                Continue in the browser
-              </Button>
             </>
           )}
           {state.kind === "proved" && (

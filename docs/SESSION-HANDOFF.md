@@ -6,29 +6,39 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04c)
+## RESUME HERE (2026-10-04d)
 
-**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1146).** The pull request is #282.
+**Branch `fix/proof-link-ios-direct`: PR-126 is #284, five changes (D-1147 to D-1154).** It is pending the auto-merge. The owner put them in one pull request (D-1150).
 
 Author provider: Claude Code
 
-**The base.** PR-124 merged as #283, so the branch sits on `main` at `8bd442f` (D-1140).
+**The base.** PR-125 merged as #282, so the branch sits on `main` at `50878de`.
+
+**The checks of PR-124 passed on the deploy of `50878de` (D-1117, D-1119).**
+
+- The `deploy-api` build of `50878de` ended at 14:50 UTC with SUCCESS. The revision `mtg-api-00120-77r` serves it, and `/readyz` names it.
+- PR-125 changed no web path, so `/version.json` names `8bd442f`, the merge of PR-124.
+- The owner signed up through a new proof link at 15:28 UTC. The log holds the refusal `email-unverified`, then `SendLink` with code ok.
+- Each `rpc` line holds a uid, and no log line since 06:25 UTC holds an email.
 
 **The code.**
 
-- `go/internal/decks` holds the mark `has_been_evaluated`, and `go/cmd/live-evals` serves the loop. `replay-input` writes the inputs of a replay (D-1144).
-- `go/cmd/chat-probe` takes `-messages-json` and `-collection-json`. The replay reads the last line of `-decks-out` (D-1146).
-- `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
+- The proof page has no iOS state, and `web/apps/web/src/lib/proof.ts` loses `iosBrowser` and `standaloneApp` (D-1147).
+- `go/internal/spendmask` clears the spend of each answer for a caller with no admin claim. The chat page shows the session id and the spend to the admin alone (D-1148).
+- `go/cmd/live-evals` puts each down verdict in the queue with the key `v-` and its id (D-1149).
+- With no theme and an owned pool rule, the commander fill ranks half on the depth of the collection. With no colors, each offer of three holds a mono-colored and a multicolor name (D-1151).
+- In Commander, a superlative such as "best possible deck" fills bracket 5 with no question. "Competitive" still asks the bracket (D-1153, D-1154).
 
-**The checks.** `make verify` passed on the rebase onto `c712e84`, with one deck flag. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. It also proves that `clear` removes a folder that an interrupted clone left.
+**The checks.** `make verify` passed on `b41a32c` with Node 22 on the PATH. A local replay of session `wBrsxouAndrjDXEJ8dDw` offered two multicolor names and one mono-colored name three times.
 
-**The review.** The Gitar review of `ef3db2b` passed with all four threads resolved. The Codex review of effective head `6d65fd5` is Ready for owner merge with no findings. The local `make verify` passed.
+**The review.** Gitar approved `b6d76b9` with no finding, and the CI note has its answer. Codex found no defect at `b6d76b90f8e91425b2b863ee17b6603961de9681`. Local verify and fresh CI passed after the hand-off size fix.
 
-**The open work.** Every check passed, and the pull request waits for the owner, then the auto-merge (D-828).
+After the deploy, four checks follow:
 
-1. Ask the owner to confirm the merge (D-834). Then turn on the auto-merge.
-2. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
-3. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
+- The owner opens a new proof link in iOS Safari, and the app opens with no screen between.
+- The test account sees no session id and no spend, and the owner sees both.
+- `./start-live-evals --dry` lists the five old thumbs down, and marks nothing.
+- A Commander request for the "best possible deck" gets no bracket question.
 
 ## How to resume
 
@@ -102,8 +112,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **The checks of PR-124** (D-1126). It merged as #283. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log. The owner tells the user about the fixes.
-0. **PR-125: the live evals** (D-1132 to D-1146). The resume section holds the open work.
+0. **PR-126: the proof page, the spend, the thumbs down, the offer, and the power of "best"** (D-1147 to D-1154). The resume section holds the open work.
+0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. Then the owner runs `./start-live-evals`, and the first run marks the six decks of 2026-10-03 read.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -132,22 +142,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-03i: a deck import from a link, PR-123
-
-**The owner asked for a workshop of an Archidekt and a Moxfield link.** The session read both sites (`docs/reference/deck-links-2026-10-03.md`), and Moxfield answered 403 again.
-
-**The owner asked for a headless browser for Moxfield.** The session declined (D-502), and the owner chose the steps (D-1102).
-
-**The owner renamed the item two times (D-1108, D-1115).** D-1106, D-1107, D-1113, and D-1114 answer the reviews and the gate.
-
-### 2026-10-04b: the findings of the first outside user, PR-124
-
-**The owner watched the first outside user and listed nine findings.** The session read the session and both decks, and replayed the shortlist for free.
-
-**The owner overrode the one concern of the skill (D-1125).** The owner answered twelve questions, and five workers changed the code by package.
-
-**Two gates failed on one item each.** A probe proved the question miss a flake. The owner chose a fix of the summary judge and a rejudge (D-1130).
-
 ### 2026-10-04c: the live evals, PR-125
 
 **The owner asked the session to watch the traffic of other users.** The logs name no user, so the session read the record of D-638 each minute. The first outside user built two decks, and the session found nine faults by hand.
@@ -156,6 +150,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for a rebase onto PR-124, and chose D-1140 to D-1145.** Gitar found a path from the session to the gcloud config, so a Seatbelt profile now holds the session.
 
+### 2026-10-04d: the checks of PR-124, and PR-126
+
+**The deploy of `50878de` and the API log passed.** The API runs the merge of PR-125, and each `rpc` line holds a uid and no email.
+
+**The owner signed up through a new proof link, and that check passed.** The owner then asked to remove the line about the home screen.
+
+**The owner chose no screen over a short screen (D-1147).** Then the owner added the spend change, the thumbs-down eval, the commander offer, and the power of "best" (D-1148 to D-1154). The owner narrowed the power words to the superlatives (D-1154).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04b, the records of 2026-08-31 to 2026-10-03h, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04c, the records of 2026-08-31 to 2026-10-04b, and 104 more sections, word for word. Read it for the detail behind a decision.

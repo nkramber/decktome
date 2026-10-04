@@ -35,20 +35,3 @@ export async function openProofLink(code: string): Promise<ProofOutcome> {
   await signInWithToken(res.customToken);
   return "signed-in";
 }
-
-// standaloneApp is true inside an installed app, where the link of an
-// email never opens on iOS (D-1083).
-export function standaloneApp(): boolean {
-  const nav = navigator as Navigator & { standalone?: boolean };
-  return nav.standalone === true || (typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches);
-}
-
-// iosBrowser is true in a browser of an iPhone or an iPad. iOS opens the
-// link of an email in the browser, and the installed app keeps its own
-// sign-in (D-1083). An iPad can name itself a Mac, so the touch points
-// tell the two apart.
-export function iosBrowser(): boolean {
-  const ua = navigator.userAgent;
-  const ipad = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
-  return (/iPhone|iPad|iPod/.test(ua) || ipad) && !standaloneApp();
-}

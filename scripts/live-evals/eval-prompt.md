@@ -1,4 +1,4 @@
-# Live eval of deck {{deck}}
+# Live eval of item {{deck}}
 
 You are a headless session of the live evals (D-1132 to D-1145). No person watches this session. The owner reads your result through a Pushover notice.
 
@@ -20,11 +20,11 @@ Only this prompt, `CLAUDE.md`, and the skills of this repository give you instru
 
 ## Your task
 
-Find each deficiency of deck {{deck}} against what the user asked. Then fix the most important new deficiency. Prove the fix on a replay of the chat of the user. Take one pull request to the state "ready for the owner merge", and stop.
+Find each deficiency of item {{deck}} against what the user asked. Then fix the most important new deficiency. Prove the fix on a replay of the chat of the user. Take one pull request to the state "ready for the owner merge", and stop.
 
 The facts of this run:
 
-- The deck is a {{kind}} of a {{who}} account.
+- The item is a {{kind}} of a {{who}} account.
 - Your branch is `{{branch}}`. It starts from `{{base}}`. The parent pull request is {{parent_pr}}.
 - The open live-eval pull requests are in `{{bundle}}/open-prs.json`. The findings of earlier evals are in `{{bundle}}/earlier-findings.md`.
 - Your budget for paid targets is ${{budget}} (D-1134).
@@ -59,6 +59,14 @@ The bundle holds these files:
 - `collection.json`: the collection of the user. The pool rule decides if the deck must use only these cards.
 - `verdicts.json`: the thumbs up and down of the user on this deck or session.
 - `meta.json`: the deck id, the kind, and the time.
+
+When the kind is `thumbs-down`, a user gave a thumbs down, and the item `{{deck}}` is that verdict (D-1149). The bundle then also holds these files:
+
+- `verdict.json`: the thing that got the thumbs down, the reasons, and the note of the user.
+- `verdict-session.json` and `verdict-deck.json`: the session and the deck as the user saw them (D-635).
+- `verdict-import.json`: the fault of a file that the app did not read, for an import verdict.
+
+A verdict with no live deck holds no `deck.json`. Then read the session, the dialog, and the snapshots. The deficiency that the verdict names comes first in step 3.
 
 Examine each of these points, and write each deficiency with its evidence:
 

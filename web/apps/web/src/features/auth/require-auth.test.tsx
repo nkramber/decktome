@@ -91,10 +91,12 @@ describe("route guard", () => {
     expect(await screen.findByText("network down")).toBeInTheDocument();
   });
 
-  it("shows the stored session's id while it loads, and signs out from the account menu", async () => {
+  // A reader who is not the admin sees no session id (D-1148).
+  it("loads a stored session with no id line, and signs out from the account menu", async () => {
     state.user = fakeUser;
     await renderAt("/session/abc123");
-    expect(await screen.findByTestId("session-id")).toHaveTextContent("Session id: abc123");
+    expect(await screen.findByTestId("pool-mode")).toBeInTheDocument();
+    expect(screen.queryByTestId("session-id")).not.toBeInTheDocument();
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Account menu" }));
     await user.click(await screen.findByRole("menuitem", { name: "Sign out" }));

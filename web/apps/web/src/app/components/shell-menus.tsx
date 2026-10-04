@@ -3,9 +3,8 @@ import { type ReactNode, useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "../../components/ui/dropdown-menu";
-import { useAuth } from "../../features/auth/auth-context";
+import { useAdmin } from "./use-admin";
 import { disablePush, enablePush, pushConfigured, type PushState, pushState } from "../../features/push/push";
-import { isAdmin } from "../../lib/firebase";
 import { notify } from "./notify";
 
 // A menu of the shell mounts closed once its chunk lands, and the caller
@@ -59,16 +58,8 @@ export function AccountMenuContent({
 // AdminMenuItem opens the admin screen. It shows for a token with the
 // admin claim alone (D-1076), and the API checks the claim again.
 function AdminMenuItem() {
-  const { user } = useAuth();
   const navigate = useNavigate();
-  const [admin, setAdmin] = useState(false);
-  useEffect(() => {
-    let live = true;
-    void isAdmin().then((yes) => live && setAdmin(yes));
-    return () => {
-      live = false;
-    };
-  }, [user]);
+  const admin = useAdmin();
   if (!admin) return null;
   return (
     <DropdownMenuItem onSelect={() => void navigate("/admin")}>

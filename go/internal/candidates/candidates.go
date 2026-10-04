@@ -1374,8 +1374,9 @@ func (b *Builder) CommanderPool(idx *cards.Index, req Request) ([]Candidate, err
 const CommanderPoolFloor = 12
 
 // unthemed ranks the commanders that fit the format and the colors but
-// carry no theme signal, best first on popularity (D-367). They go after
-// every themed commander, so the theme still leads.
+// carry no theme signal, best first on popularity (D-367), and on the
+// depth of the collection under an owned pool rule (D-1151). They go
+// after every themed commander, so the theme still leads.
 func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Color]bool,
 	setCodes map[string]bool, mode mtgv1.PoolRule, maxRank float64, have []Candidate,
 ) []Candidate {
@@ -1386,6 +1387,14 @@ func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Col
 	// The fill drops an excluded commander as the themed half does (D-408).
 	for _, id := range req.ExcludeOracleIDs {
 		seen[id] = true
+	}
+	// An owned pool rule ranks the fill half on the depth of the
+	// collection and half on popularity (D-1151). Popularity alone offered
+	// mono-colored legends that could use half the owned cards a
+	// two-color legend could.
+	var depth func([]mtgv1.Color) float64
+	if mode != mtgv1.PoolRule_POOL_RULE_ANY_CARD && req.Owned != nil {
+		depth = collectionDepth(idx, req, setCodes)
 	}
 	var out []Candidate
 	for _, c := range idx.All() {
@@ -1411,14 +1420,77 @@ func (b *Builder) unthemed(idx *cards.Index, req Request, colorSet map[mtgv1.Col
 		if mode == mtgv1.PoolRule_POOL_RULE_OWNED_ONLY && owned == 0 {
 			continue
 		}
+		score := popularity(c, maxRank)
+		if depth != nil {
+			score = depth(c.GetColorIdentity())*0.5 + score*0.5
+		}
 		out = append(out, Candidate{
 			Card: c, Role: mtgv1.CardRole_CARD_ROLE_THREAT,
-			Score: popularity(c, maxRank),
+			Score: score,
 			Owned: owned, Signals: []string{"no theme signal"},
 		})
 	}
 	sortCandidates(out)
 	return out
+}
+
+// collectionDepth gives the share of the owned cards in scope that a
+// commander of an identity can use (D-1151). The cards in scope are the
+// owned nonbasic cards legal in Commander, inside the named sets, and
+// outside an excluded precon. Each card counts once, because the deck
+// holds one copy. With no card in scope, every identity has depth zero.
+func collectionDepth(idx *cards.Index, req Request, setCodes map[string]bool) func([]mtgv1.Color) float64 {
+	excluded := make(map[string]bool, len(req.ExcludeOracleIDs))
+	for _, id := range req.ExcludeOracleIDs {
+		excluded[id] = true
+	}
+	var byMask [32]int
+	total := 0
+	for id, n := range req.Owned {
+		if n <= 0 || excluded[id] {
+			continue
+		}
+		c, ok := idx.ByOracleID(id)
+		if !ok || IsBasicLand(c) || !legalIn(c, legalKeys[mtgv1.FormatId_FORMAT_ID_COMMANDER]) ||
+			!cards.InSets(c, setCodes) {
+			continue
+		}
+		byMask[colorMask(c.GetColorIdentity())]++
+		total++
+	}
+	var share [32]float64
+	if total > 0 {
+		for m := range share {
+			usable := 0
+			for sub, n := range byMask {
+				if sub&^m == 0 {
+					usable += n
+				}
+			}
+			share[m] = float64(usable) / float64(total)
+		}
+	}
+	return func(identity []mtgv1.Color) float64 { return share[colorMask(identity)] }
+}
+
+// colorMask packs a color identity into five bits, one for each color.
+func colorMask(identity []mtgv1.Color) int {
+	m := 0
+	for _, c := range identity {
+		switch c {
+		case mtgv1.Color_COLOR_W:
+			m |= 1
+		case mtgv1.Color_COLOR_U:
+			m |= 2
+		case mtgv1.Color_COLOR_B:
+			m |= 4
+		case mtgv1.Color_COLOR_R:
+			m |= 8
+		case mtgv1.Color_COLOR_G:
+			m |= 16
+		}
+	}
+	return m
 }
 
 // commanderNames is how many names the pick row holds (catalog row

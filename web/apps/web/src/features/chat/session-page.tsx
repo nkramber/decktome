@@ -19,6 +19,7 @@ import { useAppStore } from "../../lib/store";
 import { DeckView } from "../deck/deck-view";
 import { NewCardsPanel } from "../deck/new-cards-panel";
 import { StaleBanner } from "../deck/stale-banner";
+import { useAdmin } from "../../app/components/use-admin";
 import { ReportProblem } from "../feedback/report-problem";
 import { PoolPicker, useCollections } from "./pool-picker";
 import { BuildStepper } from "./build-stepper";
@@ -54,6 +55,8 @@ export function SessionPage() {
   const isNew = !id || id === "new";
   const storedSessionId = useAppStore((s) => s.sessionId);
   const setSessionId = useAppStore((s) => s.setSessionId);
+  // The session id and the spend show to the admin alone (D-1148).
+  const admin = useAdmin();
 
   // The panel this page started stays mounted when the route moves from
   // /session/new to /session/<id>: its key is the location key of the
@@ -142,9 +145,11 @@ export function SessionPage() {
     return (
       <div className="flex flex-col gap-2 p-4 md:p-6">
         <h1 className="text-2xl font-semibold tracking-tight">Chat</h1>
-        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
-          Session id: {id}
-        </p>
+        {admin && (
+          <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
+            Session id: {id}
+          </p>
+        )}
         <p role="status" className="text-muted-foreground">
           Loading the session...
         </p>
@@ -155,9 +160,11 @@ export function SessionPage() {
     return (
       <div className="flex flex-col items-start gap-2 p-4 md:p-6">
         <h1 className="text-2xl font-semibold tracking-tight">Chat</h1>
-        <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
-          Session id: {id}
-        </p>
+        {admin && (
+          <p className="wrap-anywhere text-sm text-muted-foreground" data-testid="session-id">
+            Session id: {id}
+          </p>
+        )}
         <p role="alert" className="text-danger">
           Could not load the session: {session.isError ? errorMessage(session.error) : "the server returned no session"}
         </p>
@@ -245,6 +252,7 @@ export function ChatPanel({
   onBuildEnded?: (res: GetSessionResponse) => void;
 }) {
   const navigate = useNavigate();
+  const admin = useAdmin();
   const navigateRef = useRef(navigate);
   useEffect(() => {
     navigateRef.current = navigate;
@@ -692,14 +700,18 @@ export function ChatPanel({
 
   const idLine = (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[11px] text-muted-foreground">
-      <span className="wrap-anywhere" data-testid="session-id">
-        {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
-      </span>
-      <span aria-hidden="true">·</span>
+      {admin && (
+        <>
+          <span className="wrap-anywhere" data-testid="session-id">
+            {beforeFirstMessage ? "No session yet." : `Session id: ${state.sessionId}`}
+          </span>
+          <span aria-hidden="true">·</span>
+        </>
+      )}
       <span className="wrap-anywhere" data-testid="pool-mode">
         {poolText}
       </span>
-      {state.usage && state.usage.calls > 0 && (
+      {admin && state.usage && state.usage.calls > 0 && (
         <>
           <span aria-hidden="true">·</span>
           <span data-testid="usage">
