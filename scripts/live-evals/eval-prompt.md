@@ -92,10 +92,12 @@ Do this step before you change any code. It costs about $0.30 (D-1144).
 1. Run `cd go && go run ./cmd/live-evals replay-input -bundle {{bundle}} -out {{replay}}/input`.
 2. Run the base replay from the root of the clone:
    `make chat-probe CHAT_PROBE_OUT={{replay}}/base.txt CHAT_PROBE_ARGS="<args>"`.
-3. Put these flags in `<args>`: `-messages-json {{replay}}/input/messages.json -deck-out {{replay}}/base-deck.json`.
+3. Put these flags in `<args>`: `-messages-json {{replay}}/input/messages.json -decks-out {{replay}}/base-decks.jsonl`.
 4. When `{{replay}}/input/collection.json` exists, add `-collection-json {{replay}}/input/collection.json`.
 5. Append the cost to `{{bundle}}/spend.jsonl`.
 6. Read the base replay against the bar. When the base replay already meets the bar, the fault does not occur again. Then write the result `no-new-issues`, and name this in `findings`.
+
+The decks file holds one JSON line for each deck that reached the user, oldest first. The `deck` field of the last line is the deck at the end of the chat (D-1146). When `make chat-probe` exits with an error, the replay failed, and no line of its decks file counts.
 
 The replay answers each question with the text of the answer of the user. So a question that the new code asks can get a different answer. Read the questions of the replay before you judge it.
 
@@ -103,7 +105,7 @@ The replay answers each question with the text of the answer of the user. So a q
 
 1. Write a regression test that fails before the fix.
 2. Fix the cause, and make the test pass.
-3. Replay the chat on the fix, as in step 3b, to `{{replay}}/try-<n>.txt` and `{{replay}}/try-<n>-deck.json`. Append the cost to `{{bundle}}/spend.jsonl`.
+3. Replay the chat on the fix, as in step 3b, to `{{replay}}/try-<n>.txt` and `{{replay}}/try-<n>-decks.jsonl`. Append the cost to `{{bundle}}/spend.jsonl`.
 4. Compare the replay of the fix with the base replay against the bar. Write the verdict and its evidence to `{{replay}}/verdict-<n>.md`.
 5. When the fix is not better, change the fix, and go to item 3. Make at most three tries in total.
 6. After the third try that is not better, revert the fix, and write the result `fix-failed`. Make no pull request.

@@ -121,7 +121,6 @@ func run() error {
 	collPath := flag.String("collection", "", "a ManaBox CSV, which puts the session in an owned mode")
 	collJSON := flag.String("collection-json", "", "a stored collection as protojson, from `live-evals replay-input` (D-1144)")
 	msgsJSON := flag.String("messages-json", "", "a JSON list of the user's turns, which wins over -messages (D-1144)")
-	deckOut := flag.String("deck-out", "", "write the deck that reached the user to this file as protojson (D-1144)")
 	msgs := flag.String("messages", "Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.", "the user's turns, separated by |")
 	decksOut := flag.String("decks-out", "", "a new file for each deck that reaches the user, one JSON line per deck")
 	flag.Parse()
@@ -266,12 +265,6 @@ func run() error {
 		return fmt.Errorf("no deck reached the user after %d turns", len(userTurns))
 	}
 	report(deck, time.Since(start))
-	if *deckOut != "" {
-		if err := writeDeck(*deckOut, deck); err != nil {
-			return err
-		}
-		fmt.Printf("deck: wrote %s\n", *deckOut)
-	}
 	return nil
 }
 

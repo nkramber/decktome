@@ -53,13 +53,3 @@ func ownedFromJSON(path string) (map[string]int32, error) {
 	}
 	return collections.OracleCounts(c.GetEntries()), nil
 }
-
-// writeDeck writes the deck that reached the user, so a later replay can
-// compare its cards with this one (D-1144).
-func writeDeck(path string, d *mtgv1.Deck) error {
-	b, err := protojson.MarshalOptions{Multiline: true}.Marshal(d)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, b, 0o600)
-}

@@ -8,21 +8,21 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-04c)
 
-**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1145).** The pull request is #282.
+**Branch `feat/live-evals`: PR-125, the live evals (D-1132 to D-1146).** The pull request is #282.
 
 Author provider: Claude Code
 
-**The base.** The branch stacks on `fix/first-user-feedback` at `3a7313e`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
+**The base.** The branch stacks on `fix/first-user-feedback` at `c712e84`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
 
 **The code.**
 
 - `go/internal/decks` holds the mark `has_been_evaluated`, and `go/cmd/live-evals` serves the loop. `replay-input` writes the inputs of a replay (D-1144).
-- `go/cmd/chat-probe` takes `-messages-json`, `-collection-json`, and `-deck-out`.
+- `go/cmd/chat-probe` takes `-messages-json` and `-collection-json`. The replay reads the last line of `-decks-out` (D-1146).
 - `scripts/live-evals.sh` runs each session in a new clone, under `scripts/live-evals/sandbox.sb`, with the pinned Claude Code 2.1.288 (D-1141, D-1145). It sends the notices of D-1143.
 
-**The checks.** `make verify` passed on `8e4ab24`. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. It also proves that `clear` removes a folder that an interrupted clone left.
+**The checks.** `make verify` passed on the rebase onto `c712e84`, with one deck flag. A probe of the profile passed 27 checks. `docs/tools/test_live_evals_runfs.py` proves that a planted link stops each step of the script. It also proves that `clear` removes a folder that an interrupted clone left.
 
-**The review.** The Gitar review of `8e4ab24` closed three findings and opened one: an interrupted clone blocked each retry. With no `branch` in the deck state, `prepare` now removes the folder with `runfs clear` before the clone. No Codex review ran yet.
+**The review.** The Gitar review of `8e4ab24` closed three findings and opened one: an interrupted clone blocked each retry. With no `branch` in the deck state, `prepare` now removes the folder with `runfs clear` before the clone. The rebase onto `c712e84` brought a second deck flag to `chat-probe`, and the owner kept `-decks-out` alone (D-1146). No Codex review ran yet.
 
 **The open work.** The session stopped at the checkpoint (D-946).
 
@@ -104,7 +104,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **PR-124: the findings of the first outside user** (F-212 to F-223, D-1116 to D-1131). The resume section of 2026-10-04b in the archive holds its open work.
-0. **PR-125: the live evals** (D-1132 to D-1145). It stacks on PR-124. The resume section holds the open work.
+0. **PR-125: the live evals** (D-1132 to D-1146). It stacks on PR-124. The resume section holds the open work.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.

@@ -240,8 +240,8 @@ SUMMARY_JUDGE_IN ?= $(DECK_GATE_OUT)
 SUMMARY_JUDGE_OUT ?= .local/probes/summary-judge.txt
 # CHAT_PROBE_MESSAGES are the user's turns, separated by |.
 # CHAT_PROBE_ARGS passes flags to the probe, for example the replay
-# files of a live eval: -messages-json, -collection-json, and -deck-out
-# (D-1144).
+# files of a live eval: -messages-json, -collection-json, and -decks-out
+# (D-1144, D-1146).
 CHAT_PROBE_ARGS ?=
 CHAT_PROBE_MESSAGES ?= Build me a lifegain Commander deck from any cards.|Karlov of the Ghost Council. Bracket 3, white and black, and no budget.
 API_BUILD_OUT ?= .local/probes/api-build.txt
