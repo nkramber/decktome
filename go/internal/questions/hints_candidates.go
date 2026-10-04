@@ -331,22 +331,32 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 		// offer a commander of any set.
 		SetCodes: h.SetCodes,
 	}
-	list, err := h.Builder.Commanders(h.Index, req, 3+len(skip))
+	// The offer reads the whole ranked pool, because the spread below can
+	// reach past the first three names (D-1151).
+	list, err := h.Builder.CommanderPool(h.Index, req)
 	if err != nil {
 		h.warn("commanders", err)
 		return nil
 	}
-	var names []string
+	var fresh []candidates.Candidate
 	for _, c := range list {
 		// A pair reads "A + B". The pick row offers it as one choice,
 		// because the user chooses a pair and not half of one (D-154).
 		// hasName reads a short name and a full name as one card, which
 		// is the sameCard rule of D-70.
-		name := c.DisplayName()
-		if hasName(skip, name) {
-			continue
+		if !hasName(skip, c.DisplayName()) {
+			fresh = append(fresh, c)
 		}
-		names = append(names, name)
+	}
+	// A reader who named no colors sees a mono-colored and a multicolor
+	// name in each offer of three (D-1151). A colorless request names its
+	// colors.
+	if len(h.Colors) == 0 && !h.Colorless {
+		fresh = spreadColors(fresh, 3)
+	}
+	var names []string
+	for _, c := range fresh {
+		names = append(names, c.DisplayName())
 		if len(names) == 3 {
 			break
 		}
@@ -356,6 +366,41 @@ func (h *CandidateHints) Commanders(theme string, skip []string) []string {
 	}
 	h.commanders[cacheKey] = names
 	return names
+}
+
+// spreadColors keeps a mono-colored and a multicolor commander in the
+// first n of a ranked list (D-1151). When the first n hold one kind
+// alone, the best of the other kind takes the last place. The order
+// stays the rank order in every other place.
+func spreadColors(list []candidates.Candidate, n int) []candidates.Candidate {
+	if len(list) <= n || n < 2 {
+		return list
+	}
+	width := func(c candidates.Candidate) int {
+		ids := c.Card.GetColorIdentity()
+		if c.Partner != nil {
+			ids = append(slices.Clone(ids), c.Partner.GetColorIdentity()...)
+		}
+		return len(candidates.ColorSet(ids))
+	}
+	mono, multi := false, false
+	for _, c := range list[:n] {
+		mono = mono || width(c) == 1
+		multi = multi || width(c) >= 2
+	}
+	if mono && multi {
+		return list
+	}
+	for i := n; i < len(list); i++ {
+		w := width(list[i])
+		if (!mono && w == 1) || (!multi && w >= 2) {
+			out := slices.Clone(list[:n-1])
+			out = append(out, list[i])
+			out = append(out, list[n-1:i]...)
+			return append(out, list[i+1:]...)
+		}
+	}
+	return list
 }
 
 // OwnedThemeCount is the on-theme owned count PR-6 reported. A count

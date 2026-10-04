@@ -1126,6 +1126,57 @@ func TestCommanderPoolFillsAThinTheme(t *testing.T) {
 	}
 }
 
+// TestCommanderFillReadsTheCollectionDepth is D-1151. With no theme,
+// the fill ranked on popularity alone, so a famous mono-colored legend
+// led an owned-only offer over a two-color legend that could use every
+// owned card. Under an owned pool rule the fill ranks half on the share
+// of the owned cards the identity can use.
+func TestCommanderFillReadsTheCollectionDepth(t *testing.T) {
+	list := []tc{
+		{id: "monow", name: "Famous White Legend", typeLine: "Legendary Creature — Human",
+			identity: []mtgv1.Color{W}, mv: 2, rank: 1},
+		{id: "wb", name: "Deep White-Black Legend", typeLine: "Legendary Creature — Human",
+			identity: []mtgv1.Color{W, B}, mv: 3, rank: 500},
+		{id: "w1", name: "White Spell", typeLine: "Instant", identity: []mtgv1.Color{W}, mv: 1, rank: 1000},
+		{id: "b1", name: "Black Spell One", typeLine: "Instant", identity: []mtgv1.Color{B}, mv: 1, rank: 900},
+		{id: "b2", name: "Black Spell Two", typeLine: "Sorcery", identity: []mtgv1.Color{B}, mv: 2, rank: 800},
+		{id: "b3", name: "Black Spell Three", typeLine: "Sorcery", identity: []mtgv1.Color{B}, mv: 3, rank: 700},
+		// A basic land is no part of the depth, so many owned Plains do
+		// not make the white legend deep.
+		{id: "plains", name: "Plains", typeLine: "Basic Land — Plains", produced: []mtgv1.Color{W}, rank: 2},
+	}
+	idx := fixture(t, list)
+	b, _ := New()
+	owned := map[string]int32{"monow": 1, "wb": 1, "w1": 1, "b1": 1, "b2": 1, "b3": 1, "plains": 40}
+
+	for _, mode := range []mtgv1.PoolRule{mtgv1.PoolRule_POOL_RULE_OWNED_ONLY, mtgv1.PoolRule_POOL_RULE_OWNED_FIRST} {
+		pool, err := b.CommanderPool(idx, Request{Format: cmdr, PoolRule: mode, Owned: owned})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(pool) == 0 || pool[0].Card.Name != "Deep White-Black Legend" {
+			t.Errorf("%s: the fill ignored the depth of the collection: %v", mode, names(pool))
+		}
+	}
+
+	// The any-card rule reads no collection, so popularity alone ranks.
+	pool, err := b.CommanderPool(idx, Request{Format: cmdr, Owned: owned})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pool) == 0 || pool[0].Card.Name != "Famous White Legend" {
+		t.Errorf("the any-card fill read the collection: %v", names(pool))
+	}
+
+	depth := collectionDepth(idx, Request{Owned: owned}, nil)
+	if got := depth([]mtgv1.Color{W}); got != 2.0/6 {
+		t.Errorf("mono-white depth = %v, want 2/6: the basic land counted, or a card counted twice", got)
+	}
+	if got := depth([]mtgv1.Color{W, B}); got != 1 {
+		t.Errorf("white-black depth = %v, want 1", got)
+	}
+}
+
 // TestLandCapKeepsTheManaStaples is F-32 and D-450. A theme whose word
 // sits in land text fills the land bucket, and the most played lands of
 // the colors, the fixing, must still make the cap.
