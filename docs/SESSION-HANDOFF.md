@@ -27,11 +27,9 @@ Author provider: Claude Code
 
 **The code.** `go/cmd/api-build` sends `owned-only` by default (D-1161). The run of "best possible deck" held five cards that the collection does not hold.
 
-**The checks of the code.** `make verify` passed on `7f8fcb1`, before the rebase onto `a7731f5`, and each CI job of that head passed but `review-gate`. Gitar approved `7f8fcb1`.
+**The checks of the code.** `make verify` passed on `8489cfd`. CI passed every verify job, `pr-contract`, and Gitar. `review-gate` still reads the prior review record.
 
-**The review.** Gitar passed at `7f8fcb1`, and its D-1161 thread is resolved. Codex requires changes at `7f8fcb1649ca9895756d53354516c240a8901f2f`: P2-1, the test does not check the registered `-pool` default.
-
-**The review.** The Codex review of `7f8fcb1` found P2-1: the test read a constant, and not the registered flag. `docs/reviews/pr-287-response.md` holds the correction.
+**The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`, pending the review-record push.
 
 **Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
 
