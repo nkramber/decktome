@@ -47,7 +47,8 @@ func TestEachReadHasItsOwnKey(t *testing.T) {
 		}
 		keys[k] = true
 	}
-	if Key("u1", 42, "a") != Key("u1", 42, "a") {
+	first, again := Key("u1", 42, "a"), Key("u1", 42, "a")
+	if first != again {
 		t.Error("the same read gets two keys")
 	}
 }
