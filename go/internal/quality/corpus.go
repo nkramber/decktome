@@ -59,6 +59,36 @@ func nonlandIDs(deck *mtgv1.Deck, idx *cards.Index) []string {
 	return out
 }
 
+// shapeSum adds the land count and the mana value of the lists of one tier.
+type shapeSum struct {
+	lists     int
+	lands, mv float64
+}
+
+func (s *shapeSum) add(p *mtgv1.DeckProfile) {
+	if p == nil {
+		return
+	}
+	s.lists++
+	for _, row := range p.GetFeatures() {
+		switch row.GetKey() {
+		case profile.KeyLand:
+			s.lands += row.GetValue()
+		case profile.KeyAvgManaValue:
+			s.mv += row.GetValue()
+		}
+	}
+}
+
+// shape is the mean, or the zero shape with no list.
+func (s shapeSum) shape() Shape {
+	if s.lists == 0 {
+		return Shape{}
+	}
+	n := float64(s.lists)
+	return Shape{Lists: s.lists, Lands: round2(s.lands / n), AvgManaValue: round2(s.mv / n)}
+}
+
 // buildCorpus fills the rates, the pairs, the top cards, and the shape
 // of a format model from the great and good lists of the training
 // split. The profiles are the ones the fit measured.
@@ -69,9 +99,16 @@ func buildCorpus(fm *FormatModel, train []*Resolved, profiles map[string]*mtgv1.
 	names := map[string]string{}
 	var lists [][]string
 	var listWeights []float64
-	var shapeLands, shapeMV float64
-	shapeLists := 0
+	var great, typical shapeSum
 	for _, r := range train {
+		// The great lists give the shape of brackets 4 and 5, and the
+		// typical lists the shape of brackets 1 to 3 (D-1123).
+		switch r.List.Tier {
+		case meta.TierGreat:
+			great.add(profiles[r.List.Key()])
+		case meta.TierTypical:
+			typical.add(profiles[r.List.Key()])
+		}
 		w := tierWeight(r.List.Tier)
 		if w == 0 {
 			continue
@@ -87,20 +124,8 @@ func buildCorpus(fm *FormatModel, train []*Resolved, profiles map[string]*mtgv1.
 		}
 		lists = append(lists, ids)
 		listWeights = append(listWeights, w)
-		if r.List.Tier == meta.TierGreat {
-			if p := profiles[r.List.Key()]; p != nil {
-				shapeLists++
-				for _, row := range p.GetFeatures() {
-					switch row.GetKey() {
-					case profile.KeyLand:
-						shapeLands += row.GetValue()
-					case profile.KeyAvgManaValue:
-						shapeMV += row.GetValue()
-					}
-				}
-			}
-		}
 	}
+	fm.Shape, fm.TypicalShape = great.shape(), typical.shape()
 	fm.CardRates = map[string]float64{}
 	if len(weight) == 0 || total == 0 {
 		fm.RatePrior = 0
@@ -111,9 +136,6 @@ func buildCorpus(fm *FormatModel, train []*Resolved, profiles map[string]*mtgv1.
 	prior := 1.0 / float64(len(weight))
 	for id, w := range weight {
 		fm.CardRates[id] = (w + RateAlpha*prior) / (total + RateAlpha)
-	}
-	if shapeLists > 0 {
-		fm.Shape = Shape{Lists: shapeLists, Lands: round2(shapeLands / float64(shapeLists)), AvgManaValue: round2(shapeMV / float64(shapeLists))}
 	}
 
 	// The top cards of the great lists, by weight.

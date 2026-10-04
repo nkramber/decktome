@@ -40,6 +40,13 @@ describe("deck-stats", () => {
     expect(groups[0].count).toBe(10);
   });
 
+  // D-1120: a protection card has a group of its own, after interaction.
+  it("keeps a protection card in a group of its own", () => {
+    const groups = groupByRole([dc("boots", 1, CardRole.PROTECTION), dc("counter", 1, CardRole.INTERACTION)]);
+    expect(groups.map((g) => g.role)).toEqual([CardRole.INTERACTION, CardRole.PROTECTION]);
+    expect(roleLabel(CardRole.PROTECTION)).toBe("Protection");
+  });
+
   it("builds the curve without lands and caps at 7+", () => {
     const curve = manaCurve(
       [dc("forest", 10, CardRole.LAND), dc("elf", 4, CardRole.RAMP), dc("big", 1, CardRole.THREAT), dc("mid", 2, CardRole.REMOVAL), dc("unknown", 3, CardRole.OTHER)],

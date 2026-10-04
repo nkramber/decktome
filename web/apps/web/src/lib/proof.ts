@@ -19,15 +19,21 @@ export async function sendProof(): Promise<void> {
   }
 }
 
+// ProofOutcome is the result of one open of a proof link. "signed-in"
+// means the custom token signed in this browser. "proved" means the
+// email is proved and the answer carries no token. "already-proved"
+// means the link worked before and the email is proved (D-1119).
+export type ProofOutcome = "signed-in" | "proved" | "already-proved";
+
 // openProofLink takes the code of a proof link. The API proves the
 // email, and the custom token of its answer signs in this browser
-// (D-1082). It answers false when the answer carries no token: the email
-// is proved, and the person signs in with the password.
-export async function openProofLink(code: string): Promise<boolean> {
+// (D-1082). With no token, the person signs in with the password.
+export async function openProofLink(code: string): Promise<ProofOutcome> {
   const res = await proofClient.openLink({ code });
-  if (!res.customToken) return false;
+  if (res.alreadyProved) return "already-proved";
+  if (!res.customToken) return "proved";
   await signInWithToken(res.customToken);
-  return true;
+  return "signed-in";
 }
 
 // standaloneApp is true inside an installed app, where the link of an

@@ -16,14 +16,25 @@ import (
 // Order matters: a land is a land even when it also ramps. A sweeper is a
 // wipe, not removal. A card with a theme signal and no staple role is a
 // synergy piece or, for a big creature or planeswalker, a threat.
+//
+// A creature with the sweeper tag is no wipe: the tag marks a creature
+// whose ability damages each creature, and the deck plays it as a body
+// (D-1120). Equipment with the removal tag is no removal: the tag marks
+// an ability of the equipped creature, such as the -1/-1 of Umezawa's
+// Jitte (D-1120). A spell with the protection tag is interaction, and a
+// permanent with it is protection, which the interaction band does not
+// count (D-1120).
 func assignRole(c *mtgv1.Card, roleTags map[string]map[string]bool, onTheme, useText bool) (mtgv1.CardRole, string) {
 	in := func(role string) bool { return roleTags[role][c.OracleId] }
 	text := strings.ToLower(c.OracleText)
 	isLand := slices.Contains(c.CardTypes, "Land")
+	isCreature := slices.Contains(c.CardTypes, "Creature")
+	isSpell := slices.Contains(c.CardTypes, "Instant") || slices.Contains(c.CardTypes, "Sorcery")
+	isEquipment := slices.Contains(c.Subtypes, "Equipment")
 	switch {
 	case isLand:
 		return mtgv1.CardRole_CARD_ROLE_LAND, "type:land"
-	case in("wipe"):
+	case in("wipe") && !isCreature:
 		return mtgv1.CardRole_CARD_ROLE_WIPE, "tag:sweeper"
 	case in("wincon"):
 		return mtgv1.CardRole_CARD_ROLE_WINCON, "tag:alternate-win-condition"
@@ -31,7 +42,11 @@ func assignRole(c *mtgv1.Card, roleTags map[string]map[string]bool, onTheme, use
 		return mtgv1.CardRole_CARD_ROLE_RAMP, "tag:ramp"
 	case in("interaction"):
 		return mtgv1.CardRole_CARD_ROLE_INTERACTION, "tag:interaction"
-	case in("removal"):
+	case in("protection") && isSpell:
+		return mtgv1.CardRole_CARD_ROLE_INTERACTION, "tag:protection"
+	case in("protection"):
+		return mtgv1.CardRole_CARD_ROLE_PROTECTION, "tag:protection"
+	case in("removal") && !isEquipment:
 		return mtgv1.CardRole_CARD_ROLE_REMOVAL, "tag:removal"
 	case in("draw"):
 		return mtgv1.CardRole_CARD_ROLE_DRAW, "tag:draw"
@@ -57,7 +72,6 @@ func assignRole(c *mtgv1.Card, roleTags map[string]map[string]bool, onTheme, use
 	if !onTheme {
 		return mtgv1.CardRole_CARD_ROLE_OTHER, ""
 	}
-	isCreature := slices.Contains(c.CardTypes, "Creature")
 	isWalker := slices.Contains(c.CardTypes, "Planeswalker")
 	if isWalker || (isCreature && c.ManaValue >= 4) {
 		return mtgv1.CardRole_CARD_ROLE_THREAT, "type:threat"

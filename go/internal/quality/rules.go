@@ -14,14 +14,26 @@ import (
 )
 
 // The land need of a 99-card deck: 31.42 + 3.13 × the average mana value
-// of the spells − 0.28 × the cheap card draw or mana ramp spells (Frank
-// Karsten, "How Many Lands Do You Need in Your Deck? An Updated
-// Analysis", TCGplayer, 2022-07-29).
+// of the spells − 0.28 × the cheap card draw or mana ramp spells. A
+// 60-card deck needs 19.59 + 1.90 × the average mana value − 0.28 × the
+// same spells (Frank Karsten, "How Many Lands Do You Need in Your Deck?
+// An Updated Analysis", TCGplayer, 2022-07-29).
 const (
 	karstenLandBase     = 31.42
 	karstenLandPerMV    = 3.13
 	karstenLandPerCheap = 0.28
+
+	karstenSixtyLandBase  = 19.59
+	karstenSixtyLandPerMV = 1.90
 )
+
+// landNeed is Karsten's land need of a deck of the format.
+func landNeed(commander bool, avgManaValue float64, cheap int) float64 {
+	if commander {
+		return karstenLandBase + karstenLandPerMV*avgManaValue - karstenLandPerCheap*float64(cheap)
+	}
+	return karstenSixtyLandBase + karstenSixtyLandPerMV*avgManaValue - karstenLandPerCheap*float64(cheap)
+}
 
 // The cuts of the rules checks (D-677, D-678). A Commander deck is
 // flagged when its lands sit RuleLandShortfall or more under Karsten's
@@ -83,7 +95,7 @@ func ruleChecks(in Input) RuleRead {
 		}
 	}
 	r.Cheap = cheapCount(in.Deck, in.Cards)
-	r.Need = karstenLandBase + karstenLandPerMV*r.AvgManaValue - karstenLandPerCheap*float64(r.Cheap)
+	r.Need = landNeed(true, r.AvgManaValue, r.Cheap)
 	r.Lands = r.Shortfall() >= RuleLandShortfall
 	r.Curve = r.AvgManaValue > RuleCurveCeiling
 	r.Colors = r.HasColors && r.ColorSources < RuleColorFloor

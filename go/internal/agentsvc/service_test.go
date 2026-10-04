@@ -256,7 +256,7 @@ func classifyJSON(t *testing.T, fields map[string]any) llm.Step {
 		"format": "unknown", "theme": "", "colors": []string{},
 		"commander_names": []string{}, "locked_names": []string{}, "named_cards": []string{}, "set_names": []string{}, "set_groups": []string{}, "precon_names": []string{},
 		"power": "", "pool_rule": "unknown", "budget_usd": 0.0, "budget_scope": "unknown",
-		"house_rules": "", "closed_keys": []string{}, "declined_keys": []string{},
+		"house_rules": "", "avoid": "", "closed_keys": []string{}, "declined_keys": []string{},
 		"facts": map[string]bool{
 			"named_card": false, "buy_list": false,
 			"house_format": false, "budget_ambiguous": false,

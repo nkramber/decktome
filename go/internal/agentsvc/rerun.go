@@ -180,13 +180,16 @@ func (s *Server) sendRerun(ctx context.Context, uid string, session *mtgv1.Sessi
 	if err := stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: d.GetStaleReason()}}); err != nil {
 		return err
 	}
+	// The rerun builds from the slots of this turn, and the next turn
+	// compares its slots with them (D-1118).
+	st.MarkBuilt()
 	// version+1 is what the Put above stored (D-245).
 	if d.GetRerunCase() == mtgv1.RerunCase_RERUN_CASE_PATCH {
 		brief := &revise.Brief{Changes: []string{patchChange}, Remove: staleCardNames(d, cards)}
 		turn.RevisionBrief = brief.JSON()
 		err = s.reviseDeck(ctx, uid, session, st, version+1, owned, acc, usageBefore, d, brief, cards, turn, stream)
 	} else {
-		err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream)
+		err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream, nil)
 	}
 	if err != nil {
 		return err

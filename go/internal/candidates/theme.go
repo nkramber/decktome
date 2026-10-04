@@ -33,6 +33,11 @@ type themeRow struct {
 	// "steal" for theft (D-724). One alias names one row, and no alias is
 	// the name of a row.
 	Aliases []string `json:"aliases"`
+	// CommanderSlugs and CommanderText name a commander whose own trigger
+	// wants the row. Build adds the row when a commander of the request
+	// carries one, and the row adds no word (F-212).
+	CommanderSlugs []string `json:"commander_slugs"`
+	CommanderText  []string `json:"commander_text"`
 }
 
 // typalRow holds the typal signals every row with a subtype carries
@@ -184,14 +189,20 @@ type ThemeMatch struct {
 	// 110 cards of "indicate" and "automaton", and "angel" reads 80 of
 	// "changeling", over the snapshot of 2026-09-04.
 	TypeText []string
-	// Unmatched lists words that fired on no card of the pool. Build
-	// fills it after the scan: a needle is a guess until a card holds it.
+	// Unmatched lists words whose own signals fired on no card of the
+	// pool. Build fills it after the scan: a needle is a guess until a
+	// card holds it. A signal that two words bring counts for both, so a
+	// word is never unmatched because an earlier word brought its signal
+	// first (D-1116).
 	Unmatched []string
+	// CommanderRows lists the rows that a commander of the request added
+	// through its own trigger, with no word of the user (F-212).
+	CommanderRows []string
 
 	tagged map[string]map[string]bool // slug -> oracle ids
-	// wordOf maps a signal, as score emits it, to the theme word that
-	// produced it. Build reads it to fill Unmatched.
-	wordOf map[string]string
+	// wordOf maps a signal, as score emits it, to each theme word that
+	// brings it. Build reads it to fill Unmatched.
+	wordOf map[string][]string
 	// generic lists the text needles the generic rule made from words
 	// the table does not know. pruneNoisy reads it (D-411).
 	generic []string
@@ -224,9 +235,95 @@ const noisyShare = 0.10
 // text needle the card database makes noise of (D-411). Build and
 // CommanderPool read this, and match alone stays for the tests that
 // read the raw needles.
-func (t *themeTable) matchIn(theme string, idx *cards.Index) ThemeMatch {
-	m := t.match(theme, idx.Tags())
+//
+// extraRows are rows that join the match with no word, such as the rows
+// a commander's own trigger names (F-212).
+func (t *themeTable) matchIn(theme string, idx *cards.Index, extraRows ...string) ThemeMatch {
+	m := t.matchRows(theme, idx.Tags(), extraRows)
 	m.pruneNoisy(idx.All())
+	return m
+}
+
+// avoidNoise are the words of the avoid slot that say "less" and name no
+// card (D-1122). The classifier writes the thing to avoid, and a reader's
+// own words can still carry these.
+var avoidNoise = map[string]bool{
+	"less": true, "fewer": true, "fewest": true, "least": true, "avoid": true, "lot": true,
+	"too": true, "many": true, "much": true, "not": true, "don": true, "dont": true, "reduce": true,
+}
+
+// avoidHard are the words of a hard request: the user wants none of the
+// thing, so a type word reads every card of the type (D-1122).
+var avoidHard = map[string]bool{"no": true, "without": true, "zero": true, "none": true}
+
+// avoidSet is what the user wants less of, one match per word (D-1122).
+type avoidSet []ThemeMatch
+
+// hits reports whether any word of the set reads the card.
+func (a avoidSet) hits(c *mtgv1.Card) bool {
+	for _, m := range a {
+		if s, _ := m.score(c); s > 0 {
+			return true
+		}
+	}
+	return false
+}
+
+// avoidMatch reads what the user wants less of through the theme matcher
+// (D-1122). A word that finds a row reads the payoff signals of the row
+// alone: "less artifacts" names the cards that reward artifacts, and the
+// enabler signals of the row read every mana rock and every card whose
+// text names an artifact, such as Swiftfoot Boots in a voltron deck. A
+// word that names a card type reads the type when it finds no row, or
+// when the request is hard, as in "no artifacts". The slot joins the
+// things of each message with ";", and each part is hard or soft alone.
+func (t *themeTable) avoidMatch(avoid string, idx *cards.Index) avoidSet {
+	var out avoidSet
+	for _, part := range strings.Split(avoid, ";") {
+		out = append(out, t.avoidPart(part, idx)...)
+	}
+	return out
+}
+
+// avoidPart reads one thing of the avoid slot (D-1122).
+func (t *themeTable) avoidPart(avoid string, idx *cards.Index) avoidSet {
+	f := func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '-'
+	}
+	hard := false
+	var kept []string
+	for _, w := range strings.FieldsFunc(strings.ToLower(avoid), f) {
+		w = strings.Trim(w, "-")
+		switch {
+		case avoidHard[w]:
+			hard = true
+		case !avoidNoise[w]:
+			kept = append(kept, w)
+		}
+	}
+	var out avoidSet
+	for _, w := range t.words(strings.Join(kept, " ")) {
+		m := t.matchIn(w, idx)
+		_, row := t.rowOf(w)
+		// A row with no payoff signal keeps its enablers, or the word
+		// would read no card at all.
+		if p := m.payoffs(); row && !hard && !p.Empty() {
+			m = p
+		}
+		if ty := title(singular(w)); cardTypes[ty] && (hard || !row) {
+			m.Types = appendUnique(m.Types, ty)
+		}
+		if !m.Empty() {
+			out = append(out, m)
+		}
+	}
+	return out
+}
+
+// payoffs keeps the payoff signals of a match and the signals of its
+// creature type, and drops the enabler signals (D-1122).
+func (m ThemeMatch) payoffs() ThemeMatch {
+	m.Slugs, m.Keywords, m.Types, m.Text = nil, nil, nil, nil
 	return m
 }
 
@@ -268,7 +365,7 @@ func (f firedSignals) mark(signals []string) {
 func (m ThemeMatch) unmatchedWords(fired firedSignals) []string {
 	hit := map[string]bool{}
 	for s := range fired {
-		if w, ok := m.wordOf[s]; ok {
+		for _, w := range m.wordOf[s] {
 			hit[w] = true
 		}
 	}
@@ -286,17 +383,24 @@ func (m ThemeMatch) unmatchedWords(fired firedSignals) []string {
 // A second word that finds the same row adds nothing, so it is no word of
 // the match: "mill milling" is one word.
 func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
+	return t.matchRows(theme, tags, nil)
+}
+
+// matchRows is match with extra rows that join after the words. An extra
+// row adds signals and no word, so it is never unmatched (F-212).
+func (t *themeTable) matchRows(theme string, tags *cards.TagIndex, extraRows []string) ThemeMatch {
 	var m ThemeMatch
 	m.tagged = map[string]map[string]bool{}
-	m.wordOf = map[string]string{}
-	seenSlug := map[string]bool{}
+	m.wordOf = map[string][]string{}
+	// seenSlug maps a slug in use onto the signal score emits for it.
+	seenSlug := map[string]string{}
 	seenRow := map[string]bool{}
-	// The current word, so each signal remembers where it came from. The
-	// first word that produced a signal keeps it.
+	// The current word, so each signal remembers each word that brings it
+	// (D-1116). An extra row has no word.
 	word := ""
 	trace := func(signal string) {
-		if _, ok := m.wordOf[signal]; !ok {
-			m.wordOf[signal] = word
+		if word != "" && !slices.Contains(m.wordOf[signal], word) {
+			m.wordOf[signal] = append(m.wordOf[signal], word)
 		}
 	}
 	// resolveSlug reads the Oracle ids of a slug. The land signals share
@@ -315,17 +419,23 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 		return true
 	}
 	addSlug := func(slug string, payoff bool) bool {
-		if seenSlug[slug] || !resolveSlug(slug) {
+		if signal, ok := seenSlug[slug]; ok {
+			// A second word that brings the slug owns its signal too.
+			trace(signal)
 			return false
 		}
-		seenSlug[slug] = true
+		if !resolveSlug(slug) {
+			return false
+		}
+		signal := "tag:" + slug
 		if payoff {
+			signal = "payoff:" + slug
 			m.PayoffSlugs = append(m.PayoffSlugs, slug)
-			trace("payoff:" + slug)
 		} else {
 			m.Slugs = append(m.Slugs, slug)
-			trace("tag:" + slug)
 		}
+		seenSlug[slug] = signal
+		trace(signal)
 		return true
 	}
 	addNeedle := func(list *[]string, kind, n string) {
@@ -359,6 +469,31 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			}
 		}
 	}
+	addRow := func(name string) {
+		row := t.Themes[name]
+		for _, s := range row.PayoffSlugs {
+			addSlug(s, true)
+		}
+		for _, n := range row.PayoffText {
+			addNeedle(&m.PayoffText, "payoff-text", strings.ToLower(n))
+		}
+		for _, s := range row.Slugs {
+			addSlug(s, false)
+		}
+		for _, k := range row.Keywords {
+			addNeedle(&m.Keywords, "keyword", k)
+		}
+		if row.Subtype != "" {
+			addNeedle(&m.Subtypes, "subtype", row.Subtype)
+			addTypal(row.Subtype)
+		}
+		for _, ty := range row.Types {
+			addNeedle(&m.Types, "type", ty)
+		}
+		for _, n := range row.Text {
+			addNeedle(&m.Text, "text", strings.ToLower(n))
+		}
+	}
 	for _, w := range t.words(theme) {
 		name, found := t.rowOf(w)
 		if found && seenRow[name] {
@@ -374,29 +509,7 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 				}
 				m.Rows[w] = name
 			}
-			row := t.Themes[name]
-			for _, s := range row.PayoffSlugs {
-				addSlug(s, true)
-			}
-			for _, n := range row.PayoffText {
-				addNeedle(&m.PayoffText, "payoff-text", strings.ToLower(n))
-			}
-			for _, s := range row.Slugs {
-				addSlug(s, false)
-			}
-			for _, k := range row.Keywords {
-				addNeedle(&m.Keywords, "keyword", k)
-			}
-			if row.Subtype != "" {
-				addNeedle(&m.Subtypes, "subtype", row.Subtype)
-				addTypal(row.Subtype)
-			}
-			for _, ty := range row.Types {
-				addNeedle(&m.Types, "type", ty)
-			}
-			for _, n := range row.Text {
-				addNeedle(&m.Text, "text", strings.ToLower(n))
-			}
+			addRow(name)
 		} else {
 			// Generic rule: payoff slugs w-matters and synergy-w, enabler
 			// slugs w and typal-w, then keyword, subtype, and text.
@@ -413,7 +526,10 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 					typal = true
 				}
 			}
+			// A tag names the singular, so the word "cantrips" reads the tag
+			// cantrip as well (F-212).
 			addSlug(w, false)
+			addSlug(singular(w), false)
 			addNeedle(&m.Keywords, "keyword", title(w))
 			addNeedle(&m.Subtypes, "subtype", title(singular(w)))
 			if typal {
@@ -428,8 +544,47 @@ func (t *themeTable) match(theme string, tags *cards.TagIndex) ThemeMatch {
 			m.generic = append(m.generic, w)
 		}
 	}
+	word = ""
+	for _, name := range extraRows {
+		if _, ok := t.Themes[name]; !ok || seenRow[name] {
+			continue
+		}
+		seenRow[name] = true
+		m.CommanderRows = append(m.CommanderRows, name)
+		addRow(name)
+	}
 	// Build fills Unmatched after it scans the pool.
 	return m
+}
+
+// commanderRows names the rows whose commander signals a commander
+// carries, in name order. A commander that rewards a spell that targets
+// its side wants those spells whatever the words name (F-212).
+func (t *themeTable) commanderRows(commanders []*mtgv1.Card, tags *cards.TagIndex) []string {
+	var out []string
+	for name, row := range t.Themes {
+		if len(row.CommanderSlugs) == 0 && len(row.CommanderText) == 0 {
+			continue
+		}
+	scan:
+		for _, c := range commanders {
+			text := strings.ToLower(c.GetOracleText())
+			for _, n := range row.CommanderText {
+				if strings.Contains(text, strings.ToLower(n)) {
+					out = append(out, name)
+					break scan
+				}
+			}
+			for _, s := range row.CommanderSlugs {
+				if slices.Contains(tags.Resolve(s), c.GetOracleId()) {
+					out = append(out, name)
+					break scan
+				}
+			}
+		}
+	}
+	sort.Strings(out)
+	return out
 }
 
 // rowOf finds the row of a theme word (D-724). Each form of the word, the
@@ -743,6 +898,23 @@ var stopWords = map[string]bool{
 	"give": true, "need": true, "like": true, "best": true, "possible": true, "great": true, "really": true,
 	"very": true, "just": true, "something": true, "anything": true, "decks": true, "play": true,
 	"powerful": true, "competitive": true, "optimal": true, "optimized": true, "strongest": true,
+	// The fourth group is the filler of "handsize matters, heavy on
+	// cantrips" and "a good protection suite": no row or alias holds one
+	// of these words, and each one became a dead text needle (F-212).
+	"matters": true, "matter": true, "heavy": true, "lots": true, "suite": true,
+	// The fifth group is the filler that question gate run 58 met in
+	// "reanimate one big creature", "the best deck under budget", and
+	// "for someone who has never played before". Since D-1116 the theme
+	// question names each unmatched word, so a filler word must never
+	// reach it. The words of the avoid slot stay out of this list.
+	"one": true, "two": true, "three": true, "has": true, "have": true, "had": true, "never": true,
+	"someone": true, "anyone": true, "who": true, "played": true, "playing": true, "before": true,
+	"new": true, "player": true, "players": true, "beginner": true, "beginners": true, "budget": true,
+	"under": true, "over": true, "cheap": true, "money": true, "dollars": true, "dollar": true,
+	"are": true, "was": true, "were": true, "been": true, "its": true, "they": true, "them": true,
+	"their": true, "our": true, "but": true, "from": true, "into": true, "about": true, "around": true,
+	"more": true, "much": true, "many": true, "lot": true, "focus": true, "focused": true,
+	"theme": true, "themed": true, "style": true, "based": true, "wants": true,
 }
 
 // singularIE lists plurals in -ies whose singular ends in -ie. The rule
@@ -828,6 +1000,9 @@ func (m ThemeMatch) Describe() string {
 	if len(m.CardSlugs) > 0 || len(m.NoncreatureSlugs) > 0 {
 		s := append(append([]string(nil), m.CardSlugs...), m.NoncreatureSlugs...)
 		parts = append(parts, "typal cards "+strings.Join(s, ", "))
+	}
+	if len(m.CommanderRows) > 0 {
+		parts = append(parts, "commander rows "+strings.Join(m.CommanderRows, ", "))
 	}
 	if len(m.Unmatched) > 0 {
 		parts = append(parts, "unmatched "+strings.Join(m.Unmatched, ", "))

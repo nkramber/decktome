@@ -43,6 +43,7 @@ coverage/
 /go/case-check
 /go/feedback-triage
 /go/users-backfill
+/go/user-case
 /go/deck-gate
 /go/eval
 /go/bracket-gate

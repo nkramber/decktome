@@ -540,3 +540,33 @@ func TestReadClipsTheGoldfishOfAHugeList(t *testing.T) {
 		})
 	}
 }
+
+// TestInteractionLeavesOutProtection reads a deck with seven protection
+// cards: the interaction count holds the interaction alone, and the
+// protection row has no band and no finding (D-1120).
+func TestInteractionLeavesOutProtection(t *testing.T) {
+	rows := shaped()
+	for i, r := range rows {
+		if r.role == mtgv1.CardRole_CARD_ROLE_SYNERGY {
+			rows[i].n = 9
+		}
+	}
+	rows = append(rows, row{knight, 7, mtgv1.CardRole_CARD_ROLE_PROTECTION})
+	p := newProfiler(t, &fakeClassifier{res: &spellbook.Result{BracketTag: "C"}})
+	prof, findings := p.Read(context.Background(), deckOf(3, rows...), source(testCards))
+	if f := feature(t, prof, KeyInteraction); f.GetValue() != 6 {
+		t.Errorf("interaction = %v, want 6", f.GetValue())
+	}
+	f := feature(t, prof, KeyProtection)
+	if f.GetValue() != 7 || f.GetLow() != 0 || f.GetHasHigh() || f.GetOffBand() {
+		t.Errorf("protection row = %v, want 7 with no band", f)
+	}
+	for _, fd := range findings {
+		if strings.Contains(fd.GetMessage(), "protection") {
+			t.Errorf("a protection finding: %s", fd.GetMessage())
+		}
+	}
+	if got := Word(KeyProtection); got != "the protection count" {
+		t.Errorf("Word = %q", got)
+	}
+}

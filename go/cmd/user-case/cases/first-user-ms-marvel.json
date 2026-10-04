@@ -1,0 +1,103 @@
+{
+  "name": "first-user-ms-marvel",
+  "decision": "D-1124",
+  "about": "The session of the first outside user. The repository holds the user's words, the slots, the counts, and the bars (D-642). The collection stays in a private object, and this file pins its hash (D-639, D-1124).",
+  "collection": {
+    "object": "gs://decktome-prod-cards/eval-cases/first-user-ms-marvel/collection.csv.gz",
+    "sha256": "72448cd64be9830c4cefdf73a5b27a0088298db58b6786c6aa5f36612f735771",
+    "format": "ManaBox CSV, gzip",
+    "entries": 18318,
+    "cards": 30209
+  },
+  "snapshot": {
+    "version": "20261003T210155",
+    "object": "gs://decktome-prod-cards/scryfall/20261003T210155"
+  },
+  "model": {
+    "version": "20261003T061713Z",
+    "object": "gs://decktome-prod-cards/meta/model/20261003T061713Z"
+  },
+  "slots": {
+    "format": "commander",
+    "commander": "Ms. Marvel, Kamala Khan",
+    "colors": ["U"],
+    "bracket": 3,
+    "pool": "owned-only"
+  },
+  "turns": [
+    {"turn": 1, "words": "Build a mono-u voltron deck with a good protection suite around Ms. Marvel"},
+    {"turn": 2, "answers": [{"question": "q1-format", "option_index": 0, "means": "Commander"}]},
+    {"turn": 3, "answers": [
+      {"question": "q2-named_card_role", "option_index": 0, "means": "Ms. Marvel as the commander"},
+      {"question": "q3-power_commander", "option_index": 2, "means": "bracket 3"}
+    ]},
+    {"turn": 4, "answers": [{"question": "q4-commander_unresolved", "option_index": 0, "means": "Ms. Marvel, Kamala Khan"}]},
+    {"turn": 5, "words": "There's a lot of \"Artifacts matter\" cards. I'd prefer to play around handsize matters, to increase Marvels' power. Also should be heavy on the cantrips"},
+    {"turn": 6, "answers": [{"question": "q5-theme_unmatched", "text": "voltron, evasioin, protection,  handsize matters."}]}
+  ],
+  "paid": {
+    "target": "make user-case-chat CONFIRM=1",
+    "command": "CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=$(CURDIR)/.local/user-cases/store/scryfall go -C go run ./cmd/chat-probe -collection ../.local/user-cases/first-user-ms-marvel/collection.csv -messages \"<messages>\"",
+    "messages": [
+      "Build a mono-u voltron deck with a good protection suite around Ms. Marvel",
+      "Commander",
+      "Ms. Marvel as my commander. Bracket 3.",
+      "Ms. Marvel, Kamala Khan",
+      "There's a lot of \"Artifacts matter\" cards. I'd prefer to play around handsize matters, to increase Marvels' power. Also should be heavy on the cantrips",
+      "voltron, evasioin, protection,  handsize matters."
+    ],
+    "limits": "chat-probe sends text alone. It sends no option index and no pool rule, so turns 2 to 4 are typed answers and the pool rule comes from the classifier. It writes each deck that reaches the user to a local decks file, and user-case -decks reads the deck measures of each step from it."
+  },
+  "steps": [
+    {
+      "name": "build-1",
+      "after_turn": 4,
+      "theme": "voltron with a good protection suite",
+      "avoid": "",
+      "measures": [
+        {"id": "shortlist", "baseline": 295, "note": "the session stored 297 with the commander and Island", "bar": {"min": 250, "max": 320}},
+        {"id": "unmatched_words", "baseline": 1, "bar": {"max": 0}},
+        {"id": "equipment", "baseline": 131, "bar": {"max": 125}},
+        {"id": "counterspells", "baseline": 1, "note": "one modal Instant // Land of the list holds the counterspell tag, and the deck of the session held 0", "bar": {"min": 6}},
+        {"id": "cantrips", "baseline": 1, "bar": {"min": 3}},
+        {"id": "hand_size", "baseline": 7, "bar": {"min": 3}},
+        {"id": "targeting_spells", "baseline": 0, "bar": {"min": 8}},
+        {"id": "enchant_creature_auras", "baseline": 15, "bar": {"min": 15}},
+        {"id": "artifact_creatures", "baseline": 31, "bar": {"max": 28}}
+      ],
+      "deck": [
+        {"id": "lands", "baseline": 38, "bar": {"min": 34, "max": 38}},
+        {"id": "counterspells", "baseline": 0, "bar": {"min": 3}},
+        {"id": "unique_names", "baseline": 71, "bar": {"min": 60}},
+        {"id": "quality_grade", "baseline": 0.354, "bar": {"min": 0.354}}
+      ]
+    },
+    {
+      "name": "build-2",
+      "after_turn": 6,
+      "theme": "voltron, evasion, protection, handsize matters, heavy on cantrips",
+      "avoid": "artifacts",
+      "measures": [
+        {"id": "shortlist", "baseline": 295, "note": "the session stored 297 with the commander and Island", "bar": {"min": 250, "max": 320}},
+        {"id": "unmatched_words", "baseline": 5, "note": "evasion, handsize, matters, heavy, cantrips", "bar": {"max": 0}},
+        {"id": "equipment", "baseline": 131, "bar": {"max": 125}},
+        {"id": "counterspells", "baseline": 1, "note": "one modal Instant // Land of the list holds the counterspell tag, and the deck of the session held 0", "bar": {"min": 6}},
+        {"id": "cantrips", "baseline": 1, "bar": {"min": 10}},
+        {"id": "hand_size", "baseline": 7, "bar": {"min": 15}},
+        {"id": "targeting_spells", "baseline": 0, "bar": {"min": 10}},
+        {"id": "enchant_creature_auras", "baseline": 15, "bar": {"min": 15}},
+        {"id": "artifact_creatures", "baseline": 31, "bar": {"max": 20}}
+      ],
+      "deck": [
+        {"id": "lands", "baseline": 38, "bar": {"min": 34, "max": 38}},
+        {"id": "counterspells", "baseline": 1, "note": "one modal double-faced land whose front returns a target spell to its owner's hand, played as a land", "bar": {"min": 3}},
+        {"id": "kept_from_build_1", "baseline": 57, "note": "of 71 unique names of build 1", "bar": {"max": 45}},
+        {"id": "quality_grade", "baseline": 0.378, "bar": {"min": 0.378}},
+        {"id": "cantrips", "baseline": 1, "note": "the user asked for cantrips on turn 5", "bar": {"min": 6}},
+        {"id": "hand_size", "baseline": 5, "note": "the user asked for hand size on turn 5", "bar": {"min": 8}},
+        {"id": "equipment", "baseline": 25, "note": "the user asked for fewer artifacts on turn 5", "bar": {"max": 12}},
+        {"id": "artifact_creatures", "baseline": 9, "bar": {"max": 4}}
+      ]
+    }
+  ]
+}

@@ -851,9 +851,18 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 		defer s.building.Delete(key)
 		before := len(session.GetDeckIds())
 		session.Status = mtgv1.SessionStatus_SESSION_STATUS_BUILT
+		// The slots are compared with the slots of the last deck, and not
+		// with the slots before this turn. A change in a turn that asked
+		// a question must still rebuild on the turn that answers it
+		// (D-1118). A session with no record compares this turn alone.
+		changed, known := st.SlotsChangedSinceBuild()
+		if !known {
+			changed = slotsChanged(slotsBefore, session.GetSlots())
+		}
+		st.MarkBuilt()
 		var err error
 		switch {
-		case before > 0 && !slotsChanged(slotsBefore, session.GetSlots()):
+		case before > 0 && !changed:
 			// A message after a build with no slot change asks for a
 			// change to the deck the user read (D-283).
 			err = s.sendRevision(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, message, turn, stream)
@@ -862,15 +871,53 @@ func (s *Server) Chat(ctx context.Context, req *connect.Request[mtgv1.ChatReques
 				Status: "a deck setting changed, so the deck is built again from the start"}}); err != nil {
 				return err
 			}
-			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream)
+			if err = s.sendUnusedTheme(st, stream); err != nil {
+				return err
+			}
+			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream,
+				s.lastDeck(ctx, uid, session))
 		default:
-			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream)
+			if err = s.sendUnusedTheme(st, stream); err != nil {
+				return err
+			}
+			err = s.sendDeck(ctx, uid, session, st, st.Snapshot(), version+1, owned, acc, usageBefore, stream, nil)
 		}
 		if err != nil {
 			return err
 		}
 	}
 	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Usage{Usage: session.GetUsage()}})
+}
+
+// sendUnusedTheme names the words of the theme that match no card, before
+// a build that reads the theme. The reader kept them after the theme row
+// asked, or never answered it, and a build that drops them in silence
+// reads as a build that ignored the request (D-1116).
+func (s *Server) sendUnusedTheme(st *questions.State, stream *connect.ServerStream[mtgv1.ChatResponse]) error {
+	note := st.UnusedThemeNote()
+	if note == "" {
+		return nil
+	}
+	return stream.Send(&mtgv1.ChatResponse{Event: &mtgv1.ChatResponse_Status{Status: note}})
+}
+
+// lastDeck reads the newest deck of the session, the base of a rebuild
+// that keeps its format and its commander (D-1118). A failed read logs
+// and answers nil, and the rebuild then counts as a new deck.
+func (s *Server) lastDeck(ctx context.Context, uid string, session *mtgv1.Session) *mtgv1.Deck {
+	ids := session.GetDeckIds()
+	if s.deckStore == nil || len(ids) == 0 {
+		return nil
+	}
+	sctx, cancel := detached(ctx, storeLimit)
+	defer cancel()
+	d, err := s.deckStore.Get(sctx, uid, ids[len(ids)-1])
+	if err != nil {
+		s.log.WarnContext(ctx, "the last deck could not be read, so the rebuild counts as a new deck",
+			"session", session.GetId(), "deck", ids[len(ids)-1], "err", err)
+		return nil
+	}
+	return d
 }
 
 // errCapReached is the refusal of D-421. The date is the first day of
@@ -1349,20 +1396,11 @@ func storeError(err error) error {
 	return connect.NewError(connect.CodeInternal, err)
 }
 
-// slotsChanged compares the deck settings of two slot sets. The fill
-// states are not settings: a turn that marks a question asked changes
-// no deck. A nil side counts as empty.
+// slotsChanged compares the deck settings of two slot sets, by the rule
+// of questions.SlotsKey. The fill states are not settings: a turn that
+// marks a question asked changes no deck. A nil side counts as empty.
 func slotsChanged(before, after *mtgv1.Slots) bool {
-	if before == nil {
-		before = &mtgv1.Slots{}
-	}
-	if after == nil {
-		after = &mtgv1.Slots{}
-	}
-	a := proto.Clone(before).(*mtgv1.Slots)
-	b := proto.Clone(after).(*mtgv1.Slots)
-	a.SlotStates, b.SlotStates = nil, nil
-	return !proto.Equal(a, b)
+	return questions.SlotsKey(before) != questions.SlotsKey(after)
 }
 
 // pairSeparator joins the two names of a commander pair in one option.

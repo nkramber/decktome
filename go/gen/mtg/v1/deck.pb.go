@@ -89,6 +89,10 @@ const (
 	CardRole_CARD_ROLE_SYNERGY     CardRole = 8
 	CardRole_CARD_ROLE_WINCON      CardRole = 9
 	CardRole_CARD_ROLE_OTHER       CardRole = 10
+	// CARD_ROLE_PROTECTION is a permanent that protects a creature, for
+	// example Swiftfoot Boots. The interaction band does not count it
+	// (D-1120).
+	CardRole_CARD_ROLE_PROTECTION CardRole = 11
 )
 
 // Enum value maps for CardRole.
@@ -105,6 +109,7 @@ var (
 		8:  "CARD_ROLE_SYNERGY",
 		9:  "CARD_ROLE_WINCON",
 		10: "CARD_ROLE_OTHER",
+		11: "CARD_ROLE_PROTECTION",
 	}
 	CardRole_value = map[string]int32{
 		"CARD_ROLE_UNSPECIFIED": 0,
@@ -118,6 +123,7 @@ var (
 		"CARD_ROLE_SYNERGY":     8,
 		"CARD_ROLE_WINCON":      9,
 		"CARD_ROLE_OTHER":       10,
+		"CARD_ROLE_PROTECTION":  11,
 	}
 )
 
@@ -1964,7 +1970,7 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\tRerunCase\x12\x1a\n" +
 	"\x16RERUN_CASE_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10RERUN_CASE_PATCH\x10\x01\x12\x16\n" +
-	"\x12RERUN_CASE_REBUILD\x10\x02*\xff\x01\n" +
+	"\x12RERUN_CASE_REBUILD\x10\x02*\x99\x02\n" +
 	"\bCardRole\x12\x19\n" +
 	"\x15CARD_ROLE_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eCARD_ROLE_LAND\x10\x01\x12\x12\n" +
@@ -1977,7 +1983,8 @@ const file_mtg_v1_deck_proto_rawDesc = "" +
 	"\x11CARD_ROLE_SYNERGY\x10\b\x12\x14\n" +
 	"\x10CARD_ROLE_WINCON\x10\t\x12\x13\n" +
 	"\x0fCARD_ROLE_OTHER\x10\n" +
-	"*^\n" +
+	"\x12\x18\n" +
+	"\x14CARD_ROLE_PROTECTION\x10\v*^\n" +
 	"\bSeverity\x12\x18\n" +
 	"\x14SEVERITY_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eSEVERITY_BLOCK\x10\x01\x12\x11\n" +

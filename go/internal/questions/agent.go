@@ -267,50 +267,58 @@ func (a *Agent) readFacts(st *State) {
 	a.readThemeMatch(st)
 }
 
-// readThemeMatch sets the fact of the theme row (D-725, D-728). The row
-// asks for the theme again when the theme holds words and no word matches
-// a card of the format and the colors.
+// readThemeMatch sets the fact of the theme row (D-725, D-1116). The row
+// asks for the theme again when one word of the theme matches no card of
+// the format and the colors, though the other words match.
 //
 // The row informs the theme slot under a key of its own, so the theme the
-// reader wrote does not close it. A new theme that matches a card closes
-// the key. A reply that keeps the theme skips it, and the build reads the
-// words as they are: without this, the re-ask of D-599 sent the same
-// question again. Another theme that matches no card asks once more, the
-// D-210 rule, and so does a new miss after the key closed.
+// reader wrote does not close it. A new theme whose every word matches a
+// card closes the key. Any other reply to the row skips it, and the build
+// reads the words as they are and names the words it can not use: without
+// this, the re-ask of D-599 sent the same question again, and a reply that
+// kept one dead word asked again on each turn. A later theme that matches
+// no card asks once more, the D-210 rule.
 func (a *Agent) readThemeMatch(st *State) {
 	st.Ctx.ThemeChanged = st.BadThemeChanged()
 	ts, ok := a.hints.(ThemeSource)
 	theme := strings.TrimSpace(st.Slots.GetTheme())
 	format := st.Slots.GetFormat().GetId()
 	if !ok || theme == "" || format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
-		st.Ctx.ThemeUnmatched, st.Ctx.ThemeCheck = false, ""
+		st.Ctx.ThemeUnmatched, st.Ctx.ThemeMissing, st.Ctx.ThemeCheck = false, nil, ""
 		return
 	}
 	// The hint builds a shortlist over the whole card index, and agentsvc
 	// makes a new hint source for each turn. So the session keeps the
 	// answer, and a turn with the same theme, format, and colors reads it.
 	check := strings.ToLower(theme) + "|" + format.String() + "|" + colorKey(st.Slots.GetColors())
-	missed := st.Ctx.ThemeUnmatched
-	if check != st.Ctx.ThemeCheck {
-		missed = ts.ThemeUnmatched(theme)
+	// A snapshot from before D-1116 holds the fact and no word, so it
+	// reads the index once more for the words.
+	missing := st.Ctx.ThemeMissing
+	if check != st.Ctx.ThemeCheck || (st.Ctx.ThemeUnmatched && len(missing) == 0) {
+		missing = ts.ThemeUnmatched(theme)
 		st.Ctx.ThemeCheck = check
 	}
+	missed := len(missing) > 0
 	out := st.Slots.GetSlotStates()[SlotThemeUnmatched] == mtgv1.SlotState_SLOT_STATE_ASKED
 	switch {
 	case out && st.Ctx.ThemeChanged && !missed:
 		a.log.Info("the reader named a theme that matches cards, so the theme row closed",
 			"session", st.SessionID, "theme", theme)
 		st.Close(SlotThemeUnmatched)
-	case out && !st.Ctx.ThemeChanged && st.repliedTo(SlotThemeUnmatched):
-		a.log.Info("the reader kept a theme that matches no card, so the build reads its words as they are",
-			"session", st.SessionID, "theme", theme)
+	case out && st.repliedTo(SlotThemeUnmatched):
+		a.log.Info("the reader replied to the theme row with words that match no card, so the build reads the words as they are",
+			"session", st.SessionID, "theme", theme, "unmatched", strings.Join(missing, ", "))
 		st.Skip(SlotThemeUnmatched)
+		// The reply is the theme the row settled, so it is no change
+		// that asks again on the next turn (D-210).
+		st.RecordAskedTheme()
+		st.Ctx.ThemeChanged = false
 	case !out && st.Ctx.Filled[SlotThemeUnmatched] && st.Ctx.ThemeChanged && missed:
 		a.log.Info("another theme matches no card, so the theme row may ask again",
 			"session", st.SessionID, "theme", theme)
 		st.ReopenRows(a.cat, SlotThemeUnmatched)
 	}
-	st.Ctx.ThemeUnmatched = missed
+	st.Ctx.ThemeUnmatched, st.Ctx.ThemeMissing = missed, missing
 }
 
 // resolvedRows holds the placeholder-free text, the options, and the
@@ -603,7 +611,10 @@ type classifyOut struct {
 	// HouseRules is what the user means by "anything goes", in the
 	// user's own words. The house-rules row asks it, and the build reads
 	// the answer (D-3, D-265).
-	HouseRules string   `json:"house_rules"`
+	HouseRules string `json:"house_rules"`
+	// Avoid is what the user wants less of, in the user's own words. The
+	// build ranks a card that matches it lower (D-1122).
+	Avoid      string   `json:"avoid"`
 	ClosedKeys []string `json:"closed_keys"`
 	// DeclinedKeys are the keys the user handed back to the agent. A
 	// decline is not an answer: it holds no value, and a default applies
@@ -1548,8 +1559,35 @@ func (a *Agent) apply(ctx context.Context, st *State, out classifyOut, open []st
 		st.Slots.HouseRules = s
 		st.Close("house_rules")
 	}
+	applyAvoid(st, out.Avoid)
 	a.applyKeys(st, out, open, message)
 	a.applyFacts(st, out, message)
+}
+
+// SlotAvoid is the state key of the avoid slot (D-1122). No row asks it,
+// and a message that names a thing to avoid fills it.
+const SlotAvoid = "avoid"
+
+// applyAvoid adds what the user wants less of to the avoid slot (D-1122).
+// A later message adds to it and never drops an earlier thing, because
+// the classifier reads the earlier messages and can repeat or omit one.
+// A thing the slot holds already, in any case, is not added twice.
+func applyAvoid(st *State, avoid string) {
+	s := strings.TrimSpace(avoid)
+	if s == "" {
+		return
+	}
+	cur := st.Slots.GetAvoid()
+	for _, part := range strings.Split(cur, ";") {
+		if strings.EqualFold(strings.TrimSpace(part), s) {
+			return
+		}
+	}
+	if cur != "" {
+		s = cur + "; " + s
+	}
+	st.Slots.Avoid = s
+	st.Close(SlotAvoid)
 }
 
 // applyTheme writes the theme. A superlative phrase such as "the best

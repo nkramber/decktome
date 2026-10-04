@@ -37,9 +37,10 @@ func code(t *testing.T) string {
 	return c
 }
 
-// TestLinkRoundTrip is D-1081 and D-1082: a link works one time, a send
-// within the cooldown stores nothing, a new send removes the old link,
-// and an expired link refuses.
+// TestLinkRoundTrip is D-1081, D-1082, and D-1119: a link works one
+// time, a second take names the uid alone, a send within the cooldown
+// stores nothing, a new send removes the old link, and an expired link
+// refuses.
 func TestLinkRoundTrip(t *testing.T) {
 	client := emulatorClient(t)
 	ctx := context.Background()
@@ -68,8 +69,22 @@ func TestLinkRoundTrip(t *testing.T) {
 	if err != nil || got.UID != uid || got.Email != "ann@example.com" {
 		t.Fatalf("take: %+v, %v", got, err)
 	}
-	if _, err := repo.Take(ctx, second, t0.Add(2*Cooldown)); !errors.Is(err, ErrUnknown) {
-		t.Fatalf("a second take: %v, want ErrUnknown", err)
+	again, err := repo.Take(ctx, second, t0.Add(3*Cooldown))
+	if !errors.Is(err, ErrUsed) || again.UID != uid || again.Email != "" || !again.UsedAt.Equal(t0.Add(2*Cooldown)) {
+		t.Fatalf("a second take: %+v, %v, want ErrUsed with the uid alone", again, err)
+	}
+	snap, err := client.Collection(Collection).Doc(Key(second)).Get(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := snap.DataAt("email"); err == nil {
+		t.Fatalf("the used link keeps the email: %v", snap.Data())
+	}
+	if _, err := repo.Take(ctx, second, t0.Add(Cooldown+Life)); !errors.Is(err, ErrUsed) {
+		t.Fatalf("a used link after its expiry: %v, want ErrUsed", err)
+	}
+	if _, err := repo.Take(ctx, second, t0.Add(Cooldown+Life)); !errors.Is(err, ErrUnknown) {
+		t.Fatalf("the expired used link stays: %v, want ErrUnknown", err)
 	}
 
 	late := code(t)

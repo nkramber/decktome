@@ -409,12 +409,12 @@ func TestRewordIsRefused(t *testing.T) {
 // TestRewordKeepsTheCatalogQuestion runs the refusal through a turn.
 func TestRewordKeepsTheCatalogQuestion(t *testing.T) {
 	out := commanderClassify()
-	catalog := "Which power bracket should the deck target? 2 is the core level, near a precon, 3 is upgraded, 4 is high power."
+	catalog := "Which Commander bracket should the deck target: 1 Exhibition, 2 Core, 3 Upgraded, 4 Optimized, or 5 cEDH?"
 	a, _ := testAgent(t,
 		classifyStep(t, out),
 		scoreStep(t,
 			scored{RowID: "power_commander", Fit: 0.20, Reason: "test",
-				CustomText: "Which power bracket should the white-black deck target? 2 is the core level, near a precon, 3 is upgraded, 4 is high power."},
+				CustomText: "Which Commander bracket should the white-black deck target: 1 Exhibition, 2 Core, 3 Upgraded, 4 Optimized, or 5 cEDH?"},
 			scored{RowID: "commander", Fit: 0.9, Reason: "fits"}),
 		askStep(t))
 	st := NewState(false)
@@ -499,6 +499,9 @@ func TestPowerReadsTheOptionOfItsOwnRow(t *testing.T) {
 		{"3 upgraded", 3},
 		{"4 optimized", 4},
 		{"5 cEDH", 5},
+		// The options name the brackets as Wizards writes them (D-1125).
+		{"1 Exhibition", 1},
+		{"4 Optimized", 4},
 		{"bracket 4", 4},
 		{"4", 4},
 	} {

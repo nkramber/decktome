@@ -87,6 +87,10 @@ message Slots {
   // usable, and a card with no copy left leaves the pool. Empty means no
   // exclusion.
   repeated string exclude_precon_keys = 14;
+  // avoid is what the user wants less of, in the user's words, for
+  // example "artifacts". The build ranks a card that matches it lower
+  // (D-1122). Empty means nothing to avoid.
+  string avoid = 15;
   // slot_states is keyed by slot name: scope, deck_count, format,
   // power, colors, theme, commander, pool_rule, budget, house_rules.
   // A refinement row keys its own name beside them, for example

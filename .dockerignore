@@ -21,6 +21,7 @@ go/feedback-harvest
 go/case-check
 go/feedback-triage
 go/users-backfill
+go/user-case
 go/allow
 go/deactivate-user
 go/mark-verified

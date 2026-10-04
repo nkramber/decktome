@@ -82,7 +82,16 @@ package questions
 // Words about strong cards, such as "whatever is strongest", decline no
 // key. The constant skips 19, the number of the set matcher note above.
 // The instruction text changed, so the question gate re-baselines (D-66).
-const PromptVersion = 20
+//
+// Version 21 adds avoid to the classify role (D-1122). A reader who
+// wants less of a thing, "too many artifacts", names it there, and the
+// words leave the theme. The instruction text changed, so the question
+// gate re-baselines (D-66).
+//
+// Version 22: avoid keeps "no" when the user wants none of the thing,
+// so a hard request reaches the build (D-1122). The instruction text
+// changed, so the question gate re-baselines (D-66).
+const PromptVersion = 22
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -96,6 +105,7 @@ Rules:
 - format from an adjective: "a Commander deck", "a Modern burn deck", and "a Standard burn deck" all name the format. Read it. "EDH" means commander.
 - format from a commander phrase: a message that says "my commander", "not as my commander", "in the 99", "bracket 3", or "my precon" means the commander format, even when the word Commander is absent. Fill the format field from it.
 - theme: the plan in the user's own words, for example "lifegain" or "mill". An answer such as "the best deck under budget" or "a named tier-one deck" is also a theme.
+- avoid: what the user wants less of in the deck, in the user's own words, for example "artifacts" for "there are too many artifacts". Write the thing without "less" or "fewer". When the user wants none of the thing, start with "no": "no artifacts" for "no artifacts at all" or "I don't want any artifacts". A thing to avoid is never a theme, so it stays out of the theme field. Leave avoid empty when the message asks for less of nothing.
 - power: a Commander bracket as "bracket 3", or a 60-card step as "casual", "fnm", or "tournament". Vague words such as "strongest", "competitive", or "best" are not a step. Leave power empty for those and set facts.power_competitive.
 - "cEDH" is a power level and a format. It means bracket 5, and the deck is Commander. "Competitive Commander" is not the same thing: it names no bracket.
 - pool_rule: "owned_first" when the user builds from their library first, "owned_only" when only owned cards may be used, "any_card" when the library does not constrain the deck.
@@ -136,7 +146,7 @@ Answer with the schema only.`
 const classifySchema = `{
   "type": "object",
   "additionalProperties": false,
-  "required": ["format","theme","colors","commander_names","locked_names","named_cards","set_names","set_groups","precon_names","power","pool_rule","budget_usd","budget_scope","house_rules","closed_keys","declined_keys","facts"],
+  "required": ["format","theme","colors","commander_names","locked_names","named_cards","set_names","set_groups","precon_names","power","pool_rule","budget_usd","budget_scope","house_rules","avoid","closed_keys","declined_keys","facts"],
   "properties": {
     "format": {"type": "string"},
     "theme": {"type": "string"},
@@ -152,6 +162,7 @@ const classifySchema = `{
     "budget_usd": {"type": "number"},
     "budget_scope": {"type": "string", "enum": ["buy", "deck", "unknown"]},
     "house_rules": {"type": "string"},
+    "avoid": {"type": "string"},
     "closed_keys": {"type": "array", "items": {"type": "string"}},
     "declined_keys": {"type": "array", "items": {"type": "string"}},
     "facts": {

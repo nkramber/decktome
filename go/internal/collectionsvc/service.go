@@ -137,9 +137,12 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 		return connect.NewResponse(&mtgv1.ImportCollectionResponse{Collection: col, Report: report}), nil
 	}
 	// A collection over the stated limit fails here, with the limit in the
-	// message, and not at the store write (REV-026).
+	// message, and not at the store write (REV-026). The limit is a fixed
+	// property of the file, so the code is InvalidArgument (HTTP 400):
+	// ResourceExhausted (HTTP 429) stays for the limits that a wait
+	// clears, the rate limit and the spend cap (D-1110).
 	if len(entries) > collections.MaxEntries {
-		return nil, connect.NewError(connect.CodeResourceExhausted,
+		return nil, connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("%w. This file holds %d", collections.ErrTooManyEntries, len(entries)))
 	}
 	col.Entries = entries
@@ -178,7 +181,7 @@ func (s *Server) ImportCollection(ctx context.Context, req *connect.Request[mtgv
 	id, err := s.repo.Put(ctx, uid, col)
 	if err != nil {
 		if errors.Is(err, collections.ErrTooLarge) {
-			return nil, connect.NewError(connect.CodeResourceExhausted, err)
+			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}

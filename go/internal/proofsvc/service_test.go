@@ -69,15 +69,24 @@ func (f *fakeLinks) Put(_ context.Context, code string, link prooflink.Link) err
 	return nil
 }
 
+// Take follows the store: a used link stays until it expires, and a
+// second take names the uid alone (D-1119).
 func (f *fakeLinks) Take(_ context.Context, code string, now time.Time) (prooflink.Link, error) {
 	l, ok := f.byCode[code]
 	if !ok {
 		return prooflink.Link{}, prooflink.ErrUnknown
 	}
-	delete(f.byCode, code)
-	if !now.Before(l.ExpiresAt) {
+	expired := !now.Before(l.ExpiresAt)
+	if expired {
+		delete(f.byCode, code)
+	}
+	switch {
+	case !l.UsedAt.IsZero():
+		return prooflink.Link{UID: l.UID, UsedAt: l.UsedAt}, prooflink.ErrUsed
+	case expired:
 		return prooflink.Link{}, prooflink.ErrExpired
 	}
+	f.byCode[code] = prooflink.Link{UID: l.UID, CreatedAt: l.CreatedAt, ExpiresAt: l.ExpiresAt, UsedAt: now}
 	return l, nil
 }
 
@@ -139,11 +148,19 @@ func (r *rig) send(uid string) (*mtgv1.SendLinkResponse, error) {
 }
 
 func (r *rig) open(code string) (string, error) {
-	res, err := r.server.OpenLink(context.Background(), connect.NewRequest(&mtgv1.OpenLinkRequest{Code: code}))
+	res, err := r.openFull(code)
 	if err != nil {
 		return "", err
 	}
-	return res.Msg.GetCustomToken(), nil
+	return res.GetCustomToken(), nil
+}
+
+func (r *rig) openFull(code string) (*mtgv1.OpenLinkResponse, error) {
+	res, err := r.server.OpenLink(context.Background(), connect.NewRequest(&mtgv1.OpenLinkRequest{Code: code}))
+	if err != nil {
+		return nil, err
+	}
+	return res.Msg, nil
 }
 
 // lastCode reads the code of the last email.
@@ -193,9 +210,60 @@ func TestSendThenOpen(t *testing.T) {
 	if len(r.accounts.proved) != 1 || !r.accounts.accts["u-ann"].Proved {
 		t.Fatalf("proved = %v", r.accounts.proved)
 	}
-	if _, err := r.open(code); codeOf(err) != connect.CodeNotFound {
-		t.Fatalf("a second open: %v, want NotFound", err)
+	again, err := r.openFull(code)
+	if err != nil || !again.GetAlreadyProved() || again.GetCustomToken() != "" {
+		t.Fatalf("a second open: %v, %v, want already_proved and no token", again, err)
 	}
+	if len(r.accounts.proved) != 1 {
+		t.Fatalf("a second open proved again: %v", r.accounts.proved)
+	}
+}
+
+// TestUsedLink is D-1119: a used link signs in no one. It says that the
+// email is proved while the account is proved, and it works as an
+// unknown code otherwise and after its expiry.
+func TestUsedLink(t *testing.T) {
+	used := func(r *rig, uid string) string {
+		code, err := prooflink.NewCode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		r.links.byCode[code] = prooflink.Link{UID: uid, CreatedAt: r.now, ExpiresAt: r.now.Add(prooflink.Life), UsedAt: r.now}
+		return code
+	}
+	t.Run("a proved account", func(t *testing.T) {
+		r := newRig()
+		res, err := r.openFull(used(r, "u-bob"))
+		if err != nil || !res.GetAlreadyProved() || res.GetCustomToken() != "" {
+			t.Fatalf("open: %v, %v", res, err)
+		}
+	})
+	t.Run("an account that is not proved", func(t *testing.T) {
+		r := newRig()
+		if _, err := r.open(used(r, "u-ann")); codeOf(err) != connect.CodeNotFound {
+			t.Fatalf("err = %v, want NotFound", err)
+		}
+		if len(r.accounts.proved) != 0 {
+			t.Fatalf("a used link proved %v", r.accounts.proved)
+		}
+	})
+	t.Run("an account that is gone", func(t *testing.T) {
+		r := newRig()
+		if _, err := r.open(used(r, "u-gone")); codeOf(err) != connect.CodeNotFound {
+			t.Fatalf("err = %v, want NotFound", err)
+		}
+	})
+	t.Run("after the expiry", func(t *testing.T) {
+		r := newRig()
+		code := used(r, "u-bob")
+		r.now = r.now.Add(prooflink.Life)
+		if res, err := r.openFull(code); err != nil || !res.GetAlreadyProved() {
+			t.Fatalf("the last open: %v, %v", res, err)
+		}
+		if _, err := r.open(code); codeOf(err) != connect.CodeNotFound {
+			t.Fatalf("err = %v, want NotFound", err)
+		}
+	})
 }
 
 func TestSendRefusals(t *testing.T) {
