@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** `make store-check` passed each store on a new emulator. `make verify` on `7640013` passed each step through shellcheck, with 544 of 544 web tests under Node 22. The Docker daemon was off, so the two image builds did not run here. This diff changes no Dockerfile, and the docker job of CI builds both images.
 
-**The review.** Gitar and the Codex review follow the push.
+**The review.** Gitar approved `3e7142d`. The Codex review is Blocked at `3e7142d`. No code finding stays open. `make store-check` failed in the unchanged sessions store on old emulator data. The collection tests passed.
 
 **The open work.**
 
