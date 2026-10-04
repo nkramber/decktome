@@ -172,6 +172,18 @@ func TestParsePoolRule(t *testing.T) {
 	}
 }
 
+// The default sends the rule that the web app sends with a chosen
+// collection (D-1011, D-1161).
+func TestDefaultPoolIsTheRuleOfTheWebApp(t *testing.T) {
+	got, err := parsePoolRule(defaultPool)
+	if err != nil {
+		t.Fatalf("parsePoolRule(%q): %v", defaultPool, err)
+	}
+	if got != mtgv1.PoolRule_POOL_RULE_OWNED_ONLY {
+		t.Errorf("the default pool rule is %v, want %v", got, mtgv1.PoolRule_POOL_RULE_OWNED_ONLY)
+	}
+}
+
 func TestDescribeNamesTheChosenOption(t *testing.T) {
 	q := &mtgv1.Question{Slot: "power", Options: []string{"bracket 2", "bracket 3"}}
 	i := int32(1)
