@@ -24,12 +24,11 @@ Author provider: Claude Code
 
 **The review.** The Gitar review of `ef3db2b` passed with all four threads resolved. The Codex review of effective head `6d65fd5` is Ready for owner merge with no findings. The local `make verify` passed.
 
-**The open work.** The session stopped at the checkpoint (D-946).
+**The open work.** Every check passed, and the pull request waits for the owner, then the auto-merge (D-828).
 
-1. Confirm that `verify` and `pr-contract` run on the head. Do the Gitar pass, then `make codex-review PR=282`.
-2. The merge question of the owner (D-828, D-834).
-3. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
-4. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
+1. Ask the owner to confirm the merge (D-834). Then turn on the auto-merge.
+2. Before the first run, the owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login.
+3. After the merge and the deploy, the owner runs `./start-live-evals`. The first run marks the six decks of 2026-10-03 read (D-1133).
 
 ## How to resume
 
