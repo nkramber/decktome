@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **The checks.** The Go tests of `profile`, `generate`, and `candidates` pass. A replay of the snapshot of 2026-09-04 drops Astral Cornucopia, Mana Bloom, and Everflowing Chalice alone, from 77 to 74. `docs/reference/hidden-cost-fast-mana-2026-10-04.md` holds the counts.
 
-**The review.** The Gitar pass and the Codex review wait for the push.
+**The review.** Gitar approved effective head `5881231`, and no review thread stays open. Codex reviewed `58812319b19e0ee120ac03556796ce2e7cfff8cc`. The verdict is `Ready for owner merge`. No finding stays open.
 
 **Open.** After the deploy, read `/readyz` for the merge commit.
 
