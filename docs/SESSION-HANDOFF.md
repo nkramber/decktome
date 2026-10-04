@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The checks of the code.** `make verify` passed on `8489cfd`. CI passed every verify job, `pr-contract`, and Gitar. `review-gate` still reads the prior review record.
 
-**The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`, pending the review-record push.
+**The review.** Gitar passed on `8489cfd`, and its D-1161 thread is resolved. Codex reviewed `8489cfd34864733fc2058a78adec2bf569fa18bb`. P2-1 is fixed: the test reads the registered `-pool` default. The current verdict is `Ready for owner merge`. The review record is on the branch.
 
 **Open.** The bracket 5 deck of that run held 0 tutors and 5 Game Changers, under the profile of bracket 5. No item holds this result yet.
 
