@@ -15,6 +15,7 @@ Each repo that uses Gitar keeps a copy of this file. A rule of the repo wins ove
 - **Dashboard comment**: the Gitar comment on the pull request that holds the collapsed `Code Review` block. Gitar edits this comment for each review. Gitar can also delete it and post a new one with a new id.
 - **Pause note**: the note at the top of the dashboard comment that starts "Automatic reviews are paused".
 - **Manual review**: the review that a `Gitar review` comment starts.
+- **Accept reply**: the Gitar reply that starts a manual review: "On it", "Running the review now", or "Running a review on this PR now" (D-992, D-1114).
 - **Effective head**: the newest commit that changes a path outside the metadata set (D-752).
 - **Metadata set**: two paths of this repo: `docs/SESSION-HANDOFF.md` and `docs/reference/session-handoff-archive.md` (D-752).
 - **Current review**: a review of the effective head.
@@ -42,7 +43,7 @@ Do these steps after each push.
 9. Apply the rule in "Prove that a review is current".
 10. When the review is current, go to step 17.
 11. When the review is stale, or you cannot prove that it is current, comment `Gitar review` on the pull request.
-12. Read the Gitar reply with command B. When it is "On it" or "Running the review now", go to step 15.
+12. Read the Gitar reply with command B. When it is an accept reply, go to step 15.
 13. When the reply is "You've sent several Gitar comments in a short window", no review started. Wait ten minutes, then go to step 11.
 14. When no reply comes in five minutes, go to step 11.
 15. Do not push while the manual review runs. A push at this time makes the review stale.
@@ -91,7 +92,7 @@ A review is current only when each of these conditions is true:
 - The head from command B is the head that you recorded in step 3. A later commit of the metadata set also passes this condition (D-752).
 - The dashboard comment has an edit time later than the push time that you recorded in step 3.
 - After a `Gitar review` comment, Gitar replied "On it", and the dashboard comment has an edit time later than that reply.
-- Since 2026-09-29, Gitar can reply "Running the review now" after the review ends (D-992). Then the dashboard edit time must be later than the request.
+- Gitar can send an accept reply after the review ends (D-992, D-1114). Then the dashboard edit time must be later than the request.
 - The dashboard shows no spinner and no "Responding to your feedback" line. These mark a review in progress.
 - You read the newest dashboard comment. Gitar can delete the dashboard comment and post a new one with a new id.
 
@@ -163,7 +164,7 @@ echo "head:      $(gh pr view "$n" --json headRefOid --jq .headRefOid)"
 echo "requested: $(gh api --paginate "repos/$repo/issues/$n/comments" \
   --jq '.[] | select(.body | test("^\\s*gitar review\\s*$"; "i")) | .created_at' | tail -1)"
 
-# The time and the first line of the newest Gitar reply to a request: "On it", "Running the review now", or a refusal.
+# The time and the first line of the newest Gitar reply to a request: an accept reply or a refusal.
 echo "reply:     $(gh api --paginate "repos/$repo/issues/$n/comments" \
   --jq '.[] | select(.user.login == "gitar-bot[bot]")
         | select(.body | test("^> gitar review"; "i"))

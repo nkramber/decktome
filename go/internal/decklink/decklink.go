@@ -1,6 +1,6 @@
 // Package decklink sorts a deck link that a user pasted into the site it
 // names, and holds the steps of an export for each site that the app can
-// not read (PR-121, D-1103).
+// not read (PR-123, D-1103).
 //
 // A site is one of three kinds. The app reads an Archidekt deck itself
 // (D-1100). Moxfield refuses every client that is not a browser, so a

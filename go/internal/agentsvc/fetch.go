@@ -24,7 +24,7 @@ var (
 )
 
 // FetchDeckList reads a public deck by its link, and answers its list as
-// text (PR-121, D-1100). The import form shows the text, and ImportDeck
+// text (PR-123, D-1100). The import form shows the text, and ImportDeck
 // reads it as a pasted list. It stores nothing. A site that the app can
 // not read gets the steps of an export, and the read of such a site never
 // leaves the server (D-1103). The client files a report of a site with no

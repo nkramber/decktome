@@ -141,7 +141,7 @@ The project moved from the Spark plan to the Blaze plan when you linked the bill
 1. Run `gcloud firestore databases create --location=REGION --type=firestore-native --edition=standard`. The database id stays `(default)`.
 2. Run `firebase deploy --only firestore`. It writes the deny-all rules and the indexes of the repo.
 3. Run `gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=10d`. `decktome-prod` keeps each backup 10 days (D-936).
-4. Run `gcloud firestore fields ttls update expire_at --collection-group=deck_reads --enable-ttl`. Firestore then deletes each deck read after its hour, typically within 24 hours (D-1110).
+4. Run `gcloud firestore fields ttls update expire_at --collection-group=deck_reads --enable-ttl`. Firestore then deletes each deck read after its hour, typically within 24 hours (D-1113).
 
 Section 11 of `docs/deploy-and-rollback.md` holds the restore. The schedule command is from `gcloud firestore backups schedules create --help`, gcloud 533.0.0, read 2026-09-25.
 

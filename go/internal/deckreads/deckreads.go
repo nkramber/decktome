@@ -6,7 +6,7 @@
 //
 // Each read is one document, so no count of reads drops a read before
 // its hour ends. A Firestore TTL policy on expire_at deletes a document
-// after its hour, typically within 24 hours (D-1110).
+// after its hour, typically within 24 hours (D-1113).
 package deckreads
 
 import (
@@ -25,7 +25,7 @@ import (
 // it.
 const Collection = "deck_reads"
 
-// TTLField is the field of the TTL policy of Collection (D-1110).
+// TTLField is the field of the TTL policy of Collection (D-1113).
 const TTLField = "expire_at"
 
 // Life is how long a read lets an import keep its link.

@@ -35,6 +35,6 @@ The repeat record read `Changes required` at head `8d9737c`, with two findings o
 
 - The result: full merit.
 - The evidence: `Add` pruned old reads only at the next read of the user. With no later read, the document stayed.
-- The correction: the owner chose a Firestore TTL policy (D-1110). Each document holds `expire_at`, one hour after the read. `docs/setup-gcp.md` section 6 holds the command, and it runs once on production. Firestore deletes an expired document typically within 24 hours (docs.cloud.google.com/firestore/native/docs/ttl, read 2026-10-04). `Has` refuses an expired read before the delete.
+- The correction: the owner chose a Firestore TTL policy (D-1113). Each document holds `expire_at`, one hour after the read. `docs/setup-gcp.md` section 6 holds the command, and it runs once on production. Firestore deletes an expired document typically within 24 hours (docs.cloud.google.com/firestore/native/docs/ttl, read 2026-10-04). `Has` refuses an expired read before the delete.
 - The regression check: `TestReadRoundTrip` reads `expire_at` of a stored read. No local test runs the policy itself. The live check after the deploy runs the command.
 

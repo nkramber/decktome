@@ -26,7 +26,7 @@ func emulatorRepo(t *testing.T) *Repo {
 	return NewRepo(client)
 }
 
-// TestReadRoundTrip is D-1107 and D-1110: a user with no read has none,
+// TestReadRoundTrip is D-1107 and D-1113: a user with no read has none,
 // a read matches its deck and text for that user alone, a read stays
 // after many newer reads, and each document holds the field of the TTL
 // policy.

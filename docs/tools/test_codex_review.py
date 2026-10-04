@@ -179,6 +179,16 @@ class GitarPass(unittest.TestCase):
         self.assertEqual(cr.gitar_problems(PUSHED, [between, ask, reply], [], []), [])
         self.assertTrue(any("not changed the dashboard" in p for p in cr.gitar_problems(PUSHED, [stale, ask, reply], [], [])))
 
+    # D-1114: since 2026-10-04 Gitar can post "Running a review on this PR
+    # now" after the dashboard changed. It follows the rule of D-992.
+    def test_the_reply_of_a_review_on_this_pr_needs_a_dashboard_after_the_request(self):
+        reply = comment(GITAR, "> Gitar review\n\nRunning a review on this PR now \u2014 results will show up in the dashboard comment shortly.", "2026-09-23T10:05:00Z")
+        ask = comment("nkramber", "Gitar review", "2026-09-23T10:04:00Z")
+        between = comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:04:50Z")
+        stale = comment(GITAR, DASH, "2026-09-23T09:00:00Z", "2026-09-23T10:03:00Z")
+        self.assertEqual(cr.gitar_problems(PUSHED, [between, ask, reply], [], []), [])
+        self.assertTrue(any("not changed the dashboard" in p for p in cr.gitar_problems(PUSHED, [stale, ask, reply], [], [])))
+
     def test_a_dashboard_with_the_spinner_fails(self):
         running = comment(GITAR, '<kbd><img src="https://x/gitar-spin.svg"> Responding to your feedback</kbd>\n' + DASH,
                           "2026-09-23T09:00:00Z", "2026-09-23T10:02:00Z")

@@ -354,7 +354,7 @@ type PushNotifier interface {
 // WithPush sends a push when a build ends after the client left.
 func WithPush(p PushNotifier) Option { return func(s *Server) { s.push = p } }
 
-// WithArchidekt wires the read of an Archidekt deck URL (PR-121, D-1100).
+// WithArchidekt wires the read of an Archidekt deck URL (PR-123, D-1100).
 func WithArchidekt(c *archidekt.Client) Option { return func(s *Server) { s.archidekt = c } }
 
 // ReadLog records the deck reads of each user (D-1107). The Firestore one
