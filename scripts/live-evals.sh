@@ -395,11 +395,13 @@ prepare() { # uid deck kind who -> 0 when the run folder is ready
       parent=${newest%%$'\t'*}
       base=${newest#*$'\t'}
     fi
+    # The deck state names no branch, so no session ran in the folder.
+    # A folder there is what an interrupted clone left, and it goes.
+    runfs clear "$HOME_DIR" "$deck" || return 1
     # A new run folder holds no file of a session yet, so the clone may
     # use paths in it. mkdir fails when the folder exists.
     mkdir "$run" || return 1
-    # No session ran in the folder yet, so a removal by path is safe.
-    if ! clone "$run" "$branch" "$base"; then rm -rf "${run:?}"; return 1; fi
+    if ! clone "$run" "$branch" "$base"; then runfs clear "$HOME_DIR" "$deck"; return 1; fi
     dset "$deck" uid "$uid" kind "$kind" who "$who" branch "$branch" base "$base" parent_pr "$parent" status running
   fi
   # The bundle is built in $RUNS, where no session can write. A

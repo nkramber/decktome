@@ -13,6 +13,7 @@ file descriptor. A link at any part stops the step.
   live_evals_runfs.py put   HOME DECK REL SRC   replace folder REL with a copy of SRC
   live_evals_runfs.py rm    HOME DECK REL       remove REL, links not followed
   live_evals_runfs.py mkdir HOME DECK REL...    make each folder REL
+  live_evals_runfs.py clear HOME DECK          remove the run folder, links not followed
 
 HOME is the folder of the live evals, which no session can write. DECK
 is the name of the run folder in it. REL is a relative path in the run
@@ -127,6 +128,15 @@ def rm(home, deck, rel):
         os.close(folder)
 
 
+def clear(home, deck):
+    """Remove the run folder. A link at the run name is removed, never followed."""
+    root = os.open(home, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        remove_in(root, name(deck))
+    finally:
+        os.close(root)
+
+
 def copy_into(src, dst_fd, total):
     """Copy the regular files and folders of src into folder dst_fd."""
     for entry in sorted(os.listdir(src)):
@@ -207,6 +217,8 @@ def main(argv):
             rm(home, deck, argv[4])
         elif cmd == "mkdir" and len(argv) >= 5:
             mkdir(home, deck, argv[4:])
+        elif cmd == "clear" and len(argv) == 4:
+            clear(home, deck)
         else:
             print(__doc__, file=sys.stderr)
             return 2
