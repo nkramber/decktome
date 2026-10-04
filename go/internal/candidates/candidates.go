@@ -30,6 +30,9 @@ type Request struct {
 	Colors []mtgv1.Color
 	// Theme is the user's words, for example "lifegain aristocrats".
 	Theme string
+	// Avoid is what the user wants less of, in the user's words, for
+	// example "artifacts". A card that matches it ranks lower (D-1122).
+	Avoid string
 	// CommanderOracleIDs are excluded from the 99 candidates.
 	CommanderOracleIDs []string
 	// PoolRule is the ownership mode (D-37). UNSPECIFIED means any-card
