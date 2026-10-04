@@ -6,15 +6,15 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04f)
+## RESUME HERE (2026-10-04g)
 
 **Branch `feat/live-evals-launchd`: PR-127 is #285, the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).** The owner approved the plan as one pull request.
 
 Author provider: Claude Code
 
-**The base.** PR-128 merged as #286, so the branch sits on `main` at `a7731f5`.
+**The base.** PR-129 merged as #287, so the branch sits on `main` at `c8a70af`.
 
-**The checks of the code.** `make verify` passed on `8489cfd`. CI passed every verify job, `pr-contract`, and Gitar. `review-gate` still reads the prior review record.
+**The code.**
 
 - `scripts/live-evals-launchd.sh` writes and loads the launchd agent `com.decktome.live-evals` (D-1155). `make live-evals-install CONFIRM=1` runs it, and `make live-evals-status` reads it.
 - Each tick moves the full clone `$LIVE_EVALS_HOME/main` to origin/main, and runs `start-live-evals --once` there. Git refuses a linked worktree as the reference of a clone.
@@ -24,9 +24,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merge of PR-128 made the branch conflict, so the session moved it onto `a7731f5`. The effective head is `6ae7de4`. The later review fixed P2-1, and `docs/reviews/pr-285-response.md` holds the answer. The current review found P2-2, provider attribution in the pull request metadata. Gitar approved the code head after the review-record push. The record needs an author correction before approval.
+**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merges of PR-128 and PR-129 made the branch conflict, so the session moved it onto `a7731f5`, then onto `c8a70af`. The review fixed P2-1. Round 3 found P2-2, provider names in a commit message and in the body. The owner permitted the rebase that changed that message. `docs/reviews/pr-285-response.md` holds both answers.
 
-**Open work.** Answer P2-2 of `docs/reviews/pr-285.md` with the `pr-review` skill, in `docs/reviews/pr-285-response.md`. Test it against hard rule 6 and D-811, the `## Review` section of `.github/pull_request_template.md`, and the bodies of merged pull requests such as #284. Then do the Gitar pass, and run Codex round 4. This is the third effective head, so an open finding there stops the loop for the owner (D-826).
+**Open work.** Do the Gitar pass of the moved head, and run review round 4. An open finding there stops the loop for the owner (D-826). Then ask the owner to confirm the merge, pending the auto-merge.
 
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
@@ -134,7 +134,15 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner chose the fast mana rule that drops the filters and Springleaf Drum (D-1159).** The owner first chose a lifegain condition for the finisher tag. The measurement showed that the lists seldom pair the tag with lifegain, and the owner then chose the removal (D-1160).
 
-### 2026-10-04f: the live evals with no terminal, PR-127
+### 2026-10-04f: the checks of PR-126 and PR-123, and PR-129
+
+**The checks of the deploy of `42982d0` passed, and the owner approved the TTL command.** The owner then asked the session to run its own checks of the owner with Playwright.
+
+**The session made a throwaway account for the proof link and the admin line.** It wrote the proof code itself, and then deleted the account and its invite.
+
+**The `make api-build` run of "best possible deck" held cards that the collection does not hold.** The owner chose the fix of the default pool rule (D-1161).
+
+### 2026-10-04g: the live evals with no terminal, PR-127
 
 **The owner asked if the live evals run with no open terminal.** They did not, because the script ran in the foreground until Ctrl-C.
 

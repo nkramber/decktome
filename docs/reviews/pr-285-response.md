@@ -11,3 +11,17 @@ Evidence: `protectedPrefixes` and `protectedFiles` of `go/cmd/live-evals/guard.g
 Correction: the guard holds `go/internal/feedback/`, `go/internal/feedbacksvc/`, and `proto/mtg/v1/feedback_service.proto`. D-1158 and the caution of `scripts/live-evals/eval-prompt.md` name the feedback store.
 
 Regression check: `TestProtectedOfHoldsTheFeedbackStore` gives the three paths and a deck path. It fails on the old list, which returned no path. `go test ./cmd/live-evals` passes.
+
+## P2-2: Review-provider attribution remains in pull request metadata
+
+Result: partial merit.
+
+Rules: hard rule 6 forbids AI-attribution text in a pull request, a branch name, a commit message, and a comment. D-811 lets the review record and the `Author provider` line of the hand-off name a provider. D-811 also says that hard rule 6 still covers each commit, body, branch, and comment.
+
+The commit message. Full merit. The squash message of this repo holds each commit message (`COMMIT_MESSAGES`), so the text "Codex P2-1 on #285" goes to `main`. #287 cites its finding with no provider name, and this commit now uses that form. The owner permitted a rebase onto `c8a70af` with a new message. `git log --format=%B c8a70af..HEAD` holds no provider name.
+
+The body. Full merit. The `## Review` section of `.github/pull_request_template.md` asks for the state of the review record. It does not need the provider name. The body now names "the review record" and "the review round" in the three lines that named Codex.
+
+The comments. No merit. The three comments of the author name the command `make codex-review PR=285`. They name no reviewer. The command is a technical name of hard rule 10 of `CLAUDE.md`. A command name does not make a provider the author of the work.
+
+Regression check: read the body with `gh pr view 285 --json body`, and run `git log --format=%B c8a70af..HEAD`. Neither holds "Codex", "OpenAI", or a co-author line. The body names "Claude" only in the paths `CLAUDE.md` and `.claude/`.
