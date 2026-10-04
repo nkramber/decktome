@@ -12,13 +12,28 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The base.** `main` is `bebee78`, from #281. The branch merged main after #278 and #281. `Deck.source_url` uses field 35.
+**The base.** `main` is `bebee78`, from #281. The branch merged `main` after #278, and again after #281. `source_url` of `Deck` moved to field 35, because #278 took 33 and 34.
 
-**The review.** Codex reviewed head `8e577ef`. P2-3 and P2-4 are fixed in `fcfea7d`. The verdict is `Ready for owner merge`. Current Gitar approved the head at 01:54 UTC on 2026-10-04, with two closed findings and no open threads. All required checks pass except the stale `review-gate`, which must rerun after the review commit. The review state is pending the auto-merge (D-828).
+**The owner choices.** An Archidekt link reads into the import form (D-1100), and the deck links back to it (D-1101). The app asks Moxfield for nothing. The owner sends the access request, and a bookmarklet waits for OQ-95 (D-1102). The field reads "Deck link", and each site gets its list or its steps (D-1103). An unknown site files a report (D-1104). D-1106, D-1107, and D-1113 answer the Codex reviews. `make codex-review` accepts the new Gitar reply "Running a review on this PR now" (D-1114).
 
-**The checks.** `make verify`, 75 Codex-review tests, focused Go race tests, and the Firestore emulator `make store-check` passed on `8e577ef`.
+**The code.**
 
-**The open work.** Push the review record and this hand-off to `feat/archidekt-url-import`, then verify the branch head and required checks. After merge, enable the production TTL policy in `docs/setup-gcp.md` section 6 (D-1113), then read and import an Archidekt deck on `decktome.com`. The owner still needs to test a Moxfield bookmarklet and send the access request (OQ-95).
+- `go/internal/archidekt` reads one deck and writes its Arena text. `go/internal/decklink` sorts a link and holds the steps of each site.
+- `FetchDeckList` of `go/internal/agentsvc` reads a link. `ImportDeck` keeps `source_url`.
+- `go/internal/importfault` reads the page `IMPORT_PAGE_DECK_LINK`, and the triage class I2 takes the reason `deck_link`.
+- The web app: the field "Deck link", the steps panel, the report, and the link "Imported from Archidekt" on the deck page and the share page. `SharedDeck` carries `source_url`.
+- `go/internal/deckreads` records each read as one document, with a hash of the text and `expire_at`. `ImportDeck` refuses a link with no such read. A TTL policy deletes an expired read (D-1113).
+
+**The checks.** `make verify` passed on `8e577ef`, with 555 web tests under Node 22. Codex ran `make store-check` against the emulator on `8e577ef`, and it passed.
+
+**The review.** The record `docs/reviews/pr-277.md` reads `Ready for owner merge` at effective head `8e577ef`, with no open finding. Gitar approved `8e577ef` at 01:54 UTC on 2026-10-04, with no open thread. The state is pending the auto-merge (D-828).
+
+**The open work.**
+
+1. The owner confirms the merge, and the auto-merge merges the pull request (D-828, D-834).
+2. After the merge, ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production one time (D-1113).
+3. After the deploy, read an Archidekt link on `decktome.com`, and import it.
+4. The owner runs the console test of OQ-95 on a Moxfield deck, and sends the access request to Moxfield.
 
 ## How to resume
 
