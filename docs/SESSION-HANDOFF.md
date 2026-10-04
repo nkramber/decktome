@@ -24,9 +24,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passed on `3d39a32`, and CI passed on `3f6c1ff`. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
 
-**The review.** Gitar found two faults on `345af6a`: the guard missed the old path of a rename, and a failed first run still set its flag. `3f6c1ff` fixes both, and Gitar approved it with both closed. The merges of PR-128 and PR-129 made the branch conflict, so the session moved it onto `a7731f5`, then onto `c8a70af`. The review fixed P2-1. Round 3 found P2-2, provider names in a commit message and in the body. The owner permitted the rebase that changed that message. `docs/reviews/pr-285-response.md` holds both answers.
+**The review.** Gitar approved the moved head `bec0e573`, and both Gitar threads are closed. Review round 4 fixed P2-1 and P2-2, then found P2-3: the guard leaves paid-run controls outside its protected paths. `docs/reviews/pr-285.md` records `Changes required` for `bec0e573`, with P2-3 open. `make verify` passed on the current head. `review-gate` failed because this record was absent from the branch.
 
-**Open work.** Do the Gitar pass of the moved head, and run review round 4. An open finding there stops the loop for the owner (D-826). Then ask the owner to confirm the merge, pending the auto-merge.
+**Open work.** The author must fix P2-3 and run the next Gitar pass. Then run review round 5. If it finds an open item, follow D-826. Ask the owner to confirm the merge only after an approval.
 
 **After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
 
