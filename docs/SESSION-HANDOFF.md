@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The base.** The branch stacks on `fix/first-user-feedback` at `c712e84`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
+**The base.** The branch stacks on `fix/first-user-feedback` at `944ce24`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
 
 **The code.**
 
