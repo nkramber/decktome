@@ -45,7 +45,7 @@ func TestProtectedOfHoldsTheFeedbackStore(t *testing.T) {
 	}
 }
 
-// The paid-run gates and the provider cost meter are spend paths (D-1158, D-1162).
+// The paid-run gates and the provider cost meter are spend paths (D-1158, D-1163).
 func TestProtectedOfHoldsTheSpendControls(t *testing.T) {
 	files := []string{"go/internal/gatekit/spendcap.go", "go/internal/llm/prices.json",
 		"go/internal/llm/roles.json", "go/internal/llm/usage.go", "go/internal/generate/generate.go"}

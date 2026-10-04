@@ -3398,7 +3398,7 @@ Gate:
 - **The agent (D-1155).** `make live-evals-install` writes the launchd agent `com.decktome.live-evals`. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs one pass.
 - **The notes (D-1156).** `go/internal/feedback` reads the general notes with no eval mark. `go/cmd/live-evals` adds each note to `pending` and `summary` with the key `n-`, and it writes `note.json`.
 - **The scope rule (D-1157).** The prompt lists the product areas that a session can fix. Each other item ends `out-of-scope`, with no pull request, and the owner gets the reason.
-- **The guard (D-1158, D-1162).** `live-evals guard` reads the changed files of a pull request on GitHub. A change of a protected path holds the pull request for the owner. The protected paths hold the paid-run gates and the provider cost meter.
+- **The guard (D-1158, D-1163).** `live-evals guard` reads the changed files of a pull request on GitHub. A change of a protected path holds the pull request for the owner. The protected paths hold the paid-run gates and the provider cost meter.
 
 Gate:
 - The feedback tests prove that a note waits until its mark, and that the index file serves the note query.
