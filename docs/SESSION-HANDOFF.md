@@ -101,7 +101,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **PR-127: the live evals with no terminal, the notes, and a scope rule** (D-1155 to D-1158). The resume section holds the open work.
-0. **The check of PR-128** (F-224, D-1159, D-1160). It merged as #286. After the deploy, a new owned-only deck of bracket 4 holds no filter as fast mana and no Hurricane as a finisher.
+0. **The check of PR-128** (F-224, D-1159, D-1160). It merged as #286. After the deploy, build a new owned-only deck of bracket 4. It holds no filter as fast mana and no Hurricane as a finisher.
 0. **The checks of PR-126** (D-1147 to D-1154). It merged as #284. After the deploy, the owner opens a new proof link in iOS Safari. The test account sees no session id and no spend. A Commander request for the "best possible deck" gets no bracket question.
 0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. After PR-127, `make live-evals-install CONFIRM=1` starts the agent, and the first tick marks each item that waits read.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
