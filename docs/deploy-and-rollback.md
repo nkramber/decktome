@@ -280,6 +280,8 @@ A revision older than `mtg-api-00077-vwp` holds no Pushover secret, so a rollbac
 
 A revision older than PR-115 has no request for beta access and no admin screen. A rollback to it keeps each stored request, and the admin claim of each account.
 
+CAUTION: a revision older than PR-121 can not read a collection in parts (D-1110). After a rollback to it, each read of a collection over about 10,000 rows fails. A smaller collection stays in one document, and it reads as before.
+
 ### 8.2 The jobs
 
 A job keeps no revision history for a rollback command. Point the job at the earlier image tag.

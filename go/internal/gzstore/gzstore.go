@@ -27,8 +27,9 @@ const MaxStoredBytes = 900 << 10
 // MaxIDBytes is the Firestore limit on one document id.
 const MaxIDBytes = 1500
 
-// ErrTooLarge reports a payload that inflates past MaxInflatedBytes.
-var ErrTooLarge = fmt.Errorf("gzstore: stored payload inflates past %d bytes", MaxInflatedBytes)
+// ErrTooLarge reports a payload that inflates past its limit. The
+// wrapped error names the limit.
+var ErrTooLarge = errors.New("gzstore: stored payload inflates past its limit")
 
 // Marshal gzips raw bytes.
 func Marshal(raw []byte) ([]byte, error) {
@@ -47,6 +48,13 @@ func Marshal(raw []byte) ([]byte, error) {
 // payload reads as an empty object, so a document from before the field
 // existed opens as a zero value.
 func Unmarshal(payload []byte) ([]byte, error) {
+	return UnmarshalMax(payload, MaxInflatedBytes)
+}
+
+// UnmarshalMax inflates a payload, bounded by limit bytes. A collection
+// of 50,000 rows inflates past MaxInflatedBytes, so its store names a
+// higher limit (D-1110).
+func UnmarshalMax(payload []byte, limit int) ([]byte, error) {
 	if len(payload) == 0 {
 		return []byte("{}"), nil
 	}
@@ -55,12 +63,12 @@ func Unmarshal(payload []byte) ([]byte, error) {
 		return nil, fmt.Errorf("gzstore: read: %w", err)
 	}
 	defer func() { _ = zr.Close() }()
-	raw, err := io.ReadAll(io.LimitReader(zr, MaxInflatedBytes+1))
+	raw, err := io.ReadAll(io.LimitReader(zr, int64(limit)+1))
 	if err != nil {
 		return nil, fmt.Errorf("gzstore: read: %w", err)
 	}
-	if len(raw) > MaxInflatedBytes {
-		return nil, ErrTooLarge
+	if len(raw) > limit {
+		return nil, fmt.Errorf("%w of %d bytes", ErrTooLarge, limit)
 	}
 	return raw, nil
 }
@@ -76,7 +84,13 @@ func MarshalJSON(v any) ([]byte, error) {
 
 // UnmarshalJSON decodes a gzip JSON payload into v.
 func UnmarshalJSON(payload []byte, v any) error {
-	raw, err := Unmarshal(payload)
+	return UnmarshalJSONMax(payload, v, MaxInflatedBytes)
+}
+
+// UnmarshalJSONMax decodes a gzip JSON payload into v, bounded by limit
+// inflated bytes.
+func UnmarshalJSONMax(payload []byte, v any, limit int) error {
+	raw, err := UnmarshalMax(payload, limit)
 	if err != nil {
 		return err
 	}

@@ -231,12 +231,12 @@ describe("CollectionPage", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Upload failed: [unauthenticated] no token");
   });
 
-  it("refuses a file over the 5 MiB upload cap before the upload", async () => {
+  it("refuses a file over the 10 MiB upload cap before the upload", async () => {
     await renderAt("/collection");
     const user = userEvent.setup();
-    const big = new File([new Uint8Array((5 << 20) + 1)], "big.csv", { type: "text/csv" });
+    const big = new File([new Uint8Array((10 << 20) + 1)], "big.csv", { type: "text/csv" });
     await user.upload(await openUpload(user), big);
-    expect(await screen.findByRole("alert")).toHaveTextContent("The file is 5.0 MiB. The limit is 5 MiB.");
+    expect(await screen.findByRole("alert")).toHaveTextContent("The file is 10.0 MiB. The limit is 10 MiB.");
     expect(screen.getByRole("button", { name: "Upload" })).toBeDisabled();
     expect(importCollection).not.toHaveBeenCalled();
   });

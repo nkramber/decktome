@@ -5,7 +5,7 @@
 export const maxMessageBytes = 8 << 10;
 
 // The upload cap of ImportCollection (collectionsvc.maxUpload).
-export const maxUploadBytes = 5 << 20;
+export const maxUploadBytes = 10 << 20;
 
 export function byteLength(s: string): number {
   return new TextEncoder().encode(s).length;
