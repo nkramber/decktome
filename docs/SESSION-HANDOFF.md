@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**The base.** The branch stacks on `fix/first-user-feedback` at `944ce24`, PR-124 (#283), and GitHub shows that base (D-1140). `main` is `b308a71`, from #277.
+**The base.** PR-124 merged as #283, so the branch sits on `main` at `8bd442f` (D-1140).
 
 **The code.**
 
@@ -103,8 +103,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-124: the findings of the first outside user** (F-212 to F-223, D-1116 to D-1131). The resume section of 2026-10-04b in the archive holds its open work.
-0. **PR-125: the live evals** (D-1132 to D-1146). It stacks on PR-124. The resume section holds the open work.
+0. **The checks of PR-124** (D-1126). It merged as #283. After the deploy, sign in through a new proof link, and read one `rpc` line of the API log. The owner tells the user about the fixes.
+0. **PR-125: the live evals** (D-1132 to D-1146). The resume section holds the open work.
 0. **The checks of PR-123** (D-1100 to D-1108, D-1113). It merged as #277. Ask the owner, then run the TTL command of `docs/setup-gcp.md` section 6 on production. Read an Archidekt link on `decktome.com`. The owner runs the console test of OQ-95.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The checks of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the deploy, read the log of the snapshot job for "snapshot current". After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
