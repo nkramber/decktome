@@ -3452,7 +3452,7 @@ Gate:
 
 > *In plain English:* a card that needs extra mana before it makes mana no longer counts as "fast mana".
 
-**PR-131: The first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1166).** ✅ merged as #PRNUM. The mark comes before any review (D-822). On 2026-10-05 the owner did the setup of PR-125 and installed the agent of PR-127. Each tick stopped at the build with "operation not permitted".
+**PR-131: The first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1166).** ✅ merged as #289. The mark comes before any review (D-822). On 2026-10-05 the owner did the setup of PR-125 and installed the agent of PR-127. Each tick stopped at the build with "operation not permitted".
 
 - **The logins (D-1164).** The owner chose copies of the gh login and the Codex login of the owner. The Claude token stays apart.
 - **The launch (D-1166).** The plist and `start-live-evals` run each script of the volume through `/bin/bash`. Launchd probes showed that a script that the kernel runs from the volume loses the volume.

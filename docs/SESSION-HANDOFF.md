@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-05)
 
-**Branch `chore/live-evals-first-run`: PR-131 is #PRNUM, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1166).**
+**Branch `chore/live-evals-first-run`: PR-131 is #289, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1166).**
 
 Author provider: Claude Code
 
