@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice. A second run sent none. The mode check refused a file of mode 644 and a file with an access control list. It passed the three login files of mode 600.
 
-**Open work.** Codex review: `63a3717` fixes P1-1, P1-2, and P2-1, and the review of that head waits. The logs of the launchd probes stay out of the repository, because they hold the summaries of reader decks.
+**Open work.** Codex review: Blocked at effective head `63a3717083f84d3cc2895af1f11021c86558c4d1`. P1-1, P1-2, and P2-1 are fixed. The required launchd and wrong-pin probes lack independent evidence. Their logs stay out because they hold reader deck summaries.
 
 **After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
 
