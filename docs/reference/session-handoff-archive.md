@@ -15,6 +15,38 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-04h, PR-127
+
+**Branch `feat/live-evals-launchd`: PR-127 is #285, the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).** The owner approved the plan as one pull request.
+
+Author provider: Claude Code
+
+**The base.** PR-130 merged as #288, and the branch holds `main` at `fb66b5c` through a merge.
+
+**The code.**
+
+- `scripts/live-evals-launchd.sh` writes and loads the launchd agent `com.decktome.live-evals` (D-1155). `make live-evals-install CONFIRM=1` runs it, and `make live-evals-status` reads it.
+- Each tick moves the full clone `$LIVE_EVALS_HOME/main` to origin/main, and runs `start-live-evals --once` there. Git refuses a linked worktree as the reference of a clone.
+- `go/internal/feedback` reads the general notes with no eval mark. `go/cmd/live-evals` adds each note with the key `n-`, and its bundle holds `note.json` (D-1156).
+- The prompt holds the scope rule. An item with no fault in scope ends `out-of-scope`, and the owner gets the reason (D-1157).
+- `live-evals guard` reads the changed files of a pull request on GitHub. A protected path holds it as `blocked` (D-1158). The protected paths hold the paid-run gates and the provider cost meter (D-1163).
+
+**The checks.** `make verify` passed on `1c47456`, and CI passed every verify job, `pr-contract`, and Gitar there. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
+
+**The review.** Gitar approved effective head `1c47456`, and no review thread stays open. Round 2 found P2-1, the feedback store. Round 3 found P2-2, provider names in a commit message and the body, and the owner permitted a rebase for it. Round 4 found P2-3, the spend paths, and the owner kept the user cap of D-1109 open (D-1163). PR-130 took D-1162 first. The record reads `Ready for owner merge` for `1c474564dc4e41ed78263e947a4b4c47c04e680c`, with all three findings fixed.
+
+**Open work.** The pull request is pending the owner's confirmation and the auto-merge (D-828, D-834).
+
+**After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
+
+### 2026-10-04f: the checks of PR-126 and PR-123, and PR-129
+
+**The checks of the deploy of `42982d0` passed, and the owner approved the TTL command.** The owner then asked the session to run its own checks of the owner with Playwright.
+
+**The session made a throwaway account for the proof link and the admin line.** It wrote the proof code itself, and then deleted the account and its invite.
+
+**The `make api-build` run of "best possible deck" held cards that the collection does not hold.** The owner chose the fix of the default pool rule (D-1161).
+
 ## The resume section of 2026-10-04g, PR-130
 
 **Branch `fix/x-cost-fast-mana`: PR-130 is #288, fast mana needs no X and no multikicker (F-225, D-1162).**

@@ -55,7 +55,7 @@ preflight() {
   [ -d "$SOURCE/.local/gcs/mtg-local-cards/scryfall" ] || die "no card store under $SOURCE/.local"
   [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Do the setup in the header of scripts/live-evals.sh"
   [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Do the setup in the header of scripts/live-evals.sh"
-  [ -f "$HOME_DIR/codex-home/auth.json" ] || die "the session Codex has no login: CODEX_HOME=$HOME_DIR/codex-home codex login"
+  [ -f "$HOME_DIR/codex-home/auth.json" ] || die "the session Codex has no login. Do the setup in the header of scripts/live-evals.sh"
 }
 
 write_plist() { # file -> the agent file
@@ -79,7 +79,9 @@ write_plist() { # file -> the agent file
   # The tick runs from launchd. It reads no file of a branch before it
   # moves its own clone to origin/main. The clone is a full clone, and no
   # worktree, because the script clones each session with it as the
-  # reference, and git refuses a linked worktree there.
+  # reference, and git refuses a linked worktree there. /bin/bash reads
+  # each script of the volume, because macOS refuses the volume to the
+  # children of a script that the kernel runs itself (D-1166).
   local tick url
   url=$(git -C "$SOURCE" remote get-url origin) || die "the checkout has no origin"
   tick=$(cat <<EOF
@@ -98,7 +100,7 @@ git -C "\$wt" clean --quiet -fd || exit 1
 ln -sfn "\$src/.env" "\$wt/.env"
 ln -sfn "\$src/.local" "\$wt/.local"
 cd "\$wt" || exit 1
-exec ./start-live-evals --once
+exec /bin/bash ./start-live-evals --once
 EOF
 )
   python3 - "$1" "$LABEL" "$tick" "$path" "$HOME_DIR" "$SECRETS" "$account" "$LOG" "$INTERVAL" <<'PY'

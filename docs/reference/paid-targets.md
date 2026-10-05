@@ -95,13 +95,13 @@ The cap is the rule of the prompt, and `spend.jsonl` of the bundle records each 
 
 The cap includes the replay (D-1144). The session replays the chat of the reader with `make chat-probe` and `CHAT_PROBE_ARGS`. It replays the base code one time, and each try of the fix one time. Each replay costs about $0.30, so the base replay and three tries cost about $1.20.
 
-Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, Codex login, and GitHub token. The header of `scripts/live-evals.sh` names the one-time setup of the owner.
+Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, and copies of the gh login and the Codex login of the owner (D-1164). The header of `scripts/live-evals.sh` names the one-time setup of the owner.
 
 The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `ready`, `guard`, `notify`, and `replay-input` call no model and cost nothing.
 
 A session fixes a product fault alone (D-1157). For each other item, it writes `out-of-scope` and makes no pull request. The script holds a pull request that changes a protected path, and the owner gets no ready notice (D-1158).
 
-`make live-evals-install CONFIRM=1` loads the launchd agent `com.decktome.live-evals` (D-1155). It runs one pass every five minutes, with no open terminal, so the install is the approval of each session that it starts. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs `start-live-evals --once` there. The install refuses to start before the setup in the header of `scripts/live-evals.sh`.
+`make live-evals-install CONFIRM=1` loads the launchd agent `com.decktome.live-evals` (D-1155). It runs one pass every five minutes, with no open terminal, so the install is the approval of each session that it starts. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs `/bin/bash ./start-live-evals --once` there (D-1166). Each tick first reads the pinned version of each program it runs, and a miss stops it with one notice (D-1165). The install refuses to start before the setup in the header of `scripts/live-evals.sh`.
 
 `make live-evals-status` prints the state and the end of the log `~/Library/Logs/decktome-live-evals.log`. `make live-evals-uninstall` stops the agent and a session that runs. Both cost nothing.
 
