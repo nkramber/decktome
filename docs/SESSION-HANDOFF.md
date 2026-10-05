@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice. A second run sent none.
 
-**Open work.** Codex review: Changes required at effective head `96cb6ae0301b07f656b5cf34a8a2499e90272988`. Open finding P1-1. Fix it and repeat the review. Then get the owner's confirmation and enable auto-merge (D-828, D-834).
+**Open work.** Codex review: Blocked at effective head `96cb6ae0301b07f656b5cf34a8a2499e90272988`. Open finding P1-1. Gitar has an open thread on the review metadata, and no author reply exists. Answer that thread, fix P1-1, and repeat the review.
 
 **After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
 
