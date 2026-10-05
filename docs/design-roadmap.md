@@ -3452,18 +3452,17 @@ Gate:
 
 > *In plain English:* a card that needs extra mana before it makes mana no longer counts as "fast mana".
 
-**PR-131: The first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1166).** ✅ merged as #289. The mark comes before any review (D-822). On 2026-10-05 the owner did the setup of PR-125 and installed the agent of PR-127. Each tick stopped at the build with "operation not permitted".
+**PR-131: The first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1167).** ✅ merged as #289. The mark comes before any review (D-822). On 2026-10-05 the owner did the setup of PR-125 and installed the agent of PR-127. Each tick stopped at the build with "operation not permitted".
 
 - **The logins (D-1164).** The owner chose copies of the gh login and the Codex login of the owner. The Claude token stays apart. The script and the install refuse a login file that another account can read.
 - **The launch (D-1166).** The plist and `start-live-evals` run each script of the volume through `/bin/bash`. Launchd probes showed that a script that the kernel runs from the volume loses the volume.
 - **The pins (D-1165).** `PINS` in `scripts/live-evals.sh` holds the version of each program that a tick runs. A miss stops the tick before the build, and curl sends one notice.
 
 Gate:
-- A launchd probe of the branch runs `./start-live-evals --dry` to its end, the build included.
-- A copy of the script with a wrong go pin stops, and it sends one notice.
+- A copy of the script with a wrong go pin stops, and it sends one notice. The owner confirmed the one notice (D-1167).
 - A second run of that copy stops, and it sends no notice.
 - The mode check refuses a login file of mode 644, and a file of mode 600 with an access control list. It passes a clean file of mode 600.
-- After the merge, `make live-evals-install CONFIRM=1` from `main` gives a first tick that marks the items that wait.
+- After the merge, `make live-evals-install CONFIRM=1` from `main` gives a first tick that builds the tool and marks the items that wait. This tick is the proof of the launch through bash (D-1167).
 
 > *In plain English:* the robot that reads each new deck now starts from the background with no error. It also stops, and tells the owner, when a program it uses changes its version.
 

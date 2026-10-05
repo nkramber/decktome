@@ -53,3 +53,10 @@ Evidence: `PINS` held no line for jq. Under the PATH of the agent, jq is `/usr/b
 Correction: `PINS` in `scripts/live-evals.sh` holds `jq --version` with the line `jq-1.7.1-apple` (D-1165).
 
 Regression check: under `/bin/bash` and the PATH of the agent, the pin loop read 10 pins and no miss. The test of a wrong go pin proved the stop and the single notice of a miss for each program of the loop.
+
+## The Blocked verdict of round 3
+
+Result: the review found no open defect. It asked for independent evidence of two gate items, and the owner answered both (D-1167).
+
+- The notice of a missed pin: the owner confirmed that one notice reached the phone, and that the second run sent none.
+- The launchd probe of the branch: the owner chose the first real tick after the merge as the one proof. The gate of PR-131 in `docs/design-roadmap.md` lost its pre-merge launchd item, and its last item names the first tick.

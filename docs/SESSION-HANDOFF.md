@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-05)
 
-**Branch `chore/live-evals-first-run`: PR-131 is #289, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1166).**
+**Branch `chore/live-evals-first-run`: PR-131 is #289, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1167).**
 
 Author provider: Claude Code
 
@@ -24,9 +24,9 @@ Author provider: Claude Code
 - `PINS` in `scripts/live-evals.sh` holds the version of each program of a tick (D-1165). A miss stops the tick before the build, and curl sends one notice.
 - The header and the messages name the copied logins (D-1164). The script and the install refuse a login file that another account can read.
 
-**The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice. A second run sent none. The mode check refused a file of mode 644 and a file with an access control list. It passed the three login files of mode 600.
+**The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice, and the owner confirmed it. A second run sent none. The mode check refused a file of mode 644 and a file with an access control list. It passed the three login files of mode 600.
 
-**Open work.** Codex review: Blocked at effective head `63a3717083f84d3cc2895af1f11021c86558c4d1`. P1-1, P1-2, and P2-1 are fixed. The required launchd and wrong-pin probes lack independent evidence. Their logs stay out because they hold reader deck summaries.
+**Open work.** Round 3 of the Codex review found no defect, and it asked for independent evidence. The owner confirmed the one notice, and chose the first tick after the merge as the proof of the launch (D-1167). The Gitar pass and the Codex review of the new head wait.
 
 **After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
 
@@ -102,7 +102,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-131: the first run of the live evals** (D-1133, D-1164 to D-1166). The resume section holds the open work. After the merge, `make live-evals-install CONFIRM=1` from `main` starts the agent, and the first tick marks each item that waits.
+0. **PR-131: the first run of the live evals** (D-1133, D-1164 to D-1167). The resume section holds the open work. After the merge, `make live-evals-install CONFIRM=1` from `main` starts the agent, and the first tick marks each item that waits.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
