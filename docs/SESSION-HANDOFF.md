@@ -6,29 +6,29 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-04h)
+## RESUME HERE (2026-10-05)
 
-**Branch `feat/live-evals-launchd`: PR-127 is #285, the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).** The owner approved the plan as one pull request.
+**Branch `chore/live-evals-first-run`: PR-131 is #289, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1167).**
 
 Author provider: Claude Code
 
-**The base.** PR-130 merged as #288, and the branch holds `main` at `fb66b5c` through a merge.
+**The base.** `main` at `4da0a57`, the merge of #285. `/readyz` read `ok` and served `4da0a57`, a commit after `fb66b5c` of #288. So the deploy holds PR-130.
+
+**The setup.** The owner chose copies of the gh login and the Codex login (D-1164). `claude setup-token` wrote a token for one year. The terminal wrapped that token, so the session printed its last 29 characters one time. The owner knows this.
+
+**The fault.** `make live-evals-install CONFIRM=1` loaded the agent. Each tick stopped at the build with "operation not permitted" on `go.mod`. Launchd probes found the cause of D-1166. The session removed the agent again, because the plist of `main` holds the old command.
 
 **The code.**
 
-- `scripts/live-evals-launchd.sh` writes and loads the launchd agent `com.decktome.live-evals` (D-1155). `make live-evals-install CONFIRM=1` runs it, and `make live-evals-status` reads it.
-- Each tick moves the full clone `$LIVE_EVALS_HOME/main` to origin/main, and runs `start-live-evals --once` there. Git refuses a linked worktree as the reference of a clone.
-- `go/internal/feedback` reads the general notes with no eval mark. `go/cmd/live-evals` adds each note with the key `n-`, and its bundle holds `note.json` (D-1156).
-- The prompt holds the scope rule. An item with no fault in scope ends `out-of-scope`, and the owner gets the reason (D-1157).
-- `live-evals guard` reads the changed files of a pull request on GitHub. A protected path holds it as `blocked` (D-1158). The protected paths hold the paid-run gates and the provider cost meter (D-1163).
+- `start-live-evals` and the plist of `scripts/live-evals-launchd.sh` run each script through `/bin/bash` (D-1166).
+- `PINS` in `scripts/live-evals.sh` holds the version of each program of a tick (D-1165). A miss stops the tick before the build, and curl sends one notice.
+- The header and the messages name the copied logins (D-1164). The script and the install refuse a login file that another account can read.
 
-**The checks.** `make verify` passed on `1c47456`, and CI passed every verify job, `pr-contract`, and Gitar there. A tick under the environment of launchd cloned origin/main and ran `--dry` to its end. `--dry` on the branch listed 4 notes, and two note bundles held `note.json`.
+**The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice, and the owner confirmed it. A second run sent none. The mode check refused a file of mode 644 and a file with an access control list. It passed the three login files of mode 600.
 
-**The review.** Gitar approved effective head `1c47456`, and no review thread stays open. Round 2 found P2-1, the feedback store. Round 3 found P2-2, provider names in a commit message and the body, and the owner permitted a rebase for it. Round 4 found P2-3, the spend paths, and the owner kept the user cap of D-1109 open (D-1163). PR-130 took D-1162 first. The record reads `Ready for owner merge` for `1c474564dc4e41ed78263e947a4b4c47c04e680c`, with all three findings fixed.
+**Open work.** Codex round 4 reads `Ready for owner merge` for effective head `d2fb239`, and Gitar approved it with no open thread. The pull request is pending the confirmation of the owner and the auto-merge (D-828, D-834). The first tick after the merge is the proof of the launch (D-1167).
 
-**Open work.** The pull request is pending the owner's confirmation and the auto-merge (D-828, D-834).
-
-**After the merge.** The owner does the setup in the header of `scripts/live-evals.sh`, then runs `make live-evals-install CONFIRM=1`. The first tick marks each item that waits read, the notes too, and starts no session for them.
+**After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
 
 ## How to resume
 
@@ -102,9 +102,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-127: the live evals with no terminal, the notes, and a scope rule** (D-1155 to D-1158). The resume section holds the open work.
-0. **The check of PR-130** (F-225, D-1162). It merged as #288. After the deploy, read `/readyz` for the merge commit.
-0. **The first run of PR-125** (D-1133). It merged as #282. The owner does the setup in the header of `scripts/live-evals.sh`: two tokens and a Codex login. After PR-127, `make live-evals-install CONFIRM=1` starts the agent, and the first tick marks each item that waits read.
+0. **PR-131: the first run of the live evals** (D-1133, D-1164 to D-1167). The resume section holds the open work. After the merge, `make live-evals-install CONFIRM=1` from `main` starts the agent, and the first tick marks each item that waits.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -127,14 +125,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-04f: the checks of PR-126 and PR-123, and PR-129
-
-**The checks of the deploy of `42982d0` passed, and the owner approved the TTL command.** The owner then asked the session to run its own checks of the owner with Playwright.
-
-**The session made a throwaway account for the proof link and the admin line.** It wrote the proof code itself, and then deleted the account and its invite.
-
-**The `make api-build` run of "best possible deck" held cards that the collection does not hold.** The owner chose the fix of the default pool rule (D-1161).
-
 ### 2026-10-04g: the checks of PR-128, and PR-130
 
 **The deploy of `a7731f5` and the check of PR-128 passed.** The test collection holds no Hurricane. So the owner chose a red and green deck, where Earthquake of the same tag can show.
@@ -149,6 +139,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked for the launch of the night fixer of what-you-carry, the notes, and a scope rule.** The research found a launchd agent with `StartInterval` 900 that runs the scripts of origin/main. The owner chose one pass for each tick, a notice for each `out-of-scope` item, and the guard of protected paths.
 
+### 2026-10-05: the first run of the live evals, PR-131
+
+**The owner asked the session to copy the setup of the night fixer of what-you-carry.** That fixer uses the logins of the owner. The owner chose copies of the gh login and the Codex login over D-1141 (D-1164).
+
+**The first tick stopped at the build.** Launchd probes showed that a script that the kernel runs from the volume loses the volume (D-1166). The owner then mandated a pinned version for each program of a tick (D-1165).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04g, the records of 2026-08-31 to 2026-10-04e, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04h, the records of 2026-08-31 to 2026-10-04f, and 104 more sections, word for word. Read it for the detail behind a decision.

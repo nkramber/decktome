@@ -55,7 +55,15 @@ preflight() {
   [ -d "$SOURCE/.local/gcs/mtg-local-cards/scryfall" ] || die "no card store under $SOURCE/.local"
   [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Do the setup in the header of scripts/live-evals.sh"
   [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Do the setup in the header of scripts/live-evals.sh"
-  [ -f "$HOME_DIR/codex-home/auth.json" ] || die "the session Codex has no login: CODEX_HOME=$HOME_DIR/codex-home codex login"
+  [ -f "$HOME_DIR/codex-home/auth.json" ] || die "the session Codex has no login. Do the setup in the header of scripts/live-evals.sh"
+  # A login file that another account can read stops the install (D-1164).
+  local f mode
+  for f in "$SECRETS/claude-token" "$SECRETS/gh-token" "$HOME_DIR/codex-home/auth.json"; do
+    mode=$(stat -f %Lp "$f") || die "can not read the mode of $f"
+    [ $(( 8#$mode & 8#077 )) = 0 ] || die "$f has mode $mode, and another account can read it. Run chmod 600 on it."
+    # shellcheck disable=SC2012 # find prints no access control list, and the path is fixed.
+    [ "$(ls -lde "$f" | wc -l)" -eq 1 ] || die "$f has an access control list. Run chmod -N on it."
+  done
 }
 
 write_plist() { # file -> the agent file
@@ -79,7 +87,9 @@ write_plist() { # file -> the agent file
   # The tick runs from launchd. It reads no file of a branch before it
   # moves its own clone to origin/main. The clone is a full clone, and no
   # worktree, because the script clones each session with it as the
-  # reference, and git refuses a linked worktree there.
+  # reference, and git refuses a linked worktree there. /bin/bash reads
+  # each script of the volume, because macOS refuses the volume to the
+  # children of a script that the kernel runs itself (D-1166).
   local tick url
   url=$(git -C "$SOURCE" remote get-url origin) || die "the checkout has no origin"
   tick=$(cat <<EOF
@@ -98,7 +108,7 @@ git -C "\$wt" clean --quiet -fd || exit 1
 ln -sfn "\$src/.env" "\$wt/.env"
 ln -sfn "\$src/.local" "\$wt/.local"
 cd "\$wt" || exit 1
-exec ./start-live-evals --once
+exec /bin/bash ./start-live-evals --once
 EOF
 )
   python3 - "$1" "$LABEL" "$tick" "$path" "$HOME_DIR" "$SECRETS" "$account" "$LOG" "$INTERVAL" <<'PY'

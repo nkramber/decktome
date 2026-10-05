@@ -3346,7 +3346,7 @@ The live check after the deploy: run `make user-case`, and sign in through a new
 - **The thumbs down (D-1149).** PR-126 adds each thumbs down to the queue, as a new deck.
 - **The first run (D-1133).** It marks each waiting deck read after the summary, and it starts no session for it.
 - **The session (D-1134, D-1136, D-1142).** It reads a local bundle with no cloud credentials. It can spend $3.00 on paid targets, and the live-test lanes stay closed to it. The provider keys sit in the `.env` of its clone alone.
-- **The sandbox (D-1141, D-1145).** The pinned Claude Code 2.1.288 runs under `scripts/live-evals/sandbox.sb`. The session reads and writes its run folder, its caches, and the card store alone, and it uses its own logins.
+- **The sandbox (D-1141, D-1145).** The pinned Claude Code 2.1.288 runs under `scripts/live-evals/sandbox.sb`. The session reads and writes its run folder, its caches, and the card store alone. It uses its own Claude token, and copies of the gh and Codex logins of the owner (D-1164).
 - **The replay (D-1144, D-1146).** The session replays the chat of the reader on the base code and on each try of its fix. After three tries that are not better, it writes `fix-failed`.
 - **The safety of user text (D-1139).** Each bundle file and each prompt carries an "UNTRUSTED DATA" notice. A random code marks the end of the user text.
 - **The stack (D-1138).** Each new branch starts from the newest open live-eval pull request, with at most three open. A restack session moves a child after its parent merges or changes.
@@ -3451,6 +3451,20 @@ Gate:
 - A replay of the snapshot of 2026-09-04 drops these three cards alone, from 77 to 74.
 
 > *In plain English:* a card that needs extra mana before it makes mana no longer counts as "fast mana".
+
+**PR-131: The first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1167).** ✅ merged as #289. The mark comes before any review (D-822). On 2026-10-05 the owner did the setup of PR-125 and installed the agent of PR-127. Each tick stopped at the build with "operation not permitted".
+
+- **The logins (D-1164).** The owner chose copies of the gh login and the Codex login of the owner. The Claude token stays apart. The script and the install refuse a login file that another account can read.
+- **The launch (D-1166).** The plist and `start-live-evals` run each script of the volume through `/bin/bash`. Launchd probes showed that a script that the kernel runs from the volume loses the volume.
+- **The pins (D-1165).** `PINS` in `scripts/live-evals.sh` holds the version of each program that a tick runs. A miss stops the tick before the build, and curl sends one notice.
+
+Gate:
+- A copy of the script with a wrong go pin stops, and it sends one notice. The owner confirmed the one notice (D-1167).
+- A second run of that copy stops, and it sends no notice.
+- The mode check refuses a login file of mode 644, and a file of mode 600 with an access control list. It passes a clean file of mode 600.
+- After the merge, `make live-evals-install CONFIRM=1` from `main` gives a first tick that builds the tool and marks the items that wait. This tick is the proof of the launch through bash (D-1167).
+
+> *In plain English:* the robot that reads each new deck now starts from the background with no error. It also stops, and tells the owner, when a program it uses changes its version.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.

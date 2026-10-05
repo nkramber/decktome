@@ -65,12 +65,19 @@
 #   LIVE_EVALS_BUDGET_USD=3.00  LIVE_EVALS_MAX_OPEN=3  LIVE_EVALS_MIN_FREE_GB=20
 #   LIVE_EVALS_MODEL=<claude default>
 #
-# The one-time setup of the owner (D-1141):
-#   claude setup-token        > $LIVE_EVALS_SECRETS/claude-token
-#   a fine-grained GitHub token for decktome alone > $LIVE_EVALS_SECRETS/gh-token
-#     (contents, pull requests, and issues: read and write. Actions,
-#     checks, and commit statuses: read.)
-#   CODEX_HOME=$LIVE_EVALS_HOME/codex-home codex login
+# The one-time setup (D-1141, D-1164). Mode 600 for each file, and the
+# script refuses a login file that another account can read:
+#   umask 077
+#   claude setup-token, and the token alone > $LIVE_EVALS_SECRETS/claude-token
+#   gh auth token             > $LIVE_EVALS_SECRETS/gh-token
+#   cp ~/.codex/auth.json $LIVE_EVALS_HOME/codex-home/auth.json
+# The gh token and the Codex login are copies of the logins of the owner
+# (D-1164). The gh token reaches each repository of the owner.
+#
+# Each program that a tick runs has a pinned version in PINS below
+# (D-1165). A new version can lose the macOS access to the volume of
+# the repository. So the tick stops, and the owner gets one notice.
+# Move the pin in a pull request after the check of the new version.
 set -uo pipefail
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "live-evals: run it inside the decktome repository"; exit 1; }
@@ -101,7 +108,7 @@ for arg in "$@"; do
     --once) once=1 ;;
     --dry) dry=1 ;;
     --evaluate-backlog) backlog=1 ;;
-    -h|--help) sed -n '2,73p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,80p' "$0"; exit 0 ;;
     *) echo "live-evals: unknown flag $arg"; exit 2 ;;
   esac
 done
@@ -155,9 +162,34 @@ if pgrep -f "scripts/(autotune|feedback-loop)\.sh" >/dev/null; then
   die "a tuning or feedback loop runs. Stop it first."
 fi
 
-for cmd in git go gh jq codex gcloud python3 sandbox-exec shasum; do
+for cmd in git go gh jq codex gcloud python3 sandbox-exec shasum pnpm curl; do
   command -v "$cmd" >/dev/null || die "$cmd is not on PATH"
 done
+
+# The pinned version of each program that a tick runs (D-1165). Each
+# line holds the name, the version command, and the first line of its
+# output. The macOS build pins the programs of /bin and /usr/bin, and
+# the Command Line Tools pin git and python3 apart. Claude Code has its
+# own pin (D-1145), and .nvmrc pins Node 22.
+PINS=(
+  "macOS|sw_vers -buildVersion|25F84"
+  "jq|jq --version|jq-1.7.1-apple"
+  "git|git --version|git version 2.50.1 (Apple Git-155)"
+  "python3|python3 --version|Python 3.9.6"
+  "go|go version|go version go1.27.1 darwin/arm64"
+  "gh|gh --version|gh version 2.102.0 (2026-09-30)"
+  "codex|codex --version|codex-cli 0.39.0"
+  "gcloud|gcloud version|Google Cloud SDK 533.0.0"
+  "node|node --version|v20.17.0"
+  "pnpm|pnpm --version|9.2.0"
+)
+pin_misses=""
+for pin in "${PINS[@]}"; do
+  IFS='|' read -r name cmd want <<<"$pin"
+  got=$($cmd 2>/dev/null | head -1)
+  [ "$got" = "$want" ] || pin_misses="${pin_misses}$name reads \"$got\", and the pin is \"$want\". "
+done
+
 gh auth status >/dev/null 2>&1 || die "gh is not signed in"
 
 free_gb=$(df -g "$HOME_DIR" | awk 'NR==2 {print $4}')
@@ -184,6 +216,25 @@ if [ -z "$PO_TOKEN" ] || [ -z "$PO_USER" ]; then
   die "can not read the Pushover secrets of $PROJECT as $ACCOUNT"
 fi
 
+# A missed pin stops the tick before the build. The tool can not send
+# the notice, because go can be the missed pin. So curl sends it, and
+# it reads the secrets from stdin. One notice goes for each new miss.
+PIN_NOTICE=$STATE/pin-notice
+if [ -n "$pin_misses" ]; then
+  if [ "$dry" = 0 ] && [ "$(cat "$PIN_NOTICE" 2>/dev/null)" != "$pin_misses" ]; then
+    msg=$(printf '%s' "$pin_misses" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    if printf 'form-string = "token=%s"\nform-string = "user=%s"\nform-string = "title=%s"\nform-string = "message=%s"\n' \
+      "$PO_TOKEN" "$PO_USER" "decktome live evals stopped: a version pin" "$msg" \
+      | curl -sS -o /dev/null --fail -K - https://api.pushover.net/1/messages.json; then
+      printf '%s' "$pin_misses" > "$PIN_NOTICE"
+    else
+      say "the notice of the pins did not send"
+    fi
+  fi
+  die "a version pin missed (D-1165): $pin_misses"
+fi
+rm -f "$PIN_NOTICE"
+
 say "building the live-evals tool"
 (cd "$ROOT/go" && go build -o "$TOOL" ./cmd/live-evals) || die "the tool does not build"
 
@@ -204,6 +255,18 @@ notify() {
     || say "the notice did not send: $1"
 }
 
+# A login file that another account can read stops the script (D-1164).
+# A mode bit of the group or of others can give the read, and so can an
+# entry of an access control list. `ls -lde` prints one line for each
+# entry after the line of the file.
+private_file() { # file
+  local mode
+  mode=$(stat -f %Lp "$1") || die "can not read the mode of $1"
+  [ $(( 8#$mode & 8#077 )) = 0 ] || die "$1 has mode $mode, and another account can read it. Run chmod 600 on it (D-1164)."
+  # shellcheck disable=SC2012 # find prints no access control list, and the path is fixed.
+  [ "$(ls -lde "$1" | wc -l)" -eq 1 ] || die "$1 has an access control list. Run chmod -N on it (D-1164)."
+}
+
 if [ "$dry" = 0 ]; then
   # The pinned Claude Code (D-1145). A copy outside the folder of the
   # updater keeps the version, and the profile keeps a session out of it.
@@ -215,17 +278,20 @@ if [ "$dry" = 0 ]; then
   "$CLAUDE_BIN" --version 2>/dev/null | grep -q "^$CLAUDE_VERSION " || die "$CLAUDE_BIN is not Claude Code $CLAUDE_VERSION"
   CLAUDE_SUM=$(sum "$CLAUDE_BIN")
 
-  # The session gets its own logins, and never the ones of the owner
-  # (D-1141).
+  # The session gets its own Claude token. The gh token and the Codex
+  # login are copies of the logins of the owner (D-1141, D-1164).
   [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Run claude setup-token, and save the token there."
-  [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Save a fine-grained GitHub token for decktome alone there."
+  [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Save the output of gh auth token there (D-1164)."
+  private_file "$SECRETS/claude-token"
+  private_file "$SECRETS/gh-token"
   CLAUDE_TOKEN=$(cat "$SECRETS/claude-token")
   GH_SESSION_TOKEN=$(cat "$SECRETS/gh-token")
   # A session can write the Codex home, so this script never runs Codex
   # with it. It reads that the login file exists, and nothing more.
   if [ ! -f "$CODEX_DIR/auth.json" ] || [ -L "$CODEX_DIR/auth.json" ]; then
-    die "the session Codex has no login. Before the first run: CODEX_HOME=$CODEX_DIR codex login (D-833)"
+    die "the session Codex has no login. Copy ~/.codex/auth.json to $CODEX_DIR (D-833, D-1164)"
   fi
+  private_file "$CODEX_DIR/auth.json"
   [ -d "$CARDS/scryfall" ] || die "no card store at $CARDS. A replay needs it."
   # The checkout of the launchd agent links .local to the checkout of the
   # owner (D-1155), and the profile reads real paths.
