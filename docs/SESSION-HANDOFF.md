@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice. A second run sent none. The mode check refused a file of mode 644, and it passed the three login files of mode 600.
 
-**Open work.** Codex review: Blocked at effective head `96cb6ae0301b07f656b5cf34a8a2499e90272988`. Open finding P1-1. Gitar has an open thread on the review metadata, and no author reply exists. Answer that thread, fix P1-1, and repeat the review.
+**Open work.** Codex review: Blocked at effective head `9e1982441a50b10874fa1fe159a28fc090d37cad`. P1-1 is fixed. P1-2 and P2-1 remain open. The launchd probes have no output file for independent review.
 
 **After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
 
