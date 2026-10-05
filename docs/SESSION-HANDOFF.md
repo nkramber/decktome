@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-05b)
 
-**Branch `chore/live-evals-install`: PR-132, the temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).**
+**Branch `chore/live-evals-install`: PR-132 is #290, the temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).**
 
 Author provider: Claude Code
 

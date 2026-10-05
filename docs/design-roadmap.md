@@ -3466,7 +3466,7 @@ Gate:
 
 > *In plain English:* the robot that reads each new deck now starts from the background with no error. It also stops, and tells the owner, when a program it uses changes its version.
 
-**PR-132: The temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).** 🔧 open. The first tick of PR-131 proved the launch. The first real item then ended `blocked` after 11 seconds, because the profile refused each Bash call of the session.
+**PR-132: The temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).** ✅ merged as #290. The mark comes before any review (D-822). The first tick of PR-131 proved the launch. The first real item then ended `blocked` after 11 seconds, because the profile refused each Bash call of the session.
 
 - **The cause.** Claude Code makes the folder of its Bash tool under `CLAUDE_CODE_TMPDIR`, or under `/tmp`. It ignores `TMPDIR`, and the profile allows no write under `/tmp`.
 - **The fix.** `run_claude` gives the session `CLAUDE_CODE_TMPDIR="$run/tmp"`. The profile stays the same.
