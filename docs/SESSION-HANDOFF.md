@@ -27,7 +27,7 @@ Author provider: Claude Code
 
 **The checks.** Under the profile, a write to `/private/tmp/claude-501` failed, and a write to the run folder passed. A tick with the real probe passed it. A copy with the probe on `/private/tmp` stopped before the queue. The emulator tests of the eval mark pass with the unmark. A retry on the emulator cleared the mark of a verdict, and it refused an item that waits and an item with a pull request.
 
-**Open work.** The Gitar pass, the Codex review, and the confirmation of the owner. The pull request is pending the auto-merge (D-828).
+**Open work.** Codex review reads `Ready for owner merge` for effective head `02f96b4`, and Gitar approved it with no open thread. The pull request waits for the confirmation of the owner (D-828).
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`. The next tick starts a session for the item. Read its log for Bash calls that run.
 
