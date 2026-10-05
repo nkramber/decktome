@@ -56,6 +56,12 @@ preflight() {
   [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Do the setup in the header of scripts/live-evals.sh"
   [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Do the setup in the header of scripts/live-evals.sh"
   [ -f "$HOME_DIR/codex-home/auth.json" ] || die "the session Codex has no login. Do the setup in the header of scripts/live-evals.sh"
+  # A login file that another account can read stops the install (D-1164).
+  local f mode
+  for f in "$SECRETS/claude-token" "$SECRETS/gh-token" "$HOME_DIR/codex-home/auth.json"; do
+    mode=$(stat -f %Lp "$f") || die "can not read the mode of $f"
+    [ $(( 8#$mode & 8#077 )) = 0 ] || die "$f has mode $mode, and another account can read it. Run chmod 600 on it."
+  done
 }
 
 write_plist() { # file -> the agent file

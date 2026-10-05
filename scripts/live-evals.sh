@@ -65,7 +65,9 @@
 #   LIVE_EVALS_BUDGET_USD=3.00  LIVE_EVALS_MAX_OPEN=3  LIVE_EVALS_MIN_FREE_GB=20
 #   LIVE_EVALS_MODEL=<claude default>
 #
-# The one-time setup (D-1141, D-1164). Mode 600 for each file:
+# The one-time setup (D-1141, D-1164). Mode 600 for each file, and the
+# script refuses a login file that another account can read:
+#   umask 077
 #   claude setup-token, and the token alone > $LIVE_EVALS_SECRETS/claude-token
 #   gh auth token             > $LIVE_EVALS_SECRETS/gh-token
 #   cp ~/.codex/auth.json $LIVE_EVALS_HOME/codex-home/auth.json
@@ -106,7 +108,7 @@ for arg in "$@"; do
     --once) once=1 ;;
     --dry) dry=1 ;;
     --evaluate-backlog) backlog=1 ;;
-    -h|--help) sed -n '2,78p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,80p' "$0"; exit 0 ;;
     *) echo "live-evals: unknown flag $arg"; exit 2 ;;
   esac
 done
@@ -252,6 +254,13 @@ notify() {
     || say "the notice did not send: $1"
 }
 
+# A login file that another account can read stops the script (D-1164).
+private_file() { # file
+  local mode
+  mode=$(stat -f %Lp "$1") || die "can not read the mode of $1"
+  [ $(( 8#$mode & 8#077 )) = 0 ] || die "$1 has mode $mode, and another account can read it. Run chmod 600 on it (D-1164)."
+}
+
 if [ "$dry" = 0 ]; then
   # The pinned Claude Code (D-1145). A copy outside the folder of the
   # updater keeps the version, and the profile keeps a session out of it.
@@ -267,6 +276,8 @@ if [ "$dry" = 0 ]; then
   # login are copies of the logins of the owner (D-1141, D-1164).
   [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Run claude setup-token, and save the token there."
   [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Save the output of gh auth token there (D-1164)."
+  private_file "$SECRETS/claude-token"
+  private_file "$SECRETS/gh-token"
   CLAUDE_TOKEN=$(cat "$SECRETS/claude-token")
   GH_SESSION_TOKEN=$(cat "$SECRETS/gh-token")
   # A session can write the Codex home, so this script never runs Codex
@@ -274,6 +285,7 @@ if [ "$dry" = 0 ]; then
   if [ ! -f "$CODEX_DIR/auth.json" ] || [ -L "$CODEX_DIR/auth.json" ]; then
     die "the session Codex has no login. Copy ~/.codex/auth.json to $CODEX_DIR (D-833, D-1164)"
   fi
+  private_file "$CODEX_DIR/auth.json"
   [ -d "$CARDS/scryfall" ] || die "no card store at $CARDS. A replay needs it."
   # The checkout of the launchd agent links .local to the checkout of the
   # owner (D-1155), and the profile reads real paths.

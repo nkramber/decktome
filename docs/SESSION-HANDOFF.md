@@ -22,9 +22,9 @@ Author provider: Claude Code
 
 - `start-live-evals` and the plist of `scripts/live-evals-launchd.sh` run each script through `/bin/bash` (D-1166).
 - `PINS` in `scripts/live-evals.sh` holds the version of each program of a tick (D-1165). A miss stops the tick before the build, and curl sends one notice.
-- The header and the messages name the copied logins (D-1164).
+- The header and the messages name the copied logins (D-1164). The script and the install refuse a login file that another account can read.
 
-**The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice. A second run sent none.
+**The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice. A second run sent none. The mode check refused a file of mode 644, and it passed the three login files of mode 600.
 
 **Open work.** Codex review: Blocked at effective head `96cb6ae0301b07f656b5cf34a8a2499e90272988`. Open finding P1-1. Gitar has an open thread on the review metadata, and no author reply exists. Answer that thread, fix P1-1, and repeat the review.
 
