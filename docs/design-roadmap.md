@@ -3462,7 +3462,7 @@ Gate:
 - A launchd probe of the branch runs `./start-live-evals --dry` to its end, the build included.
 - A copy of the script with a wrong go pin stops, and it sends one notice.
 - A second run of that copy stops, and it sends no notice.
-- The mode check refuses a login file of mode 644, and it passes mode 600.
+- The mode check refuses a login file of mode 644, and a file of mode 600 with an access control list. It passes a clean file of mode 600.
 - After the merge, `make live-evals-install CONFIRM=1` from `main` gives a first tick that marks the items that wait.
 
 > *In plain English:* the robot that reads each new deck now starts from the background with no error. It also stops, and tells the owner, when a program it uses changes its version.

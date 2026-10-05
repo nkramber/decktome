@@ -173,6 +173,7 @@ done
 # own pin (D-1145), and .nvmrc pins Node 22.
 PINS=(
   "macOS|sw_vers -buildVersion|25F84"
+  "jq|jq --version|jq-1.7.1-apple"
   "git|git --version|git version 2.50.1 (Apple Git-155)"
   "python3|python3 --version|Python 3.9.6"
   "go|go version|go version go1.27.1 darwin/arm64"
@@ -255,10 +256,15 @@ notify() {
 }
 
 # A login file that another account can read stops the script (D-1164).
+# A mode bit of the group or of others can give the read, and so can an
+# entry of an access control list. `ls -lde` prints one line for each
+# entry after the line of the file.
 private_file() { # file
   local mode
   mode=$(stat -f %Lp "$1") || die "can not read the mode of $1"
   [ $(( 8#$mode & 8#077 )) = 0 ] || die "$1 has mode $mode, and another account can read it. Run chmod 600 on it (D-1164)."
+  # shellcheck disable=SC2012 # find prints no access control list, and the path is fixed.
+  [ "$(ls -lde "$1" | wc -l)" -eq 1 ] || die "$1 has an access control list. Run chmod -N on it (D-1164)."
 }
 
 if [ "$dry" = 0 ]; then

@@ -61,6 +61,8 @@ preflight() {
   for f in "$SECRETS/claude-token" "$SECRETS/gh-token" "$HOME_DIR/codex-home/auth.json"; do
     mode=$(stat -f %Lp "$f") || die "can not read the mode of $f"
     [ $(( 8#$mode & 8#077 )) = 0 ] || die "$f has mode $mode, and another account can read it. Run chmod 600 on it."
+    # shellcheck disable=SC2012 # find prints no access control list, and the path is fixed.
+    [ "$(ls -lde "$f" | wc -l)" -eq 1 ] || die "$f has an access control list. Run chmod -N on it."
   done
 }
 

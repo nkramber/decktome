@@ -19,8 +19,37 @@ Regression checks:
 - Under umask 022, `private_file` refused a file of mode 644: "has mode 644, and another account can read it".
 - The same function passed a file that `umask 077` made, of mode 600.
 - It passed the three real login files: `claude-token`, `gh-token`, and the session `auth.json`.
-- The preflight of the install did not run in a test, because a pass loads the agent. It uses the same mode rule as `private_file`.
+- The install itself did not run in a test, because a pass loads the agent. The answer to P1-2 tests the loop of its preflight.
 
 ## The Gitar finding on the Push line of the record
 
 Result: full merit, and the review tool fixed it. The record commit `6de6c36` names `b58f50c` in the Push line, and `b58f50c` is on the branch.
+
+## P1-2: The credential check ignores read access control lists
+
+Result: full merit.
+
+Evidence: `chmod +a 'everyone allow read'` on a file of mode 600 left `stat -f %Lp` at 600. `ls -lde` printed the entry `0: group:everyone allow read` on a second line.
+
+Correction:
+
+- `scripts/live-evals.sh`: `private_file` also refuses a file with any entry of an access control list. `ls -lde` prints one line for each entry after the line of the file (D-1164).
+- `scripts/live-evals-launchd.sh`: the preflight of the install refuses the same files with the same rule.
+- A `shellcheck disable=SC2012` comment states the reason: `find` prints no access control list, and each path is fixed.
+
+Regression checks:
+
+- `private_file` refused a file of mode 600 with `everyone allow read`: "has an access control list".
+- It refused a file of mode 644, and it passed a clean file of mode 600 and the three real login files.
+- The loop of the install preflight, with its `SECRETS` and `HOME_DIR` set to a test folder, refused a `claude-token` with the same entry. It passed the same folder with no entry.
+- `shellcheck scripts/*.sh` passed.
+
+## P2-1: The version gate does not pin jq
+
+Result: full merit.
+
+Evidence: `PINS` held no line for jq. Under the PATH of the agent, jq is `/usr/bin/jq`, so the macOS build pinned it. A Homebrew jq that comes first on the PATH at the time of the install has no pin.
+
+Correction: `PINS` in `scripts/live-evals.sh` holds `jq --version` with the line `jq-1.7.1-apple` (D-1165).
+
+Regression check: under `/bin/bash` and the PATH of the agent, the pin loop read 10 pins and no miss. The test of a wrong go pin proved the stop and the single notice of a miss for each program of the loop.
