@@ -3466,6 +3466,21 @@ Gate:
 
 > *In plain English:* the robot that reads each new deck now starts from the background with no error. It also stops, and tells the owner, when a program it uses changes its version.
 
+**PR-132: The temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).** ✅ merged as #290. The mark comes before any review (D-822). The first tick of PR-131 proved the launch. The first real item then ended `blocked` after 11 seconds, because the profile refused each Bash call of the session.
+
+- **The cause.** Claude Code makes the folder of its Bash tool under `CLAUDE_CODE_TMPDIR`, or under `/tmp`. It ignores `TMPDIR`, and the profile allows no write under `/tmp`.
+- **The fix.** `run_claude` gives the session `CLAUDE_CODE_TMPDIR="$run/tmp"`. The profile stays the same.
+- **The probe.** Each tick makes that folder under the profile before any session starts. A refusal stops the tick with one notice, so no session starts and no item loses its mark.
+- **The retry.** `make live-evals-retry ITEM=<key>` clears the mark of one blocked or failed item. It keeps the old state and logs. The next tick starts a new session for the item.
+
+Gate:
+- Under the profile, a write to `/private/tmp/claude-501` fails, and a write to the run folder passes.
+- A tick with the probe on `/private/tmp` stops before the queue. A tick with the real probe passes it.
+- The emulator tests read the unmark of a deck and of a verdict. A retry on the emulator clears the mark, and it refuses an item that waits or that has a pull request.
+- After the merge, the retry of `v-KefDsksH23qUg16zCWlI` gives a session whose Bash calls run.
+
+> *In plain English:* the safety box of the robot that reads each new item blocked a folder, so the robot ran no command. The robot now uses a folder inside its box, checks that folder before each start, and can try an item again.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 

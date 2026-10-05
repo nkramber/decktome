@@ -84,4 +84,16 @@ func TestEmulatorEvalMark(t *testing.T) {
 	if err := repo.MarkEvaluated(ctx, uid, "no-such-deck", created); !errors.Is(err, ErrNotFound) {
 		t.Errorf("mark of a missing deck = %v, want ErrNotFound", err)
 	}
+
+	// D-1168: the unmark puts the deck back in the queue, and the
+	// rename stays.
+	if err := repo.ClearEvaluated(ctx, uid, first); err != nil {
+		t.Fatalf("unmark: %v", err)
+	}
+	if got := pending(); len(got) != 2 || got[0].ID != first || got[0].Name != name {
+		t.Fatalf("after the unmark: unevaluated = %+v, want the renamed build again", got)
+	}
+	if err := repo.ClearEvaluated(ctx, uid, "no-such-deck"); !errors.Is(err, ErrNotFound) {
+		t.Errorf("unmark of a missing deck = %v, want ErrNotFound", err)
+	}
 }

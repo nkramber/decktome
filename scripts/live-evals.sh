@@ -30,6 +30,7 @@
 #   ./start-live-evals --once             one pass, then stop
 #   ./start-live-evals --dry              the summary alone: no mark, no session
 #   ./start-live-evals --evaluate-backlog evaluate the decks of the first run
+#   ./start-live-evals --retry KEY        put one blocked or failed item back in the queue
 #
 # CAUTION: each session spends the Claude plan of the owner, the Codex
 # plan, and at most LIVE_EVALS_BUDGET_USD (3.00) of provider money on
@@ -103,15 +104,23 @@ CARDS=$ROOT/.local/gcs/mtg-local-cards
 once=0
 dry=0
 backlog=0
+retry=""
+want_retry=0
 for arg in "$@"; do
+  if [ "$want_retry" = 1 ]; then retry=$arg; want_retry=0; continue; fi
   case "$arg" in
     --once) once=1 ;;
     --dry) dry=1 ;;
     --evaluate-backlog) backlog=1 ;;
+    --retry) want_retry=1 ;;
     -h|--help) sed -n '2,80p' "$0"; exit 0 ;;
     *) echo "live-evals: unknown flag $arg"; exit 2 ;;
   esac
 done
+if [ "$want_retry" = 1 ] || { [ -n "$retry" ] && [ "$dry" = 1 ]; }; then
+  echo "live-evals: --retry needs the key of one item, and it does not run with --dry"
+  exit 2
+fi
 
 say() { printf '%s %s\n' "$(date '+%H:%M:%S')" "$*"; }
 die() { say "STOP: $*"; exit 1; }
@@ -267,6 +276,13 @@ private_file() { # file
   [ "$(ls -lde "$1" | wc -l)" -eq 1 ] || die "$1 has an access control list. Run chmod -N on it (D-1164)."
 }
 
+# The flags of sandbox-exec for one run folder. The session and the probe
+# of the sandbox use the same flags (D-1168).
+sandbox_flags() { # run
+  SANDBOX_FLAGS=(-f "$PROFILE" -D HOME="$HOME" -D RUN="$1" -D CACHE="$CACHE" -D CODEX="$CODEX_DIR"
+    -D BIN="$BIN" -D CARDS="$CARDS" -D NODE22="$NODE22" -D NODE20="$NODE20")
+}
+
 if [ "$dry" = 0 ]; then
   # The pinned Claude Code (D-1145). A copy outside the folder of the
   # updater keeps the version, and the profile keeps a session out of it.
@@ -312,6 +328,26 @@ if [ "$dry" = 0 ]; then
   for p in "${path_parts[@]}"; do
     case "$p" in "$HOME"/*|/Volumes/*|"") ;; *) SESSION_PATH=$SESSION_PATH:$p ;; esac
   done
+
+  # Claude Code makes the folder of its Bash tool under
+  # $CLAUDE_CODE_TMPDIR/claude-<uid>, or under /tmp, and it ignores
+  # TMPDIR. The profile refuses /tmp, so a session gets $run/tmp there
+  # (D-1168). Each tick makes that folder under the profile before any
+  # session starts. A refusal stops the tick, so no session starts and
+  # no item gets its mark. One notice goes for each new refusal.
+  probe=$HOME_DIR/.probe
+  SANDBOX_NOTICE=$STATE/sandbox-notice
+  if ! rm -rf "$probe" || ! mkdir -p "$probe/tmp"; then die "can not make the probe folder $probe"; fi
+  sandbox_flags "$probe"
+  if ! env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" \
+    /bin/mkdir -p "$probe/tmp/claude-$(id -u)/probe" 2>/dev/null; then
+    if [ ! -f "$SANDBOX_NOTICE" ]; then
+      notify "decktome live evals stopped: the sandbox" "The profile refuses $probe/tmp/claude-$(id -u). No session starts until the probe passes (D-1168)."
+      touch "$SANDBOX_NOTICE"
+    fi
+    die "the profile refuses the temporary folder of a session, $probe/tmp/claude-$(id -u) (D-1168)"
+  fi
+  rm -rf "$probe" "$SANDBOX_NOTICE"
 fi
 
 if [ "$dry" = 0 ] && ! gh label list --limit 200 --json name --jq '.[].name' | grep -qx "$LABEL"; then
@@ -379,21 +415,21 @@ run_claude() { # deck run prompt-file log-file -> exit code
   runfs mkdir "$HOME_DIR" "$deck" tmp claude-config gh-config xdg-config replay || return 1
   if [ -n "${LIVE_EVALS_MODEL:-}" ]; then model_args=(--model "$LIVE_EVALS_MODEL"); fi
   check_sum "$CLAUDE_BIN" "$CLAUDE_SUM"
+  sandbox_flags "$run"
   say "session starts in $run/repo, log $log"
   # env -i passes only the names below. No cloud credential, no login of
   # the owner, and no provider key reach the process. A provider key in
   # the environment would also replace the Claude plan (D-1142).
   (cd "$run/repo" && env -i \
     HOME="$HOME" USER="$(id -un)" LOGNAME="$(id -un)" LANG="${LANG:-en_US.UTF-8}" TERM=dumb SHELL=/bin/bash \
-    PATH="$SESSION_PATH" TMPDIR="$run/tmp" \
+    PATH="$SESSION_PATH" TMPDIR="$run/tmp" CLAUDE_CODE_TMPDIR="$run/tmp" \
     CLAUDE_CONFIG_DIR="$run/claude-config" CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_TOKEN" DISABLE_AUTOUPDATER=1 \
     GH_TOKEN="$GH_SESSION_TOKEN" GH_CONFIG_DIR="$run/gh-config" XDG_CONFIG_HOME="$run/xdg-config" \
     GOCACHE="$CACHE/go-build" GOMODCACHE="$CACHE/go-mod" GOPATH="$CACHE/gopath" \
     npm_config_prefix="$CACHE/npm-global" npm_config_cache="$CACHE/npm" \
     npm_config_store_dir="$CACHE/pnpm-store" PNPM_HOME="$CACHE/pnpm-home" CODEX_HOME="$CODEX_DIR" \
     LIVE_EVAL_BUNDLE="$run/bundle" LIVE_EVAL_BUDGET_USD="$BUDGET" \
-    sandbox-exec -f "$PROFILE" -D HOME="$HOME" -D RUN="$run" -D CACHE="$CACHE" -D CODEX="$CODEX_DIR" \
-      -D BIN="$BIN" -D CARDS="$CARDS" -D NODE22="$NODE22" -D NODE20="$NODE20" \
+    sandbox-exec "${SANDBOX_FLAGS[@]}" \
     "$CLAUDE_BIN" -p "$(cat "$prompt")" --permission-mode bypassPermissions \
       --add-dir "$run/bundle" --add-dir "$run/replay" \
       ${model_args[@]+"${model_args[@]}"} --output-format stream-json --verbose > "$log" 2>&1) &
@@ -749,6 +785,29 @@ eval_pass() {
 }
 
 # --- the run --------------------------------------------------------------
+
+# --retry puts one item back in the queue after a fault of the harness
+# (D-1168). It clears the mark, and it keeps the old state and logs under
+# a new name. The next tick starts a new session for the item.
+if [ -n "$retry" ]; then
+  [ -f "$(dstate "$retry")" ] || die "--retry: no state for $retry"
+  rstatus=$(dget "$retry" status)
+  case "$rstatus" in
+    blocked|failed|fix-failed) ;;
+    *) die "--retry: $retry has the status \"$rstatus\". Only blocked, failed, or fix-failed takes a retry." ;;
+  esac
+  [ -z "$(dget "$retry" pr)" ] || die "--retry: $retry has PR #$(dget "$retry" pr). Close it, then retry."
+  rbranch=$(dget "$retry" branch)
+  if [ -n "$rbranch" ] && git ls-remote --exit-code --heads origin "$rbranch" >/dev/null 2>&1; then
+    die "--retry: the branch $rbranch is on origin. Delete it, then retry."
+  fi
+  tool unmark -uid "$(dget "$retry" uid)" -deck "$retry" || die "--retry: the unmark of $retry did not write"
+  stamp=$(date +%s)
+  mv "$(dstate "$retry")" "$(dstate "$retry").retried-$stamp"
+  if [ -d "$RUNS/$retry" ]; then mv "$RUNS/$retry" "$RUNS/$retry.retried-$stamp"; fi
+  say "--retry: $retry waits for a live eval again. The old state and logs end with .retried-$stamp."
+  exit 0
+fi
 
 say "summary of every deck that no live eval read, from $PROJECT:"
 tool summary || die "the summary did not read"

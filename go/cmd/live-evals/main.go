@@ -1,7 +1,7 @@
 // Command live-evals serves scripts/start-live-evals (D-1132 to D-1139).
 // It reads the decks, the thumbs down (D-1149), and the general notes
 // (D-1156) that no live eval read. It writes the data of one item for an
-// eval session, marks an item read, checks that a pull request is ready
+// eval session, marks an item read or unread (D-1168), checks that a pull request is ready
 // for the owner, holds a pull request that changes a protected path
 // (D-1158), and sends the owner a Pushover notice. It calls no model, and
 // it costs nothing.
@@ -12,6 +12,7 @@
 //	PROJECT_ID=decktome-prod go run ./cmd/live-evals summary
 //	PROJECT_ID=decktome-prod go run ./cmd/live-evals bundle -uid U -deck D -out DIR
 //	PROJECT_ID=decktome-prod go run ./cmd/live-evals mark -uid U -deck D
+//	PROJECT_ID=decktome-prod go run ./cmd/live-evals unmark -uid U -deck D
 //	go run ./cmd/live-evals ready -pr N
 //	go run ./cmd/live-evals guard -pr N
 //	go run ./cmd/live-evals notify -title T -message M
@@ -59,7 +60,7 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|ready|guard|notify|replay-input [flags]")
+		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|unmark|ready|guard|notify|replay-input [flags]")
 		os.Exit(2)
 	}
 	if err := run(context.Background(), os.Args[1], os.Args[2:], os.Stdout); err != nil {
@@ -154,6 +155,14 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 			return st.feedback.MarkEvaluated(ctx, *uid, id, time.Now())
 		}
 		return st.decks.MarkEvaluated(ctx, *uid, *deck, time.Now())
+	case "unmark":
+		if *uid == "" || *deck == "" {
+			return errors.New("unmark: set -uid and -deck")
+		}
+		if id, ok := feedbackOf(*deck); ok {
+			return st.feedback.ClearEvaluated(ctx, *uid, id)
+		}
+		return st.decks.ClearEvaluated(ctx, *uid, *deck)
 	}
 	return fmt.Errorf("unknown command %q", cmd)
 }

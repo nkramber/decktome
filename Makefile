@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat live-evals-install live-evals-uninstall live-evals-status
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat live-evals-install live-evals-uninstall live-evals-status live-evals-retry
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -395,6 +395,10 @@ live-evals-uninstall: ## Stop and remove the launchd agent of the live evals (D-
 
 live-evals-status: ## Print the state of the launchd agent of the live evals, and the end of its log (D-1155). Free
 	@scripts/live-evals-launchd.sh status
+
+live-evals-retry: ## Put one blocked or failed live-eval item back in the queue: ITEM=<key> (D-1168). Free. The next tick starts a paid session for it
+	@[ -n "$(ITEM)" ] || { echo "live-evals-retry: set ITEM to the key of one item, for example ITEM=v-<verdict id>"; exit 1; }
+	@scripts/live-evals-launchd.sh retry "$(ITEM)"
 
 user-case-chat: ## Drive chat-probe through the turns of a user case (D-1124). CAUTION: calls the real providers and costs money. Needs CONFIRM=1
 	@[ "$(CONFIRM)" = 1 ] || { echo "user-case-chat: this calls the real providers and costs money. Set CONFIRM=1."; exit 1; }
