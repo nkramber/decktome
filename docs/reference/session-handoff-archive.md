@@ -15,6 +15,38 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-05, PR-131
+
+**Branch `chore/live-evals-first-run`: PR-131 is #289, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1167).**
+
+Author provider: Claude Code
+
+**The base.** `main` at `4da0a57`, the merge of #285. `/readyz` read `ok` and served `4da0a57`, a commit after `fb66b5c` of #288. So the deploy holds PR-130.
+
+**The setup.** The owner chose copies of the gh login and the Codex login (D-1164). `claude setup-token` wrote a token for one year. The terminal wrapped that token, so the session printed its last 29 characters one time. The owner knows this.
+
+**The fault.** `make live-evals-install CONFIRM=1` loaded the agent. Each tick stopped at the build with "operation not permitted" on `go.mod`. Launchd probes found the cause of D-1166. The session removed the agent again, because the plist of `main` holds the old command.
+
+**The code.**
+
+- `start-live-evals` and the plist of `scripts/live-evals-launchd.sh` run each script through `/bin/bash` (D-1166).
+- `PINS` in `scripts/live-evals.sh` holds the version of each program of a tick (D-1165). A miss stops the tick before the build, and curl sends one notice.
+- The header and the messages name the copied logins (D-1164). The script and the install refuse a login file that another account can read.
+
+**The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice, and the owner confirmed it. A second run sent none. The mode check refused a file of mode 644 and a file with an access control list. It passed the three login files of mode 600.
+
+**Open work.** Codex round 4 reads `Ready for owner merge` for effective head `d2fb239`, and Gitar approved it with no open thread. The pull request is pending the confirmation of the owner and the auto-merge (D-828, D-834). The first tick after the merge is the proof of the launch (D-1167).
+
+**After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
+
+### 2026-10-04g: the checks of PR-128, and PR-130
+
+**The deploy of `a7731f5` and the check of PR-128 passed.** The test collection holds no Hurricane. So the owner chose a red and green deck, where Earthquake of the same tag can show.
+
+**The deck marked Astral Cornucopia as fast mana.** The owner asked for the fix in this pull request, and chose the X costs and the multikicker (D-1162).
+
+**The checks of PR-126 needed no run.** PR-129 ran them on the deploy of `42982d0`.
+
 ## The resume section of 2026-10-04h, PR-127
 
 **Branch `feat/live-evals-launchd`: PR-127 is #285, the live evals with no terminal, the notes, and a scope rule (D-1155 to D-1158).** The owner approved the plan as one pull request.

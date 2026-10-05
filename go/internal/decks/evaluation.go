@@ -89,3 +89,21 @@ func (r *Repo) MarkEvaluated(ctx context.Context, uid, id string, at time.Time) 
 	}
 	return err
 }
+
+// ClearEvaluated removes the eval mark of one deck, so the deck waits for
+// a live eval again (D-1168). The owner runs it after a fault of the
+// harness consumed the mark. A deck that the user deleted answers
+// ErrNotFound.
+func (r *Repo) ClearEvaluated(ctx context.Context, uid, id string) error {
+	if uid == "" || id == "" {
+		return errors.New("decks: an unmark needs a user and a deck id")
+	}
+	_, err := r.doc(uid, id).Update(ctx, []firestore.Update{
+		{Path: "has_been_evaluated", Value: false},
+		{Path: "evaluated_at", Value: firestore.Delete},
+	})
+	if status.Code(err) == codes.NotFound {
+		return ErrNotFound
+	}
+	return err
+}

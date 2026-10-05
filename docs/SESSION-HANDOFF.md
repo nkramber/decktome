@@ -6,29 +6,30 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-05)
+## RESUME HERE (2026-10-05b)
 
-**Branch `chore/live-evals-first-run`: PR-131 is #289, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1167).**
+**Branch `chore/live-evals-install`: PR-132, the temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).**
 
 Author provider: Claude Code
 
-**The base.** `main` at `4da0a57`, the merge of #285. `/readyz` read `ok` and served `4da0a57`, a commit after `fb66b5c` of #288. So the deploy holds PR-130.
+**The base.** `main` at `96240b2`, the merge of #289.
 
-**The setup.** The owner chose copies of the gh login and the Codex login (D-1164). `claude setup-token` wrote a token for one year. The terminal wrapped that token, so the session printed its last 29 characters one time. The owner knows this.
+**The install.** The three login files had mode 600, and the 10 pins matched under the PATH of the agent. The owner confirmed the install, and `make live-evals-install CONFIRM=1` ran from `main`. The first tick built the tool, marked 13 decks, 6 thumbs down, and 4 notes read, and started no session. So the launch through bash holds (D-1167).
 
-**The fault.** `make live-evals-install CONFIRM=1` loaded the agent. Each tick stopped at the build with "operation not permitted" on `go.mod`. Launchd probes found the cause of D-1166. The session removed the agent again, because the plist of `main` holds the old command.
+**The fault.** The first new item, a thumbs down of the owner, started a session at 15:39. Each Bash call failed with EPERM on `/private/tmp/claude-501/...`, and the session ended `blocked` after 11 seconds. The item lost its mark. The owner paused the agent with `make live-evals-uninstall` (D-1168).
 
 **The code.**
 
-- `start-live-evals` and the plist of `scripts/live-evals-launchd.sh` run each script through `/bin/bash` (D-1166).
-- `PINS` in `scripts/live-evals.sh` holds the version of each program of a tick (D-1165). A miss stops the tick before the build, and curl sends one notice.
-- The header and the messages name the copied logins (D-1164). The script and the install refuse a login file that another account can read.
+- `run_claude` gives the session `CLAUDE_CODE_TMPDIR="$run/tmp"`. `sandbox_flags` holds the flags of `sandbox-exec` for the session and for the probe.
+- Each tick makes `$HOME_DIR/.probe/tmp/claude-<uid>` under the profile before any session. A refusal stops the tick with one notice.
+- `unmark` in `go/cmd/live-evals` and `ClearEvaluated` in the deck and feedback stores clear an eval mark.
+- `--retry KEY` and `make live-evals-retry ITEM=<key>` put one blocked or failed item back in the queue.
 
-**The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice, and the owner confirmed it. A second run sent none. The mode check refused a file of mode 644 and a file with an access control list. It passed the three login files of mode 600.
+**The checks.** Under the profile, a write to `/private/tmp/claude-501` failed, and a write to the run folder passed. A tick with the real probe passed it. A copy with the probe on `/private/tmp` stopped before the queue. The emulator tests of the eval mark pass with the unmark. A retry on the emulator cleared the mark of a verdict, and it refused an item that waits and an item with a pull request.
 
-**Open work.** Codex round 4 reads `Ready for owner merge` for effective head `d2fb239`, and Gitar approved it with no open thread. The pull request is pending the confirmation of the owner and the auto-merge (D-828, D-834). The first tick after the merge is the proof of the launch (D-1167).
+**Open work.** The Gitar pass, the Codex review, and the confirmation of the owner. The pull request is pending the auto-merge (D-828).
 
-**After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
+**After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`. The next tick starts a session for the item. Read its log for Bash calls that run.
 
 ## How to resume
 
@@ -102,7 +103,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-131: the first run of the live evals** (D-1133, D-1164 to D-1167). The resume section holds the open work. After the merge, `make live-evals-install CONFIRM=1` from `main` starts the agent, and the first tick marks each item that waits.
+0. **PR-132: the temporary folder of a live-eval session** (D-1168). The resume section holds the open work. After the merge, the retry of `v-KefDsksH23qUg16zCWlI` and the install from `main` restart the agent.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -125,14 +126,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-04g: the checks of PR-128, and PR-130
-
-**The deploy of `a7731f5` and the check of PR-128 passed.** The test collection holds no Hurricane. So the owner chose a red and green deck, where Earthquake of the same tag can show.
-
-**The deck marked Astral Cornucopia as fast mana.** The owner asked for the fix in this pull request, and chose the X costs and the multikicker (D-1162).
-
-**The checks of PR-126 needed no run.** PR-129 ran them on the deploy of `42982d0`.
-
 ### 2026-10-04h: the live evals with no terminal, PR-127
 
 **The owner asked if the live evals run with no open terminal.** They did not, because the script ran in the foreground until Ctrl-C.
@@ -145,6 +138,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The first tick stopped at the build.** Launchd probes showed that a script that the kernel runs from the volume loses the volume (D-1166). The owner then mandated a pinned version for each program of a tick (D-1165).
 
+### 2026-10-05b: the install of the live evals, PR-132
+
+**The owner asked for the install from `main`.** The first tick proved the launch through bash, and it started no session.
+
+**The owner asked the session to watch the evals.** The first session ended `blocked`, because the profile refused the temporary folder of the Bash tool. The owner said that this fault must not occur again (D-1168).
+
+**The owner asked what the cost of $0.10 means.** The figure is the list price of the tokens in the log of Claude Code. The session runs on the Claude plan through its token, so no bill comes.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-04h, the records of 2026-08-31 to 2026-10-04f, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-05, the records of 2026-08-31 to 2026-10-04g, and 104 more sections, word for word. Read it for the detail behind a decision.

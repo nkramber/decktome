@@ -7,6 +7,7 @@
 #   scripts/live-evals-launchd.sh uninstall   stop the agent, and remove it
 #   scripts/live-evals-launchd.sh status      the state of the agent, and the log
 #   scripts/live-evals-launchd.sh print       the agent file on stdout, and no load
+#   scripts/live-evals-launchd.sh retry KEY   put one blocked or failed item back in the queue
 #
 # Each tick moves a separate clone, $LIVE_EVALS_HOME/main, to
 # origin/main, and runs `start-live-evals --once` there. So the agent
@@ -66,6 +67,19 @@ preflight() {
   done
 }
 
+# launchd gives a small PATH. The agent gets the folder of each tool that
+# the script needs, as this shell finds it now. A retry uses the same
+# PATH, so the version pins read the same programs (D-1165).
+agent_path() {
+  local path="" dir cmd
+  for cmd in git go gh jq codex gcloud python3 sandbox-exec shasum pnpm; do
+    dir=$(command -v "$cmd") || die "$cmd is not on PATH"
+    dir=$(dirname "$dir")
+    case ":$path:" in *":$dir:"*) ;; *) path=${path:+$path:}$dir ;; esac
+  done
+  echo "$path:/usr/bin:/bin:/usr/sbin:/sbin"
+}
+
 write_plist() { # file -> the agent file
   mkdir -p "$HOME_DIR"
   HOME_DIR=$(cd "$HOME_DIR" && pwd -P)
@@ -74,15 +88,8 @@ write_plist() { # file -> the agent file
   account=${LIVE_EVALS_ACCOUNT:-$(gcloud config get-value account 2>/dev/null)}
   [ -n "$account" ] || die "no gcloud account. Set LIVE_EVALS_ACCOUNT."
 
-  # launchd gives a small PATH. The agent gets the folder of each tool
-  # that the script needs, as this shell finds it now.
-  local path="" dir cmd
-  for cmd in git go gh jq codex gcloud python3 sandbox-exec shasum pnpm; do
-    dir=$(command -v "$cmd") || die "$cmd is not on PATH"
-    dir=$(dirname "$dir")
-    case ":$path:" in *":$dir:"*) ;; *) path=${path:+$path:}$dir ;; esac
-  done
-  path=$path:/usr/bin:/bin:/usr/sbin:/sbin
+  local path
+  path=$(agent_path) || exit 1
 
   # The tick runs from launchd. It reads no file of a branch before it
   # moves its own clone to origin/main. The clone is a full clone, and no
@@ -162,10 +169,33 @@ status() {
   return 0
 }
 
+# retry runs `start-live-evals --retry` in the clone of the agent at
+# origin/main, with the environment of a tick (D-1168). It starts no
+# session. The next tick starts one for the item.
+retry() { # key
+  [ -n "${1:-}" ] || die "retry needs the key of one item, for example v-<verdict id>"
+  local wt path account
+  HOME_DIR=$(cd "$HOME_DIR" && pwd -P) || die "no $HOME_DIR"
+  wt=$HOME_DIR/main
+  [ -e "$wt/.git" ] || die "no clone at $wt. Install the agent first."
+  if launchctl print "$DOMAIN/$LABEL" 2>/dev/null | grep -qE '^\s*state = running'; then
+    die "a tick runs now. Retry after it ends."
+  fi
+  path=$(agent_path) || exit 1
+  account=${LIVE_EVALS_ACCOUNT:-$(gcloud config get-value account 2>/dev/null)}
+  [ -n "$account" ] || die "no gcloud account. Set LIVE_EVALS_ACCOUNT."
+  git -C "$wt" fetch --quiet origin main || die "the fetch of origin/main failed"
+  git -C "$wt" checkout --quiet --detach --force origin/main || die "the checkout of origin/main failed"
+  (cd "$wt" && env -i HOME="$HOME" USER="$(id -un)" LANG=en_US.UTF-8 PATH="$path" \
+    LIVE_EVALS_HOME="$HOME_DIR" LIVE_EVALS_SECRETS="$SECRETS" LIVE_EVALS_ACCOUNT="$account" \
+    /bin/bash ./start-live-evals --retry "$1")
+}
+
 case "${1:-}" in
   install) install ;;
   uninstall) uninstall ;;
   status) status ;;
   print) write_plist /dev/stdout ;;
-  *) echo "usage: scripts/live-evals-launchd.sh install|uninstall|status|print"; exit 2 ;;
+  retry) retry "${2:-}" ;;
+  *) echo "usage: scripts/live-evals-launchd.sh install|uninstall|status|print|retry KEY"; exit 2 ;;
 esac

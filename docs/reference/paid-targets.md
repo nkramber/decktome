@@ -97,13 +97,15 @@ The cap includes the replay (D-1144). The session replays the chat of the reader
 
 Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, and copies of the gh login and the Codex login of the owner (D-1164). The header of `scripts/live-evals.sh` names the one-time setup of the owner.
 
-The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `ready`, `guard`, `notify`, and `replay-input` call no model and cost nothing.
+The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `unmark`, `ready`, `guard`, `notify`, and `replay-input` call no model and cost nothing.
 
 A session fixes a product fault alone (D-1157). For each other item, it writes `out-of-scope` and makes no pull request. The script holds a pull request that changes a protected path, and the owner gets no ready notice (D-1158).
 
-`make live-evals-install CONFIRM=1` loads the launchd agent `com.decktome.live-evals` (D-1155). It runs one pass every five minutes, with no open terminal, so the install is the approval of each session that it starts. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs `/bin/bash ./start-live-evals --once` there (D-1166). Each tick first reads the pinned version of each program it runs, and a miss stops it with one notice (D-1165). The install refuses to start before the setup in the header of `scripts/live-evals.sh`.
+`make live-evals-install CONFIRM=1` loads the launchd agent `com.decktome.live-evals` (D-1155). It runs one pass every five minutes, with no open terminal, so the install is the approval of each session that it starts. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs `/bin/bash ./start-live-evals --once` there (D-1166). Each tick first reads the pinned version of each program it runs, and a miss stops it with one notice (D-1165). Each tick then makes the temporary folder of a session under the profile, and a refusal stops it with one notice (D-1168). The install refuses to start before the setup in the header of `scripts/live-evals.sh`.
 
 `make live-evals-status` prints the state and the end of the log `~/Library/Logs/decktome-live-evals.log`. `make live-evals-uninstall` stops the agent and a session that runs. Both cost nothing.
+
+`make live-evals-retry ITEM=<key>` puts one blocked or failed item back in the queue (D-1168). It clears the eval mark in Firestore, and it keeps the old state and logs under a new name. It refuses an item with a pull request, or with a branch on origin. The target costs nothing, and the next tick starts a paid session for the item.
 
 `make users-backfill` seeds the user record of D-638 from what each user already holds, and `BACKFILL_ARGS=-dry` counts and writes nothing. It counts a revision and an imported deck apart from a first build (D-861). It never lowers a count. It calls no model and costs nothing.
 

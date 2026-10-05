@@ -374,6 +374,16 @@ func TestUnevaluatedDownWaitsUntilTheMark(t *testing.T) {
 	if err := r.MarkEvaluated(ctx, uid, "no-such-verdict", time.Now()); !errors.Is(err, ErrNotFound) {
 		t.Fatalf("a lost verdict = %v, want ErrNotFound", err)
 	}
+	// D-1168: the unmark puts the verdict back in the queue.
+	if err := r.ClearEvaluated(ctx, uid, down); err != nil {
+		t.Fatal(err)
+	}
+	if got := mine(); len(got) != 1 || got[0].ID != down {
+		t.Fatalf("pending after the unmark = %+v, want the down verdict again", got)
+	}
+	if err := r.ClearEvaluated(ctx, uid, "no-such-verdict"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("an unmark of a lost verdict = %v, want ErrNotFound", err)
+	}
 }
 
 // D-1156: each general note waits for a live eval until its mark, and a
