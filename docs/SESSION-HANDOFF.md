@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The checks.** A launchd probe of the branch ran `./start-live-evals --dry` to its end: 13 decks, 6 thumbs down, and 4 notes wait. A copy with a wrong go pin stopped and sent one notice, and the owner confirmed it. A second run sent none. The mode check refused a file of mode 644 and a file with an access control list. It passed the three login files of mode 600.
 
-**Open work.** Codex approved effective head `d2fb2393eadfdd930130f1e8869923562013a24d`. The first tick after merge remains the proof of launch (D-1167). The review record and this hand-off wait for the push.
+**Open work.** Codex round 4 reads `Ready for owner merge` for effective head `d2fb239`, and Gitar approved it with no open thread. The pull request is pending the confirmation of the owner and the auto-merge (D-828, D-834). The first tick after the merge is the proof of the launch (D-1167).
 
 **After the merge.** Run `make live-evals-install CONFIRM=1` from `main`, and read `make live-evals-status`. The first tick marks each item that waits, the notes too, and starts no session.
 
