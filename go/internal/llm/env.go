@@ -40,7 +40,7 @@ var sdkTimeout = DefaultBudget.Deadline
 // LLM_<ROLE>_* overrides, and wires one adapter per provider the config
 // names. A provider whose key is absent is fatal, unless LLM_REQUIRE_KEYS=0.
 // Then the fixture Fake stands in with a warning.
-func NewFromEnv(getenv func(string) string, log *slog.Logger) (*Client, error) {
+func NewFromEnv(getenv func(string) string, log *slog.Logger, opts ...Option) (*Client, error) {
 	cfg, err := LoadConfig()
 	if err != nil {
 		return nil, err
@@ -77,7 +77,7 @@ func NewFromEnv(getenv func(string) string, log *slog.Logger) (*Client, error) {
 		}
 		providers = append(providers, p)
 	}
-	c, err := New(cfg, providers, WithLogger(log))
+	c, err := New(cfg, providers, append([]Option{WithLogger(log)}, opts...)...)
 	if err != nil {
 		return nil, err
 	}

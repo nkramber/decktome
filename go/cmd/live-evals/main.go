@@ -3,7 +3,8 @@
 // (D-1156) that no live eval read. It writes the data of one item for an
 // eval session, marks an item read or unread (D-1168), checks that a pull request is ready
 // for the owner, holds a pull request that changes a protected path
-// (D-1158), and sends the owner a Pushover notice. It calls no model, and
+// (D-1158), sums the measured spend of an item (D-1170), and sends the
+// owner a Pushover notice. It calls no model, and
 // it costs nothing.
 //
 // Usage:
@@ -16,6 +17,7 @@
 //	go run ./cmd/live-evals ready -pr N
 //	go run ./cmd/live-evals guard -pr N
 //	go run ./cmd/live-evals notify -title T -message M
+//	go run ./cmd/live-evals spend [-logs DIR] [-ledger FILE] -budget USD < spend.jsonl
 //
 // For a thumbs down, -deck takes the key of its row: "v-" and the id of
 // the verdict. For a general note, it takes "n-" and the id of the note.
@@ -54,13 +56,14 @@ import (
 	"github.com/nkramber/decktome/go/internal/decks"
 	"github.com/nkramber/decktome/go/internal/feedback"
 	"github.com/nkramber/decktome/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/livespend"
 	"github.com/nkramber/decktome/go/internal/notify"
 	"github.com/nkramber/decktome/go/internal/sessions"
 )
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|unmark|ready|guard|notify|replay-input [flags]")
+		fmt.Fprintln(os.Stderr, "usage: live-evals pending|summary|bundle|mark|unmark|ready|guard|notify|replay-input|spend [flags]")
 		os.Exit(2)
 	}
 	if err := run(context.Background(), os.Args[1], os.Args[2:], os.Stdout); err != nil {
@@ -87,6 +90,9 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 	message := fs.String("message", "", "the notice text")
 	bundleDir := fs.String("bundle", "", "the bundle directory that replay-input reads")
 	nonce := fs.String("nonce", "", "the code of the untrusted-data markers, random when empty")
+	logs := fs.String("logs", "", "the folder of the session logs that spend reads, none for the spend file alone")
+	budget := fs.String("budget", "", "the budget in dollars that spend reads")
+	ledger := fs.String("ledger", "", "the append-only ledger that spend reads, none when absent")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -109,6 +115,12 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 		ctx, cancel := context.WithTimeout(ctx, notify.Timeout)
 		defer cancel()
 		return p.Send(ctx, notify.Notice{Title: notify.Clip(*title, 250), Message: notify.Clip(*message, 1024)})
+	case "spend":
+		b, err := livespend.ParseBudget(*budget)
+		if err != nil {
+			return err
+		}
+		return spend(*logs, *ledger, b, os.Stdin, out)
 	case "replay-input":
 		if *bundleDir == "" || *dir == "" {
 			return errors.New("replay-input: set -bundle and -out")

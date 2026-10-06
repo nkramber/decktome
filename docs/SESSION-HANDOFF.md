@@ -6,30 +6,36 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-05b)
+## RESUME HERE (2026-10-05d)
 
-**Branch `chore/live-evals-install`: PR-132 is #290, the temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).**
+**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169 to D-1173).**
 
 Author provider: Claude Code
 
-**The base.** `main` at `96240b2`, the merge of #289.
+**The base.** `main` at `0c15f6d`, the merge of #290. The owner stopped the agent on 2026-10-05, and it stays uninstalled for this item.
 
-**The install.** The three login files had mode 600, and the 10 pins matched under the PATH of the agent. The owner confirmed the install, and `make live-evals-install CONFIRM=1` ran from `main`. The first tick built the tool, marked 13 decks, 6 thumbs down, and 4 notes read, and started no session. So the launch through bash holds (D-1167).
-
-**The fault.** The first new item, a thumbs down of the owner, started a session at 15:39. Each Bash call failed with EPERM on `/private/tmp/claude-501/...`, and the session ended `blocked` after 11 seconds. The item lost its mark. The owner paused the agent with `make live-evals-uninstall` (D-1168).
+**The fault.** The retried session of `v-KefDsksH23qUg16zCWlI` ran one replay, then wrote `{"target":"chat-probe","usd":0.30}` to `spend.jsonl` with echo. The 0.30 was the estimate. The dashboard of the provider showed less than $0.01 for the full day.
 
 **The code.**
 
-- `run_claude` gives the session `CLAUDE_CODE_TMPDIR="$run/tmp"`. `sandbox_flags` holds the flags of `sandbox-exec` for the session and for the probe.
-- Each tick makes `$HOME_DIR/.probe/tmp/claude-<uid>` under the profile before any session. A refusal stops the tick with one notice.
-- `unmark` in `go/cmd/live-evals` and `ClearEvaluated` in the deck and feedback stores clear an eval mark.
-- `--retry KEY` and `make live-evals-retry ITEM=<key>` put one blocked or failed item back in the queue.
+- `llm.WithMeter` records every attempt of a client. `Report.Unreported` counts the attempts with no usage.
+- `gatekit.NewClient` builds the metered client of each paid command, chat-probe included. Under `LIVE_EVAL_BUNDLE`, `livespend` writes a start line and an end line to `spend.jsonl`, and on stderr after `LIVE-EVAL-SPEND`.
+- An unmeasured run counts as the full budget, and a paid command refuses to start after it (D-1169).
+- Each line also goes to the append-only ledger `$RUNS/<deck>/ledger/spend.jsonl` (D-1171).
+- Each start reads the session logs, the ledger, and the spend file. The sum marks a run with no end line in a log unmeasured (D-1173). A profile rule allows the list of the logs folder and the read of `session-<n>.log` alone. Each tick probes the rules.
+- `spent()` runs `live-evals spend`, which sums the marked lines of the session logs (D-1170).
 
-**The checks.** Under the profile, a write to `/private/tmp/claude-501` failed, and a write to the run folder passed. A tick with the real probe passed it. A copy with the probe on `/private/tmp` stopped before the queue. The emulator tests of the eval mark pass with the unmark. A retry on the emulator cleared the mark of a verdict, and it refused an item that waits and an item with a pull request.
+**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. Under the real profile, `live-evals spend` read a logged run from the volume, and a refused folder list stopped it with an error.
 
-**Open work.** Codex review reads `Ready for owner merge` for effective head `02f96b4`, and Gitar approved it with no open thread. The pull request waits for the confirmation of the owner (D-828).
+**The reviews.** Gitar approved `c43271b` with 2 of 2 findings closed. Codex round 1 found P1-1, fixed by the ledger of D-1171. Codex round 2 found P1-2 on `1f62982`: `Start` read the ledger without the logs. The owner chose option B (D-1173), and `docs/reviews/pr-291-response.md` holds the answer. Codex round 3 approves `c43271b`, and P1-2 is fixed.
 
-**After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`. The next tick starts a session for the item. Read its log for Bash calls that run.
+**Open work.**
+
+- Push the review record and this hand-off, then verify `review-gate` on the published head.
+- Ask the owner to confirm the merge after the required checks pass (D-828, D-834).
+- Unverified: a running session log holds the result of each earlier tool call. The classifier refused a local `claude -p` test. The owner can run it, or the first live session proves it.
+
+**After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
 
 ## How to resume
 
@@ -103,7 +109,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-132: the temporary folder of a live-eval session** (D-1168). The resume section holds the open work. After the merge, the retry of `v-KefDsksH23qUg16zCWlI` and the install from `main` restart the agent.
+0. **PR-133: measured spend for a live-eval session** (D-1169, D-1170). The resume section holds the open work. After the merge, the owner decides when the retry and the install from `main` restart the agent.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -126,12 +132,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-04h: the live evals with no terminal, PR-127
-
-**The owner asked if the live evals run with no open terminal.** They did not, because the script ran in the foreground until Ctrl-C.
-
-**The owner asked for the launch of the night fixer of what-you-carry, the notes, and a scope rule.** The research found a launchd agent with `StartInterval` 900 that runs the scripts of origin/main. The owner chose one pass for each tick, a notice for each `out-of-scope` item, and the guard of protected paths.
-
 ### 2026-10-05: the first run of the live evals, PR-131
 
 **The owner asked the session to copy the setup of the night fixer of what-you-carry.** That fixer uses the logins of the owner. The owner chose copies of the gh login and the Codex login over D-1141 (D-1164).
@@ -146,6 +146,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner asked what the cost of $0.10 means.** The figure is the list price of the tokens in the log of Claude Code. The session runs on the Claude plan through its token, so no bill comes.
 
+### 2026-10-05c: measured spend, PR-133
+
+**The owner found a recorded spend 30 times the real cost.** The session wrote the estimate of a replay by hand. The owner asked for measured spend from provider usage alone.
+
+**The owner chose three rules.** An unmeasured run counts as the full budget (D-1169). The script reads the spend from the session logs (D-1170). After the Codex finding, an append-only ledger outside the run folder holds each line (D-1171).
+
+**A second session answered the Codex round 2 finding.** A forged ledger end let the next paid command start. The owner chose a start that reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-05, the records of 2026-08-31 to 2026-10-04g, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-05b, the records of 2026-08-31 to 2026-10-04h, and 104 more sections, word for word. Read it for the detail behind a decision.

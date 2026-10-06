@@ -15,6 +15,37 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-05b, PR-132
+
+**Branch `chore/live-evals-install`: PR-132 is #290, the temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).**
+
+Author provider: Claude Code
+
+**The base.** `main` at `96240b2`, the merge of #289.
+
+**The install.** The three login files had mode 600, and the 10 pins matched under the PATH of the agent. The owner confirmed the install, and `make live-evals-install CONFIRM=1` ran from `main`. The first tick built the tool, marked 13 decks, 6 thumbs down, and 4 notes read, and started no session. So the launch through bash holds (D-1167).
+
+**The fault.** The first new item, a thumbs down of the owner, started a session at 15:39. Each Bash call failed with EPERM on `/private/tmp/claude-501/...`, and the session ended `blocked` after 11 seconds. The item lost its mark. The owner paused the agent with `make live-evals-uninstall` (D-1168).
+
+**The code.**
+
+- `run_claude` gives the session `CLAUDE_CODE_TMPDIR="$run/tmp"`. `sandbox_flags` holds the flags of `sandbox-exec` for the session and for the probe.
+- Each tick makes `$HOME_DIR/.probe/tmp/claude-<uid>` under the profile before any session. A refusal stops the tick with one notice.
+- `unmark` in `go/cmd/live-evals` and `ClearEvaluated` in the deck and feedback stores clear an eval mark.
+- `--retry KEY` and `make live-evals-retry ITEM=<key>` put one blocked or failed item back in the queue.
+
+**The checks.** Under the profile, a write to `/private/tmp/claude-501` failed, and a write to the run folder passed. A tick with the real probe passed it. A copy with the probe on `/private/tmp` stopped before the queue. The emulator tests of the eval mark pass with the unmark. A retry on the emulator cleared the mark of a verdict, and it refused an item that waits and an item with a pull request.
+
+**Open work.** Codex review reads `Ready for owner merge` for effective head `02f96b4`, and Gitar approved it with no open thread. The pull request waits for the confirmation of the owner (D-828).
+
+**After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`. The next tick starts a session for the item. Read its log for Bash calls that run.
+
+### 2026-10-04h: the live evals with no terminal, PR-127
+
+**The owner asked if the live evals run with no open terminal.** They did not, because the script ran in the foreground until Ctrl-C.
+
+**The owner asked for the launch of the night fixer of what-you-carry, the notes, and a scope rule.** The research found a launchd agent with `StartInterval` 900 that runs the scripts of origin/main. The owner chose one pass for each tick, a notice for each `out-of-scope` item, and the guard of protected paths.
+
 ## The resume section of 2026-10-05, PR-131
 
 **Branch `chore/live-evals-first-run`: PR-131 is #289, the first run of the live evals, the version pins, and the launch through bash (D-1164 to D-1167).**

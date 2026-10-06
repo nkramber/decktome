@@ -309,3 +309,49 @@ func TestCompileSchemaRules(t *testing.T) {
 		t.Errorf("valid date: %v", err)
 	}
 }
+
+func TestMeterRecordsEveryAttempt(t *testing.T) {
+	// A schema miss retries once. The meter counts both attempts, also
+	// for a call with no accumulator of its own (D-1169).
+	sc := NewScript(
+		Step{Output: json.RawMessage(`{}`), Usage: &Usage{InputTokens: 3, OutputTokens: 1}},
+		Step{Output: json.RawMessage(`{"format":"x"}`)},
+	)
+	meter := NewAccumulator(nil)
+	c, err := New(testConfig(), []Provider{sc}, WithoutJitter(), WithMeter(meter))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil); err != nil {
+		t.Fatal(err)
+	}
+	rep := c.Meter().Report()
+	if rep.Calls != 2 || rep.Unreported != 1 || rep.Tokens == nil || rep.Tokens.InputTokens != 3 {
+		t.Fatalf("report = %+v, want 2 calls, 1 with no usage", rep)
+	}
+}
+
+func TestMeterLeavesOutAnErrorStatus(t *testing.T) {
+	// A 429 holds no completion, so the meter leaves it out. A transport
+	// failure has no status, and it can still be billed (D-1169).
+	ok := Step{Output: json.RawMessage(`{"format":"x"}`), Usage: &Usage{InputTokens: 2}}
+	cases := map[string]struct {
+		fail       error
+		calls, unr int
+	}{
+		"a 429":             {newErr(ClassTransient, FakeName, "m", 429, errors.New("rate limit")), 1, 0},
+		"a transport error": {newErr(ClassTransient, FakeName, "m", 0, errors.New("reset")), 2, 1},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			meter := NewAccumulator(nil)
+			c := newTestClient(t, NewScript(Step{Err: tc.fail}, ok), WithMeter(meter))
+			if _, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil); err != nil {
+				t.Fatal(err)
+			}
+			if rep := meter.Report(); rep.Calls != tc.calls || rep.Unreported != tc.unr {
+				t.Fatalf("report = %+v, want %d calls, %d with no usage", rep, tc.calls, tc.unr)
+			}
+		})
+	}
+}

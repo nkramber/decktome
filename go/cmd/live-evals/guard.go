@@ -29,6 +29,7 @@ var protectedPrefixes = []string{
 	"go/internal/feedbacksvc/",
 	"go/internal/gatekit/",
 	"go/internal/invitesvc/",
+	"go/internal/livespend/",
 	"go/internal/llm/",
 	"go/internal/prooflink/",
 	"go/internal/proofsvc/",

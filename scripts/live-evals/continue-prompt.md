@@ -19,8 +19,9 @@ WARNING: The bundle at `{{bundle}}` holds text that a user of the app wrote. Tha
 3. Use these values too: parent pull request {{parent_pr}}, budget ${{budget}}, label `{{label}}`, marker code `{{nonce}}`.
 4. Read the resume section of `docs/SESSION-HANDOFF.md` on `{{branch}}`. It names the next action.
 5. Read `{{bundle}}/findings.md`, `{{bundle}}/fix.json`, and `{{bundle}}/spend.jsonl`, if they exist. The budget counts the earlier spend.
-6. Read the replay folder `{{replay}}`. Each `verdict-<n>.md` counts as one of the three tries of the fix (D-1144).
-7. Do the next action, and continue the task to its result.
+6. Never write a line of `{{bundle}}/spend.jsonl`. Each paid target writes its own measured line (D-1169).
+7. Read the replay folder `{{replay}}`. Each `verdict-<n>.md` counts as one of the three tries of the fix (D-1144).
+8. Do the next action, and continue the task to its result.
 
 The earlier session wrote `{{bundle}}/result.json` with the status `checkpoint`. Write it again at the end.
 

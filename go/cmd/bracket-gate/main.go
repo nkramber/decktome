@@ -156,10 +156,12 @@ func run() error {
 	var client *llm.Client
 	var prof *profile.Profiler
 	if !*dry {
-		client, err = llm.NewFromEnv(gatekit.Env, quiet)
+		var done func()
+		client, done, err = gatekit.NewClient("bracket-gate", quiet)
 		if err != nil {
 			return err
 		}
+		defer done()
 		run.SetRoles(client.Config(), llm.RoleGenerate, llm.RoleRepair, llm.RoleJudge)
 		prices, err := llm.LoadPrices()
 		if err != nil {

@@ -25,7 +25,7 @@ Nineteen targets and three loop scripts spend money: `make codex-review`, `make 
 
 `make autotune` is free. It prints the loop instructions and starts nothing. `scripts/autotune.sh` is the paid loop, and it refuses to start without `AUTOTUNE_ALLOW_UNATTENDED=1`. One iteration costs about $0.25 and takes 33 to 35 minutes, so a $3 budget buys about 12 iterations. Read `docs/reference/autotune-readme.md` and `docs/reference/autotune-design.md` first.
 
-Five more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document. Run 11 cost $1.46 for 24 prompts, and runs 12 to 14 cost $2.24 to $2.64 under the profile's repair passes. Run 35 of 2026-09-29 cost $3.1278 for 25 prompts on generate prompt version 16 (D-995). `make chat-probe` drives the real `Chat` RPC to a deck. `make generate-probe` builds one deck with the real generate role.
+Five more targets spend money, and each has an overwrite guard and an env guard. `make deck-gate` builds the PR-8 gate document. Run 11 cost $1.46 for 24 prompts, and runs 12 to 14 cost $2.24 to $2.64 under the profile's repair passes. Run 35 of 2026-09-29 cost $3.1278 for 25 prompts on generate prompt version 16 (D-995). `make chat-probe` drives the real `Chat` RPC to a deck, and its last line gives the measured provider spend (D-1169). `make generate-probe` builds one deck with the real generate role.
 
 `make summary-judge` judges every deck summary of a gate document (F-26). Each probe costs a few cents. Ask the owner before every run.
 
@@ -91,13 +91,32 @@ With `--here`, the cycle commits on the branch of the session and pushes nothing
 
 `./start-live-evals` runs `scripts/live-evals.sh`, the live evals (D-1132 to D-1158). It polls every five minutes for a new deck, a revision, a thumbs down (D-1149), or a "Leave feedback" note (D-1156). For each one, it starts one headless Claude Code session with `--permission-mode bypassPermissions`. Each session spends the Claude plan and the Codex plan of the owner. It also spends at most $3.00 of provider money on paid targets (D-1134).
 
-The cap is the rule of the prompt, and `spend.jsonl` of the bundle records each run. No provider key holds the cap. The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
+Each paid command of a session meters every provider call: usage times `prices.json` (D-1169). It writes a start line and an end line to the ledger and to `spend.jsonl` of the bundle. It also prints each line on stderr after the marker `LIVE-EVAL-SPEND`. The session never writes a line. No provider key holds the cap.
 
-The cap includes the replay (D-1144). The session replays the chat of the reader with `make chat-probe` and `CHAT_PROBE_ARGS`. It replays the base code one time, and each try of the fix one time. Each replay costs about $0.30, so the base replay and three tries cost about $1.20.
+The meter marks these runs unmeasured, and each one counts as the full budget:
+
+- a run with a call that gave no usage
+- a run with a model that has no price row
+- a run with a start line and no end line
+- a run with no end line in a session log, also when a file holds its end (D-1173)
+
+The meter leaves out an attempt that the provider answers with an HTTP error status, such as 429 or 5xx. Such an answer holds no completion, and the provider bills no token for it. A timeout has no status, so it stays unmeasured.
+
+The ledger is `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder (D-1171). The script sets its `uappnd` flag, and the profile allows only an append to it. So a session can not delete, truncate, or rewrite it. A paid command refuses to start when the session logs, the ledger, or `spend.jsonl` read the budget as spent. It also refuses with no ledger or no logs folder.
+
+`LIVE_EVAL_LOGS` names the logs folder of the deck, and the profile allows a list of it and the read of `session-<n>.log` alone (D-1173). Each tick probes both rules before any session. `make test-smoke` writes no line, so it refuses to run in a session.
+
+The budget reads measured spend alone, and the estimates of this document serve only for a plan. The script sums the marked lines of the session logs and the ledger, which a session can not delete or rewrite (D-1170, D-1171). `spend.jsonl` is a cross-check. The script refuses and reports a line with no run id, and it reports a run that no log holds. For one run, the highest cost wins.
+
+A session can still append a forged end line for a run that it killed. Only a log closes a run, so a forge must also reach a tool result (D-1173). A run in the background has no end line in the log, and a run with its stderr redirected has none. Each one counts as the full budget. A session can also change the meter in its own clone before a run, and the log check does not see such a change.
+
+The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
+
+The cap includes the replay (D-1144). The session replays the chat of the reader with `make chat-probe` and `CHAT_PROBE_ARGS`. It replays the base code one time, and each try of the fix one time. The plan estimates each replay at $0.30, so the base replay and three tries cost about $1.20. The first replay of 2026-10-05 sent 3 question turns, built no deck, and cost less than $0.01 on the dashboard of the provider (D-1169).
 
 Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, and copies of the gh login and the Codex login of the owner (D-1164). The header of `scripts/live-evals.sh` names the one-time setup of the owner.
 
-The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `unmark`, `ready`, `guard`, `notify`, and `replay-input` call no model and cost nothing.
+The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `unmark`, `ready`, `guard`, `notify`, `replay-input`, and `spend` call no model and cost nothing.
 
 A session fixes a product fault alone (D-1157). For each other item, it writes `out-of-scope` and makes no pull request. The script holds a pull request that changes a protected path, and the owner gets no ready notice (D-1158).
 

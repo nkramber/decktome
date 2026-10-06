@@ -101,6 +101,10 @@ type Client struct {
 	// schemas caches compiled schemas by their bytes. A role's schema is
 	// one constant document, so the compile runs once per process.
 	schemas sync.Map
+
+	// meter records every attempt of the client, whatever accumulator the
+	// caller gives. nil means no meter (D-1169).
+	meter *Accumulator
 }
 
 // Option tunes a Client.
@@ -122,6 +126,24 @@ func WithJitterSeed(seed uint64) Option {
 
 // WithoutJitter turns the backoff jitter off (tests).
 func WithoutJitter() Option { return func(c *Client) { c.rng = nil } }
+
+// answeredWithError says whether the provider answered the attempt with an
+// HTTP error status, such as 429 or 5xx. Such an answer holds no
+// completion, and the provider bills no token for it. An attempt with no
+// usage and no such status, such as a timeout, can still be billed, so the
+// meter counts it as unmeasured (D-1169).
+func answeredWithError(err error) bool {
+	var e *Error
+	return errors.As(err, &e) && e.Status != 0
+}
+
+// Meter returns the accumulator of WithMeter, or nil.
+func (c *Client) Meter() *Accumulator { return c.meter }
+
+// WithMeter records every attempt of the client in acc, besides the
+// accumulator of each call. A paid command of a live eval reads its
+// spend from it (D-1169).
+func WithMeter(acc *Accumulator) Option { return func(c *Client) { c.meter = acc } }
 
 // New wires a Client. providers must cover every provider the config names.
 func New(cfg *Config, providers []Provider, opts ...Option) (*Client, error) {
@@ -213,7 +235,11 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 		res, err := prov.Complete(actx, call)
 		attemptEnded := actx.Err() != nil
 		acancel()
-		acc.Record(role, spec.Model, res.Usage, time.Since(t0))
+		took := time.Since(t0)
+		acc.Record(role, spec.Model, res.Usage, took)
+		if res.Usage != nil || !answeredWithError(err) {
+			c.meter.Record(role, spec.Model, res.Usage, took)
+		}
 		if err == nil {
 			verr := schema.Validate(mustAny(res.Output))
 			if verr == nil {

@@ -107,10 +107,11 @@ func run(w io.Writer) error {
 		return nil
 	}
 
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("sixty-gate", quiet)
 	if err != nil {
 		return err
 	}
+	defer done()
 	spec := client.Config().Roles[llm.RoleJudge]
 	head.judge = spec.Provider + " " + spec.Model
 	prices, err := llm.LoadPrices()

@@ -316,10 +316,11 @@ func runRejudge(doc, runOut, keep string, summaryOnly bool, prompts []prompt) er
 	if err != nil {
 		return fmt.Errorf("rejudge %s: %w", doc, err)
 	}
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("deck-gate", quiet)
 	if err != nil {
 		return err
 	}
+	defer done()
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err

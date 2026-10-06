@@ -3481,6 +3481,27 @@ Gate:
 
 > *In plain English:* the safety box of the robot that reads each new item blocked a folder, so the robot ran no command. The robot now uses a folder inside its box, checks that folder before each start, and can try an item again.
 
+**PR-133: Measured provider spend for a live-eval session, never an estimate (D-1169 to D-1173).** ✅ merged as #291. The mark comes before any review (D-822). The retried session of `v-KefDsksH23qUg16zCWlI` ran one replay and wrote $0.30 to `spend.jsonl` with echo. The 0.30 was the estimate of `docs/reference/paid-targets.md`. The dashboard of the provider showed less than $0.01 for the full day.
+
+- **The meter.** `gatekit.NewClient` builds the client of each paid command. `llm.WithMeter` records every attempt of the client, so a call with no accumulator of its own counts too.
+- **The lines.** Under `LIVE_EVAL_BUNDLE`, each paid command writes a start line and a measured end line to `spend.jsonl`. It prints each line on stderr after `LIVE-EVAL-SPEND`.
+- **Fail closed.** A call with no usage, a model with no price row, or a start line with no end line marks the run unmeasured. Such a run counts as the full budget, and no paid command starts after it.
+- **The sum.** `spent()` runs `live-evals spend`. The tool sums the marked lines of the session logs, refuses a line with no run id, and reports a run that no log holds.
+- **The ledger.** Each line also goes to `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder. Its append-only flag and a profile rule stop a delete, a truncate, and a rewrite. Each start reads it (D-1171).
+- **The logs.** Each start also reads the session logs of the deck, through a profile rule for `session-<n>.log` alone. A run with no end line in a log counts as the full budget. So a forged end line in a file closes no run (D-1173).
+- **The prompts.** The eval and continue prompts forbid a hand-written line. `make test-smoke` refuses to run in a session, because it writes no line.
+
+Gate:
+- The tests of `livespend` read a measured run, both unmeasured causes, a refused hand-written line, and a forged lower cost.
+- A `gatekit` test builds a metered client under a bundle with no provider call. It reads a start line and a measured end line.
+- A second `gatekit` test refuses a run after a start line with no end line.
+- A client test reads two attempts of one call in the meter, one of them with no usage.
+- `live-evals spend` on the log of the session of 2026-10-05 refuses the hand-written 0.30 line.
+- A forged ledger end refuses the next start, with the start in a log or with no log line. A start with no logs folder refuses.
+- With no bundle file and a spent ledger, a start refuses. Under the real profile, an append to the ledger passes, and a truncate, a delete, a rename, and a change of its flag fail.
+
+> *In plain English:* the robot wrote down a guess of its cost, 30 times the real one. Each paid tool now measures its own cost and writes it down, and the robot can not write a number by hand.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 

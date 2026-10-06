@@ -71,7 +71,7 @@ func TestProviderFaultRecordsTheSpend(t *testing.T) {
 				t.Fatal(err)
 			}
 			prev := newClient
-			newClient = func() (*llm.Client, error) { return client, nil }
+			newClient = func() (*llm.Client, func(), error) { return client, func() {}, nil }
 			t.Cleanup(func() { newClient = prev })
 
 			out, jsonOut := filepath.Join(dir, "eval.md"), filepath.Join(dir, "eval.json")
@@ -132,7 +132,7 @@ func TestLimitCutIsNoError(t *testing.T) {
 		t.Fatal(err)
 	}
 	prev := newClient
-	newClient = func() (*llm.Client, error) { return client, nil }
+	newClient = func() (*llm.Client, func(), error) { return client, func() {}, nil }
 	t.Cleanup(func() { newClient = prev })
 
 	out, jsonOut := filepath.Join(dir, "eval.md"), filepath.Join(dir, "eval.json")

@@ -212,10 +212,11 @@ func runJudge(path, promptsPath, runOut string) error {
 		return err
 	}
 	run.Header.Versions["quality_model"] = modelVersion
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("quality-judge", quiet)
 	if err != nil {
 		return err
 	}
+	defer done()
 	run.SetRoles(client.Config(), llm.RoleJudge)
 	prices, err := llm.LoadPrices()
 	if err != nil {

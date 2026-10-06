@@ -54,7 +54,7 @@ func main() {
 
 // newClient builds the eval client from the environment. A test swaps in a
 // scripted provider.
-var newClient = func() (*llm.Client, error) { return llm.NewFromEnv(gatekit.Env, gatekit.Quiet()) }
+var newClient = func() (*llm.Client, func(), error) { return gatekit.NewClient("questions-eval", gatekit.Quiet()) }
 
 func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) error {
 	if err := gatekit.SpendGuard("QUESTIONS_EVAL"); err != nil {
@@ -76,10 +76,11 @@ func run(in, out, jsonOut, runOut string, budget float64, limit, holdout int) er
 	rec.Header.Prompts["eval"] = evalVersion
 	rec.LowerIsBetter("bad", "bad_ratio", "bad_ratio_tune", "bad_ratio_holdout", "holdout_bad", "partial", "unjudged", "unsure")
 	rec.Header.Versions["gate_document"] = gate.Name
-	client, err := newClient()
+	client, done, err := newClient()
 	if err != nil {
 		return err
 	}
+	defer done()
 	rec.SetRoles(client.Config(), llm.RoleEval)
 	prices, err := llm.LoadPrices()
 	if err != nil {
