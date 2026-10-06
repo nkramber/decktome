@@ -122,6 +122,8 @@ A session fixes a product fault alone (D-1157). For each other item, it writes `
 
 `make live-evals-install CONFIRM=1` loads the launchd agent `com.decktome.live-evals` (D-1155). It runs one pass every five minutes, with no open terminal, so the install is the approval of each session that it starts. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs `/bin/bash ./start-live-evals --once` there (D-1166). Each tick first reads the pinned version of each program it runs, and a miss stops it with one notice (D-1165). Each tick then makes the temporary folder of a session under the profile, and a refusal stops it with one notice (D-1168). The install refuses to start before the setup in the header of `scripts/live-evals.sh`.
 
+The install takes the folder of each pinned program from the first copy on PATH that reads the pin (D-1175). A PATH that misses a pin stops the install. `scripts/live-evals/pins.sh` holds the pins.
+
 `make live-evals-status` prints the state and the end of the log `~/Library/Logs/decktome-live-evals.log`. `make live-evals-uninstall` stops the agent and a session that runs. Both cost nothing.
 
 `make live-evals-retry ITEM=<key>` puts one blocked or failed item back in the queue (D-1168). It clears the eval mark in Firestore, and it keeps the old state and logs under a new name. It refuses an item with a pull request, or with a branch on origin. The target costs nothing, and the next tick starts a paid session for the item.

@@ -37,7 +37,7 @@ LOG=$HOME/Library/Logs/decktome-live-evals.log
 DOMAIN=gui/$(id -u)
 
 say() { printf 'live-evals-launchd: %s\n' "$*"; }
-die() { say "STOP: $*"; exit 1; }
+die() { say "STOP: $*" >&2; exit 1; }
 
 [ "$(uname -s)" = Darwin ] || die "launchd is on macOS alone"
 
@@ -67,17 +67,53 @@ preflight() {
   done
 }
 
+# The pins of the tick (D-1165). The install reads the same file.
+# shellcheck source=scripts/live-evals/pins.sh disable=SC1091 # make lint runs no -x, and the file holds PINS alone.
+. "$(git rev-parse --show-toplevel)/scripts/live-evals/pins.sh"
+
+pin_of() { # name -> pin_args and pin_want, or a fail when no pin names it
+  local pin name cmd
+  for pin in "${PINS[@]}"; do
+    IFS='|' read -r name cmd pin_want <<<"$pin"
+    if [ "$name" = "$1" ]; then pin_args=${cmd#* }; return 0; fi
+  done
+  return 1
+}
+
 # launchd gives a small PATH. The agent gets the folder of each tool that
-# the script needs, as this shell finds it now. A retry uses the same
-# PATH, so the version pins read the same programs (D-1165).
+# the script needs. For a pinned tool, the folder is the first one on
+# this PATH whose copy reads the pin. So a copy of conda or nvm earlier
+# on PATH does not stop each tick (D-1175). A retry uses the same PATH.
 agent_path() {
-  local path="" dir cmd
-  for cmd in git go gh jq codex gcloud python3 sandbox-exec shasum pnpm; do
-    dir=$(command -v "$cmd") || die "$cmd is not on PATH"
-    dir=$(dirname "$dir")
+  local path="" dir cmd cand pin name want got misses=""
+  for cmd in git go gh jq codex gcloud python3 node pnpm sandbox-exec shasum; do
+    command -v "$cmd" >/dev/null || die "$cmd is not on PATH"
+    dir=""
+    if pin_of "$cmd"; then
+      while IFS= read -r cand; do
+        # shellcheck disable=SC2086 # pin_args holds the words of the version command.
+        if [ "$("$cand" $pin_args 2>/dev/null | head -1)" = "$pin_want" ]; then
+          dir=$(dirname "$cand")
+          break
+        fi
+      done < <(type -ap "$cmd")
+      [ -n "$dir" ] || die "no copy of $cmd on PATH reads the pin \"$pin_want\" (D-1165)"
+    else
+      dir=$(dirname "$(command -v "$cmd")")
+    fi
     case ":$path:" in *":$dir:"*) ;; *) path=${path:+$path:}$dir ;; esac
   done
-  echo "$path:/usr/bin:/bin:/usr/sbin:/sbin"
+  path=$path:/usr/bin:/bin:/usr/sbin:/sbin
+  # A folder of one tool can hold another copy of a later tool. So each
+  # pin reads the PATH of the agent at the end.
+  for pin in "${PINS[@]}"; do
+    IFS='|' read -r name cmd want <<<"$pin"
+    # shellcheck disable=SC2086 # cmd holds the words of the version command.
+    got=$(PATH=$path; $cmd 2>/dev/null | head -1)
+    [ "$got" = "$want" ] || misses="${misses}$name reads \"$got\", and the pin is \"$want\". "
+  done
+  [ -z "$misses" ] || die "the PATH of the agent misses a pin (D-1175): $misses"
+  echo "$path"
 }
 
 write_plist() { # file -> the agent file
