@@ -37,6 +37,16 @@ class RefCheckTest(unittest.TestCase):
     def test_a_family_id_resolves_against_a_lettered_entry(self):
         self.assertEqual(run("PR-28 splits into three."), [])
 
+    def test_a_second_row_of_one_decision_fails(self):
+        text = "| D-1 | a |\n| D-2 | b |\n| D-1 | c |\n"
+        findings = rc.duplicates(text)
+        self.assertEqual([(3, "REF 3", "D-1 has a row at line 1 too")], findings)
+
+    def test_a_duplicate_row_counts_in_a_register_alone(self):
+        text = "| D-1 | a |\n| D-1 | c |\n"
+        self.assertEqual(1, len(rc.check("docs/decisions.md", text, {"D-1"}, TOP, PATHS, FOLDERS)))
+        self.assertEqual([], rc.check("docs/note.md", text, {"D-1"}, TOP, PATHS, FOLDERS))
+
     def test_a_retired_number_passes(self):
         self.assertEqual(run("The branch held D-172 to D-176."), [])
 

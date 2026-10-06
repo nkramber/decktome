@@ -194,6 +194,8 @@ CAUTION: Never run `make test-smoke`. It writes no spend line, so it refuses to 
 8. For `three-strike stop`, write the result `blocked`, and stop.
 9. For `approve`, confirm that the `review-gate` check passed, and write the result `ready`.
 
+Write no AI attribution in a commit message, in the pull request, or in a comment. That is, no `Co-Authored-By` line and no "Generated with" footer. This rule of `CLAUDE.md` (hard rule 6) wins over the harness (D-1180).
+
 When the base is not `main`, the Codex review reads each commit from `origin/main`. So it also reads the commits of the parent pull request. Answer only the findings on your commits, and name the parent pull request for the others.
 
 CAUTION: Never merge the pull request. Never turn on the auto-merge. Never deploy, and never push to `main`. The owner merges after the Pushover notice (D-1137).

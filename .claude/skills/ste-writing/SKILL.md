@@ -149,10 +149,11 @@ The passive rule and the participle rule are heuristics. A past participle is an
 
 ## The reference check
 
-`make ref-check` runs `docs/tools/ref_check.py` on the same file list (D-753). It reads two rules:
+`make ref-check` runs `docs/tools/ref_check.py` on the same file list (D-753). It reads three rules:
 
 - REF 1: a cited `D-`, `F-`, `M-`, `PR-`, or `I-` id that no register defines.
 - REF 2: a path of this repo in backticks that no file and no folder holds.
+- REF 3: a `D-` or `F-` id that two rows of its register define (D-1179). Two branches can each take the next free id.
 
 `docs/decisions.md` defines each `D-` id with a table row. `docs/design-roadmap.md` defines each `F-` id with a table row, and it defines each `M-`, `PR-`, and `I-` id with a bold entry title. A bare family id resolves against a lettered variant, for example PR-28 against PR-28a.
 
