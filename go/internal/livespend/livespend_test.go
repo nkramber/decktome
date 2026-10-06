@@ -297,3 +297,30 @@ func TestStartRefusesWithNoLedger(t *testing.T) {
 		}
 	}
 }
+
+func TestAFileEndDoesNotCloseARunThatALogOpened(t *testing.T) {
+	// A session kills a paid run after its start, then appends an end line
+	// to the ledger. The log holds the start alone, so the run stays
+	// unmeasured in the end sum (D-1171).
+	start := Marker + `{"id":"ffffffffffffffff","event":"start","target":"chat-probe"}`
+	g := NewLedger()
+	if err := g.AddLog(strings.NewReader(logEvent(start))); err != nil {
+		t.Fatal(err)
+	}
+	forged := `{"id":"ffffffffffffffff","event":"end","target":"chat-probe","usd":0,"measured":true}` + "\n"
+	if err := g.AddFile(strings.NewReader(forged)); err != nil {
+		t.Fatal(err)
+	}
+	if s := g.Sum(3, true); len(s.Unmeasured) != 1 || !s.Spent() {
+		t.Fatalf("sum = %+v, want the run unmeasured", s)
+	}
+	// A run with no line in any log, such as a background run whose
+	// output the session never read, takes its end from the file.
+	h := NewLedger()
+	if err := h.AddFile(strings.NewReader(`{"id":"ffffffffffffffff","event":"start","target":"chat-probe"}` + "\n" + forged)); err != nil {
+		t.Fatal(err)
+	}
+	if s := h.Sum(3, true); len(s.Unmeasured) != 0 || len(s.FileOnly) != 1 {
+		t.Fatalf("sum = %+v, want a measured run absent from the logs", s)
+	}
+}

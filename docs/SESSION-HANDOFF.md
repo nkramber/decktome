@@ -25,9 +25,9 @@ Author provider: Claude Code
 - `spent()` runs `live-evals spend`, which sums the marked lines of the session logs (D-1170). It refuses a line with no run id.
 - chat-probe prints its measured spend on its last line. `make test-smoke` refuses to run in a session.
 
-**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. `live-evals spend` on the log of 2026-10-05 refuses the hand-written 0.30 line. Under the real profile, a session can append to the ledger and can not lower it.
+**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. `live-evals spend` on the log of 2026-10-05 refuses the hand-written 0.30 line. Under the real profile, a session can append to the ledger and can not delete or rewrite it.
 
-**The reviews.** Gitar found that a 429 made a run unmeasured. Commit `998057f` leaves out an attempt with an error status, and Gitar approved. Codex round 1 found P1-1: a session can delete the spend file and restart the budget. `docs/reviews/pr-291-response.md` holds the answer, the ledger of D-1171.
+**The reviews.** Gitar found that a 429 made a run unmeasured. Commit `998057f` leaves out an attempt with an error status, and Gitar approved. Codex round 1 found P1-1: a session can delete the spend file and restart the budget. `docs/reviews/pr-291-response.md` holds the answer, the ledger of D-1171. Gitar then found that a forged end line in the ledger closes a killed run. A run that a log opened now needs a log end, and the documents name the rest of the risk.
 
 **Open work.** The Gitar pass of the ledger commit, the repeat Codex review, and the confirmation of the owner (D-828).
 

@@ -48,7 +48,7 @@
 ;; The spend ledger (D-1171). A paid command appends its measured lines.
 ;; The script sets the append-only flag of the file, and this rule
 ;; allows no other write: no create, no delete, no rename, and no change
-;; of a flag or a mode. So a session can not lower the spend.
+;; of a flag or a mode. So a session can not delete or rewrite a line.
 (allow file-read-data (literal (param "LEDGER")))
 (allow file-write-data (literal (param "LEDGER")))
 

@@ -3487,7 +3487,7 @@ Gate:
 - **The lines.** Under `LIVE_EVAL_BUNDLE`, each paid command writes a start line and a measured end line to `spend.jsonl`. It prints each line on stderr after `LIVE-EVAL-SPEND`.
 - **Fail closed.** A call with no usage, a model with no price row, or a start line with no end line marks the run unmeasured. Such a run counts as the full budget, and no paid command starts after it.
 - **The sum.** `spent()` runs `live-evals spend`. The tool sums the marked lines of the session logs, refuses a line with no run id, and reports a run that no log holds.
-- **The ledger.** Each line also goes to `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder. Its append-only flag and a profile rule stop a session that tries to lower it. Each start reads it (D-1171).
+- **The ledger.** Each line also goes to `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder. Its append-only flag and a profile rule stop a delete, a truncate, and a rewrite. Each start reads it, and a run that a log opened needs a log end (D-1171).
 - **The prompts.** The eval and continue prompts forbid a hand-written line. `make test-smoke` refuses to run in a session, because it writes no line.
 
 Gate:

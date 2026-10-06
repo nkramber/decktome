@@ -9,8 +9,9 @@
 //
 // The ledger is a file outside the run folder. The script sets its
 // append-only flag, and the profile of the session allows only an append
-// to it. So a session can not delete, truncate, or rewrite it, and each
-// start reads the spend from it (D-1171).
+// to it. So a session can not delete, truncate, or rewrite a line, and
+// each start reads the spend from it (D-1171). An appended line can still
+// be forged, so the end sum also reads the session logs.
 package livespend
 
 import (
@@ -236,9 +237,13 @@ func (s Sum) Text() string {
 	return strings.Join(parts, ", ")
 }
 
-// Ledger collects the lines of the logs and of the spend file. For one
+// Ledger collects the lines of the logs and of the spend files. For one
 // id, the highest cost wins, and one unmeasured end line makes the run
-// unmeasured. So a forged line can not lower the spend (D-1170).
+// unmeasured. So a forged line can not lower the cost of a run that
+// ended (D-1170). When a log holds the start of a run, only a log closes
+// it: an end line in a file alone does not (D-1171). A session can still
+// forge the end of a killed run in a file and in a tool result, and no
+// file inside the sandbox can prove an end line real.
 type Ledger struct {
 	runs    map[string]*run
 	refused int
@@ -251,6 +256,8 @@ type run struct {
 	usd      float64
 	inLog    bool
 	inFile   bool
+	logStart bool
+	logEnd   bool
 }
 
 // NewLedger makes an empty ledger.
@@ -268,6 +275,11 @@ func (g *Ledger) add(l Line, fromLog bool) bool {
 	}
 	if fromLog {
 		r.inLog = true
+		if l.Event == "start" {
+			r.logStart = true
+		} else {
+			r.logEnd = true
+		}
 	} else {
 		r.inFile = true
 	}
@@ -398,7 +410,7 @@ func (g *Ledger) Sum(budget float64, logs bool) Sum {
 		r := g.runs[id]
 		s.Runs++
 		s.USD += r.usd
-		if !r.ended || !r.measured {
+		if !r.ended || !r.measured || logs && r.logStart && !r.logEnd {
 			s.Unmeasured = append(s.Unmeasured, r.target+" "+id)
 		}
 		if logs && !r.inLog {

@@ -103,9 +103,11 @@ The meter leaves out an attempt that the provider answers with an HTTP error sta
 
 The ledger is `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder (D-1171). The script sets its `uappnd` flag, and the profile allows only an append to it. So a session can not delete, truncate, or rewrite it. A paid command refuses to start when the ledger or `spend.jsonl` reads the budget as spent, or when it has no ledger. Each tick probes the rule before any session. `make test-smoke` writes no line, so it refuses to run in a session.
 
-The budget reads measured spend alone, and the estimates of this document serve only for a plan. The script sums the marked lines of the session logs and the ledger, which a session can not lower (D-1170, D-1171). `spend.jsonl` is a cross-check. The script refuses and reports a line with no run id, and it reports a run that no log holds. For one run, the highest cost wins.
+The budget reads measured spend alone, and the estimates of this document serve only for a plan. The script sums the marked lines of the session logs and the ledger, which a session can not delete or rewrite (D-1170, D-1171). `spend.jsonl` is a cross-check. The script refuses and reports a line with no run id, and it reports a run that no log holds. For one run, the highest cost wins.
 
-A session can still change the meter in its own clone before a run, and the log check does not see such a change. The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
+A session can still append a forged end line for a run that it killed. When a log holds the start of a run, only a log closes it, so a forge must also reach a tool result. A session can also change the meter in its own clone before a run, and the log check does not see such a change.
+
+The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
 
 The cap includes the replay (D-1144). The session replays the chat of the reader with `make chat-probe` and `CHAT_PROBE_ARGS`. It replays the base code one time, and each try of the fix one time. The plan estimates each replay at $0.30, so the base replay and three tries cost about $1.20. The first replay of 2026-10-05 sent 3 question turns, built no deck, and cost less than $0.01 on the dashboard of the provider (D-1169).
 
