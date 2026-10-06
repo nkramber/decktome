@@ -32,7 +32,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes. A dry tick with the PATH of the agent passed the pins and the new probe. With no deny of the security server, Codex got an answer.
 
-**The reviews.** Gitar approved `7bd16aa` with 1 of 1 findings closed. The review record is `Blocked`. P2-1 is fixed, and the ledger gate remains unverified.
+**The reviews.** Gitar approved `7bd16aa` with 1 of 1 findings closed. Codex round 3 blocked it: the evidence file cited the transcript, not `session-1.log`. The fixed file answers it, and the owner chose a round 4 (D-1186).
 
 **Open work.**
 

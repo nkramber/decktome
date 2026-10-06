@@ -17,15 +17,29 @@ The ledger holds two runs. Each run has a start line and a measured end line.
 
 ## The order in the session log
 
-The session log is `claude-config/projects/<project>/6aaa12ad-9f3d-47e6-8aa2-dd15475458f1.jsonl` under the folder of the session. It holds 213 lines. The `LIVE-EVAL-SPEND` lines come in this order:
+The spend tool reads the session logs of the run folder, `session-<n>.log` (D-1173). This session has one log, `state/runs/v-lKqWOkMKOmppB0RJBmRb/session-1.log`. It holds 168 lines.
 
-| Log line | Time (UTC) | Run | Event |
-|---|---|---|---|
-| 106 | 2026-10-06T03:28:46Z | `fe89cf50f975dbb3` | end |
-| 113 | 2026-10-06T03:29:09Z | `16e39f562667ef2f` | start |
-| 113 | 2026-10-06T03:29:09Z | `16e39f562667ef2f` | end |
+Each line of this log is one JSON event of the session. A tool-result event holds the full output of one command. The logger writes one spend event per output line (`go/internal/livespend/livespend.go`). So one log line can hold several spend events, each on its own output line.
 
-The end line of the first run was in the log 23 seconds before the second start. The start of a paid run reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
+| Log line | Time (UTC) | Output line | Run | Event |
+|---|---|---|---|---|
+| 67 | 2026-10-06T03:28:46Z | 12 of 17 | `fe89cf50f975dbb3` | end |
+| 72 | 2026-10-06T03:29:09Z | 1 of 20 | `16e39f562667ef2f` | start |
+| 72 | 2026-10-06T03:29:09Z | 16 of 20 | `16e39f562667ef2f` | end |
+
+The spend lines of the output, word for word:
+
+```
+67, line 12: LIVE-EVAL-SPEND {"id":"fe89cf50f975dbb3","event":"end","target":"chat-probe","calls":4,...,"usd":0.0007356999999999999,"measured":true}
+72, line 1:  LIVE-EVAL-SPEND {"id":"16e39f562667ef2f","event":"start","target":"chat-probe","usd":0,"measured":false}
+72, line 16: LIVE-EVAL-SPEND {"id":"16e39f562667ef2f","event":"end","target":"chat-probe","calls":6,...,"usd":0.0006099300000000001,"measured":true}
+```
+
+The end of the first run was in the log 23 seconds before the second start. The start of a paid run reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
+
+The log holds no start line of the first run. The session sent the output of that command through `tail -15`, and the start line was the first output line. The ledger holds that start line.
+
+An earlier copy of this record cited the transcript of the session, not `session-1.log` (D-1186).
 
 ## The recompute
 
