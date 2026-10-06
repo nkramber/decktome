@@ -24,9 +24,9 @@ Author provider: Claude Code
 
 **Question gate runs.** Runs 61 and 62 passed, but each version added two theme rows of D-725. Run 63 read version 25 for $0.1038. It asks those rows in the same three conversations as run 60. The general theme row now asks in two terse conversations, and the owner accepted that.
 
-**Review.** Gitar approved `67f15fe` with no finding. Codex round 1 gave `Changes required` on `67f15fe`: P2-1, P2-2, and P3-1. `docs/reviews/pr-292-response.md` answers each one.
+**Review.** Gitar approved `0b1c74b` with no finding. Codex round 2 gives `Ready for owner merge` on effective head `0b1c74b`. The review record resolves P2-1, P2-2, and P3-1.
 
-**Open work.** The Gitar pass of the new head, Codex round 2, and the owner merge.
+**Open work.** The owner confirms the merge, then the author turns on auto-merge.
 
 ## How to resume
 
