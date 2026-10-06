@@ -64,9 +64,12 @@
   (regex (string-append "^" (param "LOGS_RX") "/session-[0-9]+\\.log$")))
 
 ;; Each of these runs code outside the profile, or reads a secret of the
-;; owner: the keychain, an app through Launch Services or Apple events,
-;; a launchd or cron job, sudo, and the Docker daemon.
-(deny mach-lookup (global-name "com.apple.SecurityServer"))
+;; owner: the keychain tool, an app through Launch Services or Apple
+;; events, a launchd or cron job, sudo, and the Docker daemon.
+;; The profile allows com.apple.SecurityServer (D-1185). Codex checks the
+;; TLS certificate of chatgpt.com through it, and a deny stops each
+;; request after the connect. The security tool stays denied below. A
+;; keychain item with an access list asks the owner, and no one answers.
 (deny appleevent-send)
 (deny process-exec
   (literal "/usr/bin/security")

@@ -7,6 +7,7 @@ then trusts a dead reference. The checker applies two rules:
 
 - REF 1: a cited D-, F-, M-, PR-, or I- id that no register defines.
 - REF 2: a path of this repo in backticks that no file and no folder holds.
+- REF 3: a D- or F- id that two rows of a register define (D-1179).
 
 The registers: docs/decisions.md defines D- with a table row. The roadmap
 docs/design-roadmap.md defines F- with a table row, and it defines M-, PR-,
@@ -132,6 +133,27 @@ def check(doc, text, known, top, paths, folders):
             if resolves(token, doc, paths, folders):
                 continue
             findings.append((number, "REF 2", f"no file and no folder holds `{token}`"))
+    if doc in (DECISIONS, ROADMAP):
+        findings += duplicates(text)
+    return findings
+
+
+def duplicates(text):
+    """Return a REF 3 finding for each row that defines an id a second time.
+
+    Two branches can each take the next free id. Both append a row, and a
+    merge that keeps both rows leaves one id with two meanings (D-1179).
+    """
+    findings, first = [], {}
+    for number, line in enumerate(text.splitlines(), start=1):
+        match = ROW_ID.match(line)
+        if not match:
+            continue
+        name = match.group(1)
+        if name in first:
+            findings.append((number, "REF 3", f"{name} has a row at line {first[name]} too"))
+        else:
+            first[name] = number
     return findings
 
 

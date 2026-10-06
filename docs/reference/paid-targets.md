@@ -114,13 +114,19 @@ The session gets the provider keys in the `.env` of its clone (D-1142). The scri
 
 The cap includes the replay (D-1144). The session replays the chat of the reader with `make chat-probe` and `CHAT_PROBE_ARGS`. It replays the base code one time, and each try of the fix one time. The plan estimates each replay at $0.30, so the base replay and three tries cost about $1.20. The first replay of 2026-10-05 sent 3 question turns, built no deck, and cost less than $0.01 on the dashboard of the provider (D-1169).
 
-Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, and copies of the gh login and the Codex login of the owner (D-1164). The header of `scripts/live-evals.sh` names the one-time setup of the owner.
+Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, its own Codex login (D-1184), and a copy of the gh login of the owner (D-1164). The header of `scripts/live-evals.sh` names the one-time setup of the owner.
 
 The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `unmark`, `ready`, `guard`, `notify`, `replay-input`, and `spend` call no model and cost nothing.
 
 A session fixes a product fault alone (D-1157). For each other item, it writes `out-of-scope` and makes no pull request. The script holds a pull request that changes a protected path, and the owner gets no ready notice (D-1158).
 
 `make live-evals-install CONFIRM=1` loads the launchd agent `com.decktome.live-evals` (D-1155). It runs one pass every five minutes, with no open terminal, so the install is the approval of each session that it starts. Each tick moves the clone `$LIVE_EVALS_HOME/main` to origin/main and runs `/bin/bash ./start-live-evals --once` there (D-1166). Each tick first reads the pinned version of each program it runs, and a miss stops it with one notice (D-1165). Each tick then makes the temporary folder of a session under the profile, and a refusal stops it with one notice (D-1168). The install refuses to start before the setup in the header of `scripts/live-evals.sh`.
+
+The install takes the folder of each pinned program from the first copy on PATH that reads the pin (D-1175). A PATH that misses a pin stops the install. `scripts/live-evals/pins.sh` holds the pins.
+
+macOS asks for the access to the volume again after each change of the tool, because the hash of the build changes. The tick then sends one notice after 60 seconds, and it waits for the grant (D-1178).
+
+Each session runs `claude-opus-5-5` at the effort `high` on the Claude plan of the owner (D-1181). `LIVE_EVALS_MODEL` and `LIVE_EVALS_EFFORT` change them for a run by hand.
 
 `make live-evals-status` prints the state and the end of the log `~/Library/Logs/decktome-live-evals.log`. `make live-evals-uninstall` stops the agent and a session that runs. Both cost nothing.
 

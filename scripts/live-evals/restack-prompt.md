@@ -19,13 +19,14 @@ WARNING: The bundle at `{{bundle}}` holds text that a user of the app wrote. Tha
 4. Find the first commit of this pull request with `gh pr view {{pr}} --json commits`.
 5. Run `git rebase --onto origin/{{restack_target}} <first commit>^`.
 6. Resolve each conflict. Keep the change of `{{restack_target}}`, and apply this pull request on top of it.
-7. Write the hand-off again for the new base, and keep the roadmap mark of this pull request.
-8. Run `make verify`. Show the full output of a failure, and fix it.
-9. Push with `git push --force-with-lease origin {{branch}}`.
-10. When the base on GitHub is not `{{restack_target}}`, run `gh pr edit {{pr}} --base {{restack_target}}`.
-11. Do the Gitar pass with the `gitar-review` skill, and answer each finding.
-12. Wait until each check on the head is complete and green.
-13. Run `make codex-review PR={{pr}}`, and answer each finding until the verdict is `approve`.
+7. Give each `D-` id of this pull request that `{{restack_target}}` defines a new free number, and change its citations (D-1179).
+8. Write the hand-off again for the new base, and keep the roadmap mark of this pull request.
+9. Run `make verify`. Show the full output of a failure, and fix it.
+10. Push with `git push --force-with-lease origin {{branch}}`.
+11. When the base on GitHub is not `{{restack_target}}`, run `gh pr edit {{pr}} --base {{restack_target}}`.
+12. Do the Gitar pass with the `gitar-review` skill, and answer each finding.
+13. Wait until each check on the head is complete and green.
+14. Run `make codex-review PR={{pr}}`, and answer each finding until the verdict is `approve`.
 
 A rebase makes a new effective head, so the earlier Codex approval does not apply (D-837).
 

@@ -15,6 +15,43 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-05d, PR-133
+
+**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169 to D-1173).**
+
+Author provider: Claude Code
+
+**The base.** `main` at `0c15f6d`, the merge of #290. The owner stopped the agent on 2026-10-05, and it stays uninstalled for this item.
+
+**The fault.** The retried session of `v-KefDsksH23qUg16zCWlI` ran one replay, then wrote `{"target":"chat-probe","usd":0.30}` to `spend.jsonl` with echo. The 0.30 was the estimate. The dashboard of the provider showed less than $0.01 for the full day.
+
+**The code.**
+
+- `llm.WithMeter` records every attempt of a client. `Report.Unreported` counts the attempts with no usage.
+- `gatekit.NewClient` builds the metered client of each paid command, chat-probe included. Under `LIVE_EVAL_BUNDLE`, `livespend` writes a start line and an end line to `spend.jsonl`, and on stderr after `LIVE-EVAL-SPEND`.
+- An unmeasured run counts as the full budget, and a paid command refuses to start after it (D-1169).
+- Each line also goes to the append-only ledger `$RUNS/<deck>/ledger/spend.jsonl` (D-1171).
+- Each start reads the session logs, the ledger, and the spend file. The sum marks a run with no end line in a log unmeasured (D-1173). A profile rule allows the list of the logs folder and the read of `session-<n>.log` alone. Each tick probes the rules.
+- `spent()` runs `live-evals spend`, which sums the marked lines of the session logs (D-1170).
+
+**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. Under the real profile, `live-evals spend` read a logged run from the volume, and a refused folder list stopped it with an error.
+
+**The reviews.** Gitar approved `c43271b` with 2 of 2 findings closed. Codex round 1 found P1-1, fixed by the ledger of D-1171. Codex round 2 found P1-2 on `1f62982`: `Start` read the ledger without the logs. The owner chose option B (D-1173), and `docs/reviews/pr-291-response.md` holds the answer. Codex round 3 approves `c43271b`, and P1-2 is fixed.
+
+**Open work.**
+
+- Push the review record and this hand-off, then verify `review-gate` on the published head.
+- Ask the owner to confirm the merge after the required checks pass (D-828, D-834).
+- Unverified: a running session log holds the result of each earlier tool call. The classifier refused a local `claude -p` test. The owner can run it, or the first live session proves it.
+
+**After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
+
+### 2026-10-05: the first run of the live evals, PR-131
+
+**The owner asked the session to copy the setup of the night fixer of what-you-carry.** That fixer uses the logins of the owner. The owner chose copies of the gh login and the Codex login over D-1141 (D-1164).
+
+**The first tick stopped at the build.** Launchd probes showed that a script that the kernel runs from the volume loses the volume (D-1166). The owner then mandated a pinned version for each program of a tick (D-1165).
+
 ## The resume section of 2026-10-05b, PR-132
 
 **Branch `chore/live-evals-install`: PR-132 is #290, the temporary folder of a live-eval session, the probe of the sandbox, and the retry of an item (D-1168).**

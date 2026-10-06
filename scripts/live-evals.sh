@@ -64,19 +64,22 @@
 #   LIVE_EVALS_CLAUDE_VERSION=2.1.288  (the pinned Claude Code, D-1145)
 #   LIVE_EVALS_TIMEOUT=14400 (seconds a session may run)
 #   LIVE_EVALS_BUDGET_USD=3.00  LIVE_EVALS_MAX_OPEN=3  LIVE_EVALS_MIN_FREE_GB=20
-#   LIVE_EVALS_MODEL=<claude default>
+#   LIVE_EVALS_MODEL=claude-opus-5-5  LIVE_EVALS_EFFORT=high  (the pinned model of a session, D-1181)
 #
 # The one-time setup (D-1141, D-1164). Mode 600 for each file, and the
 # script refuses a login file that another account can read:
 #   umask 077
 #   claude setup-token, and the token alone > $LIVE_EVALS_SECRETS/claude-token
 #   gh auth token             > $LIVE_EVALS_SECRETS/gh-token
-#   cp ~/.codex/auth.json $LIVE_EVALS_HOME/codex-home/auth.json
-# The gh token and the Codex login are copies of the logins of the owner
-# (D-1164). The gh token reaches each repository of the owner.
+#   CODEX_HOME=$LIVE_EVALS_HOME/codex-home codex login
+# The gh token is a copy of the login of the owner (D-1164), and it
+# reaches each repository of the owner. The Codex login is a login of
+# its own (D-1184). A copy of ~/.codex/auth.json shares one refresh
+# token with the owner. The first refresh of either copy ends the other,
+# and the session then gets 401.
 #
-# Each program that a tick runs has a pinned version in PINS below
-# (D-1165). A new version can lose the macOS access to the volume of
+# Each program that a tick runs has a pinned version in
+# scripts/live-evals/pins.sh (D-1165). A new version can lose the macOS access to the volume of
 # the repository. So the tick stops, and the owner gets one notice.
 # Move the pin in a pull request after the check of the new version.
 set -uo pipefail
@@ -175,23 +178,9 @@ for cmd in git go gh jq codex gcloud python3 sandbox-exec shasum pnpm curl; do
   command -v "$cmd" >/dev/null || die "$cmd is not on PATH"
 done
 
-# The pinned version of each program that a tick runs (D-1165). Each
-# line holds the name, the version command, and the first line of its
-# output. The macOS build pins the programs of /bin and /usr/bin, and
-# the Command Line Tools pin git and python3 apart. Claude Code has its
-# own pin (D-1145), and .nvmrc pins Node 22.
-PINS=(
-  "macOS|sw_vers -buildVersion|25F84"
-  "jq|jq --version|jq-1.7.1-apple"
-  "git|git --version|git version 2.50.1 (Apple Git-155)"
-  "python3|python3 --version|Python 3.9.6"
-  "go|go version|go version go1.27.1 darwin/arm64"
-  "gh|gh --version|gh version 2.102.0 (2026-09-30)"
-  "codex|codex --version|codex-cli 0.39.0"
-  "gcloud|gcloud version|Google Cloud SDK 533.0.0"
-  "node|node --version|v20.17.0"
-  "pnpm|pnpm --version|9.2.0"
-)
+# The pinned version of each program that a tick runs (D-1165).
+# shellcheck source=scripts/live-evals/pins.sh disable=SC1091 # make lint runs no -x, and the file holds PINS alone.
+. "$ROOT/scripts/live-evals/pins.sh"
 pin_misses=""
 for pin in "${PINS[@]}"; do
   IFS='|' read -r name cmd want <<<"$pin"
@@ -225,16 +214,23 @@ if [ -z "$PO_TOKEN" ] || [ -z "$PO_USER" ]; then
   die "can not read the Pushover secrets of $PROJECT as $ACCOUNT"
 fi
 
-# A missed pin stops the tick before the build. The tool can not send
-# the notice, because go can be the missed pin. So curl sends it, and
-# it reads the secrets from stdin. One notice goes for each new miss.
+# Two notices go before the tool can send one: a missed pin, because go
+# can be the missed pin, and a wait for the grant of the volume. So curl
+# sends them, and it reads the secrets from stdin.
+curl_notice() { # title message
+  local msg
+  msg=$(printf '%s' "$2" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  printf 'form-string = "token=%s"\nform-string = "user=%s"\nform-string = "title=%s"\nform-string = "message=%s"\n' \
+    "$PO_TOKEN" "$PO_USER" "$1" "$msg" \
+    | curl -sS -o /dev/null --fail -K - https://api.pushover.net/1/messages.json
+}
+
+# A missed pin stops the tick before the build. One notice goes for
+# each new miss.
 PIN_NOTICE=$STATE/pin-notice
 if [ -n "$pin_misses" ]; then
   if [ "$dry" = 0 ] && [ "$(cat "$PIN_NOTICE" 2>/dev/null)" != "$pin_misses" ]; then
-    msg=$(printf '%s' "$pin_misses" | sed 's/\\/\\\\/g; s/"/\\"/g')
-    if printf 'form-string = "token=%s"\nform-string = "user=%s"\nform-string = "title=%s"\nform-string = "message=%s"\n' \
-      "$PO_TOKEN" "$PO_USER" "decktome live evals stopped: a version pin" "$msg" \
-      | curl -sS -o /dev/null --fail -K - https://api.pushover.net/1/messages.json; then
+    if curl_notice "decktome live evals stopped: a version pin" "$pin_misses"; then
       printf '%s' "$pin_misses" > "$PIN_NOTICE"
     else
       say "the notice of the pins did not send"
@@ -246,6 +242,34 @@ rm -f "$PIN_NOTICE"
 
 say "building the live-evals tool"
 (cd "$ROOT/go" && go build -o "$TOOL" ./cmd/live-evals) || die "the tool does not build"
+
+# macOS knows a Go build by the hash of its ad-hoc signature. So a new
+# build of the tool asks again for the access to the volume, and the
+# dialog stops the tool before its first line (D-1178). Under launchd no
+# one sees the dialog. So the tick runs the tool one time with no
+# arguments, and after GRANT_WAIT seconds the owner gets one notice.
+GRANT_WAIT=${LIVE_EVALS_GRANT_WAIT:-60}
+case "$GRANT_WAIT" in '' | *[!0-9]*) die "LIVE_EVALS_GRANT_WAIT must be a number of seconds" ;; esac
+"$TOOL" >/dev/null 2>&1 &
+grant_pid=$!
+waited=0
+grant_sent=0
+while kill -0 "$grant_pid" 2>/dev/null; do
+  if [ "$grant_sent" = 0 ] && [ "$waited" -ge "$GRANT_WAIT" ]; then
+    grant_sent=1
+    say "the new build of the tool waits for the access to the volume. Allow it in the dialog of macOS."
+    if [ "$dry" = 0 ]; then
+      curl_notice "decktome live evals wait: allow the volume" \
+        "macOS asks whether the new build of live-evals can read $HOME_DIR. Allow it in the dialog on the Mac (D-1178)." \
+        || say "the notice of the grant did not send"
+    fi
+  fi
+  sleep 5
+  waited=$((waited + 5))
+done
+wait "$grant_pid" 2>/dev/null
+# The tool exits 2 with no arguments. Any other status is a refusal.
+[ $? = 2 ] || die "the new build of the tool did not run. Read the access to the volume in System Settings (D-1178)."
 
 # The script checks each binary before each call. The profile already
 # keeps a session out of $BIN, and the sum catches any other change.
@@ -319,8 +343,8 @@ if [ "$dry" = 0 ]; then
   "$CLAUDE_BIN" --version 2>/dev/null | grep -q "^$CLAUDE_VERSION " || die "$CLAUDE_BIN is not Claude Code $CLAUDE_VERSION"
   CLAUDE_SUM=$(sum "$CLAUDE_BIN")
 
-  # The session gets its own Claude token. The gh token and the Codex
-  # login are copies of the logins of the owner (D-1141, D-1164).
+  # The session gets its own Claude token and its own Codex login
+  # (D-1184). The gh token is a copy of the login of the owner (D-1164).
   [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Run claude setup-token, and save the token there."
   [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Save the output of gh auth token there (D-1164)."
   private_file "$SECRETS/claude-token"
@@ -330,7 +354,7 @@ if [ "$dry" = 0 ]; then
   # A session can write the Codex home, so this script never runs Codex
   # with it. It reads that the login file exists, and nothing more.
   if [ ! -f "$CODEX_DIR/auth.json" ] || [ -L "$CODEX_DIR/auth.json" ]; then
-    die "the session Codex has no login. Copy ~/.codex/auth.json to $CODEX_DIR (D-833, D-1164)"
+    die "the session Codex has no login. Run CODEX_HOME=$CODEX_DIR codex login, and never copy ~/.codex/auth.json (D-833, D-1184)"
   fi
   private_file "$CODEX_DIR/auth.json"
   [ -d "$CARDS/scryfall" ] || die "no card store at $CARDS. A replay needs it."
@@ -480,9 +504,11 @@ PY
 }
 
 run_claude() { # deck run prompt-file log-file -> exit code
-  local deck=$1 run=$2 prompt=$3 log=$4 started rc model_args=() ledger=$RUNS/$1/ledger/spend.jsonl
+  local deck=$1 run=$2 prompt=$3 log=$4 started rc ledger=$RUNS/$1/ledger/spend.jsonl
   runfs mkdir "$HOME_DIR" "$deck" tmp claude-config gh-config xdg-config replay || return 1
-  if [ -n "${LIVE_EVALS_MODEL:-}" ]; then model_args=(--model "$LIVE_EVALS_MODEL"); fi
+  # Each session names its model and its effort. The default of Claude
+  # Code changes with the plan and the version, so it is no pin (D-1181).
+  local model_args=(--model "${LIVE_EVALS_MODEL:-claude-opus-5-5}" --effort "${LIVE_EVALS_EFFORT:-high}")
   check_sum "$CLAUDE_BIN" "$CLAUDE_SUM"
   make_ledger "$ledger" || { say "can not make the ledger $ledger"; return 1; }
   sandbox_flags "$run" "$ledger" "$RUNS/$deck"
@@ -502,7 +528,7 @@ run_claude() { # deck run prompt-file log-file -> exit code
     sandbox-exec "${SANDBOX_FLAGS[@]}" \
     "$CLAUDE_BIN" -p "$(cat "$prompt")" --permission-mode bypassPermissions \
       --add-dir "$run/bundle" --add-dir "$run/replay" \
-      ${model_args[@]+"${model_args[@]}"} --output-format stream-json --verbose > "$log" 2>&1) &
+      "${model_args[@]}" --output-format stream-json --verbose > "$log" 2>&1) &
   child=$!
   started=$(date +%s)
   while kill -0 "$child" 2>/dev/null; do

@@ -3502,6 +3502,23 @@ Gate:
 
 > *In plain English:* the robot wrote down a guess of its cost, 30 times the real one. Each paid tool now measures its own cost and writes it down, and the robot can not write a number by hand.
 
+**PR-135: The restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).** ✅ merged as #293. The mark comes before any review (D-822). The check of #291 on `main` found that the retry of `v-KefDsksH23qUg16zCWlI` can not run, because its status is `out-of-scope`. The queue held no item, so the owner wrote a new thumbs-down (D-1174). The session of that verdict ran two measured replays, opened #292, and ended `blocked`.
+
+- **The install.** It picks each program by its pin, and it refuses a PATH that misses a pin (D-1175). `scripts/live-evals/pins.sh` holds the pins for the tick and the install.
+- **The eval prompt.** It reads the hand-off at the fix alone (D-1176). It forbids a pipe or a redirect on a paid target (D-1177), and attribution (D-1180). It retries a failed `pnpm install` one time (D-1182).
+- **The class of a fault.** An eval names the class of the fault and fixes its product cause, never the words of one case (D-1183).
+- **The grant of the volume.** A new build of the tool gets a timer, and a wait for the grant sends a notice (D-1178).
+- **The ids.** `make ref-check` refuses a duplicate `D-` or `F-` id (REF 3), and the restack prompt renumbers (D-1179).
+- **The session.** It runs `claude-opus-5-5` at the effort `high` (D-1181). Its Codex has a login of its own (D-1184). The profile allows the security server, so Codex can check a TLS certificate (D-1185).
+
+Gate:
+- The ledger of the session holds two runs, each with a start line and a measured end line. The second start read the first end in the session log.
+- The tests of `ref_check` read a duplicate row in a register and none in another document.
+- A dry tick with the PATH of the agent passes the pins and the probe of the new build.
+- Under the profile with no deny of the security server, Codex gets the answer of the server.
+
+> *In plain English:* the robot that checks the app found a real bug, and its notes held the true cost. Ten small faults of the robot itself are now fixed, and it now looks for the root of a bug, not a quick patch.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 
