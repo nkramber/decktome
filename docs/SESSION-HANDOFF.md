@@ -6,36 +6,37 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-05d)
+## RESUME HERE (2026-10-05e)
 
-**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169 to D-1173).**
+**Branch `chore/live-evals-restart`: PR-135 is #PRNUM, the restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).**
 
 Author provider: Claude Code
 
-**The base.** `main` at `0c15f6d`, the merge of #290. The owner stopped the agent on 2026-10-05, and it stays uninstalled for this item.
+**The base.** `main` at `b466e0c`, the merge of #291.
 
-**The fault.** The retried session of `v-KefDsksH23qUg16zCWlI` ran one replay, then wrote `{"target":"chat-probe","usd":0.30}` to `spend.jsonl` with echo. The 0.30 was the estimate. The dashboard of the provider showed less than $0.01 for the full day.
+**The restart.** The retry of `v-KefDsksH23qUg16zCWlI` did not run, because its status is `out-of-scope`, and the queue held no item. The owner wrote a new thumbs-down (D-1174). The install then ran with the PATH fix of D-1175. Each tick runs `main`, so each change of this pull request reaches a session after the merge.
 
-**The code.**
+**The proof.** The session of `v-lKqWOkMKOmppB0RJBmRb` ran two `chat-probe` replays. The ledger holds a start line and a measured end line for each: $0.00074 in 4 calls, and $0.00061 in 6 calls. The second start read the end line of the first in the session log, so the open item of D-1173 holds. The notice read `Spent: measured $0.0013 in 2 runs`.
 
-- `llm.WithMeter` records every attempt of a client. `Report.Unreported` counts the attempts with no usage.
-- `gatekit.NewClient` builds the metered client of each paid command, chat-probe included. Under `LIVE_EVAL_BUNDLE`, `livespend` writes a start line and an end line to `spend.jsonl`, and on stderr after `LIVE-EVAL-SPEND`.
-- An unmeasured run counts as the full budget, and a paid command refuses to start after it (D-1169).
-- Each line also goes to the append-only ledger `$RUNS/<deck>/ledger/spend.jsonl` (D-1171).
-- Each start reads the session logs, the ledger, and the spend file. The sum marks a run with no end line in a log unmeasured (D-1173). A profile rule allows the list of the logs folder and the read of `session-<n>.log` alone. Each tick probes the rules.
-- `spent()` runs `live-evals spend`, which sums the marked lines of the session logs (D-1170).
+**The session.** It found a real fault: the theme question named "other" and "themes". It opened #292 and ended `blocked`, because `make codex-review` failed in the sandbox.
 
-**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. Under the real profile, `live-evals spend` read a logged run from the volume, and a refused folder list stopped it with an error.
+**The fixes.**
 
-**The reviews.** Gitar approved `c43271b` with 2 of 2 findings closed. Codex round 1 found P1-1, fixed by the ledger of D-1171. Codex round 2 found P1-2 on `1f62982`: `Start` read the ledger without the logs. The owner chose option B (D-1173), and `docs/reviews/pr-291-response.md` holds the answer. Codex round 3 approves `c43271b`, and P1-2 is fixed.
+- The install picks each program by its pin (D-1175). `scripts/live-evals/pins.sh` holds the pins.
+- An eval reads the hand-off at the fix alone (D-1176). A paid target runs with no pipe and no redirect (D-1177).
+- A new build of the tool gets a timer, and a wait for the grant of the volume sends a notice (D-1178).
+- `make ref-check` refuses a duplicate `D-` or `F-` id, REF 3 (D-1179). The eval prompt forbids attribution (D-1180).
+- Each session runs `claude-opus-5-5` at `high` (D-1181). A failed `pnpm install` gets one more try, never offline (D-1182).
+- An eval fixes the product cause of a class, not one case (D-1183).
+- The session Codex has a login of its own (D-1184), and the profile allows the security server for TLS (D-1185).
+
+**The checks.** `make verify` passes. The tests of `ref_check` and `live-evals` pass. A dry tick with the PATH of the agent passed the pins and the new probe. A test of the probe block sent one notice and stopped on a status other than 2. Under the profile with no deny of the security server, Codex got the answer of the server.
 
 **Open work.**
 
-- Push the review record and this hand-off, then verify `review-gate` on the published head.
-- Ask the owner to confirm the merge after the required checks pass (D-828, D-834).
-- Unverified: a running session log holds the result of each earlier tool call. The classifier refused a local `claude -p` test. The owner can run it, or the first live session proves it.
-
-**After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
+- Unverified: the dashboard of the provider against the `Spent:` line. The owner reads it.
+- Unverified: the plan accepts `claude-opus-5-5` (D-1181). The first line of the next session log names the model.
+- #292 holds the trailer of D-1180 in `8881d54`, a D-1174 that this pull request also uses, and no Codex review. A session of #292 does that work (D-1179).
 
 ## How to resume
 
@@ -109,7 +110,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-133: measured spend for a live-eval session** (D-1169, D-1170). The resume section holds the open work. After the merge, the owner decides when the retry and the install from `main` restart the agent.
+0. **#292, the first fix of a live eval** (D-1179, D-1180). A session of #292 runs `make codex-review PR=292`, removes the trailer of `8881d54`, and renumbers its D-1174.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -132,12 +133,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-05: the first run of the live evals, PR-131
-
-**The owner asked the session to copy the setup of the night fixer of what-you-carry.** That fixer uses the logins of the owner. The owner chose copies of the gh login and the Codex login over D-1141 (D-1164).
-
-**The first tick stopped at the build.** Launchd probes showed that a script that the kernel runs from the volume loses the volume (D-1166). The owner then mandated a pinned version for each program of a tick (D-1165).
-
 ### 2026-10-05b: the install of the live evals, PR-132
 
 **The owner asked for the install from `main`.** The first tick proved the launch through bash, and it started no session.
@@ -154,6 +149,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **A second session answered the Codex round 2 finding.** A forged ledger end let the next paid command start. The owner chose a start that reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
 
+### 2026-10-05e: the restart of the live evals, PR-135
+
+**The owner asked for the restart and the proof of measured spend.** The retry did not run, so the owner wrote a new thumbs-down. Two replays wrote measured lines, and the second start read the first end in the log.
+
+**The owner asked the session to watch the eval and fix each fault in this pull request.** The owner chose a login of its own for the session Codex, and an allow of the security server (D-1184, D-1185). The classifier refused two probes of the session, and the owner ran one of them.
+
+**The owner asked for a fix of the class of a fault, not a patch of one case** (D-1183). The owner also pinned the model and the effort of a session (D-1181).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-05b, the records of 2026-08-31 to 2026-10-04h, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-05d, the records of 2026-08-31 to 2026-10-05, and 104 more sections, word for word. Read it for the detail behind a decision.
