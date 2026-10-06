@@ -3512,12 +3512,13 @@ Gate:
 - **The general theme row.** In two terse conversations of run 63 the general theme row asks, because the theme no longer holds "cEDH" or "Background commander pair". The owner accepted this change.
 
 Gate:
-- `TestFillerLeavesTheTheme` reads 17 phrasings, and each one failed on the first fix.
+- `TestFillerLeavesTheTheme` reads 18 phrasings, and each one failed on the first fix.
 - `TestStopWordsNameNoTheme` refuses a stop word that finds a theme row or names a card type.
 - `make themes-check` runs two new snapshot tests. No phrasing leaves an unmatched word, and each one puts the count of its theme words on theme.
 - The subtype guard refuses a stop word that names a subtype of a card that Commander permits.
 - The tests of `go/internal/candidates` and `go/internal/questions` pass.
 - A question gate run passes on prompt version 25 (D-66). It asks the theme row of D-725 in no more conversations than run 60.
+- The general theme row asks in no more conversations than run 60, except conversations 75 and 77, which D-1189 accepts.
 - `make verify` passes.
 - A current Gitar review, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).

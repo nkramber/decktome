@@ -24,7 +24,9 @@ Author provider: Claude Code
 
 **Question gate runs.** Runs 61 and 62 passed, but each version added two theme rows of D-725. Run 63 read version 25 for $0.1038. It asks those rows in the same three conversations as run 60. The general theme row now asks in two terse conversations, and the owner accepted that.
 
-**Open work.** `make verify`, the Gitar pass, the Codex review, and the owner merge.
+**Review.** Gitar approved `67f15fe` with no finding. Codex round 1 gave `Changes required` on `67f15fe`: P2-1, P2-2, and P3-1. `docs/reviews/pr-292-response.md` answers each one.
+
+**Open work.** The Gitar pass of the new head, Codex round 2, and the owner merge.
 
 ## How to resume
 
