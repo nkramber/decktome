@@ -29,7 +29,14 @@ Author provider: Claude Code
 
 **The reviews.** Gitar found that a 429 made a run unmeasured. Commit `998057f` leaves out an attempt with an error status, and Gitar approved. Codex round 1 found P1-1: a session can delete the spend file and restart the budget. `docs/reviews/pr-291-response.md` holds the answer, the ledger of D-1171. Gitar then found that a forged end line in the ledger closes a killed run. A run that a log opened now needs a log end, and the documents name the rest of the risk.
 
-**Open work.** The Gitar pass of the ledger commit, the repeat Codex review, and the confirmation of the owner (D-828).
+**Checkpoint (D-946).** The session passed 300K tokens of context after the audit fix.
+
+**Open work.**
+
+- Gitar approved `c36dbbb` with 2 of 2 findings closed and no open thread. The audit commit after it needs a new Gitar pass.
+- `verify:web` failed on `c36dbbb` at `pnpm audit`, on GHSA-68fv-2mgg-jv7q. The override of D-1172 fixes it. Read the CI of the audit commit.
+- Answer the CI note in the Gitar dashboard: `review-gate` waits for the repeat Codex review of P1-1.
+- Run `make codex-review PR=291`, the repeat review of round 2. Then ask the owner for the merge (D-828, D-834).
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
 
