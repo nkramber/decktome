@@ -71,6 +71,7 @@ A Seatbelt profile holds this session (D-1141). You can read and write your run 
 2. Load the `one-pr-one-session` skill, then the `mtg-corpus` skill and the `ste-writing` skill.
 3. Run `make where`, and confirm that the branch is `{{branch}}`.
 4. Run `cd web && pnpm install --frozen-lockfile`, because a fresh clone has no `node_modules`.
+5. When the install fails, run it one time more. Never add `--offline`, because the store can be empty (D-1182).
 
 The start gate of the `one-pr-one-session` skill applies, but this session has no owner to ask. Section "Questions for the owner" below replaces each question to the owner.
 
