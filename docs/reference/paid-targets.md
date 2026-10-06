@@ -99,6 +99,8 @@ The meter marks these runs unmeasured, and each one counts as the full budget:
 - a run with a model that has no price row
 - a run with a start line and no end line
 
+The meter leaves out an attempt that the provider answers with an HTTP error status, such as 429 or 5xx. Such an answer holds no completion, and the provider bills no token for it. A timeout has no status, so it stays unmeasured.
+
 A paid command refuses to start when `spend.jsonl` reads the budget as spent. `make test-smoke` writes no line, so it refuses to run in a session.
 
 The budget reads measured spend alone, and the estimates of this document serve only for a plan. The script sums the marked lines of the session logs, which a session can not edit (D-1170). `spend.jsonl` is a cross-check. The script refuses and reports a line with no run id, and it reports a run that no log holds. For one run, the highest cost wins.

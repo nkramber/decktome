@@ -330,3 +330,28 @@ func TestMeterRecordsEveryAttempt(t *testing.T) {
 		t.Fatalf("report = %+v, want 2 calls, 1 with no usage", rep)
 	}
 }
+
+func TestMeterLeavesOutAnErrorStatus(t *testing.T) {
+	// A 429 holds no completion, so the meter leaves it out. A transport
+	// failure has no status, and it can still be billed (D-1169).
+	ok := Step{Output: json.RawMessage(`{"format":"x"}`), Usage: &Usage{InputTokens: 2}}
+	cases := map[string]struct {
+		fail       error
+		calls, unr int
+	}{
+		"a 429":             {newErr(ClassTransient, FakeName, "m", 429, errors.New("rate limit")), 1, 0},
+		"a transport error": {newErr(ClassTransient, FakeName, "m", 0, errors.New("reset")), 2, 1},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			meter := NewAccumulator(nil)
+			c := newTestClient(t, NewScript(Step{Err: tc.fail}, ok), WithMeter(meter))
+			if _, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil); err != nil {
+				t.Fatal(err)
+			}
+			if rep := meter.Report(); rep.Calls != tc.calls || rep.Unreported != tc.unr {
+				t.Fatalf("report = %+v, want %d calls, %d with no usage", rep, tc.calls, tc.unr)
+			}
+		})
+	}
+}

@@ -127,6 +127,16 @@ func WithJitterSeed(seed uint64) Option {
 // WithoutJitter turns the backoff jitter off (tests).
 func WithoutJitter() Option { return func(c *Client) { c.rng = nil } }
 
+// answeredWithError says whether the provider answered the attempt with an
+// HTTP error status, such as 429 or 5xx. Such an answer holds no
+// completion, and the provider bills no token for it. An attempt with no
+// usage and no such status, such as a timeout, can still be billed, so the
+// meter counts it as unmeasured (D-1169).
+func answeredWithError(err error) bool {
+	var e *Error
+	return errors.As(err, &e) && e.Status != 0
+}
+
 // Meter returns the accumulator of WithMeter, or nil.
 func (c *Client) Meter() *Accumulator { return c.meter }
 
@@ -227,7 +237,9 @@ func (c *Client) Complete(ctx context.Context, role Role, req Request, acc *Accu
 		acancel()
 		took := time.Since(t0)
 		acc.Record(role, spec.Model, res.Usage, took)
-		c.meter.Record(role, spec.Model, res.Usage, took)
+		if res.Usage != nil || !answeredWithError(err) {
+			c.meter.Record(role, spec.Model, res.Usage, took)
+		}
 		if err == nil {
 			verr := schema.Validate(mustAny(res.Output))
 			if verr == nil {
