@@ -3481,7 +3481,7 @@ Gate:
 
 > *In plain English:* the safety box of the robot that reads each new item blocked a folder, so the robot ran no command. The robot now uses a folder inside its box, checks that folder before each start, and can try an item again.
 
-**PR-133: Measured provider spend for a live-eval session, never an estimate (D-1169, D-1170).** 🔧 open. The retried session of `v-KefDsksH23qUg16zCWlI` ran one replay and wrote $0.30 to `spend.jsonl` with echo. The 0.30 was the estimate of `docs/reference/paid-targets.md`. The dashboard of the provider showed less than $0.01 for the full day.
+**PR-133: Measured provider spend for a live-eval session, never an estimate (D-1169, D-1170).** ✅ merged as #291. The mark comes before any review (D-822). The retried session of `v-KefDsksH23qUg16zCWlI` ran one replay and wrote $0.30 to `spend.jsonl` with echo. The 0.30 was the estimate of `docs/reference/paid-targets.md`. The dashboard of the provider showed less than $0.01 for the full day.
 
 - **The meter.** `gatekit.NewClient` builds the client of each paid command. `llm.WithMeter` records every attempt of the client, so a call with no accumulator of its own counts too.
 - **The lines.** Under `LIVE_EVAL_BUNDLE`, each paid command writes a start line and a measured end line to `spend.jsonl`. It prints each line on stderr after `LIVE-EVAL-SPEND`.

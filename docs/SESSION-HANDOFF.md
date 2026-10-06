@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-05c)
 
-**Branch `chore/live-evals-measured-spend`: PR-133, measured provider spend for a live-eval session, never an estimate (D-1169, D-1170).**
+**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169, D-1170).**
 
 Author provider: Claude Code
 
