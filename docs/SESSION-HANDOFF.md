@@ -31,12 +31,11 @@ Author provider: Claude Code
 
 **Checkpoint (D-946).** The session passed 300K tokens of context after the audit fix.
 
-**Open work.**
+**Review state.** The repeat Codex review covers effective head `1f62982301616070b2838c6aad1f4e50de101794`. Verdict: Changes required. P1-1 is fixed. P1-2 remains open. The current Gitar review passes with no open thread.
 
-- Gitar approved `c36dbbb` with 2 of 2 findings closed and no open thread. The audit commit after it needs a new Gitar pass.
-- `verify:web` failed on `c36dbbb` at `pnpm audit`, on GHSA-68fv-2mgg-jv7q. The override of D-1172 fixes it. Read the CI of the audit commit.
-- Answer the CI note in the Gitar dashboard: `review-gate` waits for the repeat Codex review of P1-1.
-- Run `make codex-review PR=291`, the repeat review of round 2. Then ask the owner for the merge (D-828, D-834).
+**Checks.** GitHub verify, `pr-contract`, and Gitar pass on the effective head. `review-gate` waits for this record. Local `make verify` passes with Node 22.23.2.
+
+**Open work.** Fix P1-2, add its regression test, push the correction, and get a current Gitar review before the next Codex review.
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
 
