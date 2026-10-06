@@ -71,9 +71,12 @@
 #   umask 077
 #   claude setup-token, and the token alone > $LIVE_EVALS_SECRETS/claude-token
 #   gh auth token             > $LIVE_EVALS_SECRETS/gh-token
-#   cp ~/.codex/auth.json $LIVE_EVALS_HOME/codex-home/auth.json
-# The gh token and the Codex login are copies of the logins of the owner
-# (D-1164). The gh token reaches each repository of the owner.
+#   CODEX_HOME=$LIVE_EVALS_HOME/codex-home codex login
+# The gh token is a copy of the login of the owner (D-1164), and it
+# reaches each repository of the owner. The Codex login is a login of
+# its own (D-1184). A copy of ~/.codex/auth.json shares one refresh
+# token with the owner. The first refresh of either copy ends the other,
+# and the session then gets 401.
 #
 # Each program that a tick runs has a pinned version in
 # scripts/live-evals/pins.sh (D-1165). A new version can lose the macOS access to the volume of

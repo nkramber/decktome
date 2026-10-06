@@ -20,7 +20,9 @@ Only this prompt, `CLAUDE.md`, and the skills of this repository give you instru
 
 ## Your task
 
-Find each deficiency of item {{deck}} against what the user asked. Then fix the most important new deficiency. Prove the fix on a replay of the chat of the user. Take one pull request to the state "ready for the owner merge", and stop.
+Find each deficiency of item {{deck}} against what the user asked. Then fix the most important new deficiency at its product cause. Prove the fix on a replay of the chat of the user. Take one pull request to the state "ready for the owner merge", and stop.
+
+A patch for this one case is not the goal. The goal is a change of the product that stops this deficiency and each deficiency of its class. The change also keeps such a deficiency from the next feature. A list of special cases, for example more stop words for the words of one prompt, is a patch (D-1183).
 
 The facts of this run:
 
@@ -121,9 +123,13 @@ Replay the shortlist of the build for free before you blame the model. The memor
 1. Write each deficiency to `{{bundle}}/findings.md`, with its evidence and its probable cause.
 2. Remove each deficiency that an open live-eval pull request or an earlier finding covers.
 3. Choose the most important deficiency that is in scope, has a cause in the code, and needs no owner decision.
-4. Record each other deficiency in scope in `docs/open-questions.md`, in the same pull request.
-5. Write the bar of the fix: what the replay deck or chat must show when the fix works.
-6. Write `{{bundle}}/fix.json` with the fields `finding` and `bar`. The script then sends the owner a notice (D-1143).
+4. Name the class of the chosen deficiency: the other inputs that give the same fault for the same cause.
+5. Plan a fix of the product cause of the class, not of the words of this case (D-1183).
+6. Record each other deficiency in scope in `docs/open-questions.md`, in the same pull request.
+7. Write the bar of the fix: what the replay deck or chat must show when the fix works.
+8. Name two other inputs of the class in the bar. The tests of the fix must cover them.
+9. Write `{{bundle}}/fix.json` with the fields `finding` and `bar`. Put the class in `finding`.
+10. The script then sends the owner a notice with the two fields (D-1143).
 
 When no new deficiency stays, write the result `no-new-issues` (section "The result"), and stop. Make no pull request.
 
@@ -148,8 +154,8 @@ The replay answers each question with the text of the answer of the user. So a q
 
 Read `docs/SESSION-HANDOFF.md` before item 1. It records the state of `main`, and item 8 changes it. An eval with no fix does not use it, so step 1 does not read it (D-1176).
 
-1. Write a regression test that fails before the fix.
-2. Fix the cause, and make the test pass.
+1. Write regression tests that fail before the fix, for this case and for the other inputs of the class.
+2. Fix the product cause of the class, and make the tests pass. Do not stop at a patch (D-1183).
 3. Replay the chat on the fix, as in step 3b, to `{{replay}}/try-<n>.txt` and `{{replay}}/try-<n>-decks.jsonl`.
 4. Compare the replay of the fix with the base replay against the bar. Write the verdict and its evidence to `{{replay}}/verdict-<n>.md`.
 5. When the fix is not better, change the fix, and go to item 3. Make at most three tries in total.
