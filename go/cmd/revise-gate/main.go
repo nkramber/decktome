@@ -181,10 +181,11 @@ func run() error {
 		fmt.Fprintf(os.Stderr, "dry run: %d bases and %d revisions read, no provider call ran\n", len(file.Bases), revisions)
 		return nil
 	}
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("revise-gate", quiet)
 	if err != nil {
 		return err
 	}
+	defer done()
 	run.SetRoles(client.Config(), llm.RoleGenerate, llm.RoleRepair, llm.RoleRevise)
 	prices, err := llm.LoadPrices()
 	if err != nil {

@@ -17,6 +17,11 @@ func TestSmokeLiveProviders(t *testing.T) {
 	if os.Getenv("LLM_SMOKE") != "1" {
 		t.Skip("set LLM_SMOKE=1 and the API keys to run the live smoke")
 	}
+	// The smoke writes no spend line, so a live-eval session can not run
+	// it (D-1169).
+	if os.Getenv("LIVE_EVAL_BUNDLE") != "" {
+		t.Fatal("a live-eval session can not run the live smoke: it measures no spend")
+	}
 	env := func(k string) string {
 		if k == EnvRequireKeys {
 			return "1"

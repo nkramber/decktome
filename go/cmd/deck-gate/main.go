@@ -249,10 +249,12 @@ func run() error {
 	var acc *llm.Accumulator
 	var client *llm.Client
 	if !*dry {
-		client, err = llm.NewFromEnv(gatekit.Env, quiet)
+		var done func()
+		client, done, err = gatekit.NewClient("deck-gate", quiet)
 		if err != nil {
 			return err
 		}
+		defer done()
 		run.SetRoles(client.Config(), llm.RoleGenerate, llm.RoleRepair, llm.RoleJudge)
 		prices, err := llm.LoadPrices()
 		if err != nil {

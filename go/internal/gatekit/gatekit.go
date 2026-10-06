@@ -20,6 +20,7 @@ import (
 	"github.com/nkramber/decktome/go/internal/collections"
 	"github.com/nkramber/decktome/go/internal/evalrun"
 	"github.com/nkramber/decktome/go/internal/gcpenv"
+	"github.com/nkramber/decktome/go/internal/livespend"
 	"github.com/nkramber/decktome/go/internal/llm"
 	"github.com/nkramber/decktome/go/internal/meta"
 	"github.com/nkramber/decktome/go/internal/precons"
@@ -37,6 +38,32 @@ func SpendGuard(name string) error {
 		return fmt.Errorf("this run calls a real provider and costs money: set %s=1 to allow it", name)
 	}
 	return nil
+}
+
+// NewClient builds the provider client of a paid command, and
+// client.Meter() measures every call. Under a live eval it refuses the
+// run when the budget is spent, and done writes the end line (D-1169). Call done with
+// defer in the function that runs the provider calls.
+func NewClient(target string, log *slog.Logger) (client *llm.Client, done func(), err error) {
+	prices, err := llm.LoadPrices()
+	if err != nil {
+		return nil, nil, err
+	}
+	m, err := livespend.Start(target, os.Getenv, prices, os.Stderr)
+	if err != nil {
+		return nil, nil, err
+	}
+	done = func() {
+		if err := m.End(); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
+	}
+	client, err = llm.NewFromEnv(Env, log, llm.WithMeter(m.Accumulator()))
+	if err != nil {
+		done()
+		return nil, nil, err
+	}
+	return client, done, nil
 }
 
 // EnvMaxUSD names the most one gate run may spend. The fix cycle sets

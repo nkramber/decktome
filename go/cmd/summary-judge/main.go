@@ -86,10 +86,11 @@ func run() error {
 		return fmt.Errorf("%s holds no deck heading", *in)
 	}
 
-	client, err := llm.NewFromEnv(gatekit.Env, gatekit.Quiet())
+	client, done, err := gatekit.NewClient("summary-judge", gatekit.Quiet())
 	if err != nil {
 		return err
 	}
+	defer done()
 	prices, err := llm.LoadPrices()
 	if err != nil {
 		return err

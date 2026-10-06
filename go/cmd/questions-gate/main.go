@@ -248,10 +248,11 @@ func run(collectionPath string, limit int, only string, runOut string, w io.Writ
 		return fmt.Errorf("conversations.json: %w", err)
 	}
 	quiet := gatekit.Quiet()
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("questions-gate", quiet)
 	if err != nil {
 		return err
 	}
+	defer done()
 	rec.SetRoles(client.Config(), llm.RoleClassify, llm.RoleAsk)
 	prices, err := llm.LoadPrices()
 	if err != nil {

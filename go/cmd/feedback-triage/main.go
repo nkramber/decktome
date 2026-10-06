@@ -125,10 +125,11 @@ func run() error {
 	var judger triage.Judger
 	var acc *llm.Accumulator
 	if !*dry {
-		client, err := llm.NewFromEnv(gatekit.Env, quiet)
+		client, done, err := gatekit.NewClient("feedback-triage", quiet)
 		if err != nil {
 			return err
 		}
+		defer done()
 		prices, err := llm.LoadPrices()
 		if err != nil {
 			return err

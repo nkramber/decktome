@@ -103,10 +103,11 @@ func run() error {
 		return nil
 	}
 
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("generate-probe", quiet)
 	if err != nil {
 		return fmt.Errorf("llm client: %w", err)
 	}
+	defer done()
 	rcfg, err := rules.Load()
 	if err != nil {
 		return err

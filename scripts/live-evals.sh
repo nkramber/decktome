@@ -461,10 +461,19 @@ fix_notice() { # deck -> notify once when the session chose a fix (D-1143)
     "$(jq -r '"Finding: \(.finding // "?")\nBar: \(.bar // "?")"' <<<"$fix" 2>/dev/null || echo "fix.json does not read")"
 }
 
-spent() { # deck -> dollars the session wrote to spend.jsonl
-  local s
-  s=$(rget "$1" bundle/spend.jsonl | jq -s '[.[].usd // 0 | tonumber] | add // 0' 2>/dev/null)
-  echo "${s:-0}"
+spent() { # deck -> the measured spend of the item, for a notice (D-1169, D-1170)
+  # The marked lines of the session logs are the source. The session can
+  # not edit a log, and spend.jsonl of the bundle is a cross-check. The
+  # tool refuses a line that no paid command wrote, and an unmeasured run
+  # counts as the full budget.
+  local r
+  r=$({ rget "$1" bundle/spend.jsonl || true; } | tool spend -logs "$RUNS/$1" -budget "$BUDGET" 2>/dev/null) || r=""
+  if [ -z "$r" ]; then
+    echo "unread, counted as \$$BUDGET of \$$BUDGET"
+    return 0
+  fi
+  jq -r --arg b "$BUDGET" '"$\(.charged * 10000 | round / 10000) of $\($b): \(.text)"' <<<"$r" 2>/dev/null \
+    || echo "unread, counted as \$$BUDGET of \$$BUDGET"
 }
 
 result() { # deck key -> value of result.json
@@ -473,9 +482,9 @@ result() { # deck key -> value of result.json
 }
 
 summary_text() { # deck -> the four sections of D-836
-  printf 'What: %s\nHow: %s\nReplay: %s\nCI: %s\nCodex review: %s\nSpent: $%s of $%s' \
+  printf 'What: %s\nHow: %s\nReplay: %s\nCI: %s\nCodex review: %s\nSpent: %s' \
     "$(result "$1" what)" "$(result "$1" how)" "$(result "$1" replay)" "$(result "$1" ci)" \
-    "$(result "$1" codex)" "$(spent "$1")" "$BUDGET"
+    "$(result "$1" codex)" "$(spent "$1")"
 }
 
 open_prs() { # -> number<TAB>branch, oldest first
@@ -580,7 +589,7 @@ No fix and no pull request. The owner decides."
       mark "$uid" "$deck"
       notify "decktome live eval: the fix failed on deck $deck" "$(result "$deck" reason)
 Replay: $(result "$deck" replay)
-Spent: \$$(spent "$deck") of \$$BUDGET. Read $run and $RUNS/$deck"
+Spent: $(spent "$deck"). Read $run and $RUNS/$deck"
       ;;
     blocked)
       dset "$deck" status blocked pr "$pr"

@@ -14,6 +14,9 @@
 //	CHAT_PROBE=1 CARDS_SNAPSHOT_DIR=.local/gcs/mtg-local-cards/scryfall \
 //	  go run ./cmd/chat-probe -messages "Build me a lifegain Commander deck.|Karlov of the Ghost Council, bracket 3."
 //
+// The probe prints its measured provider spend at the end, also after a
+// failed turn (D-1169).
+//
 // -decks-out writes each deck that reaches the user, one JSON line per
 // deck with its turn, so user-case can read the deck bars (D-1124).
 package main
@@ -145,10 +148,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("chat-probe", quiet)
 	if err != nil {
 		return err
 	}
+	defer done()
+	defer func() { fmt.Println(spendText(client.Meter().Report())) }()
 	prof, err := gatekit.Profiler(idx, rcfg, quiet)
 	if err != nil {
 		return err
@@ -266,6 +271,18 @@ func run() error {
 	}
 	report(deck, time.Since(start))
 	return nil
+}
+
+// spendText gives the measured provider spend of the probe: usage times
+// prices.json, never an estimate (D-1169).
+func spendText(rep llm.Report) string {
+	if rep.Calls == 0 {
+		return "provider spend: $0.0000 in 0 calls, measured"
+	}
+	if rep.Unreported > 0 || rep.CostUSD == nil {
+		return fmt.Sprintf("provider spend: unmeasured, %d calls, %d with no usage", rep.Calls, rep.Unreported)
+	}
+	return fmt.Sprintf("provider spend: %s in %d calls, measured", gatekit.CostWord(rep), rep.Calls)
 }
 
 func report(d *mtgv1.Deck, took time.Duration) {

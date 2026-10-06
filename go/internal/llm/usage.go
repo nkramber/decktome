@@ -36,6 +36,9 @@ type Report struct {
 	// CostUSD is nil when no attempt reported usage, or when any reported
 	// attempt used a model with no price row.
 	CostUSD *float64 `json:"cost_usd"`
+	// Unreported counts the attempts that gave no usage. Their cost is
+	// absent from CostUSD, so a nonzero count makes the cost a floor.
+	Unreported int `json:"unreported,omitempty"`
 	// LatencyMS is the summed wall-clock time of all attempts, in
 	// milliseconds.
 	LatencyMS int64               `json:"latency_ms"`
@@ -97,7 +100,7 @@ func (a *Accumulator) Report() Report {
 	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	r := Report{Calls: a.calls, LatencyMS: a.latency.Milliseconds(), ByRole: map[Role]*RoleUsage{}}
+	r := Report{Calls: a.calls, Unreported: a.calls - a.reported, LatencyMS: a.latency.Milliseconds(), ByRole: map[Role]*RoleUsage{}}
 	for role, ru := range a.byRole {
 		cp := &RoleUsage{Calls: ru.Calls}
 		if ru.Tokens != nil {

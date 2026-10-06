@@ -309,3 +309,24 @@ func TestCompileSchemaRules(t *testing.T) {
 		t.Errorf("valid date: %v", err)
 	}
 }
+
+func TestMeterRecordsEveryAttempt(t *testing.T) {
+	// A schema miss retries once. The meter counts both attempts, also
+	// for a call with no accumulator of its own (D-1169).
+	sc := NewScript(
+		Step{Output: json.RawMessage(`{}`), Usage: &Usage{InputTokens: 3, OutputTokens: 1}},
+		Step{Output: json.RawMessage(`{"format":"x"}`)},
+	)
+	meter := NewAccumulator(nil)
+	c, err := New(testConfig(), []Provider{sc}, WithoutJitter(), WithMeter(meter))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.Complete(context.Background(), RoleClassify, Request{Schema: json.RawMessage(testSchema)}, nil); err != nil {
+		t.Fatal(err)
+	}
+	rep := c.Meter().Report()
+	if rep.Calls != 2 || rep.Unreported != 1 || rep.Tokens == nil || rep.Tokens.InputTokens != 3 {
+		t.Fatalf("report = %+v, want 2 calls, 1 with no usage", rep)
+	}
+}

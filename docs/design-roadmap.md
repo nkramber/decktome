@@ -3481,6 +3481,23 @@ Gate:
 
 > *In plain English:* the safety box of the robot that reads each new item blocked a folder, so the robot ran no command. The robot now uses a folder inside its box, checks that folder before each start, and can try an item again.
 
+**PR-133: Measured provider spend for a live-eval session, never an estimate (D-1169, D-1170).** 🔧 open. The retried session of `v-KefDsksH23qUg16zCWlI` ran one replay and wrote $0.30 to `spend.jsonl` with echo. The 0.30 was the estimate of `docs/reference/paid-targets.md`. The dashboard of the provider showed less than $0.01 for the full day.
+
+- **The meter.** `gatekit.NewClient` builds the client of each paid command. `llm.WithMeter` records every attempt of the client, so a call with no accumulator of its own counts too.
+- **The lines.** Under `LIVE_EVAL_BUNDLE`, each paid command writes a start line and a measured end line to `spend.jsonl`. It prints each line on stderr after `LIVE-EVAL-SPEND`.
+- **Fail closed.** A call with no usage, a model with no price row, or a start line with no end line marks the run unmeasured. Such a run counts as the full budget, and no paid command starts after it.
+- **The sum.** `spent()` runs `live-evals spend`. The tool sums the marked lines of the session logs, refuses a line with no run id, and reports a run that no log holds.
+- **The prompts.** The eval and continue prompts forbid a hand-written line. `make test-smoke` refuses to run in a session, because it writes no line.
+
+Gate:
+- The tests of `livespend` read a measured run, both unmeasured causes, a refused hand-written line, and a forged lower cost.
+- A `gatekit` test builds a metered client under a bundle with no provider call. It reads a start line and a measured end line.
+- A second `gatekit` test refuses a run after a start line with no end line.
+- A client test reads two attempts of one call in the meter, one of them with no usage.
+- `live-evals spend` on the log of the session of 2026-10-05 refuses the hand-written 0.30 line.
+
+> *In plain English:* the robot wrote down a guess of its cost, 30 times the real one. Each paid tool now measures its own cost and writes it down, and the robot can not write a number by hand.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 

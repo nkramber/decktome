@@ -163,10 +163,11 @@ func runRejudge(path, runOut string) error {
 	if err := readContent(context.Background(), results, idx, quiet); err != nil {
 		return err
 	}
-	client, err := llm.NewFromEnv(gatekit.Env, quiet)
+	client, done, err := gatekit.NewClient("bracket-gate", quiet)
 	if err != nil {
 		return err
 	}
+	defer done()
 	run.SetRoles(client.Config(), llm.RoleJudge)
 	prices, err := llm.LoadPrices()
 	if err != nil {

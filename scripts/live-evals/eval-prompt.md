@@ -130,15 +130,14 @@ When each deficiency is out of scope, write the result `out-of-scope`, and stop.
 
 ## Step 3b: Replay the chat on the base code
 
-Do this step before you change any code. It costs about $0.30 (D-1144).
+Do this step before you change any code. The estimate is $0.30 (D-1144). The replay prints its measured spend on its last line (D-1169).
 
 1. Run `cd go && go run ./cmd/live-evals replay-input -bundle {{bundle}} -out {{replay}}/input`.
 2. Run the base replay from the root of the clone:
    `make chat-probe CHAT_PROBE_OUT={{replay}}/base.txt CHAT_PROBE_ARGS="<args>"`.
 3. Put these flags in `<args>`: `-messages-json {{replay}}/input/messages.json -decks-out {{replay}}/base-decks.jsonl`.
 4. When `{{replay}}/input/collection.json` exists, add `-collection-json {{replay}}/input/collection.json`.
-5. Append the cost to `{{bundle}}/spend.jsonl`.
-6. Read the base replay against the bar. When the base replay already meets the bar, the fault does not occur again. Then write the result `no-new-issues`, and name this in `findings`.
+5. Read the base replay against the bar. When the base replay already meets the bar, the fault does not occur again. Then write the result `no-new-issues`, and name this in `findings`.
 
 The decks file holds one JSON line for each deck that reached the user, oldest first. The `deck` field of the last line is the deck at the end of the chat (D-1146). When `make chat-probe` exits with an error, the replay failed, and no line of its decks file counts.
 
@@ -148,7 +147,7 @@ The replay answers each question with the text of the answer of the user. So a q
 
 1. Write a regression test that fails before the fix.
 2. Fix the cause, and make the test pass.
-3. Replay the chat on the fix, as in step 3b, to `{{replay}}/try-<n>.txt` and `{{replay}}/try-<n>-decks.jsonl`. Append the cost to `{{bundle}}/spend.jsonl`.
+3. Replay the chat on the fix, as in step 3b, to `{{replay}}/try-<n>.txt` and `{{replay}}/try-<n>-decks.jsonl`.
 4. Compare the replay of the fix with the base replay against the bar. Write the verdict and its evidence to `{{replay}}/verdict-<n>.md`.
 5. When the fix is not better, change the fix, and go to item 3. Make at most three tries in total.
 6. After the third try that is not better, revert the fix, and write the result `fix-failed`. Make no pull request.
@@ -163,11 +162,19 @@ The repository is public (D-639). Write no email, no user id, and no collection 
 
 You can spend at most ${{budget}} on paid targets, the replays included. Free lanes come first: a unit test, a dry run, a shortlist replay. Keep about $1.20 for the base replay and three tries.
 
-- Before each paid run, read its cost in `docs/reference/paid-targets.md`.
-- After each paid run, append one line to `{{bundle}}/spend.jsonl`, for example `{"target": "revise-gate", "usd": 0.74}`.
-- Stop all paid runs when the total comes near ${{budget}}.
+- Before each paid run, read its estimate in `docs/reference/paid-targets.md`. The budget reads measured spend alone.
+- Each paid target writes its own start line and end line to `{{bundle}}/spend.jsonl` (D-1169).
+- Run one paid target at a time. A paid target refuses to start while the start line of another run has no end line.
+- To read your total, run `cd go && go run ./cmd/live-evals spend -budget {{budget}} < {{bundle}}/spend.jsonl`.
+- Stop all paid runs when the total comes near ${{budget}}. A paid target refuses to start when the spend reaches the budget.
+
+CAUTION: Never write, edit, or delete a line of `{{bundle}}/spend.jsonl`. The script refuses a hand-written line, and it reads your spend from the log of the session (D-1170).
+
+CAUTION: A call that gave no usage, or a model with no price row, makes the run unmeasured. Such a run counts as the full budget, so no paid target starts after it. Write it in `findings`.
 
 CAUTION: Never run `make api-build`, `make live-web`, or `make live-sweep`. A deck that they build starts another live eval.
+
+CAUTION: Never run `make test-smoke`. It writes no spend line, so it refuses to run in a live eval.
 
 ## Step 5: The pull request and the reviews
 
