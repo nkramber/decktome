@@ -70,3 +70,4 @@ The reviewer never replies to Gitar, never merges, and never pushes to `main`. T
 - No AI-attribution text in any PR, branch name, commit message, or comment.
 - Write docs and skills in ASD-STE100. Run `make ste-check` before you commit a `.md` file. `make lint` and CI run it too (D-264).
 - Cite an id that a register defines, and a path that exists. `make ref-check` fails on either one (D-753).
+- Take a new `D-` id after you read the end of `docs/decisions.md` on `origin/main`. `make ref-check` fails on an id with two rows (D-1179).
