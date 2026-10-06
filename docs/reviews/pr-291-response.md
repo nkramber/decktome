@@ -24,3 +24,30 @@ Regression checks:
 - `TestStartRefusesWithNoLedger`: no variable, or no file, refuses the run.
 - Under the real profile, with the ledger on the volume, an append and a read passed. A truncate, `rm`, a rename of the file or its folder, `chflags nouappnd`, `chmod`, and a new file beside it failed. A write in the run folder passed.
 - `make_ledger` set `uappnd`, and a second call kept the content.
+
+## P1-2: A forged end line can let another paid command start
+
+Result: full merit.
+
+Evidence: `Start` called `SumFiles`, which read the ledger and the spend file with no log. So a forged end line in the ledger closed a killed run, and the next start read no spend. A run whose stderr did not reach a log had the same gap in the end sum. Such a run got only the note "absent from the logs".
+
+The owner chose the correction from three options (D-1173). Option A read the logs at the start alone. Option B also counts each run with no end line in a log as unmeasured. Option C accepted the risk.
+
+Correction:
+
+- `go/internal/livespend/livespend.go`: `Start` refuses a run with no `LIVE_EVAL_LOGS`. It reads the session logs, the ledger, and the spend file with `Sum(budget, true)`.
+- The same file: with the logs read, the sum marks a run with no end line in a log unmeasured. A measured end in a file does not change that.
+- `AddLogs` lists the folder with `os.ReadDir`. A folder that does not list is an error, so a refusal of the profile starts no paid run.
+- `scripts/live-evals/sandbox.sb`: the new `LOGS` and `LOGS_RX` parameters. The profile allows a list of the logs folder and the read of `session-<n>.log`, and no other file.
+- `scripts/live-evals.sh`: the session gets `LIVE_EVAL_LOGS`. Each tick probes the rule: the list and the log read pass, and the read of `context.json` fails.
+- `scripts/live-evals/eval-prompt.md`: run each paid target in the foreground, and never redirect its stderr. The total command reads the logs too.
+
+Regression checks:
+
+- `TestStartRefusesAForgedLedgerEnd`: a forged ledger end with the start in a log, or with no log line, refuses the run. The same run with its end in a log starts. With `Start` set back to the sum without logs, the test fails.
+- `TestStartRefusesWithNoLogs`: no variable, or no folder, refuses the run.
+- `TestNewClientWritesTheSpendOfALiveEval`: the second run refuses until the log holds the end line of the first run.
+- Under the real profile, with the logs on the volume, `live-evals spend` read a logged run as measured at $0.004. With the folder list refused, it stopped with an error.
+- Under the real profile, `session-12.log` read, and `context.json` and `session-1.logx` did not. An escaped dot in the path matched only a dot.
+
+Residual risk: a session can still echo a marked end line into a tool result, and the log sum takes it. No file inside the sandbox can prove an end line real. `docs/reference/paid-targets.md` names this risk.

@@ -39,6 +39,10 @@ func env(bundle, budget string) func(string) string {
 }
 
 func envLedger(bundle, budget, ledger string) func(string) string {
+	return envLogs(bundle, budget, ledger, logsIn(bundle))
+}
+
+func envLogs(bundle, budget, ledger, logs string) func(string) string {
 	return func(k string) string {
 		switch k {
 		case EnvBundle:
@@ -47,8 +51,36 @@ func envLedger(bundle, budget, ledger string) func(string) string {
 			return budget
 		case EnvLedger:
 			return ledger
+		case EnvLogs:
+			return logs
 		}
 		return ""
+	}
+}
+
+// logsIn makes the logs folder beside the bundle, as the script does
+// before a session. It gives "" for no bundle.
+func logsIn(bundle string) string {
+	if bundle == "" {
+		return ""
+	}
+	p := filepath.Join(filepath.Dir(bundle), filepath.Base(bundle)+"-logs")
+	if err := os.MkdirAll(p, 0o755); err != nil {
+		panic(err)
+	}
+	return p
+}
+
+// writeLog writes session-1.log in dir, with each line marked in one
+// tool result, as the stderr of a paid command reaches the log.
+func writeLog(t *testing.T, dir string, lines ...string) {
+	t.Helper()
+	var b strings.Builder
+	for _, l := range lines {
+		b.WriteString(logEvent(Marker + l))
+	}
+	if err := os.WriteFile(filepath.Join(dir, "session-1.log"), []byte(b.String()), 0o644); err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -240,9 +272,11 @@ func TestLedgerCountsFileOnlyAndUnmeasuredRuns(t *testing.T) {
 	if err := g.AddFile(strings.NewReader(file)); err != nil {
 		t.Fatal(err)
 	}
+	// With the logs read, a run with no end line in a log is unmeasured,
+	// also when the file holds a measured end (D-1173).
 	s := g.Sum(3, true)
-	if s.USD != 0.7 || len(s.FileOnly) != 2 || len(s.Unmeasured) != 1 {
-		t.Fatalf("sum = %+v, want $0.70, 2 file-only runs, 1 unmeasured", s)
+	if s.USD != 0.7 || len(s.FileOnly) != 2 || len(s.Unmeasured) != 2 {
+		t.Fatalf("sum = %+v, want $0.70, 2 file-only runs, 2 unmeasured", s)
 	}
 	if !s.Spent() || s.Charged() != 3 {
 		t.Fatalf("an unmeasured run must charge the full budget: charged %v", s.Charged())
@@ -276,10 +310,11 @@ func TestStartReadsTheLedgerAfterTheBundleIsGone(t *testing.T) {
 	if _, err := Start("chat-probe", envLedger(dir, "3.00", ledger), prices(t), &bytes.Buffer{}); err == nil {
 		t.Fatal("Start must refuse: the ledger reads the budget as spent")
 	}
-	below := `{"id":"0123456789abcdef","event":"end","target":"deck-gate","usd":1.10,"measured":true}` + "\n"
-	if err := os.WriteFile(ledger, []byte(below), 0o644); err != nil {
+	below := `{"id":"0123456789abcdef","event":"end","target":"deck-gate","usd":1.10,"measured":true}`
+	if err := os.WriteFile(ledger, []byte(below+"\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	writeLog(t, logsIn(dir), below)
 	m, err := Start("chat-probe", envLedger(dir, "3.00", ledger), prices(t), &bytes.Buffer{})
 	if err != nil {
 		t.Fatalf("a run below the cap must start: %v", err)
@@ -315,12 +350,63 @@ func TestAFileEndDoesNotCloseARunThatALogOpened(t *testing.T) {
 		t.Fatalf("sum = %+v, want the run unmeasured", s)
 	}
 	// A run with no line in any log, such as a background run whose
-	// output the session never read, takes its end from the file.
+	// output the session never read, stays unmeasured too (D-1173).
 	h := NewLedger()
 	if err := h.AddFile(strings.NewReader(`{"id":"ffffffffffffffff","event":"start","target":"chat-probe"}` + "\n" + forged)); err != nil {
 		t.Fatal(err)
 	}
-	if s := h.Sum(3, true); len(s.Unmeasured) != 0 || len(s.FileOnly) != 1 {
-		t.Fatalf("sum = %+v, want a measured run absent from the logs", s)
+	if s := h.Sum(3, true); len(s.Unmeasured) != 1 || len(s.FileOnly) != 1 || !s.Spent() {
+		t.Fatalf("sum = %+v, want an unmeasured run absent from the logs", s)
+	}
+}
+
+func TestStartRefusesAForgedLedgerEnd(t *testing.T) {
+	// A session kills a paid run, then appends an end line with no cost
+	// to the ledger. Start reads the logs, and no log holds that end, so
+	// the run counts as the full budget and no paid run starts (D-1173).
+	start := `{"id":"ffffffffffffffff","event":"start","target":"chat-probe"}`
+	forged := `{"id":"ffffffffffffffff","event":"end","target":"chat-probe","usd":0,"measured":true}`
+	cases := map[string][]string{
+		"a log holds the start": {start},
+		"no log holds the run":  nil,
+	}
+	for name, logged := range cases {
+		t.Run(name, func(t *testing.T) {
+			dir := t.TempDir()
+			ledger := ledgerIn(dir)
+			if err := os.WriteFile(ledger, []byte(start+"\n"+forged+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			writeLog(t, logsIn(dir), logged...)
+			var stderr bytes.Buffer
+			if _, err := Start("chat-probe", env(dir, "3.00"), prices(t), &stderr); err == nil || !strings.Contains(err.Error(), "budget") {
+				t.Fatalf("err = %v, want a refusal for the budget", err)
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("a refused run wrote %q", stderr.String())
+			}
+		})
+	}
+	// The same run with its end in a log reads as measured.
+	dir := t.TempDir()
+	if err := os.WriteFile(ledgerIn(dir), []byte(start+"\n"+forged+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	writeLog(t, logsIn(dir), start, forged)
+	m, err := Start("chat-probe", env(dir, "3.00"), prices(t), &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("a run with its end in a log must not block the next run: %v", err)
+	}
+	if err := m.End(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStartRefusesWithNoLogs(t *testing.T) {
+	dir := t.TempDir()
+	for name, logs := range map[string]string{"no variable": "", "no folder": filepath.Join(dir, "absent")} {
+		if _, err := Start("chat-probe", envLogs(dir, "3.00", ledgerIn(dir), logs), prices(t), &bytes.Buffer{}); err == nil {
+			t.Fatalf("%s: Start must refuse", name)
+		}
 	}
 }

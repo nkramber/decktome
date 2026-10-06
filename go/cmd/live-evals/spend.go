@@ -2,11 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"os"
-	"path/filepath"
-	"sort"
 
 	"github.com/nkramber/decktome/go/internal/livespend"
 )
@@ -23,26 +19,13 @@ type spendReport struct {
 // session logs in logs and the append-only ledger are the sources, and
 // file is the spend file of the bundle, a cross-check. The session can
 // edit the bundle, and it can not edit a log or lower the ledger (D-1170,
-// D-1171). With no logs, a session reads its own spend file.
+// D-1171). With logs, a run with no end line in a log is unmeasured
+// (D-1173). With no logs, a session reads its own spend file.
 func spend(logs, ledger string, budget float64, file io.Reader, out io.Writer) error {
 	g := livespend.NewLedger()
-	var paths []string
 	if logs != "" {
-		var err error
-		if paths, err = filepath.Glob(filepath.Join(logs, "session-*.log")); err != nil {
+		if err := g.AddLogs(logs); err != nil {
 			return err
-		}
-	}
-	sort.Strings(paths)
-	for _, p := range paths {
-		f, err := os.Open(p)
-		if err != nil {
-			return err
-		}
-		err = g.AddLog(f)
-		_ = f.Close()
-		if err != nil {
-			return fmt.Errorf("%s: %w", p, err)
 		}
 	}
 	if ledger != "" {

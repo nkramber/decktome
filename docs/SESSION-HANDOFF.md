@@ -6,9 +6,9 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-05c)
+## RESUME HERE (2026-10-05d)
 
-**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169 to D-1171).**
+**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169 to D-1173).**
 
 Author provider: Claude Code
 
@@ -21,21 +21,20 @@ Author provider: Claude Code
 - `llm.WithMeter` records every attempt of a client. `Report.Unreported` counts the attempts with no usage.
 - `gatekit.NewClient` builds the metered client of each paid command, chat-probe included. Under `LIVE_EVAL_BUNDLE`, `livespend` writes a start line and an end line to `spend.jsonl`, and on stderr after `LIVE-EVAL-SPEND`.
 - An unmeasured run counts as the full budget, and a paid command refuses to start after it (D-1169).
-- Each line also goes to the append-only ledger `$RUNS/<deck>/ledger/spend.jsonl`. Each start reads it, and each tick probes its profile rule (D-1171).
-- `spent()` runs `live-evals spend`, which sums the marked lines of the session logs (D-1170). It refuses a line with no run id.
-- chat-probe prints its measured spend on its last line. `make test-smoke` refuses to run in a session.
+- Each line also goes to the append-only ledger `$RUNS/<deck>/ledger/spend.jsonl` (D-1171).
+- Each start reads the session logs, the ledger, and the spend file. The sum marks a run with no end line in a log unmeasured (D-1173). A profile rule allows the list of the logs folder and the read of `session-<n>.log` alone. Each tick probes the rules.
+- `spent()` runs `live-evals spend`, which sums the marked lines of the session logs (D-1170).
 
-**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. `live-evals spend` on the log of 2026-10-05 refuses the hand-written 0.30 line. Under the real profile, a session can append to the ledger and can not delete or rewrite it.
+**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. Under the real profile, `live-evals spend` read a logged run from the volume, and a refused folder list stopped it with an error.
 
-**The reviews.** Gitar found that a 429 made a run unmeasured. Commit `998057f` leaves out an attempt with an error status, and Gitar approved. Codex round 1 found P1-1: a session can delete the spend file and restart the budget. `docs/reviews/pr-291-response.md` holds the answer, the ledger of D-1171. Gitar then found that a forged end line in the ledger closes a killed run. A run that a log opened now needs a log end, and the documents name the rest of the risk.
+**The reviews.** Gitar approved `1f62982` with 2 of 2 findings closed. Codex round 1 found P1-1, fixed by the ledger of D-1171. Codex round 2 found P1-2 on `1f62982`: `Start` read the ledger without the logs. The owner chose option B (D-1173), and `docs/reviews/pr-291-response.md` holds the answer.
 
-**Checkpoint (D-946).** The session passed 300K tokens of context after the audit fix.
+**Open work.**
 
-**Review state.** The repeat Codex review covers effective head `1f62982301616070b2838c6aad1f4e50de101794`. Verdict: Changes required. P1-1 is fixed. P1-2 remains open. The current Gitar review passes with no open thread.
-
-**Checks.** GitHub verify, `pr-contract`, and Gitar pass on the effective head. `review-gate` waits for this record. Local `make verify` passes with Node 22.23.2.
-
-**Open work.** Fix P1-2, add its regression test, push the correction, and get a current Gitar review before the next Codex review.
+- The Gitar pass of the P1-2 commit, and the answer to each new Gitar comment.
+- The CI of the P1-2 commit.
+- `make codex-review PR=291`, the repeat review of P1-2 in round 2. Then ask the owner for the merge (D-828, D-834).
+- Unverified: a running session log holds the result of each earlier tool call. The classifier refused a local `claude -p` test. The owner can run it, or the first live session proves it.
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
 
@@ -153,6 +152,8 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner found a recorded spend 30 times the real cost.** The session wrote the estimate of a replay by hand. The owner asked for measured spend from provider usage alone.
 
 **The owner chose three rules.** An unmeasured run counts as the full budget (D-1169). The script reads the spend from the session logs (D-1170). After the Codex finding, an append-only ledger outside the run folder holds each line (D-1171).
+
+**A second session answered the Codex round 2 finding.** A forged ledger end let the next paid command start. The owner chose a start that reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
 
 ## The archive
 

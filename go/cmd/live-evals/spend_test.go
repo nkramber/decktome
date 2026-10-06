@@ -42,7 +42,9 @@ func TestSpendReadsEachSessionLog(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Runs != 3 || got.Charged != 0.71 || got.Refused != 1 || len(got.FileOnly) != 1 {
-		t.Fatalf("report = %+v, want 3 runs, $0.71, 1 refused line, 1 run absent from the logs", got)
+	// The ledger run has no end line in a log, so it counts as the full
+	// budget (D-1173).
+	if got.Runs != 3 || got.USD != 0.71 || got.Charged != 3 || got.Refused != 1 || len(got.FileOnly) != 1 || len(got.Unmeasured) != 1 {
+		t.Fatalf("report = %+v, want 3 runs, $0.71 measured, charged $3, 1 refused line, 1 unmeasured run absent from the logs", got)
 	}
 }

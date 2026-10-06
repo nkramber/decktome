@@ -9,6 +9,9 @@
 ;;   HOME      the home folder of the owner
 ;;   RUN       the run folder of the deck: the clone, the bundle, the logs
 ;;   LEDGER    the append-only spend ledger of the deck, outside RUN
+;;   LOGS      the logs folder of the deck, outside RUN
+;;   LOGS_RX   the same folder as a regular expression, with each special
+;;             character escaped
 ;;   CACHE     the caches of the sessions: Go, npm, pnpm, and the npm prefix
 ;;   CODEX     the CODEX_HOME of the sessions, with its own login
 ;;   BIN       the folder of the pinned claude binary
@@ -51,6 +54,14 @@
 ;; of a flag or a mode. So a session can not delete or rewrite a line.
 (allow file-read-data (literal (param "LEDGER")))
 (allow file-write-data (literal (param "LEDGER")))
+
+;; The session logs of the deck (D-1173). A paid command reads them
+;; before it starts, because only a log closes a run. The rule allows
+;; a list of the folder and the read of session-<n>.log: no other file
+;; of the folder, and no write.
+(allow file-read-data
+  (literal (param "LOGS"))
+  (regex (string-append "^" (param "LOGS_RX") "/session-[0-9]+\\.log$")))
 
 ;; Each of these runs code outside the profile, or reads a secret of the
 ;; owner: the keychain, an app through Launch Services or Apple events,

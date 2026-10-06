@@ -1,6 +1,7 @@
 package gatekit
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,8 @@ func TestNewClientWritesTheSpendOfALiveEval(t *testing.T) {
 	t.Setenv(livespend.EnvBundle, dir)
 	t.Setenv(livespend.EnvBudget, "3.00")
 	t.Setenv(livespend.EnvLedger, ledgerFile(t))
+	logs := t.TempDir()
+	t.Setenv(livespend.EnvLogs, logs)
 	t.Setenv("OPENAI_API_KEY", "sk-test-not-called")
 	t.Setenv("ANTHROPIC_API_KEY", "sk-test-not-called")
 	client, done, err := NewClient("chat-probe", Quiet())
@@ -32,7 +35,23 @@ func TestNewClientWritesTheSpendOfALiveEval(t *testing.T) {
 	if len(lines) != 2 || !strings.Contains(lines[0], `"event":"start"`) || !strings.Contains(lines[1], `"measured":true`) {
 		t.Fatalf("spend file = %q, want a start line and a measured end line", raw)
 	}
-	// The run reads as measured, so the next paid run can start.
+	// No log holds the end line yet, so the run reads as unmeasured
+	// (D-1173).
+	if _, _, err := NewClient("revise-gate", Quiet()); err == nil {
+		t.Fatal("the second run must wait for the end line in a log")
+	}
+	// The stderr of the run reaches the log, so the run reads as measured,
+	// and the next paid run can start.
+	var log strings.Builder
+	for _, l := range lines {
+		ev, _ := json.Marshal(map[string]any{"type": "user", "message": map[string]any{"content": []any{
+			map[string]any{"type": "tool_result", "content": livespend.Marker + l},
+		}}})
+		log.Write(append(ev, '\n'))
+	}
+	if err := os.WriteFile(filepath.Join(logs, "session-1.log"), []byte(log.String()), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	if _, done2, err := NewClient("revise-gate", Quiet()); err != nil {
 		t.Fatalf("the second run: %v", err)
 	} else {
@@ -45,6 +64,7 @@ func TestNewClientRefusesAfterAnUnmeasuredRun(t *testing.T) {
 	t.Setenv(livespend.EnvBundle, dir)
 	t.Setenv(livespend.EnvBudget, "3.00")
 	t.Setenv(livespend.EnvLedger, ledgerFile(t))
+	t.Setenv(livespend.EnvLogs, t.TempDir())
 	t.Setenv("OPENAI_API_KEY", "sk-test-not-called")
 	t.Setenv("ANTHROPIC_API_KEY", "sk-test-not-called")
 	// A start line with no end line: the run was killed.

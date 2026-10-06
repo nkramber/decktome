@@ -98,14 +98,17 @@ The meter marks these runs unmeasured, and each one counts as the full budget:
 - a run with a call that gave no usage
 - a run with a model that has no price row
 - a run with a start line and no end line
+- a run with no end line in a session log, also when a file holds its end (D-1173)
 
 The meter leaves out an attempt that the provider answers with an HTTP error status, such as 429 or 5xx. Such an answer holds no completion, and the provider bills no token for it. A timeout has no status, so it stays unmeasured.
 
-The ledger is `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder (D-1171). The script sets its `uappnd` flag, and the profile allows only an append to it. So a session can not delete, truncate, or rewrite it. A paid command refuses to start when the ledger or `spend.jsonl` reads the budget as spent, or when it has no ledger. Each tick probes the rule before any session. `make test-smoke` writes no line, so it refuses to run in a session.
+The ledger is `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder (D-1171). The script sets its `uappnd` flag, and the profile allows only an append to it. So a session can not delete, truncate, or rewrite it. A paid command refuses to start when the session logs, the ledger, or `spend.jsonl` read the budget as spent. It also refuses with no ledger or no logs folder.
+
+`LIVE_EVAL_LOGS` names the logs folder of the deck, and the profile allows a list of it and the read of `session-<n>.log` alone (D-1173). Each tick probes both rules before any session. `make test-smoke` writes no line, so it refuses to run in a session.
 
 The budget reads measured spend alone, and the estimates of this document serve only for a plan. The script sums the marked lines of the session logs and the ledger, which a session can not delete or rewrite (D-1170, D-1171). `spend.jsonl` is a cross-check. The script refuses and reports a line with no run id, and it reports a run that no log holds. For one run, the highest cost wins.
 
-A session can still append a forged end line for a run that it killed. When a log holds the start of a run, only a log closes it, so a forge must also reach a tool result. A session can also change the meter in its own clone before a run, and the log check does not see such a change.
+A session can still append a forged end line for a run that it killed. Only a log closes a run, so a forge must also reach a tool result (D-1173). A run in the background has no end line in the log, and a run with its stderr redirected has none. Each one counts as the full budget. A session can also change the meter in its own clone before a run, and the log check does not see such a change.
 
 The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
 

@@ -165,10 +165,13 @@ You can spend at most ${{budget}} on paid targets, the replays included. Free la
 - Before each paid run, read its estimate in `docs/reference/paid-targets.md`. The budget reads measured spend alone.
 - Each paid target writes its own start line and end line to `{{bundle}}/spend.jsonl` (D-1169).
 - Run one paid target at a time. A paid target refuses to start while the start line of another run has no end line.
-- To read your total, run `cd go && go run ./cmd/live-evals spend -ledger "$LIVE_EVAL_LEDGER" -budget {{budget}} < {{bundle}}/spend.jsonl`.
+- Run each paid target in the foreground. Never redirect its stderr, for example with `2>&1` or `2>/dev/null` (D-1173).
+- To read your total, run `cd go && go run ./cmd/live-evals spend -logs "$LIVE_EVAL_LOGS" -ledger "$LIVE_EVAL_LEDGER" -budget {{budget}} < {{bundle}}/spend.jsonl`.
 - Stop all paid runs when the total comes near ${{budget}}. A paid target refuses to start when the spend reaches the budget.
 
 CAUTION: Never write, edit, or delete a line of `{{bundle}}/spend.jsonl` or of the ledger. The script refuses a hand-written line. It reads your spend from the log of the session and from the append-only ledger (D-1170, D-1171).
+
+CAUTION: Keep the stderr of each paid target in the tool result. A run with no end line in the log of the session counts as the full budget, also when the ledger holds its end (D-1173).
 
 CAUTION: A call that gave no usage, or a model with no price row, makes the run unmeasured. Such a run counts as the full budget, so no paid target starts after it. Write it in `findings`.
 

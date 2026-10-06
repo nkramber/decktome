@@ -11,7 +11,8 @@
 // append-only flag, and the profile of the session allows only an append
 // to it. So a session can not delete, truncate, or rewrite a line, and
 // each start reads the spend from it (D-1171). An appended line can still
-// be forged, so the end sum also reads the session logs.
+// be forged, so each start and the end sum also read the session logs.
+// A run with no end line in a log counts as unmeasured (D-1173).
 package livespend
 
 import (
@@ -25,6 +26,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -38,6 +40,8 @@ const (
 	EnvBundle = "LIVE_EVAL_BUNDLE"
 	EnvBudget = "LIVE_EVAL_BUDGET_USD"
 	EnvLedger = "LIVE_EVAL_LEDGER"
+	// EnvLogs is the folder of the session logs, session-<n>.log.
+	EnvLogs = "LIVE_EVAL_LOGS"
 )
 
 // SpendFile is the name of the spend file in the bundle.
@@ -75,10 +79,11 @@ type Meter struct {
 }
 
 // Start opens the meter of a paid run. When getenv names a bundle, it
-// refuses the run when the ledger or the spend file reads the budget as
-// spent, and it writes the start line before any provider call. A live
-// eval with no ledger, or with a ledger that does not read, starts no
-// paid run (D-1171).
+// refuses the run when the session logs, the ledger, or the spend file
+// read the budget as spent, and it writes the start line before any
+// provider call. A run with no end line in a log counts as the full
+// budget, so a forged end line in a file starts no paid run (D-1173). A
+// live eval with no ledger or no logs folder starts no paid run (D-1171).
 func Start(target string, getenv func(string) string, prices *llm.PriceTable, stderr io.Writer) (*Meter, error) {
 	bundle := strings.TrimSpace(getenv(EnvBundle))
 	if bundle == "" {
@@ -95,11 +100,24 @@ func Start(target string, getenv func(string) string, prices *llm.PriceTable, st
 	if _, err := os.Stat(ledger); err != nil {
 		return nil, fmt.Errorf("the ledger of the live eval: %w (D-1171)", err)
 	}
-	path := filepath.Join(bundle, SpendFile)
-	sum, err := SumFiles(budget, ledger, path)
-	if err != nil {
+	logs := strings.TrimSpace(getenv(EnvLogs))
+	if logs == "" {
+		return nil, fmt.Errorf("a live eval needs %s, the folder of the session logs, to start a paid run (D-1173)", EnvLogs)
+	}
+	if fi, err := os.Stat(logs); err != nil || !fi.IsDir() {
+		return nil, fmt.Errorf("the logs folder of the live eval %s does not read (D-1173)", logs)
+	}
+	g := NewLedger()
+	if err := g.AddLogs(logs); err != nil {
 		return nil, err
 	}
+	path := filepath.Join(bundle, SpendFile)
+	for _, p := range []string{ledger, path} {
+		if err := g.AddPath(p); err != nil {
+			return nil, err
+		}
+	}
+	sum := g.Sum(budget, true)
 	if sum.Spent() {
 		return nil, fmt.Errorf("the live-eval budget of $%.2f is spent (%s): no paid run can start (D-1169)", budget, sum.Text())
 	}
@@ -240,8 +258,8 @@ func (s Sum) Text() string {
 // Ledger collects the lines of the logs and of the spend files. For one
 // id, the highest cost wins, and one unmeasured end line makes the run
 // unmeasured. So a forged line can not lower the cost of a run that
-// ended (D-1170). When a log holds the start of a run, only a log closes
-// it: an end line in a file alone does not (D-1171). A session can still
+// ended (D-1170). When the logs are read, only a log closes a run: an end
+// line in a file alone does not (D-1171, D-1173). A session can still
 // forge the end of a killed run in a file and in a tool result, and no
 // file inside the sandbox can prove an end line real.
 type Ledger struct {
@@ -256,7 +274,6 @@ type run struct {
 	usd      float64
 	inLog    bool
 	inFile   bool
-	logStart bool
 	logEnd   bool
 }
 
@@ -275,9 +292,7 @@ func (g *Ledger) add(l Line, fromLog bool) bool {
 	}
 	if fromLog {
 		r.inLog = true
-		if l.Event == "start" {
-			r.logStart = true
-		} else {
+		if l.Event == "end" {
 			r.logEnd = true
 		}
 	} else {
@@ -319,6 +334,35 @@ func (g *Ledger) AddFile(r io.Reader) error {
 			return err
 		}
 	}
+}
+
+// logName matches the name of a session log.
+var logName = regexp.MustCompile(`^session-[0-9]+\.log$`)
+
+// AddLogs reads each session log, session-<n>.log, of the folder dir. A
+// folder that does not list is an error, not a folder with no log, so a
+// refusal of the profile starts no paid run (D-1173).
+func (g *Ledger) AddLogs(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return fmt.Errorf("the logs folder of the live eval: %w (D-1173)", err)
+	}
+	for _, e := range entries {
+		if e.IsDir() || !logName.MatchString(e.Name()) {
+			continue
+		}
+		p := filepath.Join(dir, e.Name())
+		f, err := os.Open(p)
+		if err != nil {
+			return err
+		}
+		err = g.AddLog(f)
+		_ = f.Close()
+		if err != nil {
+			return fmt.Errorf("%s: %w", p, err)
+		}
+	}
+	return nil
 }
 
 // AddLog reads one session log of stream-json events. It takes the
@@ -399,6 +443,8 @@ func toolResults(raw []byte) []string {
 }
 
 // Sum totals the ledger. A run with no measured end line is unmeasured.
+// When logs is true, a run with no end line in a log is unmeasured too,
+// also when a file holds its end (D-1173).
 func (g *Ledger) Sum(budget float64, logs bool) Sum {
 	s := Sum{Budget: budget, Refused: g.refused}
 	ids := make([]string, 0, len(g.runs))
@@ -410,7 +456,7 @@ func (g *Ledger) Sum(budget float64, logs bool) Sum {
 		r := g.runs[id]
 		s.Runs++
 		s.USD += r.usd
-		if !r.ended || !r.measured || logs && r.logStart && !r.logEnd {
+		if !r.ended || !r.measured || logs && !r.logEnd {
 			s.Unmeasured = append(s.Unmeasured, r.target+" "+id)
 		}
 		if logs && !r.inLog {
@@ -418,18 +464,6 @@ func (g *Ledger) Sum(budget float64, logs bool) Sum {
 		}
 	}
 	return s
-}
-
-// SumFiles sums spend files alone, the ledger and the spend file of the
-// bundle. An absent file adds no spend.
-func SumFiles(budget float64, paths ...string) (Sum, error) {
-	g := NewLedger()
-	for _, p := range paths {
-		if err := g.AddPath(p); err != nil {
-			return Sum{}, err
-		}
-	}
-	return g.Sum(budget, false), nil
 }
 
 // AddPath reads one spend file. An absent file adds nothing.

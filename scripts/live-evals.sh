@@ -277,10 +277,17 @@ private_file() { # file
 }
 
 # The flags of sandbox-exec for one run folder. The session and the probe
-# of the sandbox use the same flags (D-1168).
-sandbox_flags() { # run ledger
-  SANDBOX_FLAGS=(-f "$PROFILE" -D HOME="$HOME" -D RUN="$1" -D LEDGER="$2" -D CACHE="$CACHE" -D CODEX="$CODEX_DIR"
-    -D BIN="$BIN" -D CARDS="$CARDS" -D NODE22="$NODE22" -D NODE20="$NODE20")
+# of the sandbox use the same flags (D-1168). LOGS is the logs folder of
+# the deck, and LOGS_RX is the same path as a regular expression. So the
+# profile allows a list of the folder and a read of its session-<n>.log
+# files alone (D-1173).
+sandbox_flags() { # run ledger logs
+  SANDBOX_FLAGS=(-f "$PROFILE" -D HOME="$HOME" -D RUN="$1" -D LEDGER="$2" -D LOGS="$3" -D LOGS_RX="$(rx_quote "$3")"
+    -D CACHE="$CACHE" -D CODEX="$CODEX_DIR" -D BIN="$BIN" -D CARDS="$CARDS" -D NODE22="$NODE22" -D NODE20="$NODE20")
+}
+
+rx_quote() { # text -> the text with each regular-expression character escaped
+  printf '%s' "$1" | sed 's/[][\\.*^$+?(){}|]/\\&/g'
 }
 
 # The ledger of a deck holds the measured spend of each paid run (D-1171).
@@ -356,7 +363,7 @@ if [ "$dry" = 0 ]; then
   probe=$HOME_DIR/.probe
   SANDBOX_NOTICE=$STATE/sandbox-notice
   if ! rm -rf "$probe" || ! mkdir -p "$probe/tmp"; then die "can not make the probe folder $probe"; fi
-  sandbox_flags "$probe" "$probe/no-ledger"
+  sandbox_flags "$probe" "$probe/no-ledger" "$probe/no-logs"
   if ! env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" \
     /bin/mkdir -p "$probe/tmp/claude-$(id -u)/probe" 2>/dev/null; then
     if [ ! -f "$SANDBOX_NOTICE" ]; then
@@ -370,7 +377,7 @@ if [ "$dry" = 0 ]; then
   probe_ledger=$HOME_DIR/.probe-ledger/spend.jsonl
   drop_ledger "$probe_ledger"
   make_ledger "$probe_ledger" || die "can not make the probe ledger $probe_ledger"
-  sandbox_flags "$probe" "$probe_ledger"
+  sandbox_flags "$probe" "$probe_ledger" "$probe/no-logs"
   ledger_ok=0
   # shellcheck disable=SC2016 # $1 expands in the shell under the profile
   if env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" /bin/sh -c 'echo probe >> "$1"' sh "$probe_ledger" 2>/dev/null \
@@ -386,6 +393,28 @@ if [ "$dry" = 0 ]; then
       touch "$SANDBOX_NOTICE"
     fi
     die "the profile does not keep the spend ledger append-only (D-1171)"
+  fi
+  # A paid command reads the session logs of its deck, and no other file
+  # of the logs folder (D-1173). A refusal stops the tick the same way.
+  probe_logs=$HOME_DIR/.probe-logs
+  if ! rm -rf "$probe_logs" || ! mkdir -p "$probe_logs"; then die "can not make the probe logs $probe_logs"; fi
+  echo probe > "$probe_logs/session-1.log"
+  echo probe > "$probe_logs/context.json"
+  sandbox_flags "$probe" "$probe_ledger" "$probe_logs"
+  if env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" /bin/ls "$probe_logs" >/dev/null 2>&1 \
+    && env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" /bin/cat "$probe_logs/session-1.log" >/dev/null 2>&1 \
+    && ! env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" /bin/cat "$probe_logs/context.json" >/dev/null 2>&1; then
+    logs_ok=1
+  else
+    logs_ok=0
+  fi
+  rm -rf "$probe_logs"
+  if [ "$logs_ok" != 1 ]; then
+    if [ ! -f "$SANDBOX_NOTICE" ]; then
+      notify "decktome live evals stopped: the logs" "The profile does not limit a session to the read of its own logs. No session starts until the probe passes (D-1173)."
+      touch "$SANDBOX_NOTICE"
+    fi
+    die "the profile does not limit a session to the read of its own logs (D-1173)"
   fi
   rm -rf "$probe" "$SANDBOX_NOTICE"
 fi
@@ -456,7 +485,7 @@ run_claude() { # deck run prompt-file log-file -> exit code
   if [ -n "${LIVE_EVALS_MODEL:-}" ]; then model_args=(--model "$LIVE_EVALS_MODEL"); fi
   check_sum "$CLAUDE_BIN" "$CLAUDE_SUM"
   make_ledger "$ledger" || { say "can not make the ledger $ledger"; return 1; }
-  sandbox_flags "$run" "$ledger"
+  sandbox_flags "$run" "$ledger" "$RUNS/$deck"
   say "session starts in $run/repo, log $log"
   # env -i passes only the names below. No cloud credential, no login of
   # the owner, and no provider key reach the process. A provider key in
@@ -469,7 +498,7 @@ run_claude() { # deck run prompt-file log-file -> exit code
     GOCACHE="$CACHE/go-build" GOMODCACHE="$CACHE/go-mod" GOPATH="$CACHE/gopath" \
     npm_config_prefix="$CACHE/npm-global" npm_config_cache="$CACHE/npm" \
     npm_config_store_dir="$CACHE/pnpm-store" PNPM_HOME="$CACHE/pnpm-home" CODEX_HOME="$CODEX_DIR" \
-    LIVE_EVAL_BUNDLE="$run/bundle" LIVE_EVAL_BUDGET_USD="$BUDGET" LIVE_EVAL_LEDGER="$ledger" \
+    LIVE_EVAL_BUNDLE="$run/bundle" LIVE_EVAL_BUDGET_USD="$BUDGET" LIVE_EVAL_LEDGER="$ledger" LIVE_EVAL_LOGS="$RUNS/$deck" \
     sandbox-exec "${SANDBOX_FLAGS[@]}" \
     "$CLAUDE_BIN" -p "$(cat "$prompt")" --permission-mode bypassPermissions \
       --add-dir "$run/bundle" --add-dir "$run/replay" \
