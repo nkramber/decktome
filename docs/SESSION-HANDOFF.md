@@ -27,13 +27,12 @@ Author provider: Claude Code
 
 **The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. Under the real profile, `live-evals spend` read a logged run from the volume, and a refused folder list stopped it with an error.
 
-**The reviews.** Gitar approved `1f62982` with 2 of 2 findings closed. Codex round 1 found P1-1, fixed by the ledger of D-1171. Codex round 2 found P1-2 on `1f62982`: `Start` read the ledger without the logs. The owner chose option B (D-1173), and `docs/reviews/pr-291-response.md` holds the answer.
+**The reviews.** Gitar approved `c43271b` with 2 of 2 findings closed. Codex round 1 found P1-1, fixed by the ledger of D-1171. Codex round 2 found P1-2 on `1f62982`: `Start` read the ledger without the logs. The owner chose option B (D-1173), and `docs/reviews/pr-291-response.md` holds the answer. Codex round 3 approves `c43271b`, and P1-2 is fixed.
 
 **Open work.**
 
-- The Gitar pass of the P1-2 commit, and the answer to each new Gitar comment.
-- The CI of the P1-2 commit.
-- `make codex-review PR=291`, the repeat review of P1-2 in round 2. Then ask the owner for the merge (D-828, D-834).
+- Push the review record and this hand-off, then verify `review-gate` on the published head.
+- Ask the owner to confirm the merge after the required checks pass (D-828, D-834).
 - Unverified: a running session log holds the result of each earlier tool call. The classifier refused a local `claude -p` test. The owner can run it, or the first live session proves it.
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
