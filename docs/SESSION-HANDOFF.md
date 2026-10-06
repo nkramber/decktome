@@ -16,7 +16,7 @@ Author provider: Claude Code
 
 **The restart.** The retry of `v-KefDsksH23qUg16zCWlI` did not run, because its status is `out-of-scope`, and the queue held no item. The owner wrote a new thumbs-down (D-1174). The install then ran with the PATH fix of D-1175. Each tick runs `main`, so each change of this pull request reaches a session after the merge.
 
-**The proof.** The session of `v-lKqWOkMKOmppB0RJBmRb` ran two `chat-probe` replays. The ledger holds a start line and a measured end line for each: $0.00074 in 4 calls, and $0.00061 in 6 calls. The second start read the end line of the first in the session log, so the open item of D-1173 holds. The notice read `Spent: measured $0.0013 in 2 runs`.
+**The proof.** The session of `v-lKqWOkMKOmppB0RJBmRb` ran two `chat-probe` replays. The ledger holds a start line and a measured end line for each: $0.00074 in 4 calls, and $0.00061 in 6 calls. The second start read the end line of the first in the session log, so the open item of D-1173 holds. The notice read `Spent: measured $0.0013 in 2 runs`. `docs/reference/live-evals-ledger-2026-10-06.md` holds the evidence.
 
 **The session.** It found a real fault: the theme question named "other" and "themes". It opened #292 and ended `blocked`, because `make codex-review` failed in the sandbox.
 
@@ -32,9 +32,9 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes. A dry tick with the PATH of the agent passed the pins and the new probe. With no deny of the security server, Codex got an answer.
 
-**The reviews.** Gitar approved `141fe63` with 1 of 1 findings closed. Codex round 1 found P2-1, and `docs/reviews/pr-293-response.md` answers it. Next: push, the Gitar pass, and Codex round 2.
+**The reviews.** Gitar approved `141fe63` with 1 of 1 findings closed. Codex round 1 found P2-1, and round 2 found the ledger outside the checkout. `docs/reviews/pr-293-response.md` answers both. Next: the Gitar pass and Codex round 3.
 
-**Review.** The effective head is `0444dc546da2abdcaa1f76b4e655d30e3bddf23b`. The review is `Blocked`. P2-1 is fixed. The measured-spend ledger gate has no source evidence in this checkout.
+**Review.** Codex round 2 blocked `0444dc5` on the ledger gate alone. P2-1 is fixed.
 
 **Open work.**
 
