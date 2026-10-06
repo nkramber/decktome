@@ -91,7 +91,7 @@ With `--here`, the cycle commits on the branch of the session and pushes nothing
 
 `./start-live-evals` runs `scripts/live-evals.sh`, the live evals (D-1132 to D-1158). It polls every five minutes for a new deck, a revision, a thumbs down (D-1149), or a "Leave feedback" note (D-1156). For each one, it starts one headless Claude Code session with `--permission-mode bypassPermissions`. Each session spends the Claude plan and the Codex plan of the owner. It also spends at most $3.00 of provider money on paid targets (D-1134).
 
-Each paid command of a session meters every provider call: usage times `prices.json` (D-1169). It writes a start line and an end line to `spend.jsonl` of the bundle. It also prints each line on stderr after the marker `LIVE-EVAL-SPEND`. The session never writes a line. No provider key holds the cap.
+Each paid command of a session meters every provider call: usage times `prices.json` (D-1169). It writes a start line and an end line to the ledger and to `spend.jsonl` of the bundle. It also prints each line on stderr after the marker `LIVE-EVAL-SPEND`. The session never writes a line. No provider key holds the cap.
 
 The meter marks these runs unmeasured, and each one counts as the full budget:
 
@@ -101,9 +101,9 @@ The meter marks these runs unmeasured, and each one counts as the full budget:
 
 The meter leaves out an attempt that the provider answers with an HTTP error status, such as 429 or 5xx. Such an answer holds no completion, and the provider bills no token for it. A timeout has no status, so it stays unmeasured.
 
-A paid command refuses to start when `spend.jsonl` reads the budget as spent. `make test-smoke` writes no line, so it refuses to run in a session.
+The ledger is `$RUNS/<deck>/ledger/spend.jsonl`, outside the run folder (D-1171). The script sets its `uappnd` flag, and the profile allows only an append to it. So a session can not delete, truncate, or rewrite it. A paid command refuses to start when the ledger or `spend.jsonl` reads the budget as spent, or when it has no ledger. Each tick probes the rule before any session. `make test-smoke` writes no line, so it refuses to run in a session.
 
-The budget reads measured spend alone, and the estimates of this document serve only for a plan. The script sums the marked lines of the session logs, which a session can not edit (D-1170). `spend.jsonl` is a cross-check. The script refuses and reports a line with no run id, and it reports a run that no log holds. For one run, the highest cost wins.
+The budget reads measured spend alone, and the estimates of this document serve only for a plan. The script sums the marked lines of the session logs and the ledger, which a session can not lower (D-1170, D-1171). `spend.jsonl` is a cross-check. The script refuses and reports a line with no run id, and it reports a run that no log holds. For one run, the highest cost wins.
 
 A session can still change the meter in its own clone before a run, and the log check does not see such a change. The session gets the provider keys in the `.env` of its clone (D-1142). The script closes `make api-build`, `make live-web`, and `make live-sweep` to a session. `--dry` prints the summary and costs nothing. `--once` does one pass.
 

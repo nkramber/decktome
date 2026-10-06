@@ -278,9 +278,27 @@ private_file() { # file
 
 # The flags of sandbox-exec for one run folder. The session and the probe
 # of the sandbox use the same flags (D-1168).
-sandbox_flags() { # run
-  SANDBOX_FLAGS=(-f "$PROFILE" -D HOME="$HOME" -D RUN="$1" -D CACHE="$CACHE" -D CODEX="$CODEX_DIR"
+sandbox_flags() { # run ledger
+  SANDBOX_FLAGS=(-f "$PROFILE" -D HOME="$HOME" -D RUN="$1" -D LEDGER="$2" -D CACHE="$CACHE" -D CODEX="$CODEX_DIR"
     -D BIN="$BIN" -D CARDS="$CARDS" -D NODE22="$NODE22" -D NODE20="$NODE20")
+}
+
+# The ledger of a deck holds the measured spend of each paid run (D-1171).
+# It sits outside the run folder, and its append-only flag stays. The
+# profile allows a session to append to it, and nothing more. So a
+# session can not delete, truncate, or rewrite the spend that each start
+# of a paid command reads.
+make_ledger() { # file -> 0 when the file exists with the append-only flag
+  mkdir -p "$(dirname "$1")" || return 1
+  [ -f "$1" ] || : > "$1" || return 1
+  chflags uappnd "$1" || return 1
+  case ",$(stat -f %Sf "$1")," in *,uappnd,*) return 0 ;; esac
+  return 1
+}
+
+drop_ledger() { # file -> remove a probe ledger
+  chflags nouappnd "$1" 2>/dev/null
+  rm -rf "$(dirname "$1")"
 }
 
 if [ "$dry" = 0 ]; then
@@ -338,7 +356,7 @@ if [ "$dry" = 0 ]; then
   probe=$HOME_DIR/.probe
   SANDBOX_NOTICE=$STATE/sandbox-notice
   if ! rm -rf "$probe" || ! mkdir -p "$probe/tmp"; then die "can not make the probe folder $probe"; fi
-  sandbox_flags "$probe"
+  sandbox_flags "$probe" "$probe/no-ledger"
   if ! env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" \
     /bin/mkdir -p "$probe/tmp/claude-$(id -u)/probe" 2>/dev/null; then
     if [ ! -f "$SANDBOX_NOTICE" ]; then
@@ -346,6 +364,28 @@ if [ "$dry" = 0 ]; then
       touch "$SANDBOX_NOTICE"
     fi
     die "the profile refuses the temporary folder of a session, $probe/tmp/claude-$(id -u) (D-1168)"
+  fi
+  # The ledger takes an append under the profile, and no truncate and no
+  # change of its flag (D-1171). A refusal stops the tick the same way.
+  probe_ledger=$HOME_DIR/.probe-ledger/spend.jsonl
+  drop_ledger "$probe_ledger"
+  make_ledger "$probe_ledger" || die "can not make the probe ledger $probe_ledger"
+  sandbox_flags "$probe" "$probe_ledger"
+  ledger_ok=0
+  # shellcheck disable=SC2016 # $1 expands in the shell under the profile
+  if env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" /bin/sh -c 'echo probe >> "$1"' sh "$probe_ledger" 2>/dev/null \
+    && ! env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" /bin/sh -c ': > "$1"' sh "$probe_ledger" 2>/dev/null \
+    && ! env -i PATH=/usr/bin:/bin sandbox-exec "${SANDBOX_FLAGS[@]}" /usr/bin/chflags nouappnd "$probe_ledger" 2>/dev/null \
+    && [ "$(cat "$probe_ledger")" = probe ]; then
+    ledger_ok=1
+  fi
+  drop_ledger "$probe_ledger"
+  if [ "$ledger_ok" != 1 ]; then
+    if [ ! -f "$SANDBOX_NOTICE" ]; then
+      notify "decktome live evals stopped: the ledger" "The profile does not keep the spend ledger append-only. No session starts until the probe passes (D-1171)."
+      touch "$SANDBOX_NOTICE"
+    fi
+    die "the profile does not keep the spend ledger append-only (D-1171)"
   fi
   rm -rf "$probe" "$SANDBOX_NOTICE"
 fi
@@ -411,11 +451,12 @@ PY
 }
 
 run_claude() { # deck run prompt-file log-file -> exit code
-  local deck=$1 run=$2 prompt=$3 log=$4 started rc model_args=()
+  local deck=$1 run=$2 prompt=$3 log=$4 started rc model_args=() ledger=$RUNS/$1/ledger/spend.jsonl
   runfs mkdir "$HOME_DIR" "$deck" tmp claude-config gh-config xdg-config replay || return 1
   if [ -n "${LIVE_EVALS_MODEL:-}" ]; then model_args=(--model "$LIVE_EVALS_MODEL"); fi
   check_sum "$CLAUDE_BIN" "$CLAUDE_SUM"
-  sandbox_flags "$run"
+  make_ledger "$ledger" || { say "can not make the ledger $ledger"; return 1; }
+  sandbox_flags "$run" "$ledger"
   say "session starts in $run/repo, log $log"
   # env -i passes only the names below. No cloud credential, no login of
   # the owner, and no provider key reach the process. A provider key in
@@ -428,7 +469,7 @@ run_claude() { # deck run prompt-file log-file -> exit code
     GOCACHE="$CACHE/go-build" GOMODCACHE="$CACHE/go-mod" GOPATH="$CACHE/gopath" \
     npm_config_prefix="$CACHE/npm-global" npm_config_cache="$CACHE/npm" \
     npm_config_store_dir="$CACHE/pnpm-store" PNPM_HOME="$CACHE/pnpm-home" CODEX_HOME="$CODEX_DIR" \
-    LIVE_EVAL_BUNDLE="$run/bundle" LIVE_EVAL_BUDGET_USD="$BUDGET" \
+    LIVE_EVAL_BUNDLE="$run/bundle" LIVE_EVAL_BUDGET_USD="$BUDGET" LIVE_EVAL_LEDGER="$ledger" \
     sandbox-exec "${SANDBOX_FLAGS[@]}" \
     "$CLAUDE_BIN" -p "$(cat "$prompt")" --permission-mode bypassPermissions \
       --add-dir "$run/bundle" --add-dir "$run/replay" \
@@ -462,12 +503,14 @@ fix_notice() { # deck -> notify once when the session chose a fix (D-1143)
 }
 
 spent() { # deck -> the measured spend of the item, for a notice (D-1169, D-1170)
-  # The marked lines of the session logs are the source. The session can
-  # not edit a log, and spend.jsonl of the bundle is a cross-check. The
-  # tool refuses a line that no paid command wrote, and an unmeasured run
+  # The marked lines of the session logs and the append-only ledger are
+  # the sources (D-1171). The session can not edit a log or lower the
+  # ledger, and spend.jsonl of the bundle is a cross-check. The tool
+  # refuses a line that no paid command wrote, and an unmeasured run
   # counts as the full budget.
-  local r
-  r=$({ rget "$1" bundle/spend.jsonl || true; } | tool spend -logs "$RUNS/$1" -budget "$BUDGET" 2>/dev/null) || r=""
+  local r ledger=$RUNS/$1/ledger/spend.jsonl
+  [ -f "$ledger" ] || ledger=""
+  r=$({ rget "$1" bundle/spend.jsonl || true; } | tool spend -logs "$RUNS/$1" -ledger "$ledger" -budget "$BUDGET" 2>/dev/null) || r=""
   if [ -z "$r" ]; then
     echo "unread, counted as \$$BUDGET of \$$BUDGET"
     return 0

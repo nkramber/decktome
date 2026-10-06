@@ -31,14 +31,18 @@ func TestSpendReadsEachSessionLog(t *testing.T) {
 	}
 	var out bytes.Buffer
 	file := strings.NewReader(`{"target":"chat-probe","usd":0.30}` + "\n")
-	if err := spend(dir, 3, file, &out); err != nil {
+	ledger := filepath.Join(dir, "ledger.jsonl")
+	if err := os.WriteFile(ledger, []byte(`{"id":"4444444444444444","event":"end","target":"chat-probe","usd":0.2,"measured":true}`+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := spend(dir, ledger, 3, file, &out); err != nil {
 		t.Fatal(err)
 	}
 	var got spendReport
 	if err := json.Unmarshal(out.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got.Runs != 2 || got.Charged != 0.51 || got.Refused != 1 || len(got.FileOnly) != 0 {
-		t.Fatalf("report = %+v, want 2 runs, $0.51, 1 refused line", got)
+	if got.Runs != 3 || got.Charged != 0.71 || got.Refused != 1 || len(got.FileOnly) != 1 {
+		t.Fatalf("report = %+v, want 3 runs, $0.71, 1 refused line, 1 run absent from the logs", got)
 	}
 }

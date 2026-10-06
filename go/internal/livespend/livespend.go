@@ -3,9 +3,14 @@
 //
 // A paid command writes two lines for each run: a start line before its
 // first provider call, and an end line with the measured calls, tokens,
-// and cost. It appends each line to the spend file of the bundle, and it
-// prints each line on stderr after Marker, so the session log holds it.
-// No session writes a line by hand.
+// and cost. It appends each line to the ledger and to the spend file of
+// the bundle, and it prints each line on stderr after Marker, so the
+// session log holds it. No session writes a line by hand.
+//
+// The ledger is a file outside the run folder. The script sets its
+// append-only flag, and the profile of the session allows only an append
+// to it. So a session can not delete, truncate, or rewrite it, and each
+// start reads the spend from it (D-1171).
 package livespend
 
 import (
@@ -31,6 +36,7 @@ import (
 const (
 	EnvBundle = "LIVE_EVAL_BUNDLE"
 	EnvBudget = "LIVE_EVAL_BUDGET_USD"
+	EnvLedger = "LIVE_EVAL_LEDGER"
 )
 
 // SpendFile is the name of the spend file in the bundle.
@@ -59,15 +65,19 @@ type Line struct {
 type Meter struct {
 	id     string
 	target string
-	path   string
+	// paths are the ledger and the spend file of the bundle. Each line
+	// goes to each path.
+	paths  []string
 	acc    *llm.Accumulator
 	stderr io.Writer
 	once   sync.Once
 }
 
 // Start opens the meter of a paid run. When getenv names a bundle, it
-// refuses the run when the spend file reads the budget as spent, and it
-// writes the start line before any provider call.
+// refuses the run when the ledger or the spend file reads the budget as
+// spent, and it writes the start line before any provider call. A live
+// eval with no ledger, or with a ledger that does not read, starts no
+// paid run (D-1171).
 func Start(target string, getenv func(string) string, prices *llm.PriceTable, stderr io.Writer) (*Meter, error) {
 	bundle := strings.TrimSpace(getenv(EnvBundle))
 	if bundle == "" {
@@ -77,8 +87,15 @@ func Start(target string, getenv func(string) string, prices *llm.PriceTable, st
 	if err != nil {
 		return nil, err
 	}
+	ledger := strings.TrimSpace(getenv(EnvLedger))
+	if ledger == "" {
+		return nil, fmt.Errorf("a live eval needs %s, the append-only ledger, to start a paid run (D-1171)", EnvLedger)
+	}
+	if _, err := os.Stat(ledger); err != nil {
+		return nil, fmt.Errorf("the ledger of the live eval: %w (D-1171)", err)
+	}
 	path := filepath.Join(bundle, SpendFile)
-	sum, err := SumFile(path, budget)
+	sum, err := SumFiles(budget, ledger, path)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +109,7 @@ func Start(target string, getenv func(string) string, prices *llm.PriceTable, st
 	if _, err := rand.Read(raw); err != nil {
 		return nil, err
 	}
-	m := &Meter{id: hex.EncodeToString(raw), target: target, path: path, acc: llm.NewAccumulator(prices), stderr: stderr}
+	m := &Meter{id: hex.EncodeToString(raw), target: target, paths: []string{ledger, path}, acc: llm.NewAccumulator(prices), stderr: stderr}
 	if err := m.write(Line{ID: m.id, Event: "start", Target: target}); err != nil {
 		return nil, err
 	}
@@ -137,7 +154,7 @@ func EndLine(id, target string, rep llm.Report) Line {
 }
 
 func (m *Meter) write(l Line) error {
-	if m.path == "" {
+	if len(m.paths) == 0 {
 		return nil
 	}
 	raw, err := json.Marshal(l)
@@ -145,13 +162,24 @@ func (m *Meter) write(l Line) error {
 		return err
 	}
 	_, _ = fmt.Fprintf(m.stderr, "%s%s\n", Marker, raw)
-	f, err := os.OpenFile(m.path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	for _, p := range m.paths {
+		if err := appendLine(p, raw); err != nil {
+			return fmt.Errorf("the spend record of the live eval: %w", err)
+		}
+	}
+	return nil
+}
+
+// appendLine opens p for an append alone. The ledger takes no other
+// write (D-1171).
+func appendLine(p string, raw []byte) error {
+	f, err := os.OpenFile(p, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
-		return fmt.Errorf("the spend file of the live eval: %w", err)
+		return err
 	}
 	if _, err := f.Write(append(raw, '\n')); err != nil {
 		_ = f.Close()
-		return fmt.Errorf("the spend file of the live eval: %w", err)
+		return err
 	}
 	return f.Close()
 }
@@ -380,19 +408,27 @@ func (g *Ledger) Sum(budget float64, logs bool) Sum {
 	return s
 }
 
-// SumFile sums a spend file alone. An absent file is no spend.
-func SumFile(path string, budget float64) (Sum, error) {
+// SumFiles sums spend files alone, the ledger and the spend file of the
+// bundle. An absent file adds no spend.
+func SumFiles(budget float64, paths ...string) (Sum, error) {
 	g := NewLedger()
-	f, err := os.Open(path)
-	if errors.Is(err, os.ErrNotExist) {
-		return g.Sum(budget, false), nil
-	}
-	if err != nil {
-		return Sum{}, err
-	}
-	defer func() { _ = f.Close() }()
-	if err := g.AddFile(f); err != nil {
-		return Sum{}, err
+	for _, p := range paths {
+		if err := g.AddPath(p); err != nil {
+			return Sum{}, err
+		}
 	}
 	return g.Sum(budget, false), nil
+}
+
+// AddPath reads one spend file. An absent file adds nothing.
+func (g *Ledger) AddPath(p string) error {
+	f, err := os.Open(p)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	defer func() { _ = f.Close() }()
+	return g.AddFile(f)
 }

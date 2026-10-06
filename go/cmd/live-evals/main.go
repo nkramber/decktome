@@ -17,7 +17,7 @@
 //	go run ./cmd/live-evals ready -pr N
 //	go run ./cmd/live-evals guard -pr N
 //	go run ./cmd/live-evals notify -title T -message M
-//	go run ./cmd/live-evals spend [-logs DIR] -budget USD < spend.jsonl
+//	go run ./cmd/live-evals spend [-logs DIR] [-ledger FILE] -budget USD < spend.jsonl
 //
 // For a thumbs down, -deck takes the key of its row: "v-" and the id of
 // the verdict. For a general note, it takes "n-" and the id of the note.
@@ -92,6 +92,7 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 	nonce := fs.String("nonce", "", "the code of the untrusted-data markers, random when empty")
 	logs := fs.String("logs", "", "the folder of the session logs that spend reads, none for the spend file alone")
 	budget := fs.String("budget", "", "the budget in dollars that spend reads")
+	ledger := fs.String("ledger", "", "the append-only ledger that spend reads, none when absent")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -119,7 +120,7 @@ func run(ctx context.Context, cmd string, args []string, out io.Writer) error {
 		if err != nil {
 			return err
 		}
-		return spend(*logs, b, os.Stdin, out)
+		return spend(*logs, *ledger, b, os.Stdin, out)
 	case "replay-input":
 		if *bundleDir == "" || *dir == "" {
 			return errors.New("replay-input: set -bundle and -out")

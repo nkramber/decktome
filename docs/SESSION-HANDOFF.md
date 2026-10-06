@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-05c)
 
-**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169, D-1170).**
+**Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169 to D-1171).**
 
 Author provider: Claude Code
 
@@ -21,14 +21,15 @@ Author provider: Claude Code
 - `llm.WithMeter` records every attempt of a client. `Report.Unreported` counts the attempts with no usage.
 - `gatekit.NewClient` builds the metered client of each paid command, chat-probe included. Under `LIVE_EVAL_BUNDLE`, `livespend` writes a start line and an end line to `spend.jsonl`, and on stderr after `LIVE-EVAL-SPEND`.
 - An unmeasured run counts as the full budget, and a paid command refuses to start after it (D-1169).
+- Each line also goes to the append-only ledger `$RUNS/<deck>/ledger/spend.jsonl`. Each start reads it, and each tick probes its profile rule (D-1171).
 - `spent()` runs `live-evals spend`, which sums the marked lines of the session logs (D-1170). It refuses a line with no run id.
 - chat-probe prints its measured spend on its last line. `make test-smoke` refuses to run in a session.
 
-**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. `live-evals spend` on the log of 2026-10-05 refuses the hand-written 0.30 line.
+**The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. `live-evals spend` on the log of 2026-10-05 refuses the hand-written 0.30 line. Under the real profile, a session can append to the ledger and can not lower it.
 
-**Review state.** Codex reviewed `998057fbf07a498c4a43b828193229a856dcc28f`. Verdict: Changes required. Open finding: P1-1, a session can erase the spend ledger and start more paid commands.
+**The reviews.** Gitar found that a 429 made a run unmeasured. Commit `998057f` leaves out an attempt with an error status, and Gitar approved. Codex round 1 found P1-1: a session can delete the spend file and restart the budget. `docs/reviews/pr-291-response.md` holds the answer, the ledger of D-1171.
 
-**Open work.** The author must fix P1-1 and run a current Gitar pass, then request another Codex review. The owner confirms the merge only after approval (D-828).
+**Open work.** The Gitar pass of the ledger commit, the repeat Codex review, and the confirmation of the owner (D-828).
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
 
@@ -145,7 +146,7 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner found a recorded spend 30 times the real cost.** The session wrote the estimate of a replay by hand. The owner asked for measured spend from provider usage alone.
 
-**The owner chose two rules.** An unmeasured run counts as the full budget (D-1169). The script reads the spend from the session logs, because a paid command can not write the run folder (D-1170).
+**The owner chose three rules.** An unmeasured run counts as the full budget (D-1169). The script reads the spend from the session logs (D-1170). After the Codex finding, an append-only ledger outside the run folder holds each line (D-1171).
 
 ## The archive
 

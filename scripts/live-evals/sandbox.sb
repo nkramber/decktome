@@ -8,6 +8,7 @@
 ;; Parameters, each a real path with no symlink:
 ;;   HOME      the home folder of the owner
 ;;   RUN       the run folder of the deck: the clone, the bundle, the logs
+;;   LEDGER    the append-only spend ledger of the deck, outside RUN
 ;;   CACHE     the caches of the sessions: Go, npm, pnpm, and the npm prefix
 ;;   CODEX     the CODEX_HOME of the sessions, with its own login
 ;;   BIN       the folder of the pinned claude binary
@@ -43,6 +44,13 @@
   (subpath "/private/var/folders")
   (subpath "/dev"))
 (deny file-write* (subpath (param "BIN")) (subpath (param "CARDS")))
+
+;; The spend ledger (D-1171). A paid command appends its measured lines.
+;; The script sets the append-only flag of the file, and this rule
+;; allows no other write: no create, no delete, no rename, and no change
+;; of a flag or a mode. So a session can not lower the spend.
+(allow file-read-data (literal (param "LEDGER")))
+(allow file-write-data (literal (param "LEDGER")))
 
 ;; Each of these runs code outside the profile, or reads a secret of the
 ;; owner: the keychain, an app through Launch Services or Apple events,

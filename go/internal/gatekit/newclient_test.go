@@ -13,6 +13,7 @@ func TestNewClientWritesTheSpendOfALiveEval(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv(livespend.EnvBundle, dir)
 	t.Setenv(livespend.EnvBudget, "3.00")
+	t.Setenv(livespend.EnvLedger, ledgerFile(t))
 	t.Setenv("OPENAI_API_KEY", "sk-test-not-called")
 	t.Setenv("ANTHROPIC_API_KEY", "sk-test-not-called")
 	client, done, err := NewClient("chat-probe", Quiet())
@@ -43,6 +44,7 @@ func TestNewClientRefusesAfterAnUnmeasuredRun(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv(livespend.EnvBundle, dir)
 	t.Setenv(livespend.EnvBudget, "3.00")
+	t.Setenv(livespend.EnvLedger, ledgerFile(t))
 	t.Setenv("OPENAI_API_KEY", "sk-test-not-called")
 	t.Setenv("ANTHROPIC_API_KEY", "sk-test-not-called")
 	// A start line with no end line: the run was killed.
@@ -53,4 +55,14 @@ func TestNewClientRefusesAfterAnUnmeasuredRun(t *testing.T) {
 	if _, _, err := NewClient("chat-probe", Quiet()); err == nil || !strings.Contains(err.Error(), "budget") {
 		t.Fatalf("err = %v, want a refusal for the budget", err)
 	}
+}
+
+// ledgerFile makes an empty ledger, as the script does before a session.
+func ledgerFile(t *testing.T) string {
+	t.Helper()
+	p := filepath.Join(t.TempDir(), "ledger.jsonl")
+	if err := os.WriteFile(p, nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return p
 }

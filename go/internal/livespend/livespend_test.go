@@ -35,15 +35,36 @@ func pricedModel(t *testing.T, p *llm.PriceTable) string {
 }
 
 func env(bundle, budget string) func(string) string {
+	return envLedger(bundle, budget, ledgerIn(bundle))
+}
+
+func envLedger(bundle, budget, ledger string) func(string) string {
 	return func(k string) string {
 		switch k {
 		case EnvBundle:
 			return bundle
 		case EnvBudget:
 			return budget
+		case EnvLedger:
+			return ledger
 		}
 		return ""
 	}
+}
+
+// ledgerIn makes an empty ledger beside the bundle, as the script does
+// before a session. It gives "" for no bundle.
+func ledgerIn(bundle string) string {
+	if bundle == "" {
+		return ""
+	}
+	p := filepath.Join(filepath.Dir(bundle), filepath.Base(bundle)+"-ledger.jsonl")
+	if _, err := os.Stat(p); err != nil {
+		if err := os.WriteFile(p, nil, 0o644); err != nil {
+			panic(err)
+		}
+	}
+	return p
 }
 
 func readLines(t *testing.T, path string) []Line {
@@ -97,6 +118,9 @@ func TestMeasuredRunWritesStartAndEnd(t *testing.T) {
 	}
 	if err := m.End(); err != nil {
 		t.Fatal(err)
+	}
+	if got := readLines(t, ledgerIn(dir)); len(got) != 2 {
+		t.Fatalf("the ledger holds %d lines, want 2", len(got))
 	}
 	lines := readLines(t, filepath.Join(dir, SpendFile))
 	if len(lines) != 2 || lines[0].Event != "start" || lines[1].Event != "end" {
@@ -237,5 +261,39 @@ func TestLedgerReadsToolResultParts(t *testing.T) {
 	}
 	if s := g.Sum(3, true); s.USD != 1.2 || s.Runs != 1 {
 		t.Fatalf("sum = %+v, want one run at $1.20", s)
+	}
+}
+
+func TestStartReadsTheLedgerAfterTheBundleIsGone(t *testing.T) {
+	// A session can delete the spend file of the bundle, and it can not
+	// lower the ledger. So the next start reads the ledger (D-1171).
+	dir := t.TempDir()
+	ledger := filepath.Join(t.TempDir(), "ledger.jsonl")
+	spent := `{"id":"0123456789abcdef","event":"end","target":"deck-gate","usd":3.10,"measured":true}` + "\n"
+	if err := os.WriteFile(ledger, []byte(spent), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Start("chat-probe", envLedger(dir, "3.00", ledger), prices(t), &bytes.Buffer{}); err == nil {
+		t.Fatal("Start must refuse: the ledger reads the budget as spent")
+	}
+	below := `{"id":"0123456789abcdef","event":"end","target":"deck-gate","usd":1.10,"measured":true}` + "\n"
+	if err := os.WriteFile(ledger, []byte(below), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	m, err := Start("chat-probe", envLedger(dir, "3.00", ledger), prices(t), &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("a run below the cap must start: %v", err)
+	}
+	if err := m.End(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestStartRefusesWithNoLedger(t *testing.T) {
+	dir := t.TempDir()
+	for name, ledger := range map[string]string{"no variable": "", "no file": filepath.Join(dir, "absent.jsonl")} {
+		if _, err := Start("chat-probe", envLedger(dir, "3.00", ledger), prices(t), &bytes.Buffer{}); err == nil {
+			t.Fatalf("%s: Start must refuse", name)
+		}
 	}
 }
