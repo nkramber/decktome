@@ -67,7 +67,7 @@ A Seatbelt profile holds this session (D-1141). You can read and write your run 
 
 ## Step 1: Start
 
-1. Read `CLAUDE.md`, then `docs/SESSION-HANDOFF.md`.
+1. Read `CLAUDE.md`. Do not read `docs/SESSION-HANDOFF.md` before step 4 (D-1176).
 2. Load the `one-pr-one-session` skill, then the `mtg-corpus` skill and the `ste-writing` skill.
 3. Run `make where`, and confirm that the branch is `{{branch}}`.
 4. Run `cd web && pnpm install --frozen-lockfile`, because a fresh clone has no `node_modules`.
@@ -145,6 +145,8 @@ The replay answers each question with the text of the answer of the user. So a q
 
 ## Step 4: Fix it
 
+Read `docs/SESSION-HANDOFF.md` before item 1. It records the state of `main`, and item 8 changes it. An eval with no fix does not use it, so step 1 does not read it (D-1176).
+
 1. Write a regression test that fails before the fix.
 2. Fix the cause, and make the test pass.
 3. Replay the chat on the fix, as in step 3b, to `{{replay}}/try-<n>.txt` and `{{replay}}/try-<n>-decks.jsonl`.
@@ -165,13 +167,14 @@ You can spend at most ${{budget}} on paid targets, the replays included. Free la
 - Before each paid run, read its estimate in `docs/reference/paid-targets.md`. The budget reads measured spend alone.
 - Each paid target writes its own start line and end line to `{{bundle}}/spend.jsonl` (D-1169).
 - Run one paid target at a time. A paid target refuses to start while the start line of another run has no end line.
-- Run each paid target in the foreground. Never redirect its stderr, for example with `2>&1` or `2>/dev/null` (D-1173).
+- Run each paid target in the foreground, as a command of its own (D-1173, D-1177).
+- Never redirect the output of a paid target, and never send it through a pipe. Examples are `2>&1`, `2>/dev/null`, `| tail`, `| head`, and `| grep`.
 - To read your total, run `cd go && go run ./cmd/live-evals spend -logs "$LIVE_EVAL_LOGS" -ledger "$LIVE_EVAL_LEDGER" -budget {{budget}} < {{bundle}}/spend.jsonl`.
 - Stop all paid runs when the total comes near ${{budget}}. A paid target refuses to start when the spend reaches the budget.
 
 CAUTION: Never write, edit, or delete a line of `{{bundle}}/spend.jsonl` or of the ledger. The script refuses a hand-written line. It reads your spend from the log of the session and from the append-only ledger (D-1170, D-1171).
 
-CAUTION: Keep the stderr of each paid target in the tool result. A run with no end line in the log of the session counts as the full budget, also when the ledger holds its end (D-1173).
+CAUTION: Keep the stderr of each paid target in the tool result. A run with no end line in the log of the session counts as the full budget, also when the ledger holds its end (D-1173). A pipe to `tail` or `head` can remove the end line from the tool result (D-1177).
 
 CAUTION: A call that gave no usage, or a model with no price row, makes the run unmeasured. Such a run counts as the full budget, so no paid target starts after it. Write it in `findings`.
 
