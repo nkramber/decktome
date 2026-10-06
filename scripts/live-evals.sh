@@ -249,11 +249,14 @@ say "building the live-evals tool"
 # one sees the dialog. So the tick runs the tool one time with no
 # arguments, and after GRANT_WAIT seconds the owner gets one notice.
 GRANT_WAIT=${LIVE_EVALS_GRANT_WAIT:-60}
+case "$GRANT_WAIT" in '' | *[!0-9]*) die "LIVE_EVALS_GRANT_WAIT must be a number of seconds" ;; esac
 "$TOOL" >/dev/null 2>&1 &
 grant_pid=$!
 waited=0
+grant_sent=0
 while kill -0 "$grant_pid" 2>/dev/null; do
-  if [ "$waited" = "$GRANT_WAIT" ]; then
+  if [ "$grant_sent" = 0 ] && [ "$waited" -ge "$GRANT_WAIT" ]; then
+    grant_sent=1
     say "the new build of the tool waits for the access to the volume. Allow it in the dialog of macOS."
     if [ "$dry" = 0 ]; then
       curl_notice "decktome live evals wait: allow the volume" \
