@@ -343,8 +343,8 @@ if [ "$dry" = 0 ]; then
   "$CLAUDE_BIN" --version 2>/dev/null | grep -q "^$CLAUDE_VERSION " || die "$CLAUDE_BIN is not Claude Code $CLAUDE_VERSION"
   CLAUDE_SUM=$(sum "$CLAUDE_BIN")
 
-  # The session gets its own Claude token. The gh token and the Codex
-  # login are copies of the logins of the owner (D-1141, D-1164).
+  # The session gets its own Claude token and its own Codex login
+  # (D-1184). The gh token is a copy of the login of the owner (D-1164).
   [ -s "$SECRETS/claude-token" ] || die "no $SECRETS/claude-token. Run claude setup-token, and save the token there."
   [ -s "$SECRETS/gh-token" ] || die "no $SECRETS/gh-token. Save the output of gh auth token there (D-1164)."
   private_file "$SECRETS/claude-token"
@@ -354,7 +354,7 @@ if [ "$dry" = 0 ]; then
   # A session can write the Codex home, so this script never runs Codex
   # with it. It reads that the login file exists, and nothing more.
   if [ ! -f "$CODEX_DIR/auth.json" ] || [ -L "$CODEX_DIR/auth.json" ]; then
-    die "the session Codex has no login. Copy ~/.codex/auth.json to $CODEX_DIR (D-833, D-1164)"
+    die "the session Codex has no login. Run CODEX_HOME=$CODEX_DIR codex login, and never copy ~/.codex/auth.json (D-833, D-1184)"
   fi
   private_file "$CODEX_DIR/auth.json"
   [ -d "$CARDS/scryfall" ] || die "no card store at $CARDS. A replay needs it."

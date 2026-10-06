@@ -114,7 +114,7 @@ The session gets the provider keys in the `.env` of its clone (D-1142). The scri
 
 The cap includes the replay (D-1144). The session replays the chat of the reader with `make chat-probe` and `CHAT_PROBE_ARGS`. It replays the base code one time, and each try of the fix one time. The plan estimates each replay at $0.30, so the base replay and three tries cost about $1.20. The first replay of 2026-10-05 sent 3 question turns, built no deck, and cost less than $0.01 on the dashboard of the provider (D-1169).
 
-Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, and copies of the gh login and the Codex login of the owner (D-1164). The header of `scripts/live-evals.sh` names the one-time setup of the owner.
+Each session runs the pinned Claude Code 2.1.288 under the Seatbelt profile `scripts/live-evals/sandbox.sb` (D-1141, D-1145). It uses its own Claude token, its own Codex login (D-1184), and a copy of the gh login of the owner (D-1164). The header of `scripts/live-evals.sh` names the one-time setup of the owner.
 
 The owner starts the script, so that start is the approval of each session it runs. `go run ./cmd/live-evals` serves the script. Its commands `pending`, `summary`, `bundle`, `mark`, `unmark`, `ready`, `guard`, `notify`, `replay-input`, and `spend` call no model and cost nothing.
 

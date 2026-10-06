@@ -30,7 +30,9 @@ Author provider: Claude Code
 - An eval fixes the product cause of a class, not one case (D-1183).
 - The session Codex has a login of its own (D-1184), and the profile allows the security server for TLS (D-1185).
 
-**The checks.** `make verify` passes. The tests of `ref_check` and `live-evals` pass. A dry tick with the PATH of the agent passed the pins and the new probe. A test of the probe block sent one notice and stopped on a status other than 2. Under the profile with no deny of the security server, Codex got the answer of the server.
+**The checks.** `make verify` passes. A dry tick with the PATH of the agent passed the pins and the new probe. With no deny of the security server, Codex got an answer.
+
+**The reviews.** Gitar approved `141fe63` with 1 of 1 findings closed. Codex round 1 found P2-1, and `docs/reviews/pr-293-response.md` answers it. Next: push, the Gitar pass, and Codex round 2.
 
 **Review.** The effective head is `141fe63e64d70568739996c77ec92770f4549fb3`. The review is `Blocked`. Finding P2-1 stays open. The measured-spend ledger gate has no evidence in this checkout.
 
