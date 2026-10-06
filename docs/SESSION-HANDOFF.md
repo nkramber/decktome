@@ -32,9 +32,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes. A dry tick with the PATH of the agent passed the pins and the new probe. With no deny of the security server, Codex got an answer.
 
-**The reviews.** Gitar approved `141fe63` with 1 of 1 findings closed. Codex round 1 found P2-1, and round 2 found the ledger outside the checkout. `docs/reviews/pr-293-response.md` answers both. Next: the Gitar pass and Codex round 3.
-
-**Review.** Codex round 2 blocked `0444dc5` on the ledger gate alone. P2-1 is fixed.
+**The reviews.** Gitar approved `7bd16aa` with 1 of 1 findings closed. The review record is `Blocked`. P2-1 is fixed, and the ledger gate remains unverified.
 
 **Open work.**
 
