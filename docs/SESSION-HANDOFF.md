@@ -32,6 +32,8 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes. The tests of `ref_check` and `live-evals` pass. A dry tick with the PATH of the agent passed the pins and the new probe. A test of the probe block sent one notice and stopped on a status other than 2. Under the profile with no deny of the security server, Codex got the answer of the server.
 
+**Review.** The effective head is `141fe63e64d70568739996c77ec92770f4549fb3`. The review is `Blocked`. Finding P2-1 stays open. The measured-spend ledger gate has no evidence in this checkout.
+
 **Open work.**
 
 - Unverified: the dashboard of the provider against the `Spent:` line. The owner reads it.
