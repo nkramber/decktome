@@ -34,7 +34,7 @@ Author provider: Claude Code
 
 **The checks.** `make verify` passes. A dry tick with the PATH of the agent passed the pins and the new probe. With no deny of the security server, Codex got an answer.
 
-**The reviews.** Gitar approved `9a7a225` with 1 of 1 findings closed. Codex round 3 blocked `7bd16aa`, because the evidence file cited the transcript, not `session-1.log`. The owner chose a fix and a round 4 (D-1186). Round 4 approved `9a7a225`. The pull request is pending the auto-merge.
+**The reviews.** Gitar approved `9a7a225` with 1 of 1 findings closed. Codex round 3 blocked `7bd16aa` on the evidence file, and the owner chose a fix and a round 4 (D-1186). Round 4 approved `9a7a225`. The pull request is pending the auto-merge.
 
 **Open work.**
 
