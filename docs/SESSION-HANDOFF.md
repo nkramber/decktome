@@ -26,7 +26,9 @@ Author provider: Claude Code
 
 **The checks.** The tests of `livespend`, `gatekit`, `llm`, and `live-evals` pass. `live-evals spend` on the log of 2026-10-05 refuses the hand-written 0.30 line.
 
-**Open work.** The Gitar pass, the Codex review, and the confirmation of the owner (D-828).
+**Review state.** Codex reviewed `998057fbf07a498c4a43b828193229a856dcc28f`. Verdict: Changes required. Open finding: P1-1, a session can erase the spend ledger and start more paid commands.
+
+**Open work.** The author must fix P1-1 and run a current Gitar pass, then request another Codex review. The owner confirms the merge only after approval (D-828).
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
 
