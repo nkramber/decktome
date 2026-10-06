@@ -46,6 +46,14 @@ Author provider: Claude Code
 
 **After the merge.** Run `make live-evals-retry ITEM=v-KefDsksH23qUg16zCWlI`, then `make live-evals-install CONFIRM=1` from `main`, when the owner says so. Read the `Spent:` line of the notice against the dashboard of the provider.
 
+### 2026-10-05b: the install of the live evals, PR-132
+
+**The owner asked for the install from `main`.** The first tick proved the launch through bash, and it started no session.
+
+**The owner asked the session to watch the evals.** The first session ended `blocked`, because the profile refused the temporary folder of the Bash tool. The owner said that this fault must not occur again (D-1168).
+
+**The owner asked what the cost of $0.10 means.** The figure is the list price of the tokens in the log of Claude Code. The session runs on the Claude plan through its token, so no bill comes.
+
 ### 2026-10-05: the first run of the live evals, PR-131
 
 **The owner asked the session to copy the setup of the night fixer of what-you-carry.** That fixer uses the logins of the owner. The owner chose copies of the gh login and the Codex login over D-1141 (D-1164).

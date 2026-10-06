@@ -3502,6 +3502,26 @@ Gate:
 
 > *In plain English:* the robot wrote down a guess of its cost, 30 times the real one. Each paid tool now measures its own cost and writes it down, and the robot can not write a number by hand.
 
+**PR-134: Filler words stay out of the theme, in two layers (D-1187 to D-1189).** ✅ merged as #292. The mark comes before any review (D-822). A live eval read a thumbs-down on "planeswalkers and other themes from this set". The theme row asked about "other" and "themes".
+
+- **The first fix.** Five filler words joined the stop words (D-1187). A test on the card snapshot then read 18 phrasings of the same request, and 15 still asked the theme row.
+- **The stop list.** `go/internal/candidates/stopwords.go` holds the Snowball English stop list and the filler classes: words about a deck or a set, hedges, and vague nouns (D-1188).
+- **The silent match.** A filler word that card text holds, such as "set" or "well", matched cards and widened the shortlist. The stop list removes it too.
+- **The classifier.** Prompt version 25 keeps the plan in the words of the user, and it leaves out the words around the plan (D-1189).
+- **Three question gate runs.** Runs 61 and 62 passed, but versions 23 and 24 each asked the theme row in two more conversations. Run 63 read version 25, and it asks in the same three as run 60.
+- **The general theme row.** In two terse conversations of run 63 the general theme row asks, because the theme no longer holds "cEDH" or "Background commander pair". The owner accepted this change.
+
+Gate:
+- `TestFillerLeavesTheTheme` reads 17 phrasings, and each one failed on the first fix.
+- `TestStopWordsNameNoTheme` refuses a stop word that finds a theme row or names a card type.
+- `make themes-check` runs two new snapshot tests. No phrasing leaves an unmatched word, and each one puts the count of its theme words on theme.
+- The subtype guard refuses a stop word that names a subtype of a card that Commander permits.
+- The tests of `go/internal/candidates` and `go/internal/questions` pass.
+- A question gate run passes on prompt version 25 (D-66). It asks the theme row of D-725 in no more conversations than run 60.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
 **PR-135: The restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).** ✅ merged as #293. The mark comes before any review (D-822). The check of #291 on `main` found that the retry of `v-KefDsksH23qUg16zCWlI` can not run, because its status is `out-of-scope`. The queue held no item, so the owner wrote a new thumbs-down (D-1174). The session of that verdict ran two measured replays, opened #292, and ended `blocked`.
 
 - **The install.** It picks each program by its pin, and it refuses a PATH that misses a pin (D-1175). `scripts/live-evals/pins.sh` holds the pins for the tick and the install.

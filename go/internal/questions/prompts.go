@@ -91,7 +91,21 @@ package questions
 // Version 22: avoid keeps "no" when the user wants none of the thing,
 // so a hard request reaches the build (D-1122). The instruction text
 // changed, so the question gate re-baselines (D-66).
-const PromptVersion = 22
+//
+// Version 23 told the classify role to write each play style alone, and
+// question gate run 61 found two new theme rows: the theme took the
+// definition "an odd card nobody expects" and the words "whatever is
+// winning" (D-1189).
+//
+// Version 24 kept the plan in the user's own words and left out the
+// words around it. Its example "elves, tribal" was a list, and question
+// gate run 62 read a new theme joined to the old one: "anime, dragons".
+//
+// Version 25 keeps the rule of version 24 without the list example
+// (D-1189). "Planeswalkers and other themes from this set" gave a theme
+// row about "other" and "themes". The instruction text changed, so the
+// question gate re-baselines (D-66).
+const PromptVersion = 25
 
 const classifyInstructions = `You map one message from a Magic: The Gathering deck-building conversation onto slots.
 
@@ -105,6 +119,7 @@ Rules:
 - format from an adjective: "a Commander deck", "a Modern burn deck", and "a Standard burn deck" all name the format. Read it. "EDH" means commander.
 - format from a commander phrase: a message that says "my commander", "not as my commander", "in the 99", "bracket 3", or "my precon" means the commander format, even when the word Commander is absent. Fill the format field from it.
 - theme: the plan in the user's own words, for example "lifegain" or "mill". An answer such as "the best deck under budget" or "a named tier-one deck" is also a theme.
+- Leave out the words around the plan. "Focused on planeswalkers and other themes from this set" gives "planeswalkers".
 - avoid: what the user wants less of in the deck, in the user's own words, for example "artifacts" for "there are too many artifacts". Write the thing without "less" or "fewer". When the user wants none of the thing, start with "no": "no artifacts" for "no artifacts at all" or "I don't want any artifacts". A thing to avoid is never a theme, so it stays out of the theme field. Leave avoid empty when the message asks for less of nothing.
 - power: a Commander bracket as "bracket 3", or a 60-card step as "casual", "fnm", or "tournament". Vague words such as "strongest", "competitive", or "best" are not a step. Leave power empty for those and set facts.power_competitive.
 - "cEDH" is a power level and a format. It means bracket 5, and the deck is Commander. "Competitive Commander" is not the same thing: it names no bracket.
