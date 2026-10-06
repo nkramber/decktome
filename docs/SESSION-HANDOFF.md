@@ -34,7 +34,7 @@ Author provider: Claude Code
 
 **The reviews.** Gitar approved `141fe63` with 1 of 1 findings closed. Codex round 1 found P2-1, and `docs/reviews/pr-293-response.md` answers it. Next: push, the Gitar pass, and Codex round 2.
 
-**Review.** The effective head is `141fe63e64d70568739996c77ec92770f4549fb3`. The review is `Blocked`. Finding P2-1 stays open. The measured-spend ledger gate has no evidence in this checkout.
+**Review.** The effective head is `0444dc546da2abdcaa1f76b4e655d30e3bddf23b`. The review is `Blocked`. P2-1 is fixed. The measured-spend ledger gate has no source evidence in this checkout.
 
 **Open work.**
 
