@@ -12,6 +12,8 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
+**Codex review.** Effective head `9a7a225e028586cadb249b1f01b37e5ccdac8a90`. Verdict: `Ready for owner merge`. Open findings: none. The ledger evidence now cites the session log.
+
 **The base.** `main` at `b466e0c`, the merge of #291.
 
 **The restart.** The retry of `v-KefDsksH23qUg16zCWlI` did not run, because its status is `out-of-scope`, and the queue held no item. The owner wrote a new thumbs-down (D-1174). The install then ran with the PATH fix of D-1175. Each tick runs `main`, so each change of this pull request reaches a session after the merge.
