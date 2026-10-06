@@ -64,7 +64,7 @@
 #   LIVE_EVALS_CLAUDE_VERSION=2.1.288  (the pinned Claude Code, D-1145)
 #   LIVE_EVALS_TIMEOUT=14400 (seconds a session may run)
 #   LIVE_EVALS_BUDGET_USD=3.00  LIVE_EVALS_MAX_OPEN=3  LIVE_EVALS_MIN_FREE_GB=20
-#   LIVE_EVALS_MODEL=<claude default>
+#   LIVE_EVALS_MODEL=claude-opus-5-5  LIVE_EVALS_EFFORT=high  (the pinned model of a session, D-1181)
 #
 # The one-time setup (D-1141, D-1164). Mode 600 for each file, and the
 # script refuses a login file that another account can read:
@@ -498,9 +498,11 @@ PY
 }
 
 run_claude() { # deck run prompt-file log-file -> exit code
-  local deck=$1 run=$2 prompt=$3 log=$4 started rc model_args=() ledger=$RUNS/$1/ledger/spend.jsonl
+  local deck=$1 run=$2 prompt=$3 log=$4 started rc ledger=$RUNS/$1/ledger/spend.jsonl
   runfs mkdir "$HOME_DIR" "$deck" tmp claude-config gh-config xdg-config replay || return 1
-  if [ -n "${LIVE_EVALS_MODEL:-}" ]; then model_args=(--model "$LIVE_EVALS_MODEL"); fi
+  # Each session names its model and its effort. The default of Claude
+  # Code changes with the plan and the version, so it is no pin (D-1181).
+  local model_args=(--model "${LIVE_EVALS_MODEL:-claude-opus-5-5}" --effort "${LIVE_EVALS_EFFORT:-high}")
   check_sum "$CLAUDE_BIN" "$CLAUDE_SUM"
   make_ledger "$ledger" || { say "can not make the ledger $ledger"; return 1; }
   sandbox_flags "$run" "$ledger" "$RUNS/$deck"
@@ -520,7 +522,7 @@ run_claude() { # deck run prompt-file log-file -> exit code
     sandbox-exec "${SANDBOX_FLAGS[@]}" \
     "$CLAUDE_BIN" -p "$(cat "$prompt")" --permission-mode bypassPermissions \
       --add-dir "$run/bundle" --add-dir "$run/replay" \
-      ${model_args[@]+"${model_args[@]}"} --output-format stream-json --verbose > "$log" 2>&1) &
+      "${model_args[@]}" --output-format stream-json --verbose > "$log" 2>&1) &
   child=$!
   started=$(date +%s)
   while kill -0 "$child" 2>/dev/null; do
