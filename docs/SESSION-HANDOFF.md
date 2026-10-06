@@ -12,7 +12,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 Author provider: Claude Code
 
-**Codex review.** Effective head `9a7a225e028586cadb249b1f01b37e5ccdac8a90`. Verdict: `Ready for owner merge`. Open findings: none. The ledger evidence now cites the session log.
+**Codex review:** head `9a7a225`, `Ready for owner merge`, findings: none.
 
 **The base.** `main` at `b466e0c`, the merge of #291.
 
