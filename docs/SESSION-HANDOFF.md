@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-05e)
 
-**Branch `chore/live-evals-restart`: PR-135 is #PRNUM, the restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).**
+**Branch `chore/live-evals-restart`: PR-135 is #293, the restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).**
 
 Author provider: Claude Code
 

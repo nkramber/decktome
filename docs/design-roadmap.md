@@ -3502,7 +3502,7 @@ Gate:
 
 > *In plain English:* the robot wrote down a guess of its cost, 30 times the real one. Each paid tool now measures its own cost and writes it down, and the robot can not write a number by hand.
 
-**PR-135: The restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).** 🔧 open as #PRNUM. The check of #291 on `main` found that the retry of `v-KefDsksH23qUg16zCWlI` can not run, because its status is `out-of-scope`. The queue held no item, so the owner wrote a new thumbs-down (D-1174). The session of that verdict ran two measured replays, opened #292, and ended `blocked`.
+**PR-135: The restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).** ✅ merged as #293. The mark comes before any review (D-822). The check of #291 on `main` found that the retry of `v-KefDsksH23qUg16zCWlI` can not run, because its status is `out-of-scope`. The queue held no item, so the owner wrote a new thumbs-down (D-1174). The session of that verdict ran two measured replays, opened #292, and ended `blocked`.
 
 - **The install.** It picks each program by its pin, and it refuses a PATH that misses a pin (D-1175). `scripts/live-evals/pins.sh` holds the pins for the tick and the install.
 - **The eval prompt.** It reads the hand-off at the fix alone (D-1176). It forbids a pipe or a redirect on a paid target (D-1177), and attribution (D-1180). It retries a failed `pnpm install` one time (D-1182).
