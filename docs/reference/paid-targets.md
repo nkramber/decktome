@@ -124,6 +124,8 @@ A session fixes a product fault alone (D-1157). For each other item, it writes `
 
 The install takes the folder of each pinned program from the first copy on PATH that reads the pin (D-1175). A PATH that misses a pin stops the install. `scripts/live-evals/pins.sh` holds the pins.
 
+macOS asks for the access to the volume again after each change of the tool, because the hash of the build changes. The tick then sends one notice after 60 seconds, and it waits for the grant (D-1178).
+
 `make live-evals-status` prints the state and the end of the log `~/Library/Logs/decktome-live-evals.log`. `make live-evals-uninstall` stops the agent and a session that runs. Both cost nothing.
 
 `make live-evals-retry ITEM=<key>` puts one blocked or failed item back in the queue (D-1168). It clears the eval mark in Firestore, and it keeps the old state and logs under a new name. It refuses an item with a pull request, or with a branch on origin. The target costs nothing, and the next tick starts a paid session for the item.

@@ -211,16 +211,23 @@ if [ -z "$PO_TOKEN" ] || [ -z "$PO_USER" ]; then
   die "can not read the Pushover secrets of $PROJECT as $ACCOUNT"
 fi
 
-# A missed pin stops the tick before the build. The tool can not send
-# the notice, because go can be the missed pin. So curl sends it, and
-# it reads the secrets from stdin. One notice goes for each new miss.
+# Two notices go before the tool can send one: a missed pin, because go
+# can be the missed pin, and a wait for the grant of the volume. So curl
+# sends them, and it reads the secrets from stdin.
+curl_notice() { # title message
+  local msg
+  msg=$(printf '%s' "$2" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  printf 'form-string = "token=%s"\nform-string = "user=%s"\nform-string = "title=%s"\nform-string = "message=%s"\n' \
+    "$PO_TOKEN" "$PO_USER" "$1" "$msg" \
+    | curl -sS -o /dev/null --fail -K - https://api.pushover.net/1/messages.json
+}
+
+# A missed pin stops the tick before the build. One notice goes for
+# each new miss.
 PIN_NOTICE=$STATE/pin-notice
 if [ -n "$pin_misses" ]; then
   if [ "$dry" = 0 ] && [ "$(cat "$PIN_NOTICE" 2>/dev/null)" != "$pin_misses" ]; then
-    msg=$(printf '%s' "$pin_misses" | sed 's/\\/\\\\/g; s/"/\\"/g')
-    if printf 'form-string = "token=%s"\nform-string = "user=%s"\nform-string = "title=%s"\nform-string = "message=%s"\n' \
-      "$PO_TOKEN" "$PO_USER" "decktome live evals stopped: a version pin" "$msg" \
-      | curl -sS -o /dev/null --fail -K - https://api.pushover.net/1/messages.json; then
+    if curl_notice "decktome live evals stopped: a version pin" "$pin_misses"; then
       printf '%s' "$pin_misses" > "$PIN_NOTICE"
     else
       say "the notice of the pins did not send"
@@ -232,6 +239,31 @@ rm -f "$PIN_NOTICE"
 
 say "building the live-evals tool"
 (cd "$ROOT/go" && go build -o "$TOOL" ./cmd/live-evals) || die "the tool does not build"
+
+# macOS knows a Go build by the hash of its ad-hoc signature. So a new
+# build of the tool asks again for the access to the volume, and the
+# dialog stops the tool before its first line (D-1178). Under launchd no
+# one sees the dialog. So the tick runs the tool one time with no
+# arguments, and after GRANT_WAIT seconds the owner gets one notice.
+GRANT_WAIT=${LIVE_EVALS_GRANT_WAIT:-60}
+"$TOOL" >/dev/null 2>&1 &
+grant_pid=$!
+waited=0
+while kill -0 "$grant_pid" 2>/dev/null; do
+  if [ "$waited" = "$GRANT_WAIT" ]; then
+    say "the new build of the tool waits for the access to the volume. Allow it in the dialog of macOS."
+    if [ "$dry" = 0 ]; then
+      curl_notice "decktome live evals wait: allow the volume" \
+        "macOS asks whether the new build of live-evals can read $HOME_DIR. Allow it in the dialog on the Mac (D-1178)." \
+        || say "the notice of the grant did not send"
+    fi
+  fi
+  sleep 5
+  waited=$((waited + 5))
+done
+wait "$grant_pid" 2>/dev/null
+# The tool exits 2 with no arguments. Any other status is a refusal.
+[ $? = 2 ] || die "the new build of the tool did not run. Read the access to the volume in System Settings (D-1178)."
 
 # The script checks each binary before each call. The profile already
 # keeps a session out of $BIN, and the sum catches any other change.
