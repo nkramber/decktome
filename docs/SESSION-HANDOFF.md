@@ -22,7 +22,9 @@ Author provider: Claude Code
 
 **Open risk.** Try 3 read the first wording, and 13 reasons said "theme-marked". D-1191 changed the wording, and no paid replay reads it.
 
-**Open work.** The Gitar pass, the Codex review, and the owner merge. OQ-96 and OQ-97 record the other findings.
+**Review.** Gitar passed on effective head `7d578659f51f3869163ea5429e92a12f4783ad44`. The Codex review is Ready for owner merge on that head, with no open finding. The local `make verify` stopped at Docker because this session can not access the Docker socket. Each required CI verify job passed. The review record is `docs/reviews/pr-294.md`.
+
+**Open work.** The owner confirms the merge, then the author turns on auto-merge. OQ-96 and OQ-97 remain open outside this change.
 
 ## How to resume
 
