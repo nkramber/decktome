@@ -6,7 +6,7 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-07, review wait)
+## RESUME HERE (2026-10-07, merge wait)
 
 **Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author.
 
