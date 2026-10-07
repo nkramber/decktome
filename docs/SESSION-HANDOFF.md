@@ -29,9 +29,9 @@ Author provider: Claude Code
 
 **Checks.** `make verify` passes with Node 22.23.2. `docs/tools/test_live_evals_git.py` fails with the old single helper, and it passes with the fix.
 
-**Review.** Gitar and Codex are pending.
+**Review.** Gitar approved effective head `8427c204bbae3af5ab1227f9d7d2072d70b40ab4` at 19:49:25 UTC. No review thread stays open. Codex says Ready for owner merge for this effective head.
 
-**Next action.** Do the Gitar pass, then run `make codex-review PR=297`. After the approval, ask the owner for the merge (D-834).
+**Next action.** Ask the owner for merge confirmation, then turn on auto-merge (D-834).
 
 ## How to resume
 
