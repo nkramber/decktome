@@ -31,9 +31,9 @@ Author provider: Claude Code
 
 **The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
-**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `fd0f452`. Codex rounds 1 to 3 kept P2-1 open: the base bracket, then no raw output, then no deck profile. Round 3 stopped the loop (D-826). The owner chose to commit the eleven deck files and permits round 4 (D-1202).
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `a51dc78`. Codex round 4 is Ready for owner merge on `a51dc78`. P2-1 is fixed: all eleven deck files match their hashes, read bracket 1, and hold 100 cards with the commander. OQ-97 still holds the merge.
 
-**Next action.** Do the Gitar pass on the head. Then run `make codex-review PR=294` for round 4. After that, wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
+**Next action.** Wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
 
 ## How to resume
 
