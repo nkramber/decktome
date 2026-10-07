@@ -38,3 +38,13 @@ Correction: `docs/reference/pr294-replays-2026-10-07.md` holds the evidence. A s
 - One row for each deck at bracket 1. A row names the size, the block findings, a hash of the decks file, and each themed card left out.
 
 Regression check: the record gives the five p6 decks 31 played and 0 left out each, at bracket 1. It gives the six pb decks 17 to 23 played and 8 to 14 left out, at bracket 1. Each of the eleven decks holds 100 cards and no block finding.
+
+## Round 3 of P2-1: The record holds no deck profile
+
+Result: full merit. The record proved the counts and not the bracket of each deck.
+
+Evidence: round 3 stopped the loop at three heads (D-826). The owner chose to commit the deck files (D-1202).
+
+Correction: `docs/reference/pr294-replays-2026-10-07` holds the eleven deck files of the bar, unchanged: `p6-3`, `p6-4`, `p6-6`, `p6-7`, `p6-8`, and `pb-1`, `pb-6` to `pb-10`. Each file is one JSON line. The field `deck.profile.bracket` gives the bracket, `deck.power` gives the recorded answer, and `deck.cards` gives each card.
+
+Regression check: the SHA-256 of each file starts with the hash in the record. Each of the eleven files reads `profile.bracket` 1 and `power.bracket` 1.

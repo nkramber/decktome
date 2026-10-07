@@ -31,9 +31,9 @@ Author provider: Claude Code
 
 **The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
-**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `fd0f452`. Codex round 1 gave Changes required for P2-1, the base replays at bracket 3. Round 2 gave Blocked, because the review read no raw output. Round 3 gives Blocked. The replay record has counts but no profiles, and P2-1 reached its third assessment (`docs/reviews/pr-294.md`).
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `fd0f452`. Codex rounds 1 to 3 kept P2-1 open: the base bracket, then no raw output, then no deck profile. Round 3 stopped the loop (D-826). The owner chose to commit the eleven deck files and permits round 4 (D-1202).
 
-**Next action.** Wait for the owner's decision on P2-1. Wait for the answer to OQ-97. Never turn on the auto-merge (D-1137).
+**Next action.** Do the Gitar pass on the head. Then run `make codex-review PR=294` for round 4. After that, wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
 
 ## How to resume
 
@@ -107,7 +107,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-136: the theme mark of a shortlist line** (D-1190 to D-1201). The resume section holds the state. The merge waits for OQ-97. Then a clean session takes the live-eval rules of D-1200.
+0. **PR-136: the theme mark of a shortlist line** (D-1190 to D-1202). The resume section holds the state. The merge waits for OQ-97. Then a clean session takes the live-eval rules of D-1200.
 0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
 0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. Unverified: the tool that names the token.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.

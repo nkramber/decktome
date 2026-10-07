@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-10-06 correction pass 267 (PR-136, F-226, D-1190, D-1191, D-1195 to D-1201): a live eval read a planeswalker deck of a new set. The model played reprints it knew and left out themed cards, because no shortlist line named the theme. Each themed line now says "on theme" and carries the card text. A themed planeswalker reads threat, and a deck that leaves out a themed card buys a repair turn. Five bracket 1 replays played all 31 themed cards. Changes: F-226, PR-136.
+2026-10-06 correction pass 267 (PR-136, F-226, D-1190, D-1191, D-1195 to D-1202): a live eval read a planeswalker deck of a new set. The model played reprints it knew and left out themed cards, because no shortlist line named the theme. Each themed line now says "on theme" and carries the card text. A themed planeswalker reads threat, and a deck that leaves out a themed card buys a repair turn. Five bracket 1 replays played all 31 themed cards. Changes: F-226, PR-136.
 2026-10-04 correction pass 266 (PR-130, F-225, D-1162): the check of PR-128 built a deck that marked Astral Cornucopia as fast mana. Fast mana now needs no X and no multikicker in the cost. Changes: F-225, PR-130, sequencing step 125.
 2026-10-04 correction pass 265 (PR-128, F-224, D-1159, D-1160): a reader verdict named Barbed Sextant, Springleaf Drum, and Hurricane in a mono-green deck. Fast mana now needs a mana ability that pays no mana and taps no creature. The finisher count drops the tag `burn-player-each`. Changes: F-224, PR-128, sequencing step 123.
 2026-10-04 correction pass 264 (PR-127, D-1155 to D-1158): the owner asked that the live evals start with no open terminal, as the night fixer of what-you-carry does. A launchd agent now runs one pass every five minutes from a clone of origin/main. The "Leave feedback" notes join the queue, and a scope rule keeps each fix to the product. Changes: PR-127, sequencing step 122.
@@ -3542,7 +3542,7 @@ Gate:
 
 > *In plain English:* the robot that checks the app found a real bug, and its notes held the true cost. Ten small faults of the robot itself are now fixed, and it now looks for the root of a bug, not a quick patch.
 
-**PR-136: The theme mark of a shortlist line (F-226, D-1190, D-1191, D-1195 to D-1201).** ✅ merged as #294. The mark comes before any review (D-822). A live eval read a planeswalker deck of Reality Fracture, a set four days old. The deck played reprints that the model knew, and it left out themed cards of the set.
+**PR-136: The theme mark of a shortlist line (F-226, D-1190, D-1191, D-1195 to D-1202).** ✅ merged as #294. The mark comes before any review (D-822). A live eval read a planeswalker deck of Reality Fracture, a set four days old. The deck played reprints that the model knew, and it left out themed cards of the set.
 
 - **The cause.** A shortlist line held the name, the type, and the job. "Way of the Pyromancer" and "Izzet Signet" both read "ramp", and no line said which card the theme matched.
 - **The class.** Each themed card with a staple job, such as a lifegain card that draws or a Zombie that removes. Also each card newer than the model.
