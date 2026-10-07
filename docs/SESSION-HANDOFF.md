@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **Review.** Gitar passed on effective head `7d578659f51f3869163ea5429e92a12f4783ad44`. The Codex review is Ready for owner merge on that head, with no open finding. The local `make verify` stopped at Docker because this session can not access the Docker socket. Each required CI verify job passed. The review record is `docs/reviews/pr-294.md`.
 
-**Open work.** The owner confirms the merge, then the author turns on auto-merge. OQ-96 and OQ-97 remain open outside this change.
+**Open work.** The owner reads the live-eval notice and merges the pull request (D-1137). No session turns on the auto-merge. OQ-96 and OQ-97 stay open outside this change.
 
 ## How to resume
 
