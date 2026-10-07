@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -407,6 +408,107 @@ func TestStartRefusesWithNoLogs(t *testing.T) {
 	for name, logs := range map[string]string{"no variable": "", "no folder": filepath.Join(dir, "absent")} {
 		if _, err := Start("chat-probe", envLogs(dir, "3.00", ledgerIn(dir), logs), prices(t), &bytes.Buffer{}); err == nil {
 			t.Fatalf("%s: Start must refuse", name)
+		}
+	}
+}
+
+func TestStartLineNamesTheModuleTree(t *testing.T) {
+	old := moduleTree
+	t.Cleanup(func() { moduleTree = old })
+	moduleTree = func() (string, string) { return "4b825dc642cb6eb9a060e54bf8d69288fbee4904", "" }
+	dir := t.TempDir()
+	m, err := Start("chat-probe", env(dir, "3.00"), prices(t), &bytes.Buffer{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := m.End(); err != nil {
+		t.Fatal(err)
+	}
+	lines := readLines(t, filepath.Join(dir, SpendFile))
+	if lines[0].Tree != "4b825dc642cb6eb9a060e54bf8d69288fbee4904" || lines[1].Tree != "" {
+		t.Fatalf("lines = %+v, want the tree on the start line alone", lines)
+	}
+}
+
+// git runs one git command in dir for a test.
+func git(t *testing.T, dir string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
+	cmd.Env = append(os.Environ(), "GIT_AUTHOR_NAME=t", "GIT_AUTHOR_EMAIL=t@example.com",
+		"GIT_COMMITTER_NAME=t", "GIT_COMMITTER_EMAIL=t@example.com")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %v: %v\n%s", args, err, out)
+	}
+	return strings.TrimSpace(string(out))
+}
+
+func TestGitTreeNamesNoTreeForAChangeThatNoCommitHolds(t *testing.T) {
+	repo := t.TempDir()
+	mod := filepath.Join(repo, "go")
+	if err := os.MkdirAll(mod, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(mod, "go.mod"), []byte("module x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, repo, "init", "-q")
+	git(t, repo, "add", ".")
+	git(t, repo, "commit", "-q", "-m", "one")
+	want := git(t, repo, "rev-parse", "HEAD:go")
+	if tree, note := GitTree(mod); tree != want || note != "" {
+		t.Fatalf("clean: tree %q note %q, want %q", tree, note, want)
+	}
+	// A change outside the module keeps the tree.
+	if err := os.WriteFile(filepath.Join(repo, "README"), []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if tree, _ := GitTree(mod); tree != want {
+		t.Fatalf("a change outside the module: tree %q, want %q", tree, want)
+	}
+	for name, body := range map[string]string{"go.mod": "module y\n", "new.go": "package x\n"} {
+		p := filepath.Join(mod, name)
+		old, _ := os.ReadFile(p)
+		if err := os.WriteFile(p, []byte(body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		if tree, note := GitTree(mod); tree != "" || note == "" {
+			t.Fatalf("%s changed: tree %q note %q, want no tree and a note", name, tree, note)
+		}
+		if old == nil {
+			_ = os.Remove(p)
+		} else if err := os.WriteFile(p, old, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func TestLogRunsReadTheTreeOfALogStartAlone(t *testing.T) {
+	logText := logEvent(Marker+`{"id":"aaaaaaaaaaaaaaaa","event":"start","target":"chat-probe","tree":"t1","usd":0,"measured":false}`) +
+		logEvent(Marker+`{"id":"aaaaaaaaaaaaaaaa","event":"end","target":"chat-probe","usd":0.03,"measured":true}`) +
+		logEvent(Marker+`{"id":"bbbbbbbbbbbbbbbb","event":"start","target":"chat-probe","tree":"t2","usd":0,"measured":false}`)
+	// A file can name a tree, and the bar reads no file (D-1206).
+	file := `{"id":"aaaaaaaaaaaaaaaa","event":"start","target":"chat-probe","tree":"forged","usd":0,"measured":false}
+{"id":"cccccccccccccccc","event":"start","target":"chat-probe","tree":"t1","usd":0,"measured":false}
+`
+	g := NewLedger()
+	if err := g.AddLog(strings.NewReader(logText)); err != nil {
+		t.Fatal(err)
+	}
+	if err := g.AddFile(strings.NewReader(file)); err != nil {
+		t.Fatal(err)
+	}
+	want := []Run{
+		{ID: "aaaaaaaaaaaaaaaa", Target: "chat-probe", Tree: "t1", Ended: true},
+		{ID: "bbbbbbbbbbbbbbbb", Target: "chat-probe", Tree: "t2"},
+	}
+	got := g.LogRuns()
+	if len(got) != len(want) {
+		t.Fatalf("runs = %+v, want %+v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("run %d = %+v, want %+v", i, got[i], want[i])
 		}
 	}
 }

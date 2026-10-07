@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -52,11 +53,15 @@ const SpendFile = "spend.jsonl"
 const Marker = "LIVE-EVAL-SPEND "
 
 // Line is one record of a paid run. Event is "start" or "end". An end
-// line with Measured false names its cause in Note.
+// line with Measured false names its cause in Note. A start line names
+// in Tree the git tree of the Go module that the run built, and it names
+// no tree when the module holds a change that no commit holds. The bar
+// check reads it to tie a replay to its code (D-1206).
 type Line struct {
 	ID         string     `json:"id"`
 	Event      string     `json:"event"`
 	Target     string     `json:"target"`
+	Tree       string     `json:"tree,omitempty"`
 	Calls      int        `json:"calls,omitempty"`
 	Unreported int        `json:"unreported,omitempty"`
 	Tokens     *llm.Usage `json:"tokens,omitempty"`
@@ -129,10 +134,50 @@ func Start(target string, getenv func(string) string, prices *llm.PriceTable, st
 		return nil, err
 	}
 	m := &Meter{id: hex.EncodeToString(raw), target: target, paths: []string{ledger, path}, acc: llm.NewAccumulator(prices), stderr: stderr}
-	if err := m.write(Line{ID: m.id, Event: "start", Target: target}); err != nil {
+	start := Line{ID: m.id, Event: "start", Target: target}
+	start.Tree, start.Note = moduleTree()
+	if err := m.write(start); err != nil {
 		return nil, err
 	}
 	return m, nil
+}
+
+// moduleTree is the git tree of the Go module of the working folder,
+// with no tree and a note when the module holds a change that no commit
+// holds. A variable, so a test can set it.
+var moduleTree = func() (tree, note string) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", "the working folder does not read"
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			break
+		}
+		up := filepath.Dir(dir)
+		if up == dir {
+			return "", "no go.mod above the working folder"
+		}
+		dir = up
+	}
+	return GitTree(dir)
+}
+
+// GitTree is the git tree of the folder dir at HEAD. It gives no tree
+// and a note when dir holds a change or a new file that no commit holds.
+func GitTree(dir string) (tree, note string) {
+	status, err := exec.Command("git", "-C", dir, "status", "--porcelain", "--", ".").Output()
+	if err != nil {
+		return "", "git status does not read"
+	}
+	if len(bytes.TrimSpace(status)) > 0 {
+		return "", "the Go module holds a change that no commit holds"
+	}
+	out, err := exec.Command("git", "-C", dir, "rev-parse", "HEAD:./").Output()
+	if err != nil {
+		return "", "git rev-parse does not read"
+	}
+	return strings.TrimSpace(string(out)), ""
 }
 
 // Accumulator is the meter of the client. It is nil on a nil *Meter.
@@ -269,6 +314,7 @@ type Ledger struct {
 
 type run struct {
 	target   string
+	tree     string
 	ended    bool
 	measured bool
 	usd      float64
@@ -292,6 +338,9 @@ func (g *Ledger) add(l Line, fromLog bool) bool {
 	}
 	if fromLog {
 		r.inLog = true
+		if l.Event == "start" && l.Tree != "" {
+			r.tree = l.Tree
+		}
 		if l.Event == "end" {
 			r.logEnd = true
 		}
@@ -464,6 +513,29 @@ func (g *Ledger) Sum(budget float64, logs bool) Sum {
 		}
 	}
 	return s
+}
+
+// Run is one paid run of the ledger, for the bar check (D-1205). Tree
+// comes from a start line in a session log alone, and Ended says that a
+// log holds its end line.
+type Run struct {
+	ID     string
+	Target string
+	Tree   string
+	Ended  bool
+}
+
+// LogRuns lists each run that a session log names, sorted by id. A run
+// that a file alone names is absent, because a session can write a file.
+func (g *Ledger) LogRuns() []Run {
+	var out []Run
+	for id, r := range g.runs {
+		if r.inLog {
+			out = append(out, Run{ID: id, Target: r.target, Tree: r.tree, Ended: r.logEnd})
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
 }
 
 // AddPath reads one spend file. An absent file adds nothing.

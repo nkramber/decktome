@@ -15,6 +15,43 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-07, PR-136
+
+**Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author.
+
+Author provider: Claude Code
+
+**The base.** `main` at `ea792c3`, the merge of #295. Commit `17f5e31` merged `main` into the branch.
+
+**The owner rules.** The owner holds the merge until OQ-97 gives a fair grade to new cards. Never turn on the auto-merge (D-1137). After the merge, a clean session makes the live-eval rules of D-1200 in a new pull request.
+
+**The code.** Each step has its tests, and each test fails on the code before it.
+
+- `84a6a28`: the mark reads `OnTheme` (D-1195).
+- `18e4b4c`: a line on theme ends with its cost and its rules text (D-1196).
+- `faab339`: a planeswalker with a lead reads threat (D-1197).
+- `76a081c`: the warning `theme_left_out` buys a repair turn (D-1198). `TestSetFillMarksTheCardOfTheSetLimit` now reads a set limit too.
+
+**The bar (D-1199) holds.** Five pinned replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". Six pinned replays of the base `ea792c3` played 17 to 23 and left out 8 to 14. The live deck played 26 and left out 5. No deck needed the repair turn. `docs/reference/pr294-replays-2026-10-07.md` holds each replay.
+
+**The pin (D-1201).** The classifier lost "1 Exhibition" in 10 of 17 unpinned decks, and 21 of 38 unpinned replays built no deck. So the owner chose a pin of the bracket answer in the scratch probe. OQ-98 holds the fault.
+
+**The spend.** $1.7986 over 64 replays, of the cap of $3.00. One replay read no usage. This session spent $0.9647.
+
+**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
+
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `a51dc78`. Codex round 4 is Ready for owner merge on `a51dc78`. P2-1 is fixed: all eleven deck files match their hashes, read bracket 1, and hold 100 cards with the commander. OQ-97 still holds the merge.
+
+**Next action.** Wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
+
+### 2026-10-06: filler words stay out of the theme, PR-134
+
+**A live eval read a thumbs-down on a theme question.** Five filler words now stay out of the theme. The replay shows the question gone.
+
+**The owner asked if the fix stops similar prompts.** 15 of 18 phrasings still asked the theme row. The owner chose a full stop list and a classifier rule (D-1188, D-1189).
+
+**Three gate runs measured the classifier rule.** Versions 23 and 24 each added two theme rows. The owner chose a third version and accepted two general theme rows of run 63.
+
 ## The resume section of 2026-10-06b, PR-137
 
 **Branch `chore/ttl-delete-check`, PR #295: PR-137, a Moxfield bookmarklet fills the import (D-1192 to D-1194).**

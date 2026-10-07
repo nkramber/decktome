@@ -6,34 +6,26 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-07, merge wait)
+## RESUME HERE (2026-10-07, PR-138)
 
-**Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author.
+**Branch `feat/live-eval-bar-check`, PR-138, pull request #PRNUM: the live evals hold the bar of a fix (D-1200).** Role: author.
 
 Author provider: Claude Code
 
-**The base.** `main` at `ea792c3`, the merge of #295. Commit `17f5e31` merged `main` into the branch.
+**The base.** `main` at `923c7df`, the merge of #294. Cloud Build `33c62ff0` deployed it, and revision `mtg-api-00130-md2` serves prompt version 21. The owner lifted the hold of OQ-97 for #294 alone (D-1203). OQ-97 stays open.
 
-**The owner rules.** The owner holds the merge until OQ-97 gives a fair grade to new cards. Never turn on the auto-merge (D-1137). After the merge, a clean session makes the live-eval rules of D-1200 in a new pull request.
+**The owner answers.** The bar check runs in the session before its push and in the script on `ready` (D-1204). `verdict.json` lists each replay, and a replay with no deck counts on no side (D-1205). After a restack, the session replays both sides again when a tree changed (D-1207).
 
-**The code.** Each step has its tests, and each test fails on the code before it.
+**The code.**
 
-- `84a6a28`: the mark reads `OnTheme` (D-1195).
-- `18e4b4c`: a line on theme ends with its cost and its rules text (D-1196).
-- `faab339`: a planeswalker with a lead reads threat (D-1197).
-- `76a081c`: the warning `theme_left_out` buys a repair turn (D-1198). `TestSetFillMarksTheCardOfTheSetLimit` now reads a set limit too.
+- `go/internal/livespend`: the start line of a paid run names the git tree of `go/`, and `LogRuns` lists each run of the session logs (D-1206).
+- `go/cmd/live-evals/bar.go`: the command `bar` reads `verdict.json`, the session logs, and the trees of the base and the head.
+- `scripts/live-evals.sh`: the clone records `base_sha`, and `bar_check` runs on the result `ready` of an eval and of a restack.
+- `scripts/live-evals/eval-prompt.md`, `continue-prompt.md`, and `restack-prompt.md`: the rules of the bar, the replays, and the verdict file.
 
-**The bar (D-1199) holds.** Five pinned replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". Six pinned replays of the base `ea792c3` played 17 to 23 and left out 8 to 14. The live deck played 26 and left out 5. No deck needed the repair turn. `docs/reference/pr294-replays-2026-10-07.md` holds each replay.
+**Checks.** The Go tests of the two packages pass. A smoke run of `bar_check` with stub helpers read each path. No open live-eval pull request predates the rule.
 
-**The pin (D-1201).** The classifier lost "1 Exhibition" in 10 of 17 unpinned decks, and 21 of 38 unpinned replays built no deck. So the owner chose a pin of the bracket answer in the scratch probe. OQ-98 holds the fault.
-
-**The spend.** $1.7986 over 64 replays, of the cap of $3.00. One replay read no usage. This session spent $0.9647.
-
-**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
-
-**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `a51dc78`. Codex round 4 is Ready for owner merge on `a51dc78`. P2-1 is fixed: all eleven deck files match their hashes, read bracket 1, and hold 100 cards with the commander. OQ-97 still holds the merge.
-
-**Next action.** Wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
+**Next action.** Run `make verify`, open the pull request, and do the Gitar pass.
 
 ## How to resume
 
@@ -107,7 +99,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-136: the theme mark of a shortlist line** (D-1190 to D-1202). The resume section holds the state. The merge waits for OQ-97. Then a clean session takes the live-eval rules of D-1200.
+0. **The first live eval under PR-138** (D-1204). After the merge, read its `verdict.json` and the bar line of the script log.
 0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
 0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. Unverified: the tool that names the token.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -131,14 +123,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-06: filler words stay out of the theme, PR-134
-
-**A live eval read a thumbs-down on a theme question.** Five filler words now stay out of the theme. The replay shows the question gone.
-
-**The owner asked if the fix stops similar prompts.** 15 of 18 phrasings still asked the theme row. The owner chose a full stop list and a classifier rule (D-1188, D-1189).
-
-**Three gate runs measured the classifier rule.** Versions 23 and 24 each added two theme rows. The owner chose a third version and accepted two general theme rows of run 63.
-
 ### 2026-10-06b: the Moxfield bookmarklet, PR-137
 
 **The owner asked for the TTL check and the check of #292 first.** Both passed. The check build started a live eval, and the owner asked for the note of D-1194.
@@ -157,6 +141,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The fix grew to four more steps, and a strong bar.** Five bracket 1 replays played all 31 themed cards (D-1195 to D-1199). The replays pin the bracket answer (D-1201).
 
+### 2026-10-07: the bar of a live-eval fix, PR-138
+
+**The owner lifted the hold of #294 for that pull request alone.** It merged as `923c7df`, and the deploy serves prompt version 21 (D-1203).
+
+**D-1200 said that the script opens no pull request, but the session opens it.** The owner chose a check in the session and again in the script (D-1204).
+
+**The owner chose a full replay list, and a restack that replays again** (D-1205, D-1207). The start line of a replay names its tree of `go/` (D-1206).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-06, the records of 2026-08-31 to 2026-10-05c, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-07, the records of 2026-08-31 to 2026-10-06, and 104 more sections, word for word. Read it for the detail behind a decision.
