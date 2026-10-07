@@ -3540,6 +3540,25 @@ Gate:
 
 > *In plain English:* the robot that checks the app found a real bug, and its notes held the true cost. Ten small faults of the robot itself are now fixed, and it now looks for the root of a bug, not a quick patch.
 
+**PR-137: A Moxfield bookmarklet fills the import (D-1192 to D-1194).** ✅ merged as #295. The mark comes before any review (D-822). Moxfield refuses each read of the server (D-1102). The console test of OQ-95 read the v3 API from a deck page, in the browser of the owner (D-1192).
+
+- **The bookmarklet (D-1193).** `web/apps/web/src/features/deck/moxfield-bookmarklet.ts` holds its code as one string. It reads the open deck and writes the Arena sections of the parser. The maybeboard and the tokens stay out.
+- **The new tab.** The bookmarklet opens `/decks` with the list and the name in the fragment. The decks page opens the import dialog with them, and drops the fragment.
+- **No link.** The import sends no source link, because the server read no deck (D-1107).
+- **The button.** The Moxfield steps of D-1103 offer the button "Import to decktome", for the bookmarks bar. An effect builds the link, because React 19 blocks a `javascript:` link.
+- **The note (D-1194).** The `live-test` skill and `docs/reference/paid-targets.md` say that a deck of a live-test lane starts a live eval.
+
+Gate:
+- The tests of the bookmarklet run its code against a v3 deck in the shape of the console test. They cover the sections, a blocked tab, another page, a failed read, and an empty deck.
+- `TestParseMoxfieldBookmarkletList` reads the list of the bookmarklet with no bad line.
+- The tests of the import dialog open the import from the fragment, send no source link, and drop the fragment. The button shows for Moxfield alone.
+- The owner selected the bookmark on a Moxfield deck, and the new tab opened `/decks` with the list.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* Moxfield blocks our server, but it answers the browser of the user. A bookmark now reads the open Moxfield deck, and decktome opens with the list ready to import.
+
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
 

@@ -12,9 +12,7 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 ## Waits on a decision
 
-| # | Question | Why only you | What it blocks |
-|---|---|---|---|
-| OQ-95 | A Moxfield link: a bookmarklet, the access of Moxfield, or the steps alone (D-1102)? | Two facts come from you alone. The first is the result of the console test on a Moxfield deck in your browser. The second is the answer of Moxfield support. | A Moxfield import with one click. Until then, a Moxfield link gets the steps of D-1103. |
+No question waits on a decision now. D-1192 answered OQ-95.
 
 ## The two numbers M-5 exists to set
 
