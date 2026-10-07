@@ -99,7 +99,8 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **PR-136: the theme mark of a shortlist line** (D-1190, D-1191). The resume section holds the open work. After the merge, a build of a themed deck must show no "mark" in a reason.
-0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
+0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
+0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. The resume section holds the evidence.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -137,6 +138,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **Three gate runs measured the classifier rule.** Versions 23 and 24 each added two theme rows. The owner chose a third version and accepted two general theme rows of run 63.
 
+### 2026-10-06b: the Moxfield bookmarklet, PR-137
+
+**The owner asked for the TTL check and the check of #292 first.** Both passed. The check build started a live eval, and the owner asked for the note of D-1194.
+
+**The console test of OQ-95 passed in the browser of the owner.** The owner permits the bookmarklet before an answer of Moxfield (D-1192). The owner chose a filled form in a new tab, with no Moxfield link (D-1193).
+
+**The owner tested the real bookmark on Moxfield.** The new tab opened `/decks` with the list. The owner chose the unit tests now and the live test after the deploy.
+
 ### 2026-10-06b: the theme mark of a shortlist line, PR-136
 
 **A live eval read a planeswalker deck of a set four days old.** The model played reprints it knew in place of themed set cards.
@@ -147,4 +156,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-06, the records of 2026-08-31 to 2026-10-05, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-06, the records of 2026-08-31 to 2026-10-05c, and 104 more sections, word for word. Read it for the detail behind a decision.

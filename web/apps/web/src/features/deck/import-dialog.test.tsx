@@ -173,6 +173,25 @@ describe("a deck link", () => {
     expect(submitFeedback).not.toHaveBeenCalled();
   });
 
+  it("offers the Moxfield bookmarklet with the steps, as a javascript: link (D-1193)", async () => {
+    fetchDeckList.mockResolvedValueOnce({ text: "", name: "", sourceUrl: "", leftOut: 0, site: "Moxfield", exportSteps: moxSteps, knownSite: true });
+    await openAndRead("https://moxfield.com/decks/abc");
+
+    const link = await screen.findByTestId("moxfield-bookmarklet");
+    expect(link).toHaveTextContent("Import to decktome");
+    expect(link.getAttribute("href")?.startsWith("javascript:")).toBe(true);
+    expect(decodeURIComponent(link.getAttribute("href") ?? "")).toContain(JSON.stringify(window.location.origin));
+  });
+
+  it("offers no bookmarklet for another site", async () => {
+    submitFeedback.mockResolvedValueOnce({ feedbackId: "fb1" });
+    fetchDeckList.mockResolvedValueOnce({ text: "", name: "", sourceUrl: "", leftOut: 0, site: "tappedout.net", exportSteps: ["Open the deck on its site."], knownSite: false });
+    await openAndRead("https://tappedout.net/mtg-decks/x/");
+
+    await screen.findByTestId("export-steps");
+    expect(screen.queryByTestId("moxfield-bookmarklet")).toBeNull();
+  });
+
   it("shows the general steps of another site, and files a report of its link (D-1104)", async () => {
     submitFeedback.mockResolvedValueOnce({ feedbackId: "fb1" });
     fetchDeckList.mockResolvedValueOnce({ text: "", name: "", sourceUrl: "", leftOut: 0, site: "tappedout.net", exportSteps: ["Open the deck on its site."], knownSite: false });
@@ -240,5 +259,46 @@ describe("the report of a list the app could not read", () => {
     await openAndPaste("4 Lightning Bolt{enter}hello");
 
     expect(await screen.findByText("The app could not read 1 row of this file.")).toBeInTheDocument();
+  });
+});
+
+describe("the list of the Moxfield bookmarklet (D-1193)", () => {
+  const list = "Commander\n1 Fire Lord Azula\n\nDeck\n12 Island";
+  const hash = `#${new URLSearchParams({ list, name: "Azula Tempo" }).toString()}`;
+
+  it("opens the import with the list and the name, and drops the fragment", async () => {
+    const { router } = await renderAt(`/decks${hash}`);
+
+    expect(await screen.findByRole("textbox", { name: "Deck list" })).toHaveValue(list);
+    expect(screen.getByRole("textbox", { name: /Deck name/ })).toHaveValue("Azula Tempo");
+    await waitFor(() => expect(router.state.location.hash).toBe(""));
+    expect(router.state.location.pathname).toBe("/decks");
+  });
+
+  it("sends the list with no source link, because the server read no deck (D-1107)", async () => {
+    importDeck.mockResolvedValueOnce({ deck: stored, sessionId: "s9", commanderOptions: [], unresolved: [] });
+    await renderAt(`/decks${hash}`);
+    const user = userEvent.setup();
+    await screen.findByRole("textbox", { name: "Deck list" });
+    await user.click(screen.getByRole("button", { name: "Import" }));
+
+    await waitFor(() => expect(importDeck).toHaveBeenCalledWith(expect.objectContaining({ text: list, name: "Azula Tempo", sourceUrl: "" })));
+  });
+
+  it("opens an empty import after the reader closes the seeded one", async () => {
+    await renderAt(`/decks${hash}`);
+    const user = userEvent.setup();
+    await screen.findByRole("textbox", { name: "Deck list" });
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Deck list" })).toBeNull());
+    await user.click(screen.getByRole("button", { name: "Import a deck" }));
+
+    expect(await screen.findByRole("textbox", { name: "Deck list" })).toHaveValue("");
+  });
+
+  it("opens no import for a fragment with no list", async () => {
+    await renderAt("/decks#top");
+    await screen.findByRole("button", { name: "Import a deck" });
+    expect(screen.queryByRole("textbox", { name: "Deck list" })).toBeNull();
   });
 });
