@@ -416,17 +416,32 @@ function Choice({
 
 // ExportSteps tells the reader how to copy the list of a site that the
 // app can not read (D-1103). A site with no steps of its own also says
-// that the app sent a report of it (D-1104).
+// that the app sent a report of it (D-1104). For Moxfield the bookmark
+// comes first, and the steps fold under a disclosure (D-1210).
 function ExportSteps({ site, known, steps, reported }: { site: string; known: boolean; steps: string[]; reported: boolean }) {
+  const list = (
+    <ol className="list-decimal pl-5">
+      {steps.map((step) => (
+        <li key={step}>{step}</li>
+      ))}
+    </ol>
+  );
+  if (known && site === "Moxfield") {
+    return (
+      <div className="flex flex-col gap-1.5 rounded-card border border-border p-3 text-sm" data-testid="export-steps">
+        <p className="font-medium">{`${site} does not let the app read its decks.`}</p>
+        <MoxfieldBookmark />
+        <details className="mt-1">
+          <summary className="cursor-pointer font-medium">Copy the list by hand</summary>
+          {list}
+        </details>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-1.5 rounded-card border border-border p-3 text-sm" data-testid="export-steps">
       <p className="font-medium">{known ? `${site} does not let the app read its decks. Copy the list by hand:` : `The app can not read decks from ${site} yet. Copy the list by hand:`}</p>
-      <ol className="list-decimal pl-5">
-        {steps.map((step) => (
-          <li key={step}>{step}</li>
-        ))}
-      </ol>
-      {known && site === "Moxfield" && <MoxfieldBookmark />}
+      {list}
       {!known && reported && <p role="status">The app sent a report of this site, so that it can be added.</p>}
     </div>
   );
@@ -450,8 +465,8 @@ function MoxfieldBookmark() {
     return () => host.replaceChildren();
   }, []);
   return (
-    <div className="mt-1 flex flex-col gap-1.5">
-      <p>Or drag this button to the bookmarks bar of your browser. Select it on a Moxfield deck page, and the list opens here.</p>
+    <div className="flex flex-col gap-1.5">
+      <p>Drag this button to the bookmarks bar of your browser. Select it on a Moxfield deck page, and the list opens here.</p>
       <span ref={ref} />
     </div>
   );

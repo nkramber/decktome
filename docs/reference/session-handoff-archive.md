@@ -15,6 +15,40 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-07, PR-138
+
+**Branch `feat/live-eval-bar-check`, PR-138, pull request #296: the live evals hold the bar of a fix (D-1200).** Role: author.
+
+Author provider: Claude Code
+
+**The base.** `main` at `923c7df`, the merge of #294. Cloud Build `33c62ff0` deployed it, and revision `mtg-api-00130-md2` serves prompt version 21. The owner lifted the hold of OQ-97 for #294 alone (D-1203). OQ-97 stays open.
+
+**The owner answers.** The bar check runs in the session before its push and in the script on `ready` (D-1204). `verdict.json` lists each replay, and a replay with no deck counts on no side (D-1205). After a restack, the session replays both sides again when a tree changed (D-1207). A second session added the stable signature of D-1208 to this pull request, after the first review round.
+
+**The code.**
+
+- `go/internal/livespend`: the start line of a paid run names the git tree of `go/`, and `LogRuns` lists each run of the session logs (D-1206).
+- `go/cmd/live-evals/bar.go`: the command `bar` reads `verdict.json`, the session logs, and the trees of the base and the head.
+- `scripts/live-evals.sh`: the clone records `base_sha`, and `bar_check` runs on the result `ready` of an eval and of a restack.
+- `scripts/live-evals/eval-prompt.md`, `continue-prompt.md`, and `restack-prompt.md`: the rules of the bar, the replays, and the verdict file.
+- `scripts/live-evals-sign.sh` and `make live-evals-sign-setup`: a key of the owner signs each build of the tool, so the grant of the volume stays (D-1208). `guard.go` protects the script.
+
+**Checks.** `make verify` passes on `b2f5843` with Node 22.23.2. Each GitHub check passes on `e7a0e4e`, except `review-gate`, which reads the new record.
+
+**Review.** Round 2 (D-1208): Gitar found an unchecked lock and a lost codesign error, and `e7a0e4e` fixes both. Gitar approved `e7a0e4e`. The Codex review says `Ready for owner merge` for `e7a0e4e0928b81a53ef0feb15378738cc3f9f8f4`. No finding stays open. This session pushed the review record and hand-off.
+
+**Next action.** The merge waits for the confirmation of the owner, and then for the auto-merge (D-828). After the merge, run `make live-evals-sign-setup` one time, and allow the dialog of the first signed build.
+
+### 2026-10-06b: the theme mark of a shortlist line, PR-136
+
+**A live eval read a planeswalker deck of a set four days old.** The model played reprints it knew in place of themed set cards.
+
+**The cause was the shortlist line.** It named no theme, so a themed card with a staple job read like a staple. Each themed line now says "on theme" (D-1190).
+
+**The replay of the fix leaked the mark into 13 reasons.** The mark now reads as plain English, and the prompt forbids "mark" in user text (D-1191).
+
+**The fix grew to four more steps, and a strong bar.** Five bracket 1 replays played all 31 themed cards (D-1195 to D-1199). The replays pin the bracket answer (D-1201).
+
 ## The resume section of 2026-10-07, PR-136
 
 **Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author.
