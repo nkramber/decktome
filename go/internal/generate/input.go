@@ -302,6 +302,12 @@ func (b *Builder) shortlist(req Request) string {
 		if job := req.Roles[c.GetOracleId()]; job != "" {
 			fmt.Fprintf(&s, " | %s", job)
 		}
+		// A card that the theme matched carries its mark. The job word of a
+		// staple role says nothing of the theme, and a card newer than the
+		// model reads as a name alone (D-1190).
+		if req.Themed[c.GetOracleId()] {
+			s.WriteString(" | on theme")
+		}
 		// A card that counts toward a power floor carries its mark, so the
 		// model counts what the check counts (D-704).
 		for _, mark := range marks(c) {

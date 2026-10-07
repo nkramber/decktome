@@ -354,6 +354,7 @@ func request(bs base, idx *cards.Index, pool *generate.Pool, list *candidates.Li
 		Commanders:   commanderIDs,
 		PoolRule:     mtgv1.PoolRule_POOL_RULE_ANY_CARD,
 		Roles:        generate.Roles(list),
+		Themed:       generate.Themed(list),
 		Targets:      generate.TargetsFor(format, powerOf(bs)),
 		Limits:       generate.LimitsFor(format),
 		LegalityAsOf: idx.AsOf.Format("2006-01-02"),

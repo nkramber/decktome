@@ -4,7 +4,13 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 
 ## Not yet asked
 
-No question waits here now. D-1188 answered OQ-91.
+D-1188 answered OQ-91.
+
+| # | Question | Why it matters | Ask when |
+|---|---|---|---|
+| OQ-96 | The gap question read "Your collection holds 0 planeswalkers cards, and I want 30 or more." Should the sentence name the theme in its singular form, and say that the count reads cards that fit the theme? | The live eval of deck `dDD9Iav9aGhgGF9dDLNQ` read it. The set of the request holds 10 planeswalkers, so a reader can read 30 as 30 planeswalkers. The count reads each card with a theme signal, and the set holds more than 30 such cards. `Gap.Sentence` in `go/internal/questions/pool_gap.go` puts the theme before "cards" as the reader wrote it. | When a live eval or a verdict names the sentence again, or with the next change of the gap question. |
+
+OQ-97 waits in `docs/owner-questions.md`, because a change of the quality model needs the owner.
 
 ## Asked, waiting
 

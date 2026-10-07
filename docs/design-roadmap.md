@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-06 correction pass 267 (PR-136, F-226, D-1190, D-1191): a live eval read a planeswalker deck of a new set. The model played reprints it knew and left out themed cards, because no shortlist line named the theme. Each themed line now says "on theme". Changes: F-226, PR-136.
 2026-10-04 correction pass 266 (PR-130, F-225, D-1162): the check of PR-128 built a deck that marked Astral Cornucopia as fast mana. Fast mana now needs no X and no multikicker in the cost. Changes: F-225, PR-130, sequencing step 125.
 2026-10-04 correction pass 265 (PR-128, F-224, D-1159, D-1160): a reader verdict named Barbed Sextant, Springleaf Drum, and Hurricane in a mono-green deck. Fast mana now needs a mana ability that pays no mana and taps no creature. The finisher count drops the tag `burn-player-each`. Changes: F-224, PR-128, sequencing step 123.
 2026-10-04 correction pass 264 (PR-127, D-1155 to D-1158): the owner asked that the live evals start with no open terminal, as the night fixer of what-you-carry does. A launchd agent now runs one pass every five minutes from a clone of origin/main. The "Leave feedback" notes join the queue, and a scope rule keeps each fix to the product. Changes: PR-127, sequencing step 122.
@@ -635,6 +636,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-223 | **A rare commander raised the grade.** The deck of the paid replay got the reason "few decks lead with the commander, and that raises the grade". The typical rung holds the average decks of the 100 most built commanders alone, so the fit gave the deck count a weight of -0.164. | ✅ PR-124 (#283): a deck of bracket 1 to 4 reads the mean of the model for the deck count too (D-1123). A later item can give the typical rung commanders of each popularity. |
 | F-224 | **Weak cards filled the power floors.** Reader verdict `x5JGF0zyIE3DcID7QB5c` named Barbed Sextant and Springleaf Drum in a mono-green deck of bracket 4, and said that Hurricane is no win condition. The fast mana counter marked a filter and a creature tap, and the finisher count read the tag `burn-player-each`, whose cards also hit the caster. | ✅ PR-128 (#286): fast mana needs a mana ability that pays no mana and taps no creature (D-1159), and the finisher count drops the tag (D-1160). |
 | F-225 | **A hidden cost read as fast mana.** The check of PR-128 built an owned-only deck of bracket 4, and its profile marked Astral Cornucopia as fast mana. The cost {X}{X}{X} gives a mana value of 0, but one mana costs 3. | ✅ PR-130 (#288): fast mana needs no X and no multikicker in the cost (D-1162). |
+| F-226 | **The model did not see the theme of a shortlist card.** Deck `dDD9Iav9aGhgGF9dDLNQ` asked for planeswalkers from a set four days old. It left out Garruk, Veiled Butcher and four more themed cards, and it played off-theme reprints. A line read the name, the type, and the job, so a themed card with a staple job read like a staple. | ✅ PR-136: each themed line says "on theme", and the model prefers such a card to another card of the same job (D-1190, D-1191). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3539,6 +3541,24 @@ Gate:
 - Under the profile with no deny of the security server, Codex gets the answer of the server.
 
 > *In plain English:* the robot that checks the app found a real bug, and its notes held the true cost. Ten small faults of the robot itself are now fixed, and it now looks for the root of a bug, not a quick patch.
+
+**PR-136: The theme mark of a shortlist line (F-226, D-1190, D-1191).** ✅ merged as #PRNUM. The mark comes before any review (D-822). A live eval read a planeswalker deck of Reality Fracture, a set four days old. The deck played reprints that the model knew, and it left out themed cards of the set.
+
+- **The cause.** A shortlist line held the name, the type, and the job. "Way of the Pyromancer" and "Izzet Signet" both read "ramp", and no line said which card the theme matched.
+- **The class.** Each themed card with a staple job, such as a lifegain card that draws or a Zombie that removes. Also each card newer than the model.
+- **The fix.** `generate.Themed` reads the flag `Themed` of the shortlist, and each themed line says "on theme". Prompt version 21 prefers such a card to another card of the same job (D-1190).
+- **The leak.** The first wording made 13 reasons say "theme-marked". No reason and no summary now writes "mark" or "marked" (D-1191).
+- **The snapshot.** The local card snapshot of 2026-09-04 held 49 cards of the set and not the commander. The replays read a snapshot of 2026-10-06 in the temp folder of the session.
+
+Gate:
+- `TestShortlistMarksEachThemedCard` and `TestBuildPromptReadsTheThemeMark` fail before the fix. They read a new set card, a lifegain draw card, a Zombie that removes, an upgrade, and Sol Ring.
+- `TestThemedCardKeepsAStapleRole` proves that the theme flag holds for each input of the class.
+- The base replay played 20 themed nonland cards of 61 and left out 11. The replay of the fix played 28 of 62 and left out 3.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* the robot that picks the cards did not know which ones fit the plan, so it chose cards it already knew. Each card that fits the plan now says so.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.

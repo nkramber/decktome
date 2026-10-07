@@ -130,6 +130,7 @@ func run() error {
 		Commanders:   cmdrIDs,
 		PoolRule:     mtgv1.PoolRule_POOL_RULE_ANY_CARD,
 		Roles:        generate.Roles(list),
+		Themed:       generate.Themed(list),
 		Limits:       generate.LimitsFor(fid),
 		Targets:      generate.TargetsFor(fid, nil),
 		LegalityAsOf: idx.AsOf.Format("2006-01-02"),

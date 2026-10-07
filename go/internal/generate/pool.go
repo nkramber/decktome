@@ -111,6 +111,21 @@ func Roles(l *candidates.List) map[string]string {
 	return out
 }
 
+// Themed is the oracle id of each shortlist card that the theme matched,
+// the upgrades included, for the theme mark of the shortlist block
+// (D-1190).
+func Themed(l *candidates.List) map[string]bool {
+	out := map[string]bool{}
+	for _, cs := range [][]candidates.Candidate{l.Candidates, l.Upgrades} {
+		for _, c := range cs {
+			if c.Card != nil && c.Themed {
+				out[c.Card.GetOracleId()] = true
+			}
+		}
+	}
+	return out
+}
+
 var roleWords = map[mtgv1.CardRole]string{
 	mtgv1.CardRole_CARD_ROLE_LAND: "land", mtgv1.CardRole_CARD_ROLE_RAMP: "ramp",
 	mtgv1.CardRole_CARD_ROLE_DRAW: "draw", mtgv1.CardRole_CARD_ROLE_REMOVAL: "removal",

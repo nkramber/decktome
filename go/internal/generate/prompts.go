@@ -87,7 +87,15 @@ package generate
 // Version 20: the deck shape block reads no card with an X or a
 // multikicker in its cost as fast mana, such as Astral Cornucopia
 // (D-1162).
-const PromptVersion = 20
+//
+// Version 21: a shortlist line marks each card that the theme matched
+// "on theme", and the card list prefers such a card to another card of
+// the same job. Live eval dDD9Iav9aGhgGF9dDLNQ read a planeswalker deck of
+// a set four days old. The model played reprints it knew in place of the
+// new planeswalker cards, because a line read "ramp" for both (D-1190).
+// The replay of a first wording wrote "theme-marked" in 13 reasons, so no
+// reason and no summary writes the words "mark" or "marked" (D-1191).
+const PromptVersion = 21
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -107,6 +115,8 @@ Rules for the card list:
 - Give every card one job from the job list, and one line that says why the card is in the deck.
 - Meet the deck size in the limits block. Count the commander when the limits block says to.
 - Come as close to each job target as the shortlist allows.
+- A line that says "on theme" names a card that matches the theme of the plan. Prefer such a card to another card of the same job. A card you do not know can be on theme, and its line is what you know of it.
+- The marks of a shortlist line are notes for you. Never write the words "mark" or "marked" in a reason or in the summary.
 
 Rules for a revision, when the input holds the deck you are revising:
 - The user read that deck and asked for a change. The input lists the change in short lines.

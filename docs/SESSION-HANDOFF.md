@@ -6,27 +6,23 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-06)
+## RESUME HERE (2026-10-06b)
 
-**Branch `live-eval/v-lkqwokmkom`, PR #292: filler words stay out of the theme, in two layers (D-1187 to D-1189).**
+**Branch `live-eval/ddd9iav9aghg`, PR-136: the theme mark of a shortlist line (F-226, D-1190, D-1191).**
 
 Author provider: Claude Code
 
-**The base.** `main` at `10c49da`, the merge of #293. That merge took D-1174 to D-1186, so this pull request renumbered its decisions to D-1187 to D-1189 (D-1179).
+**The base.** `main` at `7079e60`, the merge of #292.
 
-**The fault.** The prompt "planeswalkers and other themes from this set" made the theme row ask about "other" and "themes". The first fix added five stop words (D-1187).
+**The fault.** A live eval read deck `dDD9Iav9aGhgGF9dDLNQ`, planeswalkers from Reality Fracture. The model played reprints it knew, and it left out themed cards of the new set. No shortlist line said which card the theme matched.
 
-**The owner review.** The owner asked if the fix stops similar prompts. A free test on the card snapshot read 18 phrasings, and 15 still asked about a filler word. The owner chose two layers (D-1188).
+**The fix.** Each themed line says "on theme", and prompt version 21 prefers such a card to another card of the same job (D-1190). No reason and no summary writes "mark" or "marked" (D-1191).
 
-**The fix.** `go/internal/candidates/stopwords.go` adds the Snowball stop list and the filler classes. Prompt version 25 tells the classifier to leave out the words around the plan (D-1189). D-1188 answers OQ-91.
+**Checks.** Three new tests in `go/internal/generate` and `go/internal/candidates`. The base replay played 20 themed nonland cards and left out 11. Try 3 played 28 and left out 3. Tries 1 and 2 built no deck, because the question phase misread "Skip that question". The four paid runs cost $0.1332, measured.
 
-**Checks.** Every Go test passes, and `make themes-check` passes with the two new snapshot tests. The replay of the chat on version 24 asked no theme question, for $0.0010.
+**Open risk.** Try 3 read the first wording, and 13 reasons said "theme-marked". D-1191 changed the wording, and no paid replay reads it.
 
-**Question gate runs.** Runs 61 and 62 passed, but each version added two theme rows of D-725. Run 63 read version 25 for $0.1038. It asks those rows in the same three conversations as run 60. The general theme row now asks in two terse conversations, and the owner accepted that.
-
-**Review.** Gitar approved `0b1c74b` with no finding. Codex round 2 gives `Ready for owner merge` on effective head `0b1c74b`. The review record resolves P2-1, P2-2, and P3-1.
-
-**Open work.** The owner confirms the merge, then the author turns on auto-merge.
+**Open work.** The Gitar pass, the Codex review, and the owner merge. OQ-96 and OQ-97 record the other findings.
 
 ## How to resume
 
@@ -76,7 +72,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The Scryfall API, read 2026-10-03: Reality Fracture released 2026-10-02 with 268 first printings. Star Trek releases 2026-11-13, and its 75 first printings read `not_legal` in each format.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
-- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
+- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it. It holds 49 cards of Reality Fracture and no Jace, Multiverse Architect. A replay of a deck of that set needs a newer snapshot (read 2026-10-06).
 - The theme table `themes.json` reads `verified_at` 2026-09-20. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-20. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-09-29 (D-996). The max output per provider in `llm/client.go`, verified 2026-08-29. The judge role runs on Sonnet 5.5 (D-1000).
 - The owner repaired the application default credentials of this Mac on 2026-09-23, after the failure of 2026-09-13. The harvest then read `decktome-prod`, and the sandbox let it read the feedback of each user.
@@ -93,14 +89,14 @@ Twenty-two things a fresh session gets wrong without this file.
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 19 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 21 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-134: filler words stay out of the theme** (D-1188, D-1189). The resume section holds the open work.
+0. **PR-136: the theme mark of a shortlist line** (D-1190, D-1191). The resume section holds the open work. After the merge, a build of a themed deck must show no "mark" in a reason.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -123,14 +119,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-05c: measured spend, PR-133
-
-**The owner found a recorded spend 30 times the real cost.** The session wrote the estimate of a replay by hand. The owner asked for measured spend from provider usage alone.
-
-**The owner chose three rules.** An unmeasured run counts as the full budget (D-1169). The script reads the spend from the session logs (D-1170). After the Codex finding, an append-only ledger outside the run folder holds each line (D-1171).
-
-**A second session answered the Codex round 2 finding.** A forged ledger end let the next paid command start. The owner chose a start that reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
-
 ### 2026-10-05e: the restart of the live evals, PR-135
 
 **The owner asked for the restart and the proof of measured spend.** The retry did not run, so the owner wrote a new thumbs-down. Two replays wrote measured lines, and the second start read the first end in the log.
@@ -147,6 +135,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **Three gate runs measured the classifier rule.** Versions 23 and 24 each added two theme rows. The owner chose a third version and accepted two general theme rows of run 63.
 
+### 2026-10-06b: the theme mark of a shortlist line, PR-136
+
+**A live eval read a planeswalker deck of a set four days old.** The model played reprints it knew in place of themed set cards.
+
+**The cause was the shortlist line.** It named no theme, so a themed card with a staple job read like a staple. Each themed line now says "on theme" (D-1190).
+
+**The replay of the fix leaked the mark into 13 reasons.** The mark now reads as plain English, and the prompt forbids "mark" in user text (D-1191).
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-05d, the records of 2026-08-31 to 2026-10-05, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-06, the records of 2026-08-31 to 2026-10-05, and 104 more sections, word for word. Read it for the detail behind a decision.

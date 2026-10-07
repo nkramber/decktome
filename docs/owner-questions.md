@@ -25,6 +25,7 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 | # | Question | Why only you | What it blocks |
 |---|---|---|---|
+| OQ-97 | A card newer than the top lists reads as "unseen", and the grade falls. Should the grade read such a card as unknown? The options: (a) leave it out of the unseen share and the card rate, which gives a fair grade to a new set, but a deck of new cards then reads on fewer cards; (b) give it the mean rate of its rarity, which keeps each card in the count, but the mean is a guess; (c) keep the grade and add a note that names the new cards, which needs no new fit, but the grade stays low. | Deck `dDD9Iav9aGhgGF9dDLNQ` of Reality Fracture, four days after the release, read "many of the cards appear in no top list, and that lowers the grade". Each option changes the features of the fitted model, or the text of the grade, and the owner chose that model. | A fair grade for a deck of a new set. F-226 and D-1190 do not touch the grade. |
 
 ## How to answer
 
