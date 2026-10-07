@@ -74,3 +74,42 @@ func TestCommanderRateIsNotOnTheme(t *testing.T) {
 		}
 	}
 }
+
+// TestThemedPlaneswalkerIsAThreat is D-1197. Three replays of D-1196 left
+// out Chandra, Torch of Defiance as "ramp", Garruk, Veiled Butcher as
+// "removal", and Ajani Unrelenting as "wipe": a tag marks one loyalty
+// ability, and the job word set each beside the staples of that job. A
+// planeswalker with a lead now reads threat. An alternate win stays a
+// wincon. With no lead, the quality fit keeps the role of the tag.
+func TestThemedPlaneswalkerIsAThreat(t *testing.T) {
+	b, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	R := mtgv1.Color_COLOR_R
+	idx := fixture(t, []tc{
+		{id: "chandra", name: "Chandra, Torch of Defiance", typeLine: "Legendary Planeswalker — Chandra", text: "+1: Add {R}{R}.", identity: []mtgv1.Color{R}, mv: 4, rank: 50, tags: []string{"ramp"}},
+		{id: "garruk", name: "Garruk, Veiled Butcher", typeLine: "Legendary Planeswalker — Garruk", text: "+2: Up to one target creature gets -4/-1 until your next turn.", identity: []mtgv1.Color{B}, mv: 5, rank: 9000, tags: []string{"removal"}},
+		{id: "ajani", name: "Ajani Unrelenting", typeLine: "Legendary Planeswalker — Ajani", text: "−7: Destroy all creatures.", identity: []mtgv1.Color{R, W}, mv: 6, rank: 9000, tags: []string{"sweeper"}},
+		{id: "walkerwin", name: "Test Walker of Victory", typeLine: "Legendary Planeswalker — Test", text: "−10: You win the game.", identity: []mtgv1.Color{R}, mv: 5, rank: 9000, tags: []string{"alternate-win-condition"}},
+	})
+	roleTags := b.themes.roleSets(idx.Tags())
+	for _, tt := range []struct {
+		id      string
+		themed  mtgv1.CardRole
+		offList mtgv1.CardRole
+	}{
+		{"chandra", mtgv1.CardRole_CARD_ROLE_THREAT, mtgv1.CardRole_CARD_ROLE_RAMP},
+		{"garruk", mtgv1.CardRole_CARD_ROLE_THREAT, mtgv1.CardRole_CARD_ROLE_REMOVAL},
+		{"ajani", mtgv1.CardRole_CARD_ROLE_THREAT, mtgv1.CardRole_CARD_ROLE_WIPE},
+		{"walkerwin", mtgv1.CardRole_CARD_ROLE_WINCON, mtgv1.CardRole_CARD_ROLE_WINCON},
+	} {
+		c, _ := idx.ByOracleID(tt.id)
+		if got, _ := assignRole(c, roleTags, true, false); got != tt.themed {
+			t.Errorf("%s with a lead: role %s, want %s", c.Name, RoleName(got), RoleName(tt.themed))
+		}
+		if got, _ := assignRole(c, roleTags, false, false); got != tt.offList {
+			t.Errorf("%s with no lead: role %s, want %s", c.Name, RoleName(got), RoleName(tt.offList))
+		}
+	}
+}
