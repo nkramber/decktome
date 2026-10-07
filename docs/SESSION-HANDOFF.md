@@ -30,9 +30,9 @@ Author provider: Claude Code
 
 **Checks.** `make verify` passed on `f492851`. The web tests of `src/features/deck/` pass, and `TestParseMoxfieldBookmarkletList` passes.
 
-**Review.** The Gitar pass and the Codex review wait.
+**Review.** Gitar passed on `ca76c41` with no open finding. The Codex review record approves effective head `ca76c41`.
 
-**Open work.** The Gitar pass, the Codex review, and the merge question to the owner, pending the auto-merge (D-828).
+**Open work.** The review record and hand-off need one metadata commit and push. Then check `review-gate` on the branch. The owner confirms the merge before auto-merge (D-828).
 
 ## How to resume
 
