@@ -62,7 +62,7 @@ type Request struct {
 	// reads the job it was given and does not invent one.
 	Roles map[string]string
 	// Themed holds the oracle id of each shortlist card that the theme
-	// matched. Its line carries the mark "theme", because the job word of
+	// matched. Its line carries the mark "on theme", because the job word of
 	// a staple role hides the theme, and the model can not recall a card
 	// newer than itself (D-1190).
 	Themed map[string]bool
