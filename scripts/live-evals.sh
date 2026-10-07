@@ -726,17 +726,20 @@ $( [ -n "$pr" ] && echo "PR #$pr")"
 
 bar_check() { # deck pr [target] -> 0 when verdict.json holds the bar (D-1200)
   # After a restack the base is the fork point from target (D-1207).
-  local deck=$1 pr=$2 target=${3:-} v=$RUNS/$1/verdict.json head base
+  local deck=$1 pr=$2 target=${3:-} v=$RUNS/$1/verdict.json head base ref
   [ -n "$pr" ] || { echo "result.json names no pull request"; return 1; }
   # The script reads the verdict through the helper, as each file of the
   # run folder, and git reads its own checkout alone.
   rget "$deck" bundle/verdict.json 262144 > "$v" || { echo "verdict.json does not read"; return 1; }
-  git -C "$ROOT" fetch --quiet origin "$(dget "$deck" branch)" || { echo "the branch does not fetch"; return 1; }
+  # The session can run for hours, so the base ref of this checkout can
+  # be older than the tip that the session rebased onto.
+  ref=${target:-$(dget "$deck" base)}
+  git -C "$ROOT" fetch --quiet origin "$(dget "$deck" branch)" "$ref" || { echo "the branch or the base does not fetch"; return 1; }
   head=$(gh pr view "$pr" --json headRefOid --jq .headRefOid) || { echo "the head of PR #$pr does not read"; return 1; }
   base=""
   [ -n "$target" ] || base=$(dget "$deck" base_sha)
   # An item that started before base_sha reads its fork point.
-  [ -n "$base" ] || base=$(git -C "$ROOT" merge-base "$head" "origin/${target:-$(dget "$deck" base)}") || { echo "the base does not read"; return 1; }
+  [ -n "$base" ] || base=$(git -C "$ROOT" merge-base "$head" "origin/$ref") || { echo "the base does not read"; return 1; }
   tool bar -verdict "$v" -logs "$RUNS/$deck" -repo "$ROOT" -base "$base" -head "$head"
 }
 
