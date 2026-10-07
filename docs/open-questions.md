@@ -4,7 +4,7 @@ Questions not yet asked, or asked and not yet answered. Move each answered quest
 
 ## Not yet asked
 
-No question waits here now. D-1033 answered OQ-90.
+No question waits here now. D-1188 answered OQ-91.
 
 ## Asked, waiting
 
@@ -45,5 +45,6 @@ These questions wait for work, and not for an answer of the owner.
 - OQ-54 answered 2026-09-02 (D-479): the owner created the Topdeck.gg key, and a live probe of the API passed the same day.
 - OQ-51 closed 2026-09-02 (D-470): no session can check the Moxfield bracket field. The deck page, the v2 API, and the v3 API answer 403 to a plain client, so PR-14B reads no Moxfield list.
 - OQ-81 answered 2026-09-08 (D-611): the low-effort measurement of the generate role runs before PR-33, against the run 16 baseline.
+- OQ-91 answered 2026-10-05 (D-1188): the word "set" matched card text and widened the shortlist in silence. It now stays out of the theme. The set limit reads the set name of the classifier.
 - OQ-90 answered 2026-10-01 (D-1033): the page tells the server when it goes to the background.
 - OQ-18 answered 2026-09-30 (D-1008): a ban of the commander, of a win condition, or of 10% of the nonland slots causes a full rebuild.

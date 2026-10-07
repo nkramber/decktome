@@ -842,7 +842,7 @@ func (t *themeTable) words(theme string) []string {
 	var out []string
 	seen := map[string]bool{}
 	for _, w := range tokens {
-		if utf8.RuneCountInString(w) < minWordLen || allDigits(w) || stopWords[w] || seen[w] {
+		if utf8.RuneCountInString(w) < minWordLen || allDigits(w) || isStopWord(w) || seen[w] {
 			continue
 		}
 		seen[w] = true
@@ -877,6 +877,13 @@ func allDigits(w string) bool {
 		}
 	}
 	return w != ""
+}
+
+// isStopWord reports whether a token names no theme: a word of the
+// request lists below, an English stop word, or the filler around a
+// theme (D-1188).
+func isStopWord(w string) bool {
+	return stopWords[w] || englishStopWords[w] || requestFiller[w]
 }
 
 // stopWords are the words of a request that name no theme. The second
@@ -915,6 +922,9 @@ var stopWords = map[string]bool{
 	"their": true, "our": true, "but": true, "from": true, "into": true, "about": true, "around": true,
 	"more": true, "much": true, "many": true, "lot": true, "focus": true, "focused": true,
 	"theme": true, "themed": true, "style": true, "based": true, "wants": true,
+	// The sixth group is the filler of "planeswalkers and other themes
+	// from this set": the theme question asked about "other" and "themes".
+	"other": true, "others": true, "another": true, "themes": true, "styles": true,
 }
 
 // singularIE lists plurals in -ies whose singular ends in -ie. The rule

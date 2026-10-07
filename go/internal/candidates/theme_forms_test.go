@@ -67,6 +67,9 @@ func TestTwoWordsJoinThroughAForm(t *testing.T) {
 		"hand size":                           "hand-size",
 		"handsize matters, heavy on cantrips": "handsize cantrips",
 		"a good protection suite":             "protection",
+		// The filler of a live eval: "other", "themes", and "set" name no
+		// theme (D-1187, D-1188).
+		"planeswalkers and other themes from this set": "planeswalkers",
 	}
 	for theme, want := range cases {
 		if got := strings.Join(b.themes.words(theme), " "); got != want {

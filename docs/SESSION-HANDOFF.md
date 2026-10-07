@@ -6,41 +6,27 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-05e)
+## RESUME HERE (2026-10-06)
 
-**Branch `chore/live-evals-restart`: PR-135 is #293, the restart of the live evals, the proof of measured spend, and ten fixes (D-1174 to D-1185).**
+**Branch `live-eval/v-lkqwokmkom`, PR #292: filler words stay out of the theme, in two layers (D-1187 to D-1189).**
 
 Author provider: Claude Code
 
-**Codex review:** head `9a7a225`, `Ready for owner merge`, findings: none.
+**The base.** `main` at `10c49da`, the merge of #293. That merge took D-1174 to D-1186, so this pull request renumbered its decisions to D-1187 to D-1189 (D-1179).
 
-**The base.** `main` at `b466e0c`, the merge of #291.
+**The fault.** The prompt "planeswalkers and other themes from this set" made the theme row ask about "other" and "themes". The first fix added five stop words (D-1187).
 
-**The restart.** The retry of `v-KefDsksH23qUg16zCWlI` did not run, because its status is `out-of-scope`, and the queue held no item. The owner wrote a new thumbs-down (D-1174). The install then ran with the PATH fix of D-1175. Each tick runs `main`, so each change of this pull request reaches a session after the merge.
+**The owner review.** The owner asked if the fix stops similar prompts. A free test on the card snapshot read 18 phrasings, and 15 still asked about a filler word. The owner chose two layers (D-1188).
 
-**The proof.** The session of `v-lKqWOkMKOmppB0RJBmRb` ran two `chat-probe` replays. The ledger holds a start line and a measured end line for each: $0.00074 in 4 calls, and $0.00061 in 6 calls. The second start read the end line of the first in the session log, so the open item of D-1173 holds. The notice read `Spent: measured $0.0013 in 2 runs`. `docs/reference/live-evals-ledger-2026-10-06.md` holds the evidence.
+**The fix.** `go/internal/candidates/stopwords.go` adds the Snowball stop list and the filler classes. Prompt version 25 tells the classifier to leave out the words around the plan (D-1189). D-1188 answers OQ-91.
 
-**The session.** It found a real fault: the theme question named "other" and "themes". It opened #292 and ended `blocked`, because `make codex-review` failed in the sandbox.
+**Checks.** Every Go test passes, and `make themes-check` passes with the two new snapshot tests. The replay of the chat on version 24 asked no theme question, for $0.0010.
 
-**The fixes.**
+**Question gate runs.** Runs 61 and 62 passed, but each version added two theme rows of D-725. Run 63 read version 25 for $0.1038. It asks those rows in the same three conversations as run 60. The general theme row now asks in two terse conversations, and the owner accepted that.
 
-- The install picks each program by its pin (D-1175). `scripts/live-evals/pins.sh` holds the pins.
-- An eval reads the hand-off at the fix alone (D-1176). A paid target runs with no pipe and no redirect (D-1177).
-- A new build of the tool gets a timer, and a wait for the grant of the volume sends a notice (D-1178).
-- `make ref-check` refuses a duplicate `D-` or `F-` id, REF 3 (D-1179). The eval prompt forbids attribution (D-1180).
-- Each session runs `claude-opus-5-5` at `high` (D-1181). A failed `pnpm install` gets one more try, never offline (D-1182).
-- An eval fixes the product cause of a class, not one case (D-1183).
-- The session Codex has a login of its own (D-1184), and the profile allows the security server for TLS (D-1185).
+**Review.** Gitar approved `0b1c74b` with no finding. Codex round 2 gives `Ready for owner merge` on effective head `0b1c74b`. The review record resolves P2-1, P2-2, and P3-1.
 
-**The checks.** `make verify` passes. A dry tick with the PATH of the agent passed the pins and the new probe. With no deny of the security server, Codex got an answer.
-
-**The reviews.** Gitar approved `9a7a225` with 1 of 1 findings closed. Codex round 3 blocked `7bd16aa` on the evidence file, and the owner chose a fix and a round 4 (D-1186). Round 4 approved `9a7a225`. The pull request is pending the auto-merge.
-
-**Open work.**
-
-- Unverified: the dashboard of the provider against the `Spent:` line. The owner reads it.
-- Unverified: the plan accepts `claude-opus-5-5` (D-1181). The first line of the next session log names the model.
-- #292 holds the trailer of D-1180 in `8881d54`, a D-1174 that this pull request also uses, and no Codex review. A session of #292 does that work (D-1179).
+**Open work.** The owner confirms the merge, then the author turns on auto-merge.
 
 ## How to resume
 
@@ -114,7 +100,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **#292, the first fix of a live eval** (D-1179, D-1180). A session of #292 runs `make codex-review PR=292`, removes the trailer of `8881d54`, and renumbers its D-1174.
+0. **PR-134: filler words stay out of the theme** (D-1188, D-1189). The resume section holds the open work.
 0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -137,14 +123,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-05b: the install of the live evals, PR-132
-
-**The owner asked for the install from `main`.** The first tick proved the launch through bash, and it started no session.
-
-**The owner asked the session to watch the evals.** The first session ended `blocked`, because the profile refused the temporary folder of the Bash tool. The owner said that this fault must not occur again (D-1168).
-
-**The owner asked what the cost of $0.10 means.** The figure is the list price of the tokens in the log of Claude Code. The session runs on the Claude plan through its token, so no bill comes.
-
 ### 2026-10-05c: measured spend, PR-133
 
 **The owner found a recorded spend 30 times the real cost.** The session wrote the estimate of a replay by hand. The owner asked for measured spend from provider usage alone.
@@ -160,6 +138,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner asked the session to watch the eval and fix each fault in this pull request.** The owner chose a login of its own for the session Codex, and an allow of the security server (D-1184, D-1185). The classifier refused two probes of the session, and the owner ran one of them.
 
 **The owner asked for a fix of the class of a fault, not a patch of one case** (D-1183). The owner also pinned the model and the effort of a session (D-1181).
+
+### 2026-10-06: filler words stay out of the theme, PR-134
+
+**A live eval read a thumbs-down on a theme question.** Five filler words now stay out of the theme. The replay shows the question gone.
+
+**The owner asked if the fix stops similar prompts.** 15 of 18 phrasings still asked the theme row. The owner chose a full stop list and a classifier rule (D-1188, D-1189).
+
+**Three gate runs measured the classifier rule.** Versions 23 and 24 each added two theme rows. The owner chose a third version and accepted two general theme rows of run 63.
 
 ## The archive
 
