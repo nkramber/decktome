@@ -113,3 +113,21 @@ func TestThemedPlaneswalkerIsAThreat(t *testing.T) {
 		}
 	}
 }
+
+// TestSetFillMarksTheCardOfTheSetLimit is D-1198. A set limit lets a card
+// with no lead and no staple role onto the list (D-379). SetFill marks
+// that card alone: a card on theme and a staple read false, and a list
+// with no set limit holds no such card.
+func TestSetFillMarksTheCardOfTheSetLimit(t *testing.T) {
+	b, _ := New()
+	idx := fixture(t, testCards())
+	all, err := b.Build(idx, Request{Format: cmdr, Colors: []mtgv1.Color{W, G}, Theme: "lifegain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range all.Candidates {
+		if c.SetFill {
+			t.Errorf("no set limit: %s reads set fill", c.Card.GetName())
+		}
+	}
+}

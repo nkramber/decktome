@@ -403,6 +403,7 @@ func (s *Server) buildDeckFrom(ctx context.Context, uid string, session *mtgv1.S
 		ExcludedOracleIDs: excludedIDs,
 		Roles:             generate.Roles(list),
 		Themed:            generate.Themed(list),
+		SetFill:           generate.SetFill(list),
 		Targets:           generate.TargetsFor(format, slots.GetPower()),
 		Limits:            generate.LimitsFor(format),
 		LegalityAsOf:      idx.AsOf.Format("2006-01-02"),

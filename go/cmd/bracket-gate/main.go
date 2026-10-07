@@ -313,6 +313,7 @@ func build(ctx context.Context, b *generate.Builder, cb *candidates.Builder, idx
 		PoolRule:     mtgv1.PoolRule_POOL_RULE_ANY_CARD,
 		Roles:        generate.Roles(list),
 		Themed:       generate.Themed(list),
+		SetFill:      generate.SetFill(list),
 		Targets:      generate.TargetsFor(format, power),
 		Limits:       generate.LimitsFor(format),
 		LegalityAsOf: idx.AsOf.Format("2006-01-02"),

@@ -158,6 +158,7 @@ Rules:
 - A finding that the deck holds too few new nonbasic lands means you kept basic lands the change told you to replace. Cut more basic lands and add nonbasic lands from the shortlist, of the kinds the change names, until the count is met. Keep the land total the same.
 - A finding that the deck keeps too few precon names means you dropped too many. Put back the ones marked "precon" until the count is met, and drop cards that are not marked instead. Keep the theme of the precon, and change no more than the fix needs.
 - A finding that a count is off its band names the count, the value, and the range the power level wants. Move the count into the range: add or cut cards of that job, or swap lands, and keep the deck size. A finding about the average mana value means swap dear cards for cheaper ones that do the same job, or the reverse.
+- A finding that the deck leaves out cards on theme names those cards and the cards of the set with no theme and no job. Swap each card of the set for a card on theme, one for one. Keep the deck size and the land count.
 - A finding that names a card or a combo the power level forbids means cut that card, or one card of the combo, and replace it with a shortlist card that does the same job.
 - Return the whole deck, and not the change alone.
 - Write the summary again from nothing. It describes the deck, and never the repair. Name no card you changed, no count, and no slot you filled. A reader of the summary does not know a first turn happened.

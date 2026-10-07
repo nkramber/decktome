@@ -127,6 +127,21 @@ func Themed(l *candidates.List) map[string]bool {
 	return out
 }
 
+// SetFill is the oracle id of each shortlist card that only the set
+// limit put on the list, the upgrades included, for the theme check of a
+// built deck (D-1198).
+func SetFill(l *candidates.List) map[string]bool {
+	out := map[string]bool{}
+	for _, cs := range [][]candidates.Candidate{l.Candidates, l.Upgrades} {
+		for _, c := range cs {
+			if c.Card != nil && c.SetFill {
+				out[c.Card.GetOracleId()] = true
+			}
+		}
+	}
+	return out
+}
+
 var roleWords = map[mtgv1.CardRole]string{
 	mtgv1.CardRole_CARD_ROLE_LAND: "land", mtgv1.CardRole_CARD_ROLE_RAMP: "ramp",
 	mtgv1.CardRole_CARD_ROLE_DRAW: "draw", mtgv1.CardRole_CARD_ROLE_REMOVAL: "removal",

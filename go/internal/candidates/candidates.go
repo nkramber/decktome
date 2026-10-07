@@ -190,6 +190,11 @@ type Candidate struct {
 	// OnTheme says the theme matched the card, and no commander rate
 	// counts. The theme mark of the shortlist reads it (D-1195).
 	OnTheme bool
+	// SetFill marks a card that only the set limit put on the list: no
+	// lead, no staple role, and no keep rate (D-379). It fills the slots
+	// a set family can not fill with the theme, so a deck must not play
+	// it while it leaves out a card on theme (D-1198).
+	SetFill bool
 	// ManaHalf marks a land of the mana half of the land cap. The total
 	// cut keeps it, so the half of D-450 holds past the cut (F-165).
 	ManaHalf bool
@@ -498,7 +503,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 			signals = append(signals, "avoid")
 		}
 		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Rate: rate, Fix: fixCount(c, colorSet),
-			LandRank: landRank(req, c, colorSet, owned), Themed: lead > 0, OnTheme: themeScore > 0, Owned: owned, Outside: outside, Avoided: avoided, Signals: signals})
+			LandRank: landRank(req, c, colorSet, owned), Themed: lead > 0, OnTheme: themeScore > 0, SetFill: lead == 0 && !stapleRole(role) && setCodes != nil && !kept, Owned: owned, Outside: outside, Avoided: avoided, Signals: signals})
 	}
 	// A pinned power card skips the cap of its role (F-131, D-710).
 	pinPower(scored, pw)
