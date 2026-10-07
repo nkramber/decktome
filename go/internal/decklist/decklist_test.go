@@ -126,6 +126,27 @@ func TestParseMoxfieldArenaExport(t *testing.T) {
 	}
 }
 
+// TestParseMoxfieldBookmarkletList reads the list that the Moxfield
+// bookmarklet writes (D-1193): bare headers, no set codes, and a full
+// name of two faces. moxfield-bookmarklet.test.ts asserts that shape.
+func TestParseMoxfieldBookmarkletList(t *testing.T) {
+	text := "Commander\n1 Fire Lord Azula\n\nCompanion\n1 Lurrus of the Dream-Den\n\nDeck\n12 Island\n1 Arcane Signet\n1 Fire // Ice\n\nSideboard\n2 Negate"
+	l, err := Parse(strings.NewReader(text))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(l.Bad) != 0 {
+		t.Fatalf("bad lines: %v", l.Bad)
+	}
+	if !l.Marked || sum(l, Commander) != 1 || sum(l, Companion) != 1 || sum(l, Main) != 14 || sum(l, Sideboard) != 2 {
+		t.Errorf("sections: commander %d, companion %d, main %d, sideboard %d",
+			sum(l, Commander), sum(l, Companion), sum(l, Main), sum(l, Sideboard))
+	}
+	if line, ok := find(l, "Fire // Ice"); !ok || line.Section != Main {
+		t.Errorf("Fire // Ice = %+v, %v", line, ok)
+	}
+}
+
 // TestParseArenaSections covers each header of an Arena list, the About
 // name, a comment, and a line that reads as no card.
 func TestParseArenaSections(t *testing.T) {

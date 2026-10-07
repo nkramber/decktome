@@ -15,6 +15,36 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-06, PR-134
+
+**Branch `live-eval/v-lkqwokmkom`, PR #292: filler words stay out of the theme, in two layers (D-1187 to D-1189).**
+
+Author provider: Claude Code
+
+**The base.** `main` at `10c49da`, the merge of #293. That merge took D-1174 to D-1186, so this pull request renumbered its decisions to D-1187 to D-1189 (D-1179).
+
+**The fault.** The prompt "planeswalkers and other themes from this set" made the theme row ask about "other" and "themes". The first fix added five stop words (D-1187).
+
+**The owner review.** The owner asked if the fix stops similar prompts. A free test on the card snapshot read 18 phrasings, and 15 still asked about a filler word. The owner chose two layers (D-1188).
+
+**The fix.** `go/internal/candidates/stopwords.go` adds the Snowball stop list and the filler classes. Prompt version 25 tells the classifier to leave out the words around the plan (D-1189). D-1188 answers OQ-91.
+
+**Checks.** Every Go test passes, and `make themes-check` passes with the two new snapshot tests. The replay of the chat on version 24 asked no theme question, for $0.0010.
+
+**Question gate runs.** Runs 61 and 62 passed, but each version added two theme rows of D-725. Run 63 read version 25 for $0.1038. It asks those rows in the same three conversations as run 60. The general theme row now asks in two terse conversations, and the owner accepted that.
+
+**Review.** Gitar approved `0b1c74b` with no finding. Codex round 2 gives `Ready for owner merge` on effective head `0b1c74b`. The review record resolves P2-1, P2-2, and P3-1.
+
+**Open work.** The owner confirms the merge, then the author turns on auto-merge.
+
+### 2026-10-05c: measured spend, PR-133
+
+**The owner found a recorded spend 30 times the real cost.** The session wrote the estimate of a replay by hand. The owner asked for measured spend from provider usage alone.
+
+**The owner chose three rules.** An unmeasured run counts as the full budget (D-1169). The script reads the spend from the session logs (D-1170). After the Codex finding, an append-only ledger outside the run folder holds each line (D-1171).
+
+**A second session answered the Codex round 2 finding.** A forged ledger end let the next paid command start. The owner chose a start that reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
+
 ## The resume section of 2026-10-05d, PR-133
 
 **Branch `chore/live-evals-measured-spend`: PR-133 is #291, measured provider spend for a live-eval session, never an estimate (D-1169 to D-1173).**

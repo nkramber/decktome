@@ -8,25 +8,31 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-06)
 
-**Branch `live-eval/v-lkqwokmkom`, PR #292: filler words stay out of the theme, in two layers (D-1187 to D-1189).**
+**Branch `chore/ttl-delete-check`, PR #PRNUM: PR-137, a Moxfield bookmarklet fills the import (D-1192 to D-1194).**
 
 Author provider: Claude Code
 
-**The base.** `main` at `10c49da`, the merge of #293. That merge took D-1174 to D-1186, so this pull request renumbered its decisions to D-1187 to D-1189 (D-1179).
+**The base.** `main` at `7079e60`, the merge of #292. The live eval PR #294 took the next roadmap number and two decision ids. So this pull request starts at PR-137 and D-1192 (D-1179).
 
-**The fault.** The prompt "planeswalkers and other themes from this set" made the theme row ask about "other" and "themes". The first fix added five stop words (D-1187).
+**The deploy of #292.** Cloud Build `deploy-api` built `7079e60` and ended SUCCESS at 00:30 UTC on 2026-10-07. `/readyz` names `7079e60`.
 
-**The owner review.** The owner asked if the fix stops similar prompts. A free test on the card snapshot read 18 phrasings, and 15 still asked about a filler word. The owner chose two layers (D-1188).
+**The check of #292.** `make api-build` sent "Build me a deck from Reality Fracture focused on planeswalkers and other themes from this set". Session `6beErCRdWEM2eFEVOZ5A` asked no theme question about "other", "themes", or "set". It built a Commander deck in 4 turns. The October ledger of the test account read $0.1784 for 28 calls, so the build cost $0.1784 or less.
 
-**The fix.** `go/internal/candidates/stopwords.go` adds the Snowball stop list and the filler classes. Prompt version 25 tells the classifier to leave out the words around the plan (D-1189). D-1188 answers OQ-91.
+**The TTL delete (D-1113).** The policy on `expire_at` reads ACTIVE. At 00:49 UTC on 2026-10-07, `deck_reads` held no document. An Archidekt read at 19:52 UTC on 2026-10-04 wrote one document, and the app has no delete path for it.
 
-**Checks.** Every Go test passes, and `make themes-check` passes with the two new snapshot tests. The replay of the chat on version 24 asked no theme question, for $0.0010.
+**OQ-95 (D-1192).** The console test passed in the browser of the owner. The owner permits the bookmarklet, and the access request to Moxfield stays open.
 
-**Question gate runs.** Runs 61 and 62 passed, but each version added two theme rows of D-725. Run 63 read version 25 for $0.1038. It asks those rows in the same three conversations as run 60. The general theme row now asks in two terse conversations, and the owner accepted that.
+**The fix (D-1193).** The bookmarklet reads the open Moxfield deck and opens `/decks` with the list in the fragment. The decks page opens the filled import dialog. The bookmark on Moxfield opened the new tab with the list. The deployed page opens the dialog only after this merge.
 
-**Review.** Gitar approved `0b1c74b` with no finding. Codex round 2 gives `Ready for owner merge` on effective head `0b1c74b`. The review record resolves P2-1, P2-2, and P3-1.
+**The live eval of the check (D-1194).** The deck of the check started the live eval `dDD9Iav9aGhgGF9dDLNQ`, and it opened PR #294. The owner let it end.
 
-**Open work.** The owner confirms the merge, then the author turns on auto-merge.
+**The keychain dialog.** Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. The owner selected Cancel, and the push still worked. An empty git `credential.helper` in the session stops the dialog. Unverified: the tool that names the token `x-access-token`.
+
+**Checks.** CHECKS
+
+**Review.** REVIEW
+
+**Open work.** OPENWORK
 
 ## How to resume
 
@@ -100,8 +106,8 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-134: filler words stay out of the theme** (D-1188, D-1189). The resume section holds the open work.
-0. **OQ-95 and the TTL delete** (D-1102, D-1113). The owner runs the console test of OQ-95. After 21:00 UTC on 2026-10-05, read that `deck_reads` holds no expired document.
+0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
+0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. The resume section holds the evidence.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -123,14 +129,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-05c: measured spend, PR-133
-
-**The owner found a recorded spend 30 times the real cost.** The session wrote the estimate of a replay by hand. The owner asked for measured spend from provider usage alone.
-
-**The owner chose three rules.** An unmeasured run counts as the full budget (D-1169). The script reads the spend from the session logs (D-1170). After the Codex finding, an append-only ledger outside the run folder holds each line (D-1171).
-
-**A second session answered the Codex round 2 finding.** A forged ledger end let the next paid command start. The owner chose a start that reads the session logs. A run with no end line in a log counts as the full budget (D-1173).
-
 ### 2026-10-05e: the restart of the live evals, PR-135
 
 **The owner asked for the restart and the proof of measured spend.** The retry did not run, so the owner wrote a new thumbs-down. Two replays wrote measured lines, and the second start read the first end in the log.
@@ -147,6 +145,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **Three gate runs measured the classifier rule.** Versions 23 and 24 each added two theme rows. The owner chose a third version and accepted two general theme rows of run 63.
 
+### 2026-10-06b: the Moxfield bookmarklet, PR-137
+
+**The owner asked for the TTL check and the check of #292 first.** Both passed. The check build started a live eval, and the owner asked for the note of D-1194.
+
+**The console test of OQ-95 passed in the browser of the owner.** The owner permits the bookmarklet before an answer of Moxfield (D-1192). The owner chose a filled form in a new tab, with no Moxfield link (D-1193).
+
+**The owner tested the real bookmark on Moxfield.** The new tab opened `/decks` with the list. The owner chose the unit tests now and the live test after the deploy.
+
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-05d, the records of 2026-08-31 to 2026-10-05, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-06, the records of 2026-08-31 to 2026-10-05c, and 104 more sections, word for word. Read it for the detail behind a decision.

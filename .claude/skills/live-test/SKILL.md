@@ -11,6 +11,7 @@ The owner decisions are D-959 to D-961. The test account is the check account of
 
 - Never write the address or the password into a file, a commit, a pull request, or a comment. The repository is public (D-639).
 - A screenshot shows the address in the page header. Keep each screenshot under `.local`, and never commit one.
+- CAUTION: A deck that a lane builds starts a live eval, because every account gets one (D-1135, D-1194). That eval can spend $3.00 and open a pull request. Name both costs in the question to the owner.
 - A chat turn calls the deployed API, and the deployed API calls the real providers. So each turn costs money. A sweep with `LIVE_SWEEP_BUILD=0` sends no turn.
 - The "anime" turn of 2026-09-26 cost $0.0007. A whole build costs $0.05 to $0.20. The first sweep with a build cost $0.0545.
 - Ask the owner before every run, as `CLAUDE.md` tells. One answer of the owner can approve the runs of one check.

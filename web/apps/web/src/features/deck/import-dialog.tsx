@@ -6,7 +6,7 @@ import { FeedbackKind, FeedbackVerdict, ImportPage } from "@mtg/api-client/mtg/v
 import { ConnectError } from "@connectrpc/connect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileTextIcon } from "lucide-react";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 
 import { Button } from "../../components/ui/button";
@@ -18,6 +18,7 @@ import { cn } from "../../lib/cn";
 import { errorMessage } from "../../lib/errors";
 import { isUnreadable, parseFaults, ReportImport } from "../feedback/report-import";
 import { useSubmitFeedback } from "../feedback/use-feedback";
+import { bookmarkletHref } from "./moxfield-bookmarklet";
 
 // The deck import (PR-70). A reader brings a deck list: a text file that
 // Archidekt exports, or a pasted Arena list (D-845). The app stores it as
@@ -40,6 +41,8 @@ export const maxImportBytes = 128 * 1024;
 
 type Step = "pick" | "format" | "commander" | "done";
 
+export type ImportSeed = { list: string; name: string };
+
 // nameFromFile turns "living_weapon.txt" into "living weapon".
 // fetchErrorText is the answer of the server to a deck link, with no code
 // and no field name.
@@ -55,7 +58,9 @@ export function nameFromFile(file: string): string {
     .trim();
 }
 
-export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+// initial is the list and the name that the Moxfield bookmarklet hands
+// to the page in the fragment (D-1193). The reader still selects Import.
+export function ImportDialog({ open, onOpenChange, initial }: { open: boolean; onOpenChange: (open: boolean) => void; initial?: ImportSeed | null }) {
   // A new key on each open remounts the body, so a second open starts
   // clean, as the collection upload does.
   const [wasOpen, setWasOpen] = useState(open);
@@ -66,21 +71,21 @@ export function ImportDialog({ open, onOpenChange }: { open: boolean; onOpenChan
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <ImportBody key={openCount} onClose={() => onOpenChange(false)} />
+      <ImportBody key={openCount} onClose={() => onOpenChange(false)} initial={initial ?? null} />
     </Dialog>
   );
 }
 
-function ImportBody({ onClose }: { onClose: () => void }) {
+function ImportBody({ onClose, initial }: { onClose: () => void; initial: ImportSeed | null }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   // The key is the one of the pool picker of the chat, so one call serves
   // both.
   const collections = useQuery({ queryKey: ["collections"], queryFn: () => collectionClient.listCollections({}) }).data?.collections ?? [];
   const [step, setStep] = useState<Step>("pick");
-  const [text, setText] = useState("");
+  const [text, setText] = useState(initial?.list ?? "");
   const [fileName, setFileName] = useState("");
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initial?.name ?? "");
   const [collectionId, setCollectionId] = useState("");
   const [format, setFormat] = useState<FormatId>(FormatId.UNSPECIFIED);
   const [options, setOptions] = useState<DeckCard[]>([]);
@@ -421,7 +426,33 @@ function ExportSteps({ site, known, steps, reported }: { site: string; known: bo
           <li key={step}>{step}</li>
         ))}
       </ol>
+      {known && site === "Moxfield" && <MoxfieldBookmark />}
       {!known && reported && <p role="status">The app sent a report of this site, so that it can be added.</p>}
+    </div>
+  );
+}
+
+// MoxfieldBookmark is the bookmarklet of D-1193. The reader drags it to
+// the bookmarks bar, then selects it on a Moxfield deck page. React 19
+// replaces a javascript: href with an error, so the effect builds the
+// link outside React. A click on this page only says to open Moxfield.
+function MoxfieldBookmark() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const host = ref.current;
+    if (host === null) return;
+    const link = document.createElement("a");
+    link.href = bookmarkletHref(window.location.origin);
+    link.textContent = "Import to decktome";
+    link.className = "inline-block rounded-md border border-border px-3 py-1.5 font-medium";
+    link.dataset.testid = "moxfield-bookmarklet";
+    host.replaceChildren(link);
+    return () => host.replaceChildren();
+  }, []);
+  return (
+    <div className="mt-1 flex flex-col gap-1.5">
+      <p>Or drag this button to the bookmarks bar of your browser. Select it on a Moxfield deck page, and the list opens here.</p>
+      <span ref={ref} />
     </div>
   );
 }
