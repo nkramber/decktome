@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-07, PR-138)
 
-**Branch `feat/live-eval-bar-check`, PR-138, pull request #PRNUM: the live evals hold the bar of a fix (D-1200).** Role: author.
+**Branch `feat/live-eval-bar-check`, PR-138, pull request #296: the live evals hold the bar of a fix (D-1200).** Role: author.
 
 Author provider: Claude Code
 

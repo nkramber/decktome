@@ -3591,7 +3591,7 @@ Gate:
 
 > *In plain English:* Moxfield blocks our server, but it answers the browser of the user. A bookmark now reads the open Moxfield deck, and decktome opens with the list ready to import.
 
-**PR-138: The live evals hold the bar of a fix (D-1200, D-1203 to D-1207).** ✅ merged as #PRNUM. The mark comes before any review (D-822). The eval session of #294 called its fix ready on one replay of each side. A bar that only the prompt holds lets a session argue past it.
+**PR-138: The live evals hold the bar of a fix (D-1200, D-1203 to D-1207).** ✅ merged as #296. The mark comes before any review (D-822). The eval session of #294 called its fix ready on one replay of each side. A bar that only the prompt holds lets a session argue past it.
 
 - **The verdict file (D-1200, D-1205).** The session writes `verdict.json`: the bar, its metric, the better direction, the target, and each replay with its run id, its side, and its score. A replay with no deck has no score.
 - **The check (D-1200).** `live-evals bar` needs three or more replays with a score on each side. The worst fix replay must beat the best base replay and reach the target. The list must hold each replay of the two trees.
