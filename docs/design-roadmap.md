@@ -3563,7 +3563,7 @@ Gate:
 - `TestThemedLineCarriesTheCardText` reads the cost and the text of a line on theme (D-1196).
 - `TestThemedPlaneswalkerIsAThreat` reads three planeswalkers and an alternate win (D-1197).
 - `TestSetFillMarksTheCardOfTheSetLimit` reads the set fill with and without a set limit. `TestThemeLeftOutNamesTheSwap` reads the warning, and a land, a revision, and an upgrade with none (D-1198).
-- Five replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark" (D-1199, D-1201). The live deck played 26 and left out 5. The base replays played 20 and 23.
+- Five pinned replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark" (D-1199, D-1201). Six pinned replays of the base `ea792c3` at bracket 1 played 17 to 23 and left out 8 to 14. The live deck played 26 and left out 5.
 - `make verify` passes.
 - A current Gitar review, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).

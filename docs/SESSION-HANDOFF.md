@@ -23,17 +23,17 @@ Author provider: Claude Code
 - `faab339`: a planeswalker with a lead reads threat (D-1197).
 - `76a081c`: the warning `theme_left_out` buys a repair turn (D-1198). `TestSetFillMarksTheCardOfTheSetLimit` now reads a set limit too.
 
-**The bar (D-1199) holds.** Five replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". The live deck played 26 and left out 5. The base replays played 20 and 23. No deck needed the repair turn.
+**The bar (D-1199) holds.** Five pinned replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". Six pinned replays of the base `ea792c3` played 17 to 23 and left out 8 to 14. The live deck played 26 and left out 5. No deck needed the repair turn.
 
 **The pin (D-1201).** The classifier lost "1 Exhibition" in 10 of 17 unpinned decks, and 21 of 38 unpinned replays built no deck. So the owner chose a pin of the bracket answer in the scratch probe. OQ-98 holds the fault.
 
-**The spend.** $1.4698 over 54 replays, of the cap of $3.00. One replay read no usage. This session spent $0.6359.
+**The spend.** $1.7986 over 64 replays, of the cap of $3.00. One replay read no usage. This session spent $0.9647.
 
 **The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
-**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on effective head `557ac7c`. Codex verdict: Changes required. P2-1 stays open.
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `557ac7c`. The Codex review of `557ac7c` gave Changes required for P2-1, the base replays at bracket 3. The pinned base replays answer it (`docs/reviews/pr-294-response.md`).
 
-**Next action.** Run matched bracket 1 replays to close P2-1. Wait for OQ-97. Never enable auto-merge (D-1137).
+**Next action.** Do the Gitar pass on the head, then run `make codex-review PR=294` for round 2. Then wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
 
 ## How to resume
 
