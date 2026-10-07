@@ -183,9 +183,13 @@ type Candidate struct {
 	// makes, then ownership (D-733, D-734). A land of another format reads
 	// the deck colors it makes alone (D-450). Zero for a nonland.
 	LandRank int
-	// Themed says the theme matched the card. The land cap fills its
-	// theme half with these alone (D-450).
+	// Themed says the lead of the card is above zero: the theme matched
+	// it, or at bracket 5 the lists of its commander play it (D-839). The
+	// land cap fills its theme half with these alone (D-450).
 	Themed bool
+	// OnTheme says the theme matched the card, and no commander rate
+	// counts. The theme mark of the shortlist reads it (D-1195).
+	OnTheme bool
 	// ManaHalf marks a land of the mana half of the land cap. The total
 	// cut keeps it, so the half of D-450 holds past the cut (F-165).
 	ManaHalf bool
@@ -494,7 +498,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 			signals = append(signals, "avoid")
 		}
 		scored = append(scored, Candidate{Card: c, Role: role, Score: score, Pop: pop, Rate: rate, Fix: fixCount(c, colorSet),
-			LandRank: landRank(req, c, colorSet, owned), Themed: lead > 0, Owned: owned, Outside: outside, Avoided: avoided, Signals: signals})
+			LandRank: landRank(req, c, colorSet, owned), Themed: lead > 0, OnTheme: themeScore > 0, Owned: owned, Outside: outside, Avoided: avoided, Signals: signals})
 	}
 	// A pinned power card skips the cap of its role (F-131, D-710).
 	pinPower(scored, pw)

@@ -17,13 +17,13 @@ func themeMarkList() *candidates.List {
 	}
 	return &candidates.List{
 		Candidates: []candidates.Candidate{
-			{Card: card("o-pyro", "Way of the Pyromancer", "Legendary Enchantment"), Role: mtgv1.CardRole_CARD_ROLE_RAMP, Themed: true},
-			{Card: card("o-well", "Well of Lost Dreams", "Artifact"), Role: mtgv1.CardRole_CARD_ROLE_DRAW, Themed: true},
-			{Card: card("o-skin", "Skinrender", "Creature — Phyrexian Zombie"), Role: mtgv1.CardRole_CARD_ROLE_REMOVAL, Themed: true},
+			{Card: card("o-pyro", "Way of the Pyromancer", "Legendary Enchantment"), Role: mtgv1.CardRole_CARD_ROLE_RAMP, Themed: true, OnTheme: true},
+			{Card: card("o-well", "Well of Lost Dreams", "Artifact"), Role: mtgv1.CardRole_CARD_ROLE_DRAW, Themed: true, OnTheme: true},
+			{Card: card("o-skin", "Skinrender", "Creature — Phyrexian Zombie"), Role: mtgv1.CardRole_CARD_ROLE_REMOVAL, Themed: true, OnTheme: true},
 			{Card: card("o-sol", "Sol Ring", "Artifact"), Role: mtgv1.CardRole_CARD_ROLE_RAMP},
 		},
 		Upgrades: []candidates.Candidate{
-			{Card: card("o-garruk", "Garruk, Veiled Butcher", "Legendary Planeswalker — Garruk"), Role: mtgv1.CardRole_CARD_ROLE_REMOVAL, Themed: true},
+			{Card: card("o-garruk", "Garruk, Veiled Butcher", "Legendary Planeswalker — Garruk"), Role: mtgv1.CardRole_CARD_ROLE_REMOVAL, Themed: true, OnTheme: true},
 		},
 	}
 }
@@ -82,5 +82,30 @@ func TestBuildPromptReadsTheThemeMark(t *testing.T) {
 	// (D-1191). The prompt now forbids a mark in user text.
 	if !strings.Contains(generateInstructions, `Never write the words "mark" or "marked"`) {
 		t.Error("the generate prompt lets a reason name a mark")
+	}
+}
+
+// TestThemeMarkSkipsACommanderRateCard is D-1195. At bracket 5 a card that
+// the lists of the commander play reads Themed with no theme signal
+// (D-839). Its line must not say "on theme", because the prompt tells the
+// model that such a card matches the theme.
+func TestThemeMarkSkipsACommanderRateCard(t *testing.T) {
+	b, _, _ := testBuilder(t)
+	l := themeMarkList()
+	l.Candidates = append(l.Candidates, candidates.Candidate{
+		Card: &mtgv1.Card{OracleId: "o-rhystic", Name: "Rhystic Study", TypeLine: "Enchantment"},
+		Role: mtgv1.CardRole_CARD_ROLE_DRAW, Themed: true,
+	})
+	if Themed(l)["o-rhystic"] {
+		t.Error("Themed reads a card that only the commander rate leads")
+	}
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Pool = FromList(l, nil, true)
+	req.Roles = Roles(l)
+	req.Themed = Themed(l)
+	got := b.shortlist(req)
+	if !strings.Contains(got, "- Rhystic Study | Enchantment | draw\n") {
+		t.Errorf("the commander rate card reads a theme mark:\n%s", got)
 	}
 }

@@ -50,3 +50,27 @@ func TestThemedCardKeepsAStapleRole(t *testing.T) {
 		}
 	}
 }
+
+// TestCommanderRateIsNotOnTheme is D-1195. At bracket 5 the rate of the
+// commander lists alone makes a card Themed (D-839), and the land cap
+// reads that. The theme mark reads OnTheme, and the theme alone sets it.
+// So Grizzly Bears, which the lists play and the lifegain theme does not
+// match, is Themed and not OnTheme. Soul Warden is both.
+func TestCommanderRateIsNotOnTheme(t *testing.T) {
+	b, _ := New()
+	idx := fixture(t, testCards())
+	rate := fixedRates(map[string]float64{"vanilla": 0.9})
+	for _, bracket := range []int32{5, 3} {
+		list, err := b.Build(idx, Request{Format: cmdr, Colors: []mtgv1.Color{W, G}, Theme: "lifegain", Bracket: bracket, CommanderRate: rate})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if bears, ok := find(list.Candidates, "Grizzly Bears"); ok && bears.OnTheme {
+			t.Errorf("bracket %d: Grizzly Bears reads on theme from the commander rate alone", bracket)
+		}
+		warden, ok := find(list.Candidates, "Soul Warden")
+		if !ok || !warden.OnTheme || !warden.Themed {
+			t.Errorf("bracket %d: Soul Warden reads on theme %v, themed %v; want both", bracket, warden.OnTheme, warden.Themed)
+		}
+	}
+}

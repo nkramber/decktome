@@ -113,12 +113,13 @@ func Roles(l *candidates.List) map[string]string {
 
 // Themed is the oracle id of each shortlist card that the theme matched,
 // the upgrades included, for the theme mark of the shortlist block
-// (D-1190).
+// (D-1190). It reads OnTheme and not Themed, because at bracket 5 the
+// commander rate alone makes a card Themed (D-1195).
 func Themed(l *candidates.List) map[string]bool {
 	out := map[string]bool{}
 	for _, cs := range [][]candidates.Candidate{l.Candidates, l.Upgrades} {
 		for _, c := range cs {
-			if c.Card != nil && c.Themed {
+			if c.Card != nil && c.OnTheme {
 				out[c.Card.GetOracleId()] = true
 			}
 		}
