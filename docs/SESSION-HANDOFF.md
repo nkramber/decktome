@@ -31,9 +31,9 @@ Author provider: Claude Code
 
 **The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
-**Checks.** `make verify` passes every check on this machine, the docker build included. The Gitar pass and the Codex review of this head wait.
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on effective head `557ac7c`. Codex verdict: Changes required. P2-1 stays open.
 
-**Next action.** Do the Gitar pass on the head, then run `make codex-review PR=294`. Then wait for OQ-97 and the owner.
+**Next action.** Run matched bracket 1 replays to close P2-1. Wait for OQ-97. Never enable auto-merge (D-1137).
 
 ## How to resume
 
