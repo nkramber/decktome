@@ -29,7 +29,7 @@ Author provider: Claude Code
 
 **The spend.** $1.4698 over 54 replays, of the cap of $3.00. One replay read no usage. This session spent $0.6359.
 
-**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
+**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
 **Checks.** `make verify` passes every check on this machine, the docker build included. The Gitar pass and the Codex review of this head wait.
 
