@@ -109,3 +109,34 @@ func TestThemeMarkSkipsACommanderRateCard(t *testing.T) {
 		t.Errorf("the commander rate card reads a theme mark:\n%s", got)
 	}
 }
+
+// TestThemedLineCarriesTheCardText is D-1196. Three replays of the mark
+// alone left out Garruk, Veiled Butcher, because its line held no text and
+// the card is newer than the model. A line on theme now ends with the cost
+// and the rules text. A staple line stays short, so the shortlist grows by
+// the cards on theme alone.
+func TestThemedLineCarriesTheCardText(t *testing.T) {
+	b, _, _ := testBuilder(t)
+	l := themeMarkList()
+	l.Upgrades[0].Card.ManaCost = "{3}{B}{B}"
+	l.Upgrades[0].Card.OracleText = "If a creature an opponent controls would die, exile it instead.\n+2: Up to one target creature gets -4/-1 until your next turn."
+	l.Candidates[3].Card.ManaCost = "{1}"
+	l.Candidates[3].Card.OracleText = "{T}: Add {C}{C}."
+	req := testRequest()
+	req.Format = mtgv1.FormatId_FORMAT_ID_COMMANDER
+	req.Pool = FromList(l, nil, true)
+	req.Roles = Roles(l)
+	req.Themed = Themed(l)
+	got := b.shortlist(req)
+	for _, want := range []string{
+		"- Garruk, Veiled Butcher | Legendary Planeswalker — Garruk | on theme | {3}{B}{B} | If a creature an opponent controls would die, exile it instead. +2: Up to one target creature gets -4/-1 until your next turn.\n",
+		"- Sol Ring | Artifact | ramp\n",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("the shortlist holds no line %q:\n%s", want, got)
+		}
+	}
+	if !strings.Contains(generateInstructions, "Judge the card by that text") {
+		t.Error("the generate prompt does not say what the text of a line on theme is for")
+	}
+}

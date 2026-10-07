@@ -328,6 +328,16 @@ func (b *Builder) shortlist(req Request) string {
 		if precon[c.GetOracleId()] {
 			s.WriteString(" | precon")
 		}
+		// A card on theme ends with its cost and its rules text. The model
+		// can not judge a card newer than itself from the name, and three
+		// replays of D-1190 left out Garruk, Veiled Butcher, a planeswalker
+		// of a planeswalker deck, each time (D-1196).
+		if req.Themed[c.GetOracleId()] {
+			if cost := strings.TrimSpace(c.GetManaCost()); cost != "" {
+				fmt.Fprintf(&s, " | %s", cost)
+			}
+			s.WriteString(rulesText(c))
+		}
 		s.WriteString("\n")
 	}
 	return s.String()
