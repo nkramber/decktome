@@ -126,10 +126,14 @@ Replay the shortlist of the build for free before you blame the model. The memor
 4. Name the class of the chosen deficiency: the other inputs that give the same fault for the same cause.
 5. Plan a fix of the product cause of the class, not of the words of this case (D-1183).
 6. Record each other deficiency in scope in `docs/open-questions.md`, in the same pull request.
-7. Write the bar of the fix: what the replay deck or chat must show when the fix works.
-8. Name two other inputs of the class in the bar. The tests of the fix must cover them.
-9. Write `{{bundle}}/fix.json` with the fields `finding` and `bar`. Put the class in `finding`.
-10. The script then sends the owner a notice with the two fields (D-1143).
+7. Write the bar of the fix: one metric that each replay gives as a number (D-1200).
+8. Name the better direction of the metric, `higher` or `lower`.
+9. Name the target: the value that the worst replay of the fix must reach.
+10. Name two other inputs of the class in the bar. The tests of the fix must cover them.
+11. Write `{{bundle}}/fix.json` with the fields `finding` and `bar`. Put the class in `finding`.
+12. The script then sends the owner a notice with the two fields (D-1143).
+
+A bar of pass or fail gives the number 1 for a pass and 0 for a fail. An example of a metric is "themed nonland cards in the deck" (D-1199).
 
 When no new deficiency stays, write the result `no-new-issues` (section "The result"), and stop. Make no pull request.
 
@@ -137,14 +141,19 @@ When each deficiency is out of scope, write the result `out-of-scope`, and stop.
 
 ## Step 3b: Replay the chat on the base code
 
-Do this step before you change any code. The estimate is $0.30 (D-1144). The replay prints its measured spend on its last line (D-1169).
+Do this step before you change a file of `go/`. Ten replays of #294 cost $0.31 (D-1201). The replay prints its measured spend on its last line (D-1169).
 
 1. Run `cd go && go run ./cmd/live-evals replay-input -bundle {{bundle}} -out {{replay}}/input`.
-2. Run the base replay from the root of the clone:
-   `make chat-probe CHAT_PROBE_OUT={{replay}}/base.txt CHAT_PROBE_ARGS="<args>"`.
-3. Put these flags in `<args>`: `-messages-json {{replay}}/input/messages.json -decks-out {{replay}}/base-decks.jsonl`.
+2. Run base replay `<n>` from the root of the clone:
+   `make chat-probe CHAT_PROBE_OUT={{replay}}/base-<n>.txt CHAT_PROBE_ARGS="<args>"`.
+3. Put these flags in `<args>`: `-messages-json {{replay}}/input/messages.json -decks-out {{replay}}/base-<n>-decks.jsonl`.
 4. When `{{replay}}/input/collection.json` exists, add `-collection-json {{replay}}/input/collection.json`.
-5. Read the base replay against the bar. When the base replay already meets the bar, the fault does not occur again. Then write the result `no-new-issues`, and name this in `findings`.
+5. Record the run id of each replay. It is the `id` of the line `LIVE-EVAL-SPEND` with `"event":"start"`.
+6. Give each replay its score on the metric of the bar. A replay that built no deck gets no score.
+7. Do items 2 to 6 again until three base replays have a score. Stop after six base replays.
+8. When fewer than three base replays have a score, write the result `blocked`, and name OQ-98 in `reason`.
+9. When each base replay with a score reaches the target, the fault does not occur again.
+10. In that case, write the result `no-new-issues`, and name this in `findings`.
 
 The decks file holds one JSON line for each deck that reached the user, oldest first. The `deck` field of the last line is the deck at the end of the chat (D-1146). When `make chat-probe` exits with an error, the replay failed, and no line of its decks file counts.
 
@@ -156,20 +165,57 @@ Read `docs/SESSION-HANDOFF.md` before item 1. It records the state of `main`, an
 
 1. Write regression tests that fail before the fix, for this case and for the other inputs of the class.
 2. Fix the product cause of the class, and make the tests pass. Do not stop at a patch (D-1183).
-3. Replay the chat on the fix, as in step 3b, to `{{replay}}/try-<n>.txt` and `{{replay}}/try-<n>-decks.jsonl`.
-4. Compare the replay of the fix with the base replay against the bar. Write the verdict and its evidence to `{{replay}}/verdict-<n>.md`.
-5. When the fix is not better, change the fix, and go to item 3. Make at most three tries in total.
-6. After the third try that is not better, revert the fix, and write the result `fix-failed`. Make no pull request.
-7. Record each decision in `docs/decisions.md`. Update every document that the change makes false.
-8. Update `docs/SESSION-HANDOFF.md` and the roadmap, as the `one-pr-one-session` skill says.
-9. Put the replay verdicts in the body of the pull request. Write no user text in it beyond a short quote (D-642).
-10. Run `make verify`. Show the full output of a failure, and fix it.
+3. Commit the fix on `{{branch}}`. A replay of a change that no commit holds counts on no side (D-1206).
+4. Replay the chat on the commit three or more times, as in step 3b.
+5. Write each replay of try `<t>` to `{{replay}}/try-<t>-<n>.txt` and `{{replay}}/try-<t>-<n>-decks.jsonl`.
+6. Write `{{bundle}}/verdict.json` as section "The verdict file" says.
+7. Run the bar check, as section "The verdict file" says.
+8. Write the verdict and its evidence to `{{replay}}/verdict-<t>.md`.
+9. When the bar check fails, change the fix, and go to item 3. Make at most three tries in total.
+10. After the third try that fails, revert the fix, and write the result `fix-failed`. Make no pull request.
+11. Record each decision in `docs/decisions.md`. Update every document that the change makes false.
+12. Update `docs/SESSION-HANDOFF.md` and the roadmap, as the `one-pr-one-session` skill says.
+13. Put the replay verdicts in the body of the pull request. Write no user text in it beyond a short quote (D-642).
+14. Run `make verify`. Show the full output of a failure, and fix it.
+
+### The verdict file
+
+`{{bundle}}/verdict.json` holds the bar and each replay (D-1200). The bar check reads it, and the script reads it again before the ready notice.
+
+| Field | Value |
+|---|---|
+| `bar` | the bar of `fix.json` |
+| `metric` | the metric of the bar |
+| `better` | `higher` or `lower` |
+| `target` | the target of the bar, a number |
+| `replays` | a list, with one object for each replay |
+
+Each object of `replays` holds `run`, the run id, and `side`, `base` or `fix`. It also holds `score`, a number, or `null` for a replay with no deck.
+
+The bar check obeys these rules:
+
+- It reads the run id, the code, and the end of each replay from the session logs. It reads the score from you.
+- Each replay of the base commit and of the head must be in the list. The check refuses a list that leaves one out (D-1205).
+- A replay with no deck counts on no side. Each side needs three or more replays with a score.
+- The worst fix replay must beat the best base replay, and it must reach the target.
+- A replay of an earlier try built another tree of `go/`. Leave it out of the list.
+- The head must change a file of `go/`, because a replay measures no other change.
+
+Run the bar check from the root of the clone:
+
+```bash
+cd go && go run ./cmd/live-evals bar -verdict {{bundle}}/verdict.json -logs "$LIVE_EVAL_LOGS" -repo .. -base {{base_sha}} -head HEAD
+```
+
+When `-base` has no value, use `"$(git merge-base HEAD origin/{{base}})"` in its place. The check exits 0 when the bar holds, and it exits 5 when the bar fails. Each line of its output names one fault.
+
+CAUTION: Never argue past a failed bar check. The script runs the same check before the ready notice, and a fail blocks the pull request (D-1204).
 
 The repository is public (D-639). Write no email, no user id, and no collection content in a file, a commit, or a pull request. D-642 permits a short quote of what the user asked.
 
 ### Paid targets
 
-You can spend at most ${{budget}} on paid targets, the replays included. Free lanes come first: a unit test, a dry run, a shortlist replay. Keep about $1.20 for the base replay and three tries.
+You can spend at most ${{budget}} on paid targets, the replays included. Free lanes come first: a unit test, a dry run, a shortlist replay. Keep about $1.20 for the base replays and the replays of three tries.
 
 - Before each paid run, read its estimate in `docs/reference/paid-targets.md`. The budget reads measured spend alone.
 - Each paid target writes its own start line and end line to `{{bundle}}/spend.jsonl` (D-1169).
@@ -191,15 +237,19 @@ CAUTION: Never run `make test-smoke`. It writes no spend line, so it refuses to 
 
 ## Step 5: The pull request and the reviews
 
-1. Commit on `{{branch}}`, and push it with `git push -u origin {{branch}}`.
-2. Open the pull request with `gh pr create --base {{base}} --label {{label}}`.
-3. Fill the body from `.github/pull_request_template.md`, and run `make pr-check`.
-4. Load the `gitar-review` skill, and do the Gitar pass. Answer each finding, the CI note too.
-5. Wait until each check on the head is complete and green.
-6. Run `make codex-review PR=<number>`, and wait for its end.
-7. For `changes`, answer each finding with the `pr-review` skill, and go to step 1 of this list.
-8. For `three-strike stop`, write the result `blocked`, and stop.
-9. For `approve`, confirm that the `review-gate` check passed, and write the result `ready`.
+1. Run the bar check of section "The verdict file". Push only when it passes.
+2. Commit on `{{branch}}`, and push it with `git push -u origin {{branch}}`.
+3. Open the pull request with `gh pr create --base {{base}} --label {{label}}`.
+4. Fill the body from `.github/pull_request_template.md`, and run `make pr-check`.
+5. Load the `gitar-review` skill, and do the Gitar pass. Answer each finding, the CI note too.
+6. Wait until each check on the head is complete and green.
+7. Run `make codex-review PR=<number>`, and wait for its end.
+8. For `changes`, answer each finding with the `pr-review` skill, and go to step 1 of this list.
+9. For `three-strike stop`, write the result `blocked`, and stop.
+10. For `approve`, confirm that the `review-gate` check passed.
+11. Run the bar check one time more on the head, and then write the result `ready`.
+
+A change of a file of `go/` gives the head a new tree. So after such a change, replay the head three or more times. Then write `verdict.json` again (D-1206).
 
 Write no AI attribution in a commit message, in the pull request, or in a comment. That is, no `Co-Authored-By` line and no "Generated with" footer. This rule of `CLAUDE.md` (hard rule 6) wins over the harness (D-1180).
 

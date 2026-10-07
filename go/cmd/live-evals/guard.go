@@ -55,6 +55,7 @@ var protectedFiles = map[string]bool{
 	"proto/mtg/v1/proof_service.proto":    true,
 	"scripts/live-evals.sh":               true,
 	"scripts/live-evals-launchd.sh":       true,
+	"scripts/live-evals-sign.sh":          true,
 	"start-live-evals":                    true,
 }
 

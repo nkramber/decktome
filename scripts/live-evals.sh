@@ -72,6 +72,7 @@
 #   claude setup-token, and the token alone > $LIVE_EVALS_SECRETS/claude-token
 #   gh auth token             > $LIVE_EVALS_SECRETS/gh-token
 #   CODEX_HOME=$LIVE_EVALS_HOME/codex-home codex login
+#   make live-evals-sign-setup  (the key that signs each build, D-1208)
 # The gh token is a copy of the login of the owner (D-1164), and it
 # reaches each repository of the owner. The Codex login is a login of
 # its own (D-1184). A copy of ~/.codex/auth.json shares one refresh
@@ -245,9 +246,20 @@ say "building the live-evals tool"
 
 # macOS knows a Go build by the hash of its ad-hoc signature. So a new
 # build of the tool asks again for the access to the volume, and the
-# dialog stops the tool before its first line (D-1178). Under launchd no
-# one sees the dialog. So the tick runs the tool one time with no
-# arguments, and after GRANT_WAIT seconds the owner gets one notice.
+# dialog stops the tool before its first line (D-1178). A signature with
+# the key of `make live-evals-sign-setup` gives each build the same
+# requirement, and the grant stays (D-1208). With no key, each new build
+# asks again.
+SIGN=$ROOT/scripts/live-evals-sign.sh
+if [ -s "$SECRETS/sign-identity" ]; then
+  LIVE_EVALS_SECRETS=$SECRETS "$SIGN" sign "$TOOL" || die "the signature of the tool failed (D-1208)"
+else
+  say "no signing key, so a new build asks again for the access to the volume. Run make live-evals-sign-setup (D-1208)."
+fi
+
+# Under launchd no one sees the dialog. So the tick runs the tool one
+# time with no arguments, and after GRANT_WAIT seconds the owner gets
+# one notice. With the key, only the first signed build waits.
 GRANT_WAIT=${LIVE_EVALS_GRANT_WAIT:-60}
 case "$GRANT_WAIT" in '' | *[!0-9]*) die "LIVE_EVALS_GRANT_WAIT must be a number of seconds" ;; esac
 "$TOOL" >/dev/null 2>&1 &
@@ -629,7 +641,10 @@ prepare() { # uid deck kind who -> 0 when the run folder is ready
     # use paths in it. mkdir fails when the folder exists.
     mkdir "$run" || return 1
     if ! clone "$run" "$branch" "$base"; then runfs clear "$HOME_DIR" "$deck"; return 1; fi
-    dset "$deck" uid "$uid" kind "$kind" who "$who" branch "$branch" base "$base" parent_pr "$parent" status running
+    # The base commit names the code of the base replays. The script
+    # records it before any session can write in the clone (D-1206).
+    dset "$deck" uid "$uid" kind "$kind" who "$who" branch "$branch" base "$base" parent_pr "$parent" status running \
+      base_sha "$(git -C "$run/repo" rev-parse HEAD)"
   fi
   # The bundle is built in $RUNS, where no session can write. A
   # continuation keeps what the earlier session wrote: its findings, its
@@ -647,13 +662,13 @@ prepare() { # uid deck kind who -> 0 when the run folder is ready
   cp "$STATE/findings-index.md" "$build/earlier-findings.md" 2>/dev/null || echo "No earlier finding." > "$build/earlier-findings.md"
   runfs put "$HOME_DIR" "$deck" bundle "$build" || return 1
   jq -n --arg branch "$(dget "$deck" branch)" --arg base "$(dget "$deck" base)" --arg parent_pr "$(dget "$deck" parent_pr)" \
-    --arg kind "$kind" --arg who "$who" --arg label "$LABEL" --arg nonce "$nonce" \
-    '{branch: $branch, base: $base, parent_pr: (if $parent_pr == "" then "none" else $parent_pr end), kind: $kind, who: $who, label: $label, nonce: $nonce}' \
+    --arg kind "$kind" --arg who "$who" --arg label "$LABEL" --arg nonce "$nonce" --arg base_sha "$(dget "$deck" base_sha)" \
+    '{branch: $branch, base: $base, base_sha: $base_sha, parent_pr: (if $parent_pr == "" then "none" else $parent_pr end), kind: $kind, who: $who, label: $label, nonce: $nonce}' \
     > "$logs/context.json"
 }
 
 finish() { # deck run -> act on result.json
-  local deck=$1 run=$2 status pr uid n
+  local deck=$1 run=$2 status pr uid n out
   uid=$(dget "$deck" uid)
   status=$(result "$deck" status)
   pr=$(result "$deck" pr)
@@ -662,6 +677,16 @@ finish() { # deck run -> act on result.json
   fi
   case "$status" in
     ready)
+      # The session ran the bar check before its push. The script runs it
+      # again, and a fail sends no ready notice (D-1200, D-1204).
+      if ! out=$(bar_check "$deck" "$pr" 2>&1); then
+        dset "$deck" status blocked pr "$pr" bar failed
+        mark "$uid" "$deck"
+        notify "decktome live eval: PR #$pr does not hold its bar" "${out#live-evals: }
+The pull request waits for the owner, and no ready notice follows."
+        say "PR #$pr does not hold its bar, so it waits for the owner"
+        return 0
+      fi
       dset "$deck" status waiting pr "$pr" waiting_since "$(date +%s)"
       check_ready "$deck"
       ;;
@@ -709,6 +734,25 @@ $( [ -n "$pr" ] && echo "PR #$pr")"
       fi
       ;;
   esac
+}
+
+bar_check() { # deck pr [target] -> 0 when verdict.json holds the bar (D-1200)
+  # After a restack the base is the fork point from target (D-1207).
+  local deck=$1 pr=$2 target=${3:-} v=$RUNS/$1/verdict.json head base ref
+  [ -n "$pr" ] || { echo "result.json names no pull request"; return 1; }
+  # The script reads the verdict through the helper, as each file of the
+  # run folder, and git reads its own checkout alone.
+  rget "$deck" bundle/verdict.json 262144 > "$v" || { echo "verdict.json does not read"; return 1; }
+  # The session can run for hours, so the base ref of this checkout can
+  # be older than the tip that the session rebased onto.
+  ref=${target:-$(dget "$deck" base)}
+  git -C "$ROOT" fetch --quiet origin "$(dget "$deck" branch)" "$ref" || { echo "the branch or the base does not fetch"; return 1; }
+  head=$(gh pr view "$pr" --json headRefOid --jq .headRefOid) || { echo "the head of PR #$pr does not read"; return 1; }
+  base=""
+  [ -n "$target" ] || base=$(dget "$deck" base_sha)
+  # An item that started before base_sha reads its fork point.
+  [ -n "$base" ] || base=$(git -C "$ROOT" merge-base "$head" "origin/$ref") || { echo "the base does not read"; return 1; }
+  tool bar -verdict "$v" -logs "$RUNS/$deck" -repo "$ROOT" -base "$base" -head "$head"
 }
 
 check_ready() { # deck -> notify once when GitHub shows the pull request ready
@@ -776,7 +820,12 @@ restack() { # deck target -> rebase the pull request of deck onto target
   n=$(( $(dnum "$deck" sessions) + 1 ))
   dset "$deck" sessions "$n" status restacking
   run_claude "$deck" "$run" "$logs/restack-prompt.md" "$logs/session-$n.log"
-  if [ "$(result "$deck" status)" = ready ]; then
+  local out
+  if [ "$(result "$deck" status)" = ready ] && ! out=$(bar_check "$deck" "$(dget "$deck" pr)" "$target" 2>&1); then
+    dset "$deck" status blocked bar failed
+    notify "decktome live eval: PR #$(dget "$deck" pr) does not hold its bar after the restack" "${out#live-evals: }
+The pull request waits for the owner, and no ready notice follows."
+  elif [ "$(result "$deck" status)" = ready ]; then
     local parent=""
     if [ "$target" != main ]; then parent=$(dget "$deck" parent_pr); fi
     dset "$deck" status waiting waiting_since "$(date +%s)" late_notice "" base "$target" parent_pr "$parent"

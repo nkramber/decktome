@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat live-evals-install live-evals-uninstall live-evals-status live-evals-retry
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat live-evals-install live-evals-uninstall live-evals-status live-evals-sign-setup live-evals-retry
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -392,6 +392,9 @@ live-evals-install: ## Load the launchd agent that runs one live-eval pass every
 
 live-evals-uninstall: ## Stop and remove the launchd agent of the live evals (D-1155). Free
 	@scripts/live-evals-launchd.sh uninstall
+
+live-evals-sign-setup: ## Make the key that signs each build of the live-evals tool, so the grant of the volume stays (D-1208). Free
+	@scripts/live-evals-sign.sh setup
 
 live-evals-status: ## Print the state of the launchd agent of the live evals, and the end of its log (D-1155). Free
 	@scripts/live-evals-launchd.sh status
