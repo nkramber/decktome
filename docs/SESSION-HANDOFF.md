@@ -25,9 +25,9 @@ Author provider: Claude Code
 
 **Checks.** `make verify` passes with Node 22.23.2. GitHub `review-gate`, `pr-contract`, Gitar, and active verify jobs pass on the record commit. The document-only workflow skips its heavy jobs.
 
-**Review.** Ready for owner merge on `0a65010b86a9a8387a59d0db02c0295d1ede1982`. No open findings remain.
+**Review.** Gitar found that `bar_check` read a stale base ref after a restack, and `0a65010` fetches it. Gitar approves `0a65010`. The Codex record is Ready for owner merge on `0a65010b86a9a8387a59d0db02c0295d1ede1982`, and no finding is open.
 
-**Next action.** The author session asks the owner for the merge confirmation.
+**Next action.** The merge waits for the confirmation of the owner, and then for the auto-merge (D-828).
 
 ## How to resume
 
