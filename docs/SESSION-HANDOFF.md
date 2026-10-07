@@ -23,7 +23,7 @@ Author provider: Claude Code
 - `scripts/live-evals.sh`: the clone records `base_sha`, and `bar_check` runs on the result `ready` of an eval and of a restack.
 - `scripts/live-evals/eval-prompt.md`, `continue-prompt.md`, and `restack-prompt.md`: the rules of the bar, the replays, and the verdict file.
 
-**Checks.** `make verify` passes with Node 22.23.2. GitHub verify, `pr-contract`, and Gitar pass on head `0a65010`. The review gate waits for the Codex record.
+**Checks.** `make verify` passes with Node 22.23.2. GitHub `review-gate`, `pr-contract`, Gitar, and active verify jobs pass on the record commit. The document-only workflow skips its heavy jobs.
 
 **Review.** Ready for owner merge on `0a65010b86a9a8387a59d0db02c0295d1ede1982`. No open findings remain.
 
