@@ -602,13 +602,22 @@ open_prs() { # -> number<TAB>branch, oldest first
     --jq 'sort_by(.createdAt) | .[] | "\(.number)\t\(.headRefName)"'
 }
 
+# session_credential gives the clone of a session the gh helper alone.
+# The empty helper drops each helper of a lower config, and the Apple Git
+# config holds osxkeychain. Without the drop, git asks the keychain to
+# store the token of the session after each push (D-1209).
+session_credential() { # repo
+  git -C "$1" config credential.helper '' &&
+    git -C "$1" config --add credential.helper '!gh auth git-credential'
+}
+
 clone() { # run branch base -> a clone of the base on a new branch
   local run=$1 branch=$2 base=$3 repo=$1/repo
   # --dissociate copies the objects, so the clone never writes or needs
   # the checkout of the owner after this step.
   git clone --quiet --reference "$ROOT" --dissociate --branch "$base" "$REPO_URL" "$repo" || return 1
   git -C "$repo" switch --quiet -c "$branch" || return 1
-  git -C "$repo" config credential.helper '!gh auth git-credential'
+  session_credential "$repo" || return 1
   git -C "$repo" config user.name "$(git config user.name)"
   git -C "$repo" config user.email "$(git config user.email)"
   # The session gets the provider keys alone (D-1142). The test account

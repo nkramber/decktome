@@ -16,10 +16,11 @@ export function DialogContent({ className, children, ...props }: ComponentProps<
         // frame of the fade, and the wordmark's shimmer repaints under it,
         // so the open and the close stuttered.
         className="fixed inset-0 z-50 bg-black/70 will-change-[opacity] data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:animate-out data-[state=closed]:fade-out-0" />
+      {/* A dialog taller than the screen scrolls inside, so its buttons stay in reach (D-1210). */}
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-panel border border-border bg-card p-5 text-card-foreground shadow-overlay will-change-transform",
+          "fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-panel border border-border bg-card p-5 text-card-foreground shadow-overlay will-change-transform",
           "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0",
           className,
         )}

@@ -168,7 +168,7 @@ describe("a deck link", () => {
 
     const steps = await screen.findByTestId("export-steps");
     expect(steps).toHaveTextContent("Moxfield does not let the app read its decks.");
-    expect(within(steps).getAllByRole("listitem").map((li) => li.textContent)).toEqual(moxSteps);
+    expect(within(steps).getAllByRole("listitem", { hidden: true }).map((li) => li.textContent)).toEqual(moxSteps);
     expect(screen.getByRole("textbox", { name: "Deck list" })).toHaveValue("");
     expect(submitFeedback).not.toHaveBeenCalled();
   });
@@ -179,8 +179,21 @@ describe("a deck link", () => {
 
     const link = await screen.findByTestId("moxfield-bookmarklet");
     expect(link).toHaveTextContent("Import to decktome");
+    // The bookmark comes first, and the steps fold under a disclosure (D-1210).
+    const fold = screen.getByText("Copy the list by hand").closest("details");
+    expect(fold).not.toBeNull();
+    expect(fold?.open).toBe(false);
+    expect(link.compareDocumentPosition(fold as Node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(link.getAttribute("href")?.startsWith("javascript:")).toBe(true);
     expect(decodeURIComponent(link.getAttribute("href") ?? "")).toContain(JSON.stringify(window.location.origin));
+  });
+
+  it("caps the dialog at the screen height and scrolls inside it (D-1210)", async () => {
+    fetchDeckList.mockResolvedValueOnce({ text: "", name: "", sourceUrl: "", leftOut: 0, site: "Moxfield", exportSteps: moxSteps, knownSite: true });
+    await openAndRead("https://moxfield.com/decks/abc");
+
+    await screen.findByTestId("export-steps");
+    expect(screen.getByRole("dialog")).toHaveClass("max-h-[calc(100dvh-2rem)]", "overflow-y-auto");
   });
 
   it("offers no bookmarklet for another site", async () => {

@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-07 correction pass 269 (PR-139, D-1209, D-1210): a live-eval session asked macOS to store its GitHub token, because the Apple Git config holds osxkeychain. The clone now holds the gh helper alone. The import dialog of a Moxfield link was taller than the screen. Each dialog now scrolls inside, and the steps fold under the bookmark. Changes: PR-139.
 2026-10-07 correction pass 268 (PR-138, D-1200, D-1203 to D-1208): the eval session of #294 called its fix ready on one replay of each side. A live eval now holds its bar with a script check and prompt rules. A key of the owner signs each build of the tool, so the grant of the volume stays. Changes: PR-125, PR-138.
 2026-10-06 correction pass 267 (PR-136, F-226, D-1190, D-1191, D-1195 to D-1202): a live eval read a planeswalker deck of a new set. The model played reprints it knew and left out themed cards, because no shortlist line named the theme. Each themed line now says "on theme" and carries the card text. A themed planeswalker reads threat, and a deck that leaves out a themed card buys a repair turn. Five bracket 1 replays played all 31 themed cards. Changes: F-226, PR-136.
 2026-10-04 correction pass 266 (PR-130, F-225, D-1162): the check of PR-128 built a deck that marked Astral Cornucopia as fast mana. Fast mana now needs no X and no multikicker in the cost. Changes: F-225, PR-130, sequencing step 125.
@@ -3614,6 +3615,22 @@ Gate:
 - A Codex review record that approves the effective head (D-815).
 
 > *In plain English:* a live eval once called a fix good after one try of each side. Now a script counts the tries, and it checks that each try ran the right code. When the fix is not better on every try, no "ready" notice goes out. Also, the Mac stops its question about the drive after each new build.
+
+**PR-139: No keychain store in a live-eval session, and a short import dialog (D-1209, D-1210).** ✅ merged as #297. The mark comes before any review (D-822). Two times a live-eval session asked macOS to store its GitHub token. The live check of PR-137 then found an import dialog taller than the screen.
+
+- **The keychain store (D-1209).** The Apple Git config sets `credential.helper=osxkeychain`. The clone added the gh helper after it, so git sent the session token to the keychain after each push. The clone now sets an empty helper first, and then the gh helper.
+- **The height of a dialog (D-1210).** The shared dialog had no height limit. A dialog taller than the screen now scrolls inside, so its buttons stay in reach.
+- **The Moxfield steps (D-1210).** For a Moxfield link, the bookmark comes first, and the four steps fold under "Copy the list by hand".
+- **The tab of the bookmark (D-1210).** The bookmark keeps its new tab. A page can not bring an open tab to the front.
+
+Gate:
+- `docs/tools/test_live_evals_git.py` passes. The helper list starts empty, and a lower helper gets no `store`. Without the empty helper, both tests fail.
+- The tests of `ImportDialog` read the fold, the order of the bookmark and the steps, and the height limit.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* the eval sessions push code to GitHub. Each push made the Mac ask to save the GitHub token, and no one answered. Now git gives the token to gh alone. Also, the import window fits the screen again, and the Moxfield button comes first.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.

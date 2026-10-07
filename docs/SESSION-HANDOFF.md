@@ -6,29 +6,32 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-07, PR-138)
+## RESUME HERE (2026-10-07b, PR-139)
 
-**Branch `feat/live-eval-bar-check`, PR-138, pull request #296: the live evals hold the bar of a fix (D-1200).** Role: author.
+**Branch `chore/live-evals-no-keychain`, PR-139, pull request #297: no keychain store in a live-eval session, and a short import dialog (D-1209, D-1210).** Role: author.
 
 Author provider: Claude Code
 
-**The base.** `main` at `923c7df`, the merge of #294. Cloud Build `33c62ff0` deployed it, and revision `mtg-api-00130-md2` serves prompt version 21. The owner lifted the hold of OQ-97 for #294 alone (D-1203). OQ-97 stays open.
+**The base.** `main` at `8ae2717`, the merge of #296. Cloud Build `50f909ae` deployed it, and revision `mtg-api-00131-xr6` serves it. No web file changed after `ea792c3`, so `deploy-web` did not run.
 
-**The owner answers.** The bar check runs in the session before its push and in the script on `ready` (D-1204). `verdict.json` lists each replay, and a replay with no deck counts on no side (D-1205). After a restack, the session replays both sides again when a tree changed (D-1207). A second session added the stable signature of D-1208 to this pull request, after the first review round.
+**The checks of the base.**
+
+- The owner selected the bookmark of PR-137 on a Moxfield deck. The import dialog opened with the list and the name, and the fragment went away (D-1193).
+- The owner ran `make live-evals-sign-setup`. The tick of 14:33 local time waited for the grant. The tick of 14:39 made a new build and passed the probe with no dialog (D-1208).
+- No live eval ran under PR-138 yet, because no deck waits. So no `verdict.json` exists (D-1204).
 
 **The code.**
 
-- `go/internal/livespend`: the start line of a paid run names the git tree of `go/`, and `LogRuns` lists each run of the session logs (D-1206).
-- `go/cmd/live-evals/bar.go`: the command `bar` reads `verdict.json`, the session logs, and the trees of the base and the head.
-- `scripts/live-evals.sh`: the clone records `base_sha`, and `bar_check` runs on the result `ready` of an eval and of a restack.
-- `scripts/live-evals/eval-prompt.md`, `continue-prompt.md`, and `restack-prompt.md`: the rules of the bar, the replays, and the verdict file.
-- `scripts/live-evals-sign.sh` and `make live-evals-sign-setup`: a key of the owner signs each build of the tool, so the grant of the volume stays (D-1208). `guard.go` protects the script.
+- `scripts/live-evals.sh`: `session_credential` sets an empty helper, then the gh helper, in each new clone (D-1209). No clone of an older run exists.
+- `docs/tools/test_live_evals_git.py`: a lower helper gets no `store`.
+- `web/apps/web/src/components/ui/dialog.tsx`: each dialog scrolls inside the screen (D-1210).
+- `web/apps/web/src/features/deck/import-dialog.tsx`: for Moxfield, the bookmark comes first, and the steps fold.
 
-**Checks.** `make verify` passes on `b2f5843` with Node 22.23.2. Each GitHub check passes on `e7a0e4e`, except `review-gate`, which reads the new record.
+**Checks.** `make verify` passes with Node 22.23.2. `docs/tools/test_live_evals_git.py` fails with the old single helper, and it passes with the fix.
 
-**Review.** Round 2 (D-1208): Gitar found an unchecked lock and a lost codesign error, and `e7a0e4e` fixes both. Gitar approved `e7a0e4e`. The Codex review says `Ready for owner merge` for `e7a0e4e0928b81a53ef0feb15378738cc3f9f8f4`. No finding stays open. This session pushed the review record and hand-off.
+**Review.** Gitar approved effective head `8427c204bbae3af5ab1227f9d7d2072d70b40ab4` at 19:49:25 UTC. No review thread stays open. Codex says Ready for owner merge for this effective head.
 
-**Next action.** The merge waits for the confirmation of the owner, and then for the auto-merge (D-828). After the merge, run `make live-evals-sign-setup` one time, and allow the dialog of the first signed build.
+**Next action.** Ask the owner for merge confirmation, then turn on auto-merge (D-834).
 
 ## How to resume
 
@@ -103,8 +106,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **The first live eval under PR-138** (D-1204). After the merge, read its `verdict.json` and the bar line of the script log.
-0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
-0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. Unverified: the tool that names the token.
+0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -126,23 +128,13 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-06b: the Moxfield bookmarklet, PR-137
+### 2026-10-07b: the keychain store of a live-eval session, PR-139
 
-**The owner asked for the TTL check and the check of #292 first.** Both passed. The check build started a live eval, and the owner asked for the note of D-1194.
+**The cause was the Apple Git config.** It sets osxkeychain, and the clone added the gh helper after it. So git sent the session token to the keychain after each push (D-1209).
 
-**The console test of OQ-95 passed in the browser of the owner.** The owner permits the bookmarklet before an answer of Moxfield (D-1192). The owner chose a filled form in a new tab, with no Moxfield link (D-1193).
+**The owner read the keychain.** No "x-access-token" item exists, and the default keychain sits in the home folder that the profile denies.
 
-**The owner tested the real bookmark on Moxfield.** The new tab opened `/decks` with the list. The owner chose the unit tests now and the live test after the deploy.
-
-### 2026-10-06b: the theme mark of a shortlist line, PR-136
-
-**A live eval read a planeswalker deck of a set four days old.** The model played reprints it knew in place of themed set cards.
-
-**The cause was the shortlist line.** It named no theme, so a themed card with a staple job read like a staple. Each themed line now says "on theme" (D-1190).
-
-**The replay of the fix leaked the mark into 13 reasons.** The mark now reads as plain English, and the prompt forbids "mark" in user text (D-1191).
-
-**The fix grew to four more steps, and a strong bar.** Five bracket 1 replays played all 31 themed cards (D-1195 to D-1199). The replays pin the bracket answer (D-1201).
+**The live check of PR-137 passed, and the owner asked for two changes in this pull request.** The import dialog now fits the screen, and the bookmark comes first. The owner kept the new tab, because a page can not bring an open tab to the front (D-1210).
 
 ### 2026-10-07: the bar of a live-eval fix, PR-138
 
@@ -153,6 +145,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner chose a full replay list, and a restack that replays again** (D-1205, D-1207). The start line of a replay names its tree of `go/` (D-1206).
 
 **Each new build of the tool asked again for the grant of the volume.** A self-signed key now gives each build one requirement. A test proved the requirement, and no tick proved the grant yet (D-1208).
+
+### 2026-10-06b: the Moxfield bookmarklet, PR-137
+
+**The owner asked for the TTL check and the check of #292 first.** Both passed. The check build started a live eval, and the owner asked for the note of D-1194.
+
+**The console test of OQ-95 passed in the browser of the owner.** The owner permits the bookmarklet before an answer of Moxfield (D-1192). The owner chose a filled form in a new tab, with no Moxfield link (D-1193).
+
+**The owner tested the real bookmark on Moxfield.** The new tab opened `/decks` with the list. The owner chose the unit tests now and the live test after the deploy.
 
 ## The archive
 
