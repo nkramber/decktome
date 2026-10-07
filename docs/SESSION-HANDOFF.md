@@ -24,11 +24,11 @@ Author provider: Claude Code
 - `scripts/live-evals/eval-prompt.md`, `continue-prompt.md`, and `restack-prompt.md`: the rules of the bar, the replays, and the verdict file.
 - `scripts/live-evals-sign.sh` and `make live-evals-sign-setup`: a key of the owner signs each build of the tool, so the grant of the volume stays (D-1208). `guard.go` protects the script.
 
-**Checks.** The first round passed `make verify` and each GitHub check on `41f2da8`. The commit of D-1208 needs `make verify` and CI again.
+**Checks.** `make verify` passes on `b2f5843` with Node 22.23.2. Each GitHub check passes on `e7a0e4e`, except `review-gate`, which reads the new record.
 
-**Review.** Gitar approved `e7a0e4e`. The Codex review says `Ready for owner merge` for `e7a0e4e0928b81a53ef0feb15378738cc3f9f8f4`. No finding stays open. This session pushed the review record and hand-off.
+**Review.** Round 2 (D-1208): Gitar found an unchecked lock and a lost codesign error, and `e7a0e4e` fixes both. Gitar approved `e7a0e4e`. The Codex review says `Ready for owner merge` for `e7a0e4e0928b81a53ef0feb15378738cc3f9f8f4`. No finding stays open. This session pushed the review record and hand-off.
 
-**Next action.** Do the Gitar pass and the Codex round on the commit of D-1208. Then ask the owner for the merge (D-834). After the merge, run `make live-evals-sign-setup` one time, and allow the dialog of the first signed build.
+**Next action.** The merge waits for the confirmation of the owner, and then for the auto-merge (D-828). After the merge, run `make live-evals-sign-setup` one time, and allow the dialog of the first signed build.
 
 ## How to resume
 
