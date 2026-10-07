@@ -23,9 +23,11 @@ Author provider: Claude Code
 - `scripts/live-evals.sh`: the clone records `base_sha`, and `bar_check` runs on the result `ready` of an eval and of a restack.
 - `scripts/live-evals/eval-prompt.md`, `continue-prompt.md`, and `restack-prompt.md`: the rules of the bar, the replays, and the verdict file.
 
-**Checks.** The Go tests of the two packages pass. A smoke run of `bar_check` with stub helpers read each path. No open live-eval pull request predates the rule.
+**Checks.** `make verify` passes with Node 22.23.2. GitHub verify, `pr-contract`, and Gitar pass on head `0a65010`. The review gate waits for the Codex record.
 
-**Next action.** Run `make verify`, open the pull request, and do the Gitar pass.
+**Review.** Ready for owner merge on `0a65010b86a9a8387a59d0db02c0295d1ede1982`. No open findings remain.
+
+**Next action.** The author session asks the owner for the merge confirmation.
 
 ## How to resume
 
