@@ -130,4 +130,31 @@ func TestSetFillMarksTheCardOfTheSetLimit(t *testing.T) {
 			t.Errorf("no set limit: %s reads set fill", c.Card.GetName())
 		}
 	}
+	set := fixture(t, []tc{
+		{id: "insoul", name: "Soul Warden", typeLine: "Creature — Human Cleric",
+			text:     "Whenever another creature enters, you gain 1 life.",
+			identity: []mtgv1.Color{W}, mv: 1, rank: 200, tags: []string{"lifegain"}, sets: []string{"hob"}},
+		{id: "inplain", name: "Hobbit Farmer", typeLine: "Creature — Halfling",
+			identity: []mtgv1.Color{W}, mv: 2, rank: 900, sets: []string{"hob"}},
+		{id: "inrock", name: "Mind Stone", typeLine: "Artifact", text: "{T}: Add {C}.",
+			mv: 2, rank: 3, tags: []string{"ramp", "mana-rock"}, sets: []string{"hob"}},
+	})
+	limited, err := b.Build(set, Request{Format: cmdr, Colors: []mtgv1.Color{W}, Theme: "lifegain",
+		SetCodes: []string{"hob"}, PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{"insoul": false, "inplain": true, "inrock": false}
+	for _, c := range limited.Candidates {
+		id := c.Card.GetOracleId()
+		if w, ok := want[id]; ok {
+			if c.SetFill != w {
+				t.Errorf("set limit: %s set fill %v, want %v", c.Card.GetName(), c.SetFill, w)
+			}
+			delete(want, id)
+		}
+	}
+	for id := range want {
+		t.Errorf("set limit: the list lost %q", id)
+	}
 }

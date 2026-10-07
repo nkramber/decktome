@@ -6,37 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-06c, checkpoint)
+## RESUME HERE (2026-10-07, review wait)
 
-**Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author. The owner asked for a proper fix and a strong bar.
+**Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author.
 
 Author provider: Claude Code
 
 **The base.** `main` at `ea792c3`, the merge of #295. Commit `17f5e31` merged `main` into the branch.
 
-**The owner rules.** The owner holds the merge until OQ-97 gives a fair grade to new cards. The live-eval rules go to a new pull request in a clean session after the merge. The replay cap is $3.00, and the measured spend is $0.83.
-
-**The bar.** Three or more replay decks at bracket 1, the bracket of the reader. The worst deck of the fix beats the best deck of the base, the live deck included. The worst deck leaves out two or fewer of the 31 themed nonland cards. No reason writes "mark".
+**The owner rules.** The owner holds the merge until OQ-97 gives a fair grade to new cards. Never turn on the auto-merge (D-1137). After the merge, a clean session makes the live-eval rules of D-1200 in a new pull request.
 
 **The code.** Each step has its tests, and each test fails on the code before it.
 
-- `84a6a28`: the mark reads `OnTheme`, so a bracket 5 card of the commander rate reads no mark (D-1195).
+- `84a6a28`: the mark reads `OnTheme` (D-1195).
 - `18e4b4c`: a line on theme ends with its cost and its rules text (D-1196).
 - `faab339`: a planeswalker with a lead reads threat (D-1197).
-- `76a081c`: the finding `theme_left_out` buys a repair turn when the deck plays a set fill card and leaves out a card on theme (D-1198).
+- `76a081c`: the warning `theme_left_out` buys a repair turn (D-1198). `TestSetFillMarksTheCardOfTheSetLimit` now reads a set limit too.
 
-**The replays.** Base: live deck 26 played and 5 left out, replays 20 and 23. On `faab339` at bracket 1: 31, 31, 31, 31, and 27. Deck v3-14 dropped each card with two pips and played Yargle, Glutton of Urborg. No replay reads `76a081c` yet.
+**The bar (D-1199) holds.** Five replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". The live deck played 26 and left out 5. The base replays played 20 and 23. No deck needed the repair turn.
 
-**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` to `go/cmd/zzprobe` before a run, and remove it before a test. `run.sh <worktree> <label>` runs one replay.
+**The pin (D-1201).** The classifier lost "1 Exhibition" in 10 of 17 unpinned decks, and 21 of 38 unpinned replays built no deck. So the owner chose a pin of the bracket answer in the scratch probe. OQ-98 holds the fault.
 
-**Open work.**
+**The spend.** $1.4698 over 54 replays, of the cap of $3.00. One replay read no usage. This session spent $0.6359.
 
-1. Write two decisions in `docs/decisions.md`: the bar above, and the live-eval rules of the next pull request.
-2. Add OQ-98: the classifier lost "1 Exhibition" in 5 of 9 decks, and 18 of 27 replays built no deck.
-3. Add a set-limit case to `TestSetFillMarksTheCardOfTheSetLimit`.
-4. Replay `76a081c` until three decks reach bracket 1. Ask the owner when the bar fails.
-5. Update the PR-136 entry, F-226, the PR body, and the correction pass line. Then run `make verify`, Gitar, and Codex.
-6. Never turn on the auto-merge (D-1137).
+**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
+
+**Checks.** `make verify` passes every check on this machine, the docker build included. The Gitar pass and the Codex review of this head wait.
+
+**Next action.** Do the Gitar pass on the head, then run `make codex-review PR=294`. Then wait for OQ-97 and the owner.
 
 ## How to resume
 
@@ -110,7 +107,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-136: the theme mark of a shortlist line** (D-1190 to D-1198). The resume section holds the open work. The merge waits for OQ-97.
+0. **PR-136: the theme mark of a shortlist line** (D-1190 to D-1201). The resume section holds the state. The merge waits for OQ-97. Then a clean session takes the live-eval rules of D-1200.
 0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
 0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. Unverified: the tool that names the token.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -157,6 +154,8 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The cause was the shortlist line.** It named no theme, so a themed card with a staple job read like a staple. Each themed line now says "on theme" (D-1190).
 
 **The replay of the fix leaked the mark into 13 reasons.** The mark now reads as plain English, and the prompt forbids "mark" in user text (D-1191).
+
+**The fix grew to four more steps, and a strong bar.** Five bracket 1 replays played all 31 themed cards (D-1195 to D-1199). The replays pin the bracket answer (D-1201).
 
 ## The archive
 
