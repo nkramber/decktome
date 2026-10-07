@@ -126,6 +126,8 @@ The install takes the folder of each pinned program from the first copy on PATH 
 
 macOS asks for the access to the volume again after each change of the tool, because the hash of the build changes. The tick then sends one notice after 60 seconds, and it waits for the grant (D-1178).
 
+`make live-evals-sign-setup` makes a key that signs each build, so the grant stays after a change of the tool (D-1208). The target costs nothing. Run it one time, and allow the dialog of the first signed build. The key and its password stay in `LIVE_EVALS_SECRETS`.
+
 Each session runs `claude-opus-5-5` at the effort `high` on the Claude plan of the owner (D-1181). `LIVE_EVALS_MODEL` and `LIVE_EVALS_EFFORT` change them for a run by hand.
 
 `make live-evals-status` prints the state and the end of the log `~/Library/Logs/decktome-live-evals.log`. `make live-evals-uninstall` stops the agent and a session that runs. Both cost nothing.

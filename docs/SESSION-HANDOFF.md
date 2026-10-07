@@ -14,7 +14,7 @@ Author provider: Claude Code
 
 **The base.** `main` at `923c7df`, the merge of #294. Cloud Build `33c62ff0` deployed it, and revision `mtg-api-00130-md2` serves prompt version 21. The owner lifted the hold of OQ-97 for #294 alone (D-1203). OQ-97 stays open.
 
-**The owner answers.** The bar check runs in the session before its push and in the script on `ready` (D-1204). `verdict.json` lists each replay, and a replay with no deck counts on no side (D-1205). After a restack, the session replays both sides again when a tree changed (D-1207).
+**The owner answers.** The bar check runs in the session before its push and in the script on `ready` (D-1204). `verdict.json` lists each replay, and a replay with no deck counts on no side (D-1205). After a restack, the session replays both sides again when a tree changed (D-1207). A second session added the stable signature of D-1208 to this pull request, after the first review round.
 
 **The code.**
 
@@ -22,12 +22,13 @@ Author provider: Claude Code
 - `go/cmd/live-evals/bar.go`: the command `bar` reads `verdict.json`, the session logs, and the trees of the base and the head.
 - `scripts/live-evals.sh`: the clone records `base_sha`, and `bar_check` runs on the result `ready` of an eval and of a restack.
 - `scripts/live-evals/eval-prompt.md`, `continue-prompt.md`, and `restack-prompt.md`: the rules of the bar, the replays, and the verdict file.
+- `scripts/live-evals-sign.sh` and `make live-evals-sign-setup`: a key of the owner signs each build of the tool, so the grant of the volume stays (D-1208). `guard.go` protects the script.
 
-**Checks.** `make verify` passes with Node 22.23.2. GitHub `review-gate`, `pr-contract`, Gitar, and active verify jobs pass on the record commit. The document-only workflow skips its heavy jobs.
+**Checks.** The first round passed `make verify` and each GitHub check on `41f2da8`. The commit of D-1208 needs `make verify` and CI again.
 
-**Review.** Gitar found that `bar_check` read a stale base ref after a restack, and `0a65010` fetches it. Gitar approves `0a65010`. The Codex record is Ready for owner merge on `0a65010b86a9a8387a59d0db02c0295d1ede1982`, and no finding is open.
+**Review.** Gitar found that `bar_check` read a stale base ref after a restack, and `0a65010` fetches it. Gitar approved `0a65010`, and the Codex record approved `0a65010b86a9a8387a59d0db02c0295d1ede1982`. The commit of D-1208 changes code, so it needs a new Gitar pass and a new Codex round.
 
-**Next action.** The merge waits for the confirmation of the owner, and then for the auto-merge (D-828).
+**Next action.** Do the Gitar pass and the Codex round on the commit of D-1208. Then ask the owner for the merge (D-834). After the merge, run `make live-evals-sign-setup` one time, and allow the dialog of the first signed build.
 
 ## How to resume
 
@@ -150,6 +151,8 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **D-1200 said that the script opens no pull request, but the session opens it.** The owner chose a check in the session and again in the script (D-1204).
 
 **The owner chose a full replay list, and a restack that replays again** (D-1205, D-1207). The start line of a replay names its tree of `go/` (D-1206).
+
+**Each new build of the tool asked again for the grant of the volume.** A self-signed key now gives each build one requirement. A test proved the requirement, and no tick proved the grant yet (D-1208).
 
 ## The archive
 

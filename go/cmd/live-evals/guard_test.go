@@ -21,13 +21,15 @@ func TestProtectedOfHoldsAccessAndDeployPaths(t *testing.T) {
 		".github/workflows/verify.yml",
 		"scripts/live-evals/eval-prompt.md",
 		"scripts/live-evals.sh",
+		"scripts/live-evals-sign.sh",
 		"web/apps/web/src/features/admin/panel.tsx",
 		"go/internal/users/store.go",
 		"",
 	}
 	got := protectedOf(files)
 	want := []string{"go/internal/auth/verify.go", "firestore.rules", ".github/workflows/verify.yml",
-		"scripts/live-evals/eval-prompt.md", "scripts/live-evals.sh", "web/apps/web/src/features/admin/panel.tsx",
+		"scripts/live-evals/eval-prompt.md", "scripts/live-evals.sh", "scripts/live-evals-sign.sh",
+		"web/apps/web/src/features/admin/panel.tsx",
 		"go/internal/users/store.go"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("protectedOf = %v, want %v", got, want)

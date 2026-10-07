@@ -72,6 +72,7 @@
 #   claude setup-token, and the token alone > $LIVE_EVALS_SECRETS/claude-token
 #   gh auth token             > $LIVE_EVALS_SECRETS/gh-token
 #   CODEX_HOME=$LIVE_EVALS_HOME/codex-home codex login
+#   make live-evals-sign-setup  (the key that signs each build, D-1208)
 # The gh token is a copy of the login of the owner (D-1164), and it
 # reaches each repository of the owner. The Codex login is a login of
 # its own (D-1184). A copy of ~/.codex/auth.json shares one refresh
@@ -245,9 +246,20 @@ say "building the live-evals tool"
 
 # macOS knows a Go build by the hash of its ad-hoc signature. So a new
 # build of the tool asks again for the access to the volume, and the
-# dialog stops the tool before its first line (D-1178). Under launchd no
-# one sees the dialog. So the tick runs the tool one time with no
-# arguments, and after GRANT_WAIT seconds the owner gets one notice.
+# dialog stops the tool before its first line (D-1178). A signature with
+# the key of `make live-evals-sign-setup` gives each build the same
+# requirement, and the grant stays (D-1208). With no key, each new build
+# asks again.
+SIGN=$ROOT/scripts/live-evals-sign.sh
+if [ -s "$SECRETS/sign-identity" ]; then
+  LIVE_EVALS_SECRETS=$SECRETS "$SIGN" sign "$TOOL" || die "the signature of the tool failed (D-1208)"
+else
+  say "no signing key, so a new build asks again for the access to the volume. Run make live-evals-sign-setup (D-1208)."
+fi
+
+# Under launchd no one sees the dialog. So the tick runs the tool one
+# time with no arguments, and after GRANT_WAIT seconds the owner gets
+# one notice. With the key, only the first signed build waits.
 GRANT_WAIT=${LIVE_EVALS_GRANT_WAIT:-60}
 case "$GRANT_WAIT" in '' | *[!0-9]*) die "LIVE_EVALS_GRANT_WAIT must be a number of seconds" ;; esac
 "$TOOL" >/dev/null 2>&1 &

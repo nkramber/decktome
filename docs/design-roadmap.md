@@ -6,7 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
-2026-10-07 correction pass 268 (PR-138, D-1200, D-1203 to D-1207): the eval session of #294 called its fix ready on one replay of each side. A live eval now holds its bar with a script check and prompt rules. Changes: PR-125, PR-138.
+2026-10-07 correction pass 268 (PR-138, D-1200, D-1203 to D-1208): the eval session of #294 called its fix ready on one replay of each side. A live eval now holds its bar with a script check and prompt rules. A key of the owner signs each build of the tool, so the grant of the volume stays. Changes: PR-125, PR-138.
 2026-10-06 correction pass 267 (PR-136, F-226, D-1190, D-1191, D-1195 to D-1202): a live eval read a planeswalker deck of a new set. The model played reprints it knew and left out themed cards, because no shortlist line named the theme. Each themed line now says "on theme" and carries the card text. A themed planeswalker reads threat, and a deck that leaves out a themed card buys a repair turn. Five bracket 1 replays played all 31 themed cards. Changes: F-226, PR-136.
 2026-10-04 correction pass 266 (PR-130, F-225, D-1162): the check of PR-128 built a deck that marked Astral Cornucopia as fast mana. Fast mana now needs no X and no multikicker in the cost. Changes: F-225, PR-130, sequencing step 125.
 2026-10-04 correction pass 265 (PR-128, F-224, D-1159, D-1160): a reader verdict named Barbed Sextant, Springleaf Drum, and Hurricane in a mono-green deck. Fast mana now needs a mana ability that pays no mana and taps no creature. The finisher count drops the tag `burn-player-each`. Changes: F-224, PR-128, sequencing step 123.
@@ -3591,7 +3591,7 @@ Gate:
 
 > *In plain English:* Moxfield blocks our server, but it answers the browser of the user. A bookmark now reads the open Moxfield deck, and decktome opens with the list ready to import.
 
-**PR-138: The live evals hold the bar of a fix (D-1200, D-1203 to D-1207).** ✅ merged as #296. The mark comes before any review (D-822). The eval session of #294 called its fix ready on one replay of each side. A bar that only the prompt holds lets a session argue past it.
+**PR-138: The live evals hold the bar of a fix (D-1200, D-1203 to D-1208).** ✅ merged as #296. The mark comes before any review (D-822). The eval session of #294 called its fix ready on one replay of each side. A bar that only the prompt holds lets a session argue past it.
 
 - **The verdict file (D-1200, D-1205).** The session writes `verdict.json`: the bar, its metric, the better direction, the target, and each replay with its run id, its side, and its score. A replay with no deck has no score.
 - **The check (D-1200).** `live-evals bar` needs three or more replays with a score on each side. The worst fix replay must beat the best base replay and reach the target. The list must hold each replay of the two trees.
@@ -3600,18 +3600,20 @@ Gate:
 - **The restack (D-1207).** After a rebase, the restack session runs the check. When a tree changed, it replays both sides again, and the script checks before the ready notice.
 - **The prompt rules.** Step 3 names the metric, the direction, and the target. Step 3b replays the base three or more times. Step 4 commits the fix before its replays.
 - **The hold of #294 (D-1203).** The owner lifted the hold of OQ-97 for #294 alone. OQ-97 stays open.
+- **The stable signature (D-1208).** A key of the owner signs each build of the tool. So each build has the same requirement, and the grant of the volume stays.
 
 Gate:
 - `TestBarHoldsForTheReplaysOf294` passes on the counts of the bar of #294.
 - `TestBarRefusesAWeakVerdict` refuses one replay of each side, a fix no better than the base, a missed target, and a replay left out. It also refuses a stale tree, a run that no log names, a score with no end, a duplicate, and another target.
 - `TestBarDropsAReplayWithNoDeck` and `TestBarReadsALowerIsBetterMetric` read D-1205 and a metric where lower is better.
 - `TestBarReadsTheLogsAndTheTreesOfTheRepository` runs the command on a git repository, and a commit of documents alone keeps the tree.
+- `TestProtectedOfHoldsAccessAndDeployPaths` holds a pull request that changes `scripts/live-evals-sign.sh`.
 - `TestStartLineNamesTheModuleTree`, `TestGitTreeNamesNoTreeForAChangeThatNoCommitHolds`, and `TestLogRunsReadTheTreeOfALogStartAlone` read the tree of a run.
 - `make verify` passes.
 - A current Gitar review, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).
 
-> *In plain English:* a live eval once called a fix good after one try of each side. Now a script counts the tries, and it checks that each try ran the right code. When the fix is not better on every try, no "ready" notice goes out.
+> *In plain English:* a live eval once called a fix good after one try of each side. Now a script counts the tries, and it checks that each try ran the right code. When the fix is not better on every try, no "ready" notice goes out. Also, the Mac stops its question about the drive after each new build.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
