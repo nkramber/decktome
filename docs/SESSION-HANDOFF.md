@@ -31,9 +31,9 @@ Author provider: Claude Code
 
 **The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
-**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `fd0f452`. Codex round 1 gave Changes required for P2-1, the base replays at bracket 3. Round 2 gave Blocked, because the review read no raw output. The replay record answers P2-1 (`docs/reviews/pr-294-response.md`). Round 3 gives Blocked until OQ-97 has an answer (`docs/reviews/pr-294.md`).
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `fd0f452`. Codex round 1 gave Changes required for P2-1, the base replays at bracket 3. Round 2 gave Blocked, because the review read no raw output. Round 3 gives Blocked. The replay record has counts but no profiles, and P2-1 reached its third assessment (`docs/reviews/pr-294.md`).
 
-**Next action.** Wait for the answer to OQ-97. Then follow the owner's decision. Never turn on the auto-merge (D-1137).
+**Next action.** Wait for the owner's decision on P2-1. Wait for the answer to OQ-97. Never turn on the auto-merge (D-1137).
 
 ## How to resume
 
