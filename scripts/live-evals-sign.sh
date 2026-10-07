@@ -97,7 +97,7 @@ EOF
     || die "can not import the key"
   security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$pass" "$KEYCHAIN" >/dev/null \
     || die "can not let codesign use the key"
-  security lock-keychain "$KEYCHAIN"
+  security lock-keychain "$KEYCHAIN" || die "can not lock $KEYCHAIN again. Lock it by hand."
   printf '%s\n' "$sha" > "$ID_FILE"
   chmod 600 "$KEYCHAIN" "$ID_FILE"
   echo "live-evals-sign: the key is ready. Each build now has this requirement:"
@@ -115,10 +115,13 @@ sign() { # file
   [ $(( 8#$mode & 8#077 )) = 0 ] || die "$PASS_FILE has mode $mode, and another account can read it. Run chmod 600 on it (D-1164)."
   pass=$(cat "$PASS_FILE") || die "can not read $PASS_FILE"
   security unlock-keychain -p "$pass" "$KEYCHAIN" || die "can not unlock $KEYCHAIN"
-  with_keychain codesign -f -s "$sha" -i "$IDENT" "$file" 2>/dev/null
-  local rc=$?
-  security lock-keychain "$KEYCHAIN"
-  [ "$rc" = 0 ] || die "codesign did not sign $file"
+  # codesign writes a note on each success, so the tick logs its text
+  # only on a failure.
+  local out rc
+  out=$(with_keychain codesign -f -s "$sha" -i "$IDENT" "$file" 2>&1)
+  rc=$?
+  security lock-keychain "$KEYCHAIN" || die "can not lock $KEYCHAIN again. Lock it by hand before the next tick."
+  [ "$rc" = 0 ] || die "codesign did not sign $file: $out"
   got=$(codesign -d -r- "$file" 2>&1 | sed -n 's/^designated => //p')
   want=$(requirement "$sha")
   [ "$got" = "$want" ] || die "the requirement of $file is [$got], not [$want]"
