@@ -32,7 +32,7 @@ Author provider: Claude Code
 
 **Review.** Gitar passed on `ca76c41` with no open finding. The Codex review record approves effective head `ca76c41`.
 
-**Open work.** The review record and hand-off need one metadata commit and push. Then check `review-gate` on the branch. The owner confirms the merge before auto-merge (D-828).
+**Open work.** The review record is on the branch, and `review-gate` passes. The owner confirms the merge before auto-merge (D-828).
 
 ## How to resume
 
