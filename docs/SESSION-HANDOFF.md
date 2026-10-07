@@ -6,25 +6,37 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-06b)
+## RESUME HERE (2026-10-06c, checkpoint)
 
-**Branch `live-eval/ddd9iav9aghg`, PR-136: the theme mark of a shortlist line (F-226, D-1190, D-1191).**
+**Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author. The owner asked for a proper fix and a strong bar.
 
 Author provider: Claude Code
 
-**The base.** `main` at `7079e60`, the merge of #292.
+**The base.** `main` at `ea792c3`, the merge of #295. Commit `17f5e31` merged `main` into the branch.
 
-**The fault.** A live eval read deck `dDD9Iav9aGhgGF9dDLNQ`, planeswalkers from Reality Fracture. The model played reprints it knew, and it left out themed cards of the new set. No shortlist line said which card the theme matched.
+**The owner rules.** The owner holds the merge until OQ-97 gives a fair grade to new cards. The live-eval rules go to a new pull request in a clean session after the merge. The replay cap is $3.00, and the measured spend is $0.83.
 
-**The fix.** Each themed line says "on theme", and prompt version 21 prefers such a card to another card of the same job (D-1190). No reason and no summary writes "mark" or "marked" (D-1191).
+**The bar.** Three or more replay decks at bracket 1, the bracket of the reader. The worst deck of the fix beats the best deck of the base, the live deck included. The worst deck leaves out two or fewer of the 31 themed nonland cards. No reason writes "mark".
 
-**Checks.** Three new tests in `go/internal/generate` and `go/internal/candidates`. The base replay played 20 themed nonland cards and left out 11. Try 3 played 28 and left out 3. Tries 1 and 2 built no deck, because the question phase misread "Skip that question". The four paid runs cost $0.1332, measured.
+**The code.** Each step has its tests, and each test fails on the code before it.
 
-**Open risk.** Try 3 read the first wording, and 13 reasons said "theme-marked". D-1191 changed the wording, and no paid replay reads it.
+- `84a6a28`: the mark reads `OnTheme`, so a bracket 5 card of the commander rate reads no mark (D-1195).
+- `18e4b4c`: a line on theme ends with its cost and its rules text (D-1196).
+- `faab339`: a planeswalker with a lead reads threat (D-1197).
+- `76a081c`: the finding `theme_left_out` buys a repair turn when the deck plays a set fill card and leaves out a card on theme (D-1198).
 
-**Review.** Gitar passed on effective head `7d578659f51f3869163ea5429e92a12f4783ad44`. The Codex review is Ready for owner merge on that head, with no open finding. The local `make verify` stopped at Docker because this session can not access the Docker socket. Each required CI verify job passed. The review record is `docs/reviews/pr-294.md`.
+**The replays.** Base: live deck 26 played and 5 left out, replays 20 and 23. On `faab339` at bracket 1: 31, 31, 31, 31, and 27. Deck v3-14 dropped each card with two pips and played Yargle, Glutton of Urborg. No replay reads `76a081c` yet.
 
-**Open work.** The owner reads the live-eval notice and merges the pull request (D-1137). No session turns on the auto-merge. OQ-96 and OQ-97 stay open outside this change.
+**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` to `go/cmd/zzprobe` before a run, and remove it before a test. `run.sh <worktree> <label>` runs one replay.
+
+**Open work.**
+
+1. Write two decisions in `docs/decisions.md`: the bar above, and the live-eval rules of the next pull request.
+2. Add OQ-98: the classifier lost "1 Exhibition" in 5 of 9 decks, and 18 of 27 replays built no deck.
+3. Add a set-limit case to `TestSetFillMarksTheCardOfTheSetLimit`.
+4. Replay `76a081c` until three decks reach bracket 1. Ask the owner when the bar fails.
+5. Update the PR-136 entry, F-226, the PR body, and the correction pass line. Then run `make verify`, Gitar, and Codex.
+6. Never turn on the auto-merge (D-1137).
 
 ## How to resume
 
@@ -98,9 +110,9 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **PR-136: the theme mark of a shortlist line** (D-1190, D-1191). The resume section holds the open work. After the merge, a build of a themed deck must show no "mark" in a reason.
+0. **PR-136: the theme mark of a shortlist line** (D-1190 to D-1198). The resume section holds the open work. The merge waits for OQ-97.
 0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
-0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. The resume section holds the evidence.
+0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. Unverified: the tool that names the token.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -121,14 +133,6 @@ The CI step "fake gcs tests" ran no test until 2026-09-10 (D-658). Its filter ma
 The repository is public (D-639). The rulesets API answers, and the ruleset of `main` can require each job of `verify` (D-828). `docs/reference/merge-rules.md` holds the rules, and `make ruleset-check` compares them with GitHub.
 
 ## The three most recent sessions
-
-### 2026-10-05e: the restart of the live evals, PR-135
-
-**The owner asked for the restart and the proof of measured spend.** The retry did not run, so the owner wrote a new thumbs-down. Two replays wrote measured lines, and the second start read the first end in the log.
-
-**The owner asked the session to watch the eval and fix each fault in this pull request.** The owner chose a login of its own for the session Codex, and an allow of the security server (D-1184, D-1185). The classifier refused two probes of the session, and the owner ran one of them.
-
-**The owner asked for a fix of the class of a fault, not a patch of one case** (D-1183). The owner also pinned the model and the effort of a session (D-1181).
 
 ### 2026-10-06: filler words stay out of the theme, PR-134
 

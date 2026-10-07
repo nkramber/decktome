@@ -15,6 +15,42 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-06b, PR-137
+
+**Branch `chore/ttl-delete-check`, PR #295: PR-137, a Moxfield bookmarklet fills the import (D-1192 to D-1194).**
+
+Author provider: Claude Code
+
+**The base.** `main` at `7079e60`, the merge of #292. The live eval PR #294 took the next roadmap number and two decision ids. So this pull request starts at PR-137 and D-1192 (D-1179).
+
+**The deploy of #292.** Cloud Build `deploy-api` built `7079e60` and ended SUCCESS at 00:30 UTC on 2026-10-07. `/readyz` names `7079e60`.
+
+**The check of #292.** `make api-build` sent "Build me a deck from Reality Fracture focused on planeswalkers and other themes from this set". Session `6beErCRdWEM2eFEVOZ5A` asked no theme question about "other", "themes", or "set". It built a Commander deck in 4 turns. The October ledger of the test account read $0.1784 for 28 calls, so the build cost $0.1784 or less.
+
+**The TTL delete (D-1113).** The policy on `expire_at` reads ACTIVE. At 00:49 UTC on 2026-10-07, `deck_reads` held no document. An Archidekt read at 19:52 UTC on 2026-10-04 wrote one document, and the app has no delete path for it.
+
+**OQ-95 (D-1192).** The console test passed in the browser of the owner. The owner permits the bookmarklet, and the access request to Moxfield stays open.
+
+**The fix (D-1193).** The bookmarklet reads the open Moxfield deck and opens `/decks` with the list in the fragment. The decks page opens the filled import dialog. The bookmark on Moxfield opened the new tab with the list. The deployed page opens the dialog only after this merge.
+
+**The live eval of the check (D-1194).** The deck of the check started the live eval `dDD9Iav9aGhgGF9dDLNQ`, and it opened PR #294. The owner let it end.
+
+**The keychain dialog.** Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. The owner selected Cancel, and the push still worked. An empty git `credential.helper` in the session stops the dialog. Unverified: the tool that names the token `x-access-token`.
+
+**Checks.** `make verify` passed on `f492851`. The web tests of `src/features/deck/` pass, and `TestParseMoxfieldBookmarkletList` passes.
+
+**Review.** Gitar passed on `ca76c41` with no open finding. The Codex review record approves effective head `ca76c41`.
+
+**Open work.** The review record is on the branch, and `review-gate` passes. The owner confirms the merge before auto-merge (D-828).
+
+### 2026-10-05e: the restart of the live evals, PR-135
+
+**The owner asked for the restart and the proof of measured spend.** The retry did not run, so the owner wrote a new thumbs-down. Two replays wrote measured lines, and the second start read the first end in the log.
+
+**The owner asked the session to watch the eval and fix each fault in this pull request.** The owner chose a login of its own for the session Codex, and an allow of the security server (D-1184, D-1185). The classifier refused two probes of the session, and the owner ran one of them.
+
+**The owner asked for a fix of the class of a fault, not a patch of one case** (D-1183). The owner also pinned the model and the effort of a session (D-1181).
+
 ## The resume section of 2026-10-06, PR-134
 
 **Branch `live-eval/v-lkqwokmkom`, PR #292: filler words stay out of the theme, in two layers (D-1187 to D-1189).**
