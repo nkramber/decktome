@@ -87,7 +87,18 @@ package generate
 // Version 20: the deck shape block reads no card with an X or a
 // multikicker in its cost as fast mana, such as Astral Cornucopia
 // (D-1162).
-const PromptVersion = 20
+//
+// Version 21: a shortlist line marks each card that the theme matched
+// "on theme", and the card list prefers such a card to another card of
+// the same job. Live eval dDD9Iav9aGhgGF9dDLNQ read a planeswalker deck of
+// a set four days old. The model played reprints it knew in place of the
+// new planeswalker cards, because a line read "ramp" for both (D-1190).
+// The replay of a first wording wrote "theme-marked" in 13 reasons, so no
+// reason and no summary writes the words "mark" or "marked" (D-1191).
+// Each line on theme ends with the cost and the rules text of the card,
+// because the mark alone left out a new planeswalker in three of three
+// replays (D-1196).
+const PromptVersion = 21
 
 // generateInstructions is the stable prefix. It names no card, no format,
 // and no session value, so every call of a session shares it.
@@ -107,6 +118,8 @@ Rules for the card list:
 - Give every card one job from the job list, and one line that says why the card is in the deck.
 - Meet the deck size in the limits block. Count the commander when the limits block says to.
 - Come as close to each job target as the shortlist allows.
+- A line that says "on theme" names a card that matches the theme of the plan. Prefer such a card to another card of the same job. The line ends with the mana cost and the rules text of the card. Judge the card by that text, because you may not know the card.
+- The marks of a shortlist line are notes for you. Never write the words "mark" or "marked" in a reason or in the summary.
 
 Rules for a revision, when the input holds the deck you are revising:
 - The user read that deck and asked for a change. The input lists the change in short lines.
@@ -145,6 +158,7 @@ Rules:
 - A finding that the deck holds too few new nonbasic lands means you kept basic lands the change told you to replace. Cut more basic lands and add nonbasic lands from the shortlist, of the kinds the change names, until the count is met. Keep the land total the same.
 - A finding that the deck keeps too few precon names means you dropped too many. Put back the ones marked "precon" until the count is met, and drop cards that are not marked instead. Keep the theme of the precon, and change no more than the fix needs.
 - A finding that a count is off its band names the count, the value, and the range the power level wants. Move the count into the range: add or cut cards of that job, or swap lands, and keep the deck size. A finding about the average mana value means swap dear cards for cheaper ones that do the same job, or the reverse.
+- A finding that the deck leaves out cards on theme names those cards and the cards of the set with no theme and no job. Swap each card of the set for a card on theme, one for one. Keep the deck size and the land count.
 - A finding that names a card or a combo the power level forbids means cut that card, or one card of the combo, and replace it with a shortlist card that does the same job.
 - Return the whole deck, and not the change alone.
 - Write the summary again from nothing. It describes the deck, and never the repair. Name no card you changed, no count, and no slot you filled. A reader of the summary does not know a first turn happened.

@@ -61,6 +61,15 @@ type Request struct {
 	// Roles is the job word per oracle id, from the shortlist. The model
 	// reads the job it was given and does not invent one.
 	Roles map[string]string
+	// Themed holds the oracle id of each shortlist card that the theme
+	// matched. Its line carries the mark "on theme", because the job word of
+	// a staple role hides the theme, and the model can not recall a card
+	// newer than itself (D-1190).
+	Themed map[string]bool
+	// SetFill holds the oracle id of each shortlist card that only the
+	// set limit put on the list. A deck that plays one and leaves out a
+	// card on theme gets the finding theme_left_out (D-1198).
+	SetFill map[string]bool
 	// Limits is the deck-building limits block the prompt reads.
 	Limits string
 	// Precon names the precon the user asked to upgrade, and it is empty
@@ -587,6 +596,7 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	// The set limit is a build rule and not a rule of the game, so it is
 	// marked here and never blocks (D-373, D-383).
 	markOutsideSets(deck, req, b.cards)
+	checkThemeLeftOut(deck, req)
 	// A revision must do what the brief says. The pool already dropped
 	// the removed cards and the cards over the cap, so these fire only
 	// on a kept card the model left out, or a pool the brief could not
@@ -753,15 +763,16 @@ func (b *Builder) call(ctx context.Context, role llm.Role, instructions, input, 
 
 // repairable lists the findings that buy the repair turn: every BLOCK,
 // and the warnings that do so by decision. Over budget is D-244, a
-// short precon share is D-248, and a profile finding is PR-14A. The
-// repair input carries each one.
+// short precon share is D-248, a card on theme left out is D-1198, and
+// a profile finding is PR-14A. The repair input carries each one.
 func repairable(v *mtgv1.ValidationResult) []*mtgv1.Finding {
 	var out []*mtgv1.Finding
 	for _, f := range v.GetFindings() {
 		switch {
 		case f.GetSeverity() == mtgv1.Severity_SEVERITY_BLOCK:
 			out = append(out, f)
-		case f.GetCode() == CodeOverBudget, f.GetCode() == CodePreconShare, f.GetCode() == CodeRevisionOverManaValue:
+		case f.GetCode() == CodeOverBudget, f.GetCode() == CodePreconShare, f.GetCode() == CodeRevisionOverManaValue,
+			f.GetCode() == CodeThemeLeftOut:
 			out = append(out, f)
 		case f.GetCode() == profile.CodeOffBand, f.GetCode() == profile.CodeMassLandDenial,
 			f.GetCode() == profile.CodeExtraTurns, f.GetCode() == profile.CodeTwoCardCombo:

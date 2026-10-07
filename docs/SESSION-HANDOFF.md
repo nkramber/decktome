@@ -6,33 +6,34 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-06)
+## RESUME HERE (2026-10-07, merge wait)
 
-**Branch `chore/ttl-delete-check`, PR #295: PR-137, a Moxfield bookmarklet fills the import (D-1192 to D-1194).**
+**Branch `live-eval/ddd9iav9aghg`, PR-136, pull request #294: the theme mark of a shortlist line (F-226).** Role: correction author.
 
 Author provider: Claude Code
 
-**The base.** `main` at `7079e60`, the merge of #292. The live eval PR #294 took the next roadmap number and two decision ids. So this pull request starts at PR-137 and D-1192 (D-1179).
+**The base.** `main` at `ea792c3`, the merge of #295. Commit `17f5e31` merged `main` into the branch.
 
-**The deploy of #292.** Cloud Build `deploy-api` built `7079e60` and ended SUCCESS at 00:30 UTC on 2026-10-07. `/readyz` names `7079e60`.
+**The owner rules.** The owner holds the merge until OQ-97 gives a fair grade to new cards. Never turn on the auto-merge (D-1137). After the merge, a clean session makes the live-eval rules of D-1200 in a new pull request.
 
-**The check of #292.** `make api-build` sent "Build me a deck from Reality Fracture focused on planeswalkers and other themes from this set". Session `6beErCRdWEM2eFEVOZ5A` asked no theme question about "other", "themes", or "set". It built a Commander deck in 4 turns. The October ledger of the test account read $0.1784 for 28 calls, so the build cost $0.1784 or less.
+**The code.** Each step has its tests, and each test fails on the code before it.
 
-**The TTL delete (D-1113).** The policy on `expire_at` reads ACTIVE. At 00:49 UTC on 2026-10-07, `deck_reads` held no document. An Archidekt read at 19:52 UTC on 2026-10-04 wrote one document, and the app has no delete path for it.
+- `84a6a28`: the mark reads `OnTheme` (D-1195).
+- `18e4b4c`: a line on theme ends with its cost and its rules text (D-1196).
+- `faab339`: a planeswalker with a lead reads threat (D-1197).
+- `76a081c`: the warning `theme_left_out` buys a repair turn (D-1198). `TestSetFillMarksTheCardOfTheSetLimit` now reads a set limit too.
 
-**OQ-95 (D-1192).** The console test passed in the browser of the owner. The owner permits the bookmarklet, and the access request to Moxfield stays open.
+**The bar (D-1199) holds.** Five pinned replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". Six pinned replays of the base `ea792c3` played 17 to 23 and left out 8 to 14. The live deck played 26 and left out 5. No deck needed the repair turn. `docs/reference/pr294-replays-2026-10-07.md` holds each replay.
 
-**The fix (D-1193).** The bookmarklet reads the open Moxfield deck and opens `/decks` with the list in the fragment. The decks page opens the filled import dialog. The bookmark on Moxfield opened the new tab with the list. The deployed page opens the dialog only after this merge.
+**The pin (D-1201).** The classifier lost "1 Exhibition" in 10 of 17 unpinned decks, and 21 of 38 unpinned replays built no deck. So the owner chose a pin of the bracket answer in the scratch probe. OQ-98 holds the fault.
 
-**The live eval of the check (D-1194).** The deck of the check started the live eval `dDD9Iav9aGhgGF9dDLNQ`, and it opened PR #294. The owner let it end.
+**The spend.** $1.7986 over 64 replays, of the cap of $3.00. One replay read no usage. This session spent $0.9647.
 
-**The keychain dialog.** Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. The owner selected Cancel, and the push still worked. An empty git `credential.helper` in the session stops the dialog. Unverified: the tool that names the token `x-access-token`.
+**The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
-**Checks.** `make verify` passed on `f492851`. The web tests of `src/features/deck/` pass, and `TestParseMoxfieldBookmarkletList` passes.
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `a51dc78`. Codex round 4 is Ready for owner merge on `a51dc78`. P2-1 is fixed: all eleven deck files match their hashes, read bracket 1, and hold 100 cards with the commander. OQ-97 still holds the merge.
 
-**Review.** Gitar passed on `ca76c41` with no open finding. The Codex review record approves effective head `ca76c41`.
-
-**Open work.** The review record is on the branch, and `review-gate` passes. The owner confirms the merge before auto-merge (D-828).
+**Next action.** Wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
 
 ## How to resume
 
@@ -82,7 +83,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - The Scryfall API, read 2026-10-03: Reality Fracture released 2026-10-02 with 268 first printings. Star Trek releases 2026-11-13, and its 75 first printings read `not_legal` in each format.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
-- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it.
+- Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it. It holds 49 cards of Reality Fracture and no Jace, Multiverse Architect. A replay of a deck of that set needs a newer snapshot (read 2026-10-06).
 - The theme table `themes.json` reads `verified_at` 2026-09-20. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-20. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-09-29 (D-996). The max output per provider in `llm/client.go`, verified 2026-08-29. The judge role runs on Sonnet 5.5 (D-1000).
 - The owner repaired the application default credentials of this Mac on 2026-09-23, after the failure of 2026-09-13. The harvest then read `decktome-prod`, and the sandbox let it read the feedback of each user.
@@ -99,15 +100,16 @@ Twenty-two things a fresh session gets wrong without this file.
 - The local quality model is `20260923T202806Z`, from `make meta-refresh` on `1089438` on 2026-09-23. It holds the commander rates of 231 commanders (D-839).
 - The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
-- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 19 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
+- Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 21 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
 - Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
+0. **PR-136: the theme mark of a shortlist line** (D-1190 to D-1202). The resume section holds the state. The merge waits for OQ-97. Then a clean session takes the live-eval rules of D-1200.
 0. **The live check of PR-137** (D-1193). After the deploy, select the bookmark on a Moxfield deck. The import dialog of `decktome.com` must open with the list and the name.
-0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. The resume section holds the evidence.
+0. **The keychain dialog of a live-eval session.** Give the session git an empty `credential.helper`, in a pull request of the live evals. Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. Unverified: the tool that names the token.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
 0. **The checks of PR-118** (D-1087 to D-1089). After the deploy, read the log of the snapshot job for "stale pass ended" with "users hit". After the ban announcement of 2026-10-12, a stale deck of the owner must send the push.
@@ -129,14 +131,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
-### 2026-10-05e: the restart of the live evals, PR-135
-
-**The owner asked for the restart and the proof of measured spend.** The retry did not run, so the owner wrote a new thumbs-down. Two replays wrote measured lines, and the second start read the first end in the log.
-
-**The owner asked the session to watch the eval and fix each fault in this pull request.** The owner chose a login of its own for the session Codex, and an allow of the security server (D-1184, D-1185). The classifier refused two probes of the session, and the owner ran one of them.
-
-**The owner asked for a fix of the class of a fault, not a patch of one case** (D-1183). The owner also pinned the model and the effort of a session (D-1181).
-
 ### 2026-10-06: filler words stay out of the theme, PR-134
 
 **A live eval read a thumbs-down on a theme question.** Five filler words now stay out of the theme. The replay shows the question gone.
@@ -152,6 +146,16 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The console test of OQ-95 passed in the browser of the owner.** The owner permits the bookmarklet before an answer of Moxfield (D-1192). The owner chose a filled form in a new tab, with no Moxfield link (D-1193).
 
 **The owner tested the real bookmark on Moxfield.** The new tab opened `/decks` with the list. The owner chose the unit tests now and the live test after the deploy.
+
+### 2026-10-06b: the theme mark of a shortlist line, PR-136
+
+**A live eval read a planeswalker deck of a set four days old.** The model played reprints it knew in place of themed set cards.
+
+**The cause was the shortlist line.** It named no theme, so a themed card with a staple job read like a staple. Each themed line now says "on theme" (D-1190).
+
+**The replay of the fix leaked the mark into 13 reasons.** The mark now reads as plain English, and the prompt forbids "mark" in user text (D-1191).
+
+**The fix grew to four more steps, and a strong bar.** Five bracket 1 replays played all 31 themed cards (D-1195 to D-1199). The replays pin the bracket answer (D-1201).
 
 ## The archive
 

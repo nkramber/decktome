@@ -24,6 +24,13 @@ import (
 // Jitte (D-1120). A spell with the protection tag is interaction, and a
 // permanent with it is protection, which the interaction band does not
 // count (D-1120).
+//
+// A planeswalker on the shortlist with a lead is a threat, whatever its
+// staple tags. A tag marks one loyalty ability, such as the {R}{R} of
+// Chandra, Torch of Defiance, and the job word "ramp" set that card
+// beside the Signets, so the model left it out (D-1197). An alternate
+// win stays a wincon. The quality fit reads roles with no lead, so its
+// role counts do not change.
 func assignRole(c *mtgv1.Card, roleTags map[string]map[string]bool, onTheme, useText bool) (mtgv1.CardRole, string) {
 	in := func(role string) bool { return roleTags[role][c.OracleId] }
 	text := strings.ToLower(c.OracleText)
@@ -31,9 +38,12 @@ func assignRole(c *mtgv1.Card, roleTags map[string]map[string]bool, onTheme, use
 	isCreature := slices.Contains(c.CardTypes, "Creature")
 	isSpell := slices.Contains(c.CardTypes, "Instant") || slices.Contains(c.CardTypes, "Sorcery")
 	isEquipment := slices.Contains(c.Subtypes, "Equipment")
+	isWalker := slices.Contains(c.CardTypes, "Planeswalker")
 	switch {
 	case isLand:
 		return mtgv1.CardRole_CARD_ROLE_LAND, "type:land"
+	case isWalker && onTheme && !in("wincon"):
+		return mtgv1.CardRole_CARD_ROLE_THREAT, "type:planeswalker"
 	case in("wipe") && !isCreature:
 		return mtgv1.CardRole_CARD_ROLE_WIPE, "tag:sweeper"
 	case in("wincon"):
@@ -72,7 +82,6 @@ func assignRole(c *mtgv1.Card, roleTags map[string]map[string]bool, onTheme, use
 	if !onTheme {
 		return mtgv1.CardRole_CARD_ROLE_OTHER, ""
 	}
-	isWalker := slices.Contains(c.CardTypes, "Planeswalker")
 	if isWalker || (isCreature && c.ManaValue >= 4) {
 		return mtgv1.CardRole_CARD_ROLE_THREAT, "type:threat"
 	}
