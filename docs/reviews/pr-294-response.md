@@ -23,3 +23,18 @@ Regression check: each base and fix deck of the table reads bracket 1 in its `pr
 ## A correction to the PR comments of the record
 
 The record says that the archive now contains the checkpoint. It does not. The answer on the Gitar thread refuted that part. The archive holds the resume section of the base. The checkpoint was a draft of this pull request. The hand-off restored the probe steps alone.
+
+## Round 2 of P2-1: The replay evidence is not available for verification
+
+Result: full merit.
+
+Evidence: the raw outputs stay under `.local`, and the checkout of a review does not hold that folder. So the review read the reported numbers alone.
+
+Correction: `docs/reference/pr294-replays-2026-10-07.md` holds the evidence. A script read each raw output and wrote the file, so no number came from a person. The file holds:
+
+- The input, the snapshot, and the rule of the pin.
+- The 31 themed nonland cards, and a check that each fix shortlist holds the same cards.
+- One row for each of the 64 replays. A row names the commit, the Go tree, the count of pins, the bracket, and the recorded power. It also gives the played count, the left-out count, the "mark" count, and the measured spend.
+- One row for each deck at bracket 1. A row names the size, the block findings, a hash of the decks file, and each themed card left out.
+
+Regression check: the record gives the five p6 decks 31 played and 0 left out each, at bracket 1. It gives the six pb decks 17 to 23 played and 8 to 14 left out, at bracket 1. Each of the eleven decks holds 100 cards and no block finding.

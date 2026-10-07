@@ -23,7 +23,7 @@ Author provider: Claude Code
 - `faab339`: a planeswalker with a lead reads threat (D-1197).
 - `76a081c`: the warning `theme_left_out` buys a repair turn (D-1198). `TestSetFillMarksTheCardOfTheSetLimit` now reads a set limit too.
 
-**The bar (D-1199) holds.** Five pinned replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". Six pinned replays of the base `ea792c3` played 17 to 23 and left out 8 to 14. The live deck played 26 and left out 5. No deck needed the repair turn.
+**The bar (D-1199) holds.** Five pinned replays of `76a081c` at bracket 1 each played the 31 themed nonland cards, left out none, and wrote no "mark". Six pinned replays of the base `ea792c3` played 17 to 23 and left out 8 to 14. The live deck played 26 and left out 5. No deck needed the repair turn. `docs/reference/pr294-replays-2026-10-07.md` holds each replay.
 
 **The pin (D-1201).** The classifier lost "1 Exhibition" in 10 of 17 unpinned decks, and 21 of 38 unpinned replays built no deck. So the owner chose a pin of the bracket answer in the scratch probe. OQ-98 holds the fault.
 
@@ -31,9 +31,9 @@ Author provider: Claude Code
 
 **The replay kit.** `.local/pr294-replays` holds `run.sh`, the scorers, the probe, the outputs, and the snapshot of 2026-10-06. Copy `zzprobe` into the folder of the Go commands before a run. Remove it before a test, or `make verify` reads the scratch probe. `ZZ_PIN_POWER="1 Exhibition"` turns on the pin.
 
-**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `557ac7c`. Codex round 2 on `1f740e6` is Blocked. P2-1 awaits replay evidence. OQ-97 holds the merge. Keep auto-merge off (D-1137).
+**Checks.** `make verify` passes every check on this machine, the docker build included. Gitar passes on `1f740e6`. Codex round 1 gave Changes required for P2-1, the base replays at bracket 3, and the pinned base replays answer it. Round 2 gave Blocked, because the review read no raw output. The replay record answers it (`docs/reviews/pr-294-response.md`).
 
-**Next action.** Wait for reviewable replay evidence and the owner answer to OQ-97. Keep auto-merge off (D-1137).
+**Next action.** Do the Gitar pass on the head. Then run `make codex-review PR=294` for round 3. After that, wait for OQ-97 and the owner. Never turn on the auto-merge (D-1137).
 
 ## How to resume
 
