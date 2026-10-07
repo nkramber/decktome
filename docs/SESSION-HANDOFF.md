@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-06)
 
-**Branch `chore/ttl-delete-check`, PR #PRNUM: PR-137, a Moxfield bookmarklet fills the import (D-1192 to D-1194).**
+**Branch `chore/ttl-delete-check`, PR #295: PR-137, a Moxfield bookmarklet fills the import (D-1192 to D-1194).**
 
 Author provider: Claude Code
 
@@ -28,11 +28,11 @@ Author provider: Claude Code
 
 **The keychain dialog.** Two times the eval session asked macOS to store "x-access-token" in a login keychain that its sandbox can not read. The owner selected Cancel, and the push still worked. An empty git `credential.helper` in the session stops the dialog. Unverified: the tool that names the token `x-access-token`.
 
-**Checks.** CHECKS
+**Checks.** `make verify` passed on `f492851`. The web tests of `src/features/deck/` pass, and `TestParseMoxfieldBookmarkletList` passes.
 
-**Review.** REVIEW
+**Review.** The Gitar pass and the Codex review wait.
 
-**Open work.** OPENWORK
+**Open work.** The Gitar pass, the Codex review, and the merge question to the owner, pending the auto-merge (D-828).
 
 ## How to resume
 

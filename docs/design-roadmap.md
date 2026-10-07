@@ -3540,7 +3540,7 @@ Gate:
 
 > *In plain English:* the robot that checks the app found a real bug, and its notes held the true cost. Ten small faults of the robot itself are now fixed, and it now looks for the root of a bug, not a quick patch.
 
-**PR-137: A Moxfield bookmarklet fills the import (D-1192 to D-1194).** ✅ merged as #PRNUM. The mark comes before any review (D-822). Moxfield refuses each read of the server (D-1102). The console test of OQ-95 read the v3 API from a deck page, in the browser of the owner (D-1192).
+**PR-137: A Moxfield bookmarklet fills the import (D-1192 to D-1194).** ✅ merged as #295. The mark comes before any review (D-822). Moxfield refuses each read of the server (D-1102). The console test of OQ-95 read the v3 API from a deck page, in the browser of the owner (D-1192).
 
 - **The bookmarklet (D-1193).** `web/apps/web/src/features/deck/moxfield-bookmarklet.ts` holds its code as one string. It reads the open deck and writes the Arena sections of the parser. The maybeboard and the tokens stay out.
 - **The new tab.** The bookmarklet opens `/decks` with the list and the name in the fragment. The decks page opens the import dialog with them, and drops the fragment.
