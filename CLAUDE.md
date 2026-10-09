@@ -83,6 +83,6 @@ Nineteen targets and three loop scripts spend money: `make codex-review`, `make 
 
 `docs/reference/paid-targets.md` holds the cost, the flags, and the guards of each paid target, and every free target (D-749). Read it before you run or change a target.
 
-`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make lint` also runs `make ste-check`, `make ref-check`, `make lifecycle-check`, `make context-budget`, and `make pipefail-check` (F-160). `make pr-check` reads the pull request body and diff against the contract of D-747. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
+`make verify` runs every check the verify workflow runs, on this machine, for nothing (D-578). Run it before every pull request. `make lint` also runs `make ste-check`, `make ref-check`, `make lifecycle-check`, `make context-budget`, `make pipefail-check` (F-160), and `make go-version-check` (D-1216). `make pr-check` reads the pull request body and diff against the contract of D-747. `make hooks` installs the pre-commit hook that refuses a commit on `main` (D-585).
 
 `make ruleset-check` compares the live ruleset of `main` with `.github/rulesets/` (D-828).

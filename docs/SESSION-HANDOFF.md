@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-08, PR-140)
 
-**Branch `fix/live-evals-question-bar`, PR-140, pull request #298: a live eval reads a question fault, and a bar of pass or fail counts its replays (D-1211 to D-1215).** Role: author.
+**Branch `fix/live-evals-question-bar`, PR-140, pull request #298: a question bar for the live evals, and one Go version (D-1211 to D-1216).** Role: author.
 
 Author provider: Claude Code
 
@@ -25,8 +25,10 @@ Author provider: Claude Code
 - `go/cmd/live-evals/bar.go`: `verdict.json` can name the scale `pass-fail`. Such a bar counts its replays (D-1214).
 - `scripts/live-evals/eval-prompt.md`: a question fault gets a bar from the question log (D-1212). A blocked reason names D-1212 or D-1214, in place of OQ-98.
 - `scripts/live-evals/restack-prompt.md`: the restack replays the fix as step 4 says.
+- `go/go.mod` names Go 1.27.2, and `golang.org/x/net` reads 0.60.0 (D-1216). Both Dockerfiles and the go pin of the live evals read 1.27.2.
+- `make go-version-check` holds each Dockerfile and the pin to the go line, in `make lint` and in CI.
 
-**Checks.** `make verify` passes with Node 22.23.2. `go test ./cmd/live-evals/` passes the new tests of the pass-fail bar.
+**Checks.** `go test ./cmd/live-evals/` passes the new tests of the pass-fail bar. govulncheck reads no called vulnerability on Go 1.27.2.
 
 **Review.** Gitar waits for its first review. The Codex review waits for the Gitar pass.
 
@@ -98,12 +100,13 @@ Twenty-two things a fresh session gets wrong without this file.
 - The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 21 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
-- Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
+- Toolchain on this Mac, read 2026-09-11: Go 1.27.1 (on 2026-10-08, the go line of `go/go.mod` moved to 1.27.2, D-1216), Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.0 or newer, and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
+0. **Go 1.27.2 on this Mac** (D-1216). Before the first tick after the merge, run `brew uninstall go`, and install Go 1.27.2 from go.dev. Then run `make live-evals-install CONFIRM=1` from `main`, so the agent finds that copy. Until then, each tick stops on the go pin.
 0. **The retry of the blocked eval** (D-1215). After the merge, run `make live-evals-retry ITEM=v-8k83YGt2Dn6IddKn3CBT`. Read its `verdict.json` and the bar line of the script log.
 0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. It fixes F1 only when the retry does not.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
@@ -135,6 +138,8 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner answered three questions of that eval.** F1 goes to the item of D-1211, and the pick row keeps its text (D-1212, D-1213). The owner then asked to fix the evals.
 
 **A bar of pass or fail had a second fault.** It needed each base replay to fail, and the fault showed in 3 of 5. The owner chose the counted rule for each such bar (D-1214), and a retry of the eval after the merge (D-1215).
+
+**A new Go advisory failed CI.** The owner asked for one Go version everywhere. The go line of `go/go.mod` names it, and a check holds the copies (D-1216).
 
 ### 2026-10-07b: the keychain store of a live-eval session, PR-139
 

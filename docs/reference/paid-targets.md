@@ -69,6 +69,8 @@ Each other target is free. `make meta-refresh` reads the deck list sources over 
 
 `make ste-check` checks every hand-written `.md` file against the STE rules, and `make lint` runs it. `make ref-check` checks every cited id and every repository path of the same files, free, and `make lint` runs it (D-753). `make m5-sheet` builds the scoring sheet, and `make m5-report` reads it. `make themes-check` checks the theme slugs and the commander ranking.
 
+`make go-version-check` checks that each Dockerfile and the live-eval pin name the Go version of `go/go.mod` (D-1216). It is free, and `make lint` runs it.
+
 `make eval-check` compares every baseline of the eval harness with its newest run and names the flips (PR-15). It is free.
 
 `make self-reload-check` proves that an installed app reloads itself on the next web release (D-692). It builds two releases and drives Chromium, and it calls no provider. It needs Node 22.23.2 and a pnpm store, and it takes about three minutes. `SELF_RELOAD_REF=<ref>` names a different old release, and `docs/reference/self-reload-2026-09-20.md` holds the method and the first result.

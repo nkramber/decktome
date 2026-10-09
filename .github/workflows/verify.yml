@@ -323,6 +323,10 @@ jobs:
       # recipe rule against that make too.
       - name: pipefail check
         run: make pipefail-check
+      # Each Dockerfile and the live-eval pin name the Go version of the go
+      # line of go/go.mod, which setup-go reads (D-1216).
+      - name: go version check
+        run: make go-version-check
 
   # Tier 0 of the eval harness (PR-15). It compares every baseline of
   # docs/reference/eval with the newest committed run of its suite and

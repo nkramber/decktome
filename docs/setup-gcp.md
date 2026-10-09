@@ -46,7 +46,7 @@ You need three accounts and their credentials:
 
 You need these tools on the Mac. `docs/setup.md` installs the first four.
 
-1. Go 1.27.0, Node 22.23.2, pnpm 9.2.0, and firebase-tools 14.14.0.
+1. Go 1.27.2, Node 22.23.2, pnpm 9.2.0, and firebase-tools 14.14.0.
 2. The gcloud CLI. Run `brew install --cask gcloud-cli`, then `gcloud init`.
 3. Docker Desktop, for the image builds of section 10. Cloud Build is the alternative there.
 

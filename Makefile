@@ -13,7 +13,7 @@ GO := go -C go
 BUF := .bin/buf
 PNPM := pnpm --dir web
 
-.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat live-evals-install live-evals-uninstall live-evals-status live-evals-sign-setup live-evals-retry
+.PHONY: feedback-loop feedback-loop-dry feedback-triage feedback-triage-dry smoke self-reload-check api-build live-web live-sweep allow disallow grant-admin deactivate-user mark-verified manapass-check deck-gate-dry deck-gate-trim candidates-review questions-gate deck-gate bracket-gate sixty-gate sixty-gate-dry bracket-calibrate revise-gate chat-probe generate-probe summary-judge questions-eval eval-calibrate autotune m5-sheet m5-report store-check gcs-check themes-check ste-check context-budget pipefail-check go-version-check help doctor buf proto proto-check proto-breaking lint lint-go lint-web where hooks pr-check lifecycle-check verify test test-repeat test-smoke llm-defaults-check cover build dev dev-docker dev-seed run-api run-worker run-web clean codex-review --skip-gitar-review ruleset-check user-case user-case-chat live-evals-install live-evals-uninstall live-evals-status live-evals-sign-setup live-evals-retry
 
 help: ## Show this help
 # pipefail-ok: the grep reads the target list, and an empty list is no fault
@@ -49,7 +49,7 @@ proto-breaking: $(BUF) ## Fail on a breaking proto change against the main branc
 	@echo "==> buf breaking against $(PROTO_BASE)"
 	@$(BUF) breaking --against '.git#branch=$(PROTO_BASE)'
 
-lint: lint-go lint-web ste-check ref-check lifecycle-check context-budget pipefail-check ## Lint Go, TypeScript, the docs, the references, the start-read budget, the pull request contract tools, and the pipelines of this file
+lint: lint-go lint-web ste-check ref-check lifecycle-check context-budget pipefail-check go-version-check ## Lint Go, TypeScript, the docs, the references, the start-read budget, the pull request contract tools, the pipelines of this file, and the Go version of each build
 
 lint-go: ## Lint Go (vet + golangci-lint, built from source with the local toolchain)
 	@echo "==> go vet"
@@ -95,6 +95,10 @@ context-budget: ## Check the byte budget of CLAUDE.md and the hand-off, and the 
 # ignores .SHELLFLAGS, so a 3.81 recipe reads pipefail from no variable.
 # The check holds the recipe rule, and it proves the rule against the make
 # of this machine. Its unit tests run in lifecycle-check.
+go-version-check: ## Check that each Dockerfile and the live-eval pin name the Go version of go/go.mod, free (D-1216)
+	@echo "==> go-version-check"
+	@python3 docs/tools/go_version_check.py
+
 pipefail-check: ## Check that every pipeline of the Makefile fails its target, free (F-160)
 	@echo "==> pipefail-check"
 	@python3 docs/tools/pipefail_check.py

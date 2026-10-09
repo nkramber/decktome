@@ -26,7 +26,7 @@ Skip this step if `brew --version` prints a version.
 ## 4. Install Go
 
 1. Read the `go` line in `go/go.mod`. That is the required version.
-2. Download that version from https://go.dev/dl/ and run the installer. Or run `brew install go`.
+2. Download that version from https://go.dev/dl/ and run the installer. Homebrew can lag the version (D-1216).
 3. Run `go version` to confirm. The version must match `go/go.mod`.
 
 Note: `buf`, `protoc-gen-go`, and `protoc-gen-connect-go` are not separate installs. `make proto` builds them from the `tool` directives in `go/go.mod`.
