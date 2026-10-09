@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **Checks.** `make verify` passes with Node 22.23.2 and Go 1.27.2, the two docker builds included. govulncheck reads no called vulnerability.
 
-**Review.** Gitar approved effective head `952e046`. Its check completed at 03:02:00 UTC, after the push at 03:01:05 UTC. Each of its 4 findings is fixed, and no thread is open. Codex round 1 read no defect and said Blocked, because this file did not record that pass. `docs/reviews/pr-298-response.md` answers it.
+**Review.** Gitar approved `952e046` and `d1c6111`, with 4 of 4 findings fixed. Codex round 1 read no defect, and it blocked on a stale line of this file (`docs/reviews/pr-298-response.md`).
 
 **Next action.** Do the Gitar pass, then run `make codex-review PR=298`. After the approval, ask the owner for merge confirmation (D-834). The auto-merge of D-828 then merges the pull request.
 
@@ -100,13 +100,13 @@ Twenty-two things a fresh session gets wrong without this file.
 - The newest stored quality model, read 2026-09-29: `20260929T065701Z`, from the scheduled meta job `mtg-meta-b56rq` on `worker:bdc5b60`. It read 81,431 lists and 1,513 commanders. The MTGO lane read 4 new pages, and 9 of 11 older months stayed empty. The time budget did not hold. The job logs hold each message in `jsonPayload.message`.
 - The Karsten land article of 2022-07-29, read 2026-09-11 through `infinite-api.tcgplayer.com/content/article/<id>/`, because the page draws its text in the browser. `docs/reference/m12-rules-diagnostic-2026-09-11.md` holds the formula, the error, and the cheap rules.
 - Baselines, in `docs/reference/eval/baselines.json`: questions is run 42, decks is run 19, revise is run 9. The generate prompt reads version 21 now, and run 19 read version 12. Run 35 of 2026-09-29 is the newest whole deck gate run, on generate prompt version 16. `make eval-check` reads it as PASS against run 19 (D-995). Run 53 is the newest whole questions run, and it reads PASS (D-955). Runs 45 to 47 read FAIL (D-669, F-112), and run 43 records the regression of F-84. `make eval-check` compares the newest whole run of a suite against its baseline. The quality gate has no baseline row, and run 23 is its newest run.
-- Toolchain on this Mac, read 2026-09-11: Go 1.27.1 (on 2026-10-08, the go line of `go/go.mod` moved to 1.27.2, D-1216), Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.2, and vitest is 5.0.0 since #133.
+- Toolchain on this Mac, read 2026-09-11: Go 1.27.1, Node 22.23.2, pnpm 9.2.0, firebase-tools 14.14.0, and Java 17.0.20.1. Playwright is 1.63.0 with its Chromium headless shell (`playwright install chromium`). `go.mod` asks Go 1.27.2 (D-1216), and vitest is 5.0.0 since #133.
 - The local meta store, read 2026-09-14: 17,686 TopDeck good and 6,431 top-cut Commander lists from 2026-06-04 to 2026-09-14. It also holds 1,045 EDHREC average decks and 192 MTGJSON precons. M-17 read the TopDeck lists from 2026-08-01 alone.
 
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it, and the tick of 21:49 local time read go1.27.2. Each tick stops on the old pin of `main` until the merge. After the merge, read the next tick. When it still stops, run `make live-evals-install CONFIRM=1` from `main`.
+0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it. Each tick stops on the old pin until the merge. Then read the next tick, and run `make live-evals-install CONFIRM=1` from `main` when it still stops.
 0. **The retry of the blocked eval** (D-1215). After the merge, run `make live-evals-retry ITEM=v-8k83YGt2Dn6IddKn3CBT`. Read its `verdict.json` and the bar line of the script log.
 0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. It fixes F1 only when the retry does not.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
