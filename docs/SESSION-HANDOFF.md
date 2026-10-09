@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-09, PR-142)
 
-**Branch `live-eval/v-8k83ygt2dn`, PR-142, pull request #N: a request for commander names needs the words of one (F-228, D-1220).** Role: author, a headless live-eval session.
+**Branch `live-eval/v-8k83ygt2dn`, PR-142, pull request #300: a request for commander names needs the words of one (F-228, D-1220).** Role: author, a headless live-eval session.
 
 Author provider: Claude Code
 
