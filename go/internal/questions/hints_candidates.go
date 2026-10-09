@@ -225,6 +225,19 @@ func (h *CandidateHints) FitsColors(name string, colors []mtgv1.Color) (fits, kn
 	return candidates.IdentityMatches(card.GetColorIdentity(), colors), true
 }
 
+// ColorIdentity answers the color identity of a named card (D-1217). A
+// name the index does not hold answers known false.
+func (h *CandidateHints) ColorIdentity(name string) (colors []mtgv1.Color, known bool) {
+	if h == nil || h.Index == nil {
+		return nil, false
+	}
+	card, ok := h.Index.ByName(strings.TrimSpace(name))
+	if !ok {
+		return nil, false
+	}
+	return card.GetColorIdentity(), true
+}
+
 // UseSlots takes the slot values as they stand inside the turn. The cache
 // key carries the format, the colors, and the pool rule, so an answer
 // computed under other values stays keyed to those values (D-82).

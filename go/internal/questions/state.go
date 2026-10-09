@@ -111,6 +111,12 @@ type State struct {
 	// The row asks again only for another theme that matches no card, the
 	// D-210 rule of the set row.
 	UnmatchedThemeAsked string
+	// ExcludedCards are the locked cards the commander's color identity
+	// leaves out (D-1217). The agent reads them again on each turn.
+	ExcludedCards []string
+	// ExclusionAsked names the commander and the cards that row named
+	// last. The row asks again only when they differ, the D-210 rule.
+	ExclusionAsked string
 	// BuiltSlots is the SlotsKey of the slots the last deck was built
 	// from. A turn after a build compares the slots with it, so a change
 	// in a turn that asked a question still rebuilds the deck on the turn
@@ -399,6 +405,27 @@ func (s *State) RecordAskedSet() { s.UnresolvedSetAsked = s.UnresolvedSet }
 func (s *State) BadSetChanged() bool {
 	return !strings.EqualFold(strings.TrimSpace(s.UnresolvedSet), strings.TrimSpace(s.UnresolvedSetAsked))
 }
+
+// SlotCommanderExcludes is the state key of the row that asks the reader
+// to keep the commander or to pick another one, when the commander's
+// color identity leaves out a card the reader asked to keep (D-1217). It
+// is its own key, and a commander does not close it: a second commander
+// can leave out the same card.
+const SlotCommanderExcludes = "commander_excludes_card"
+
+// exclusionKey names the commander and the cards it leaves out, in one
+// string that two turns can compare.
+func (s *State) exclusionKey() string {
+	return normName(strings.Join(s.CommanderNames, " + ")) + "|" + normName(strings.Join(s.ExcludedCards, ", "))
+}
+
+// RecordAskedExclusion keeps the commander and the cards the row just
+// named.
+func (s *State) RecordAskedExclusion() { s.ExclusionAsked = s.exclusionKey() }
+
+// ExclusionChanged reports whether the commander or the cards it leaves
+// out differ from the ones the row named last (D-210).
+func (s *State) ExclusionChanged() bool { return s.exclusionKey() != s.ExclusionAsked }
 
 // commanderKeys are the state keys of the rows that ask for the commander.
 // A named commander closes all of them: the pick row and the role row ask

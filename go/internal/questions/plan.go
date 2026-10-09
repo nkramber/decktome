@@ -120,6 +120,15 @@ type Context struct {
 	// CommanderChanged says the name that row would name differs from the
 	// one it named last, the D-210 rule for that row.
 	CommanderChanged bool `json:"commander_changed"`
+	// CommanderExcludesCard says the commander's color identity leaves
+	// out a card the reader asked to keep. A Commander deck holds no card
+	// outside that identity (CR 903.4), so the engine blocks the deck
+	// (D-1217).
+	CommanderExcludesCard bool `json:"commander_excludes_card"`
+	// ExclusionChanged says the commander and the cards that row would
+	// name differ from the ones it named last, the D-210 rule for that
+	// row.
+	ExclusionChanged bool `json:"exclusion_changed"`
 	// Theme is the theme slot in the user's words.
 	Theme string `json:"theme"`
 	// SetLimited says the deck is limited to the sets the reader named
@@ -266,12 +275,16 @@ func (r Row) asksAgain(ctx Context) bool {
 // signal never repeats, which is the safe answer: silence beats the same
 // sentence twice (D-163, D-210).
 //
-// The key comes first, because two rows of the commander slot repeat on
-// two different signals: the pick row on the names it offers, and the
-// row of F-75 on the name the card index does not hold. The theme row of
+// The key comes first, because three rows of the commander slot repeat
+// on three different signals: the pick row on the names it offers, the
+// row of F-75 on the name the card index does not hold, and the row of
+// D-1217 on the commander and the cards it leaves out. The theme row of
 // D-725 reads its own key too, because no other row of the theme slot
 // repeats.
 func (c Context) contentChanged(key, slot string) bool {
+	if key == SlotCommanderExcludes {
+		return c.ExclusionChanged
+	}
 	if key == SlotCommanderUnresolved {
 		return c.CommanderChanged
 	}
@@ -346,6 +359,7 @@ func (w When) matches(ctx Context) bool {
 		{w.CommanderIllegal, ctx.CommanderIllegal},
 		{w.CommanderUnresolved, ctx.CommanderUnresolved},
 		{w.CommanderNoMatch, ctx.CommanderNoMatch},
+		{w.CommanderExcludesCard, ctx.CommanderExcludesCard},
 		{w.SetLimited, ctx.SetLimited},
 		{w.SetUnresolved, ctx.SetUnresolved},
 		{w.ThinSetMana, ctx.ThinSetMana},

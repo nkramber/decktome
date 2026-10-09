@@ -306,6 +306,29 @@
       "closed": true
     },
     {
+      "id": "commander_excludes_card",
+      "slot": "commander",
+      "order": 31,
+      "fixed": true,
+      "repeat": true,
+      "repeat_on_change": true,
+      "text": "{commander_name} is {commander_colors}, so a deck it leads can not hold {excluded_cards}. Keep {commander_name}, or pick another commander?",
+      "options": [
+        "Keep the commander, leave the card out",
+        "Pick another commander"
+      ],
+      "option_values": [
+        "keep_commander",
+        "another_commander"
+      ],
+      "when": {
+        "format": "commander",
+        "commander_excludes_card": true
+      },
+      "key": "commander_excludes_card",
+      "fallback": "Your commander's colors leave out a card you asked for. Keep the commander without that card, or pick another commander?"
+    },
+    {
       "id": "commander",
       "slot": "commander",
       "order": 80,

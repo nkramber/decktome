@@ -13,9 +13,11 @@ import mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 // facts of PR-17B (D-376). Version 4 adds the precon exclusion of PR-24
 // (D-496). Version 5 adds the commander name the card index does not
 // hold (F-75, D-606). Version 6 adds the theme the theme row named last
-// (D-725). Version 7 adds the slots of the last deck (D-1118). Production restores from the snapshot on every turn, so a fact
+// (D-725). Version 7 adds the slots of the last deck (D-1118). Version 8
+// adds the commander and the cards the row of D-1217 named last.
+// Production restores from the snapshot on every turn, so a fact
 // that stays in memory only works in the gate harness (D-74).
-const SnapshotVersion = 7
+const SnapshotVersion = 8
 
 // Snapshot is the private state of one session, as data (D-74). The proto
 // Session carries the slots, the turns, and the usage. It carries none of
@@ -73,6 +75,13 @@ type Snapshot struct {
 	// snapshot holds none, and the row asks once more for a theme that
 	// matches no card, which is the safe failure.
 	UnmatchedThemeAsked string `json:"unmatched_theme_asked,omitempty"`
+	// The commander and the cards the row of D-1217 named last. Version
+	// 8. An older snapshot holds none, and the row asks once more for a
+	// commander that leaves out a locked card.
+	ExclusionAsked string `json:"exclusion_asked,omitempty"`
+	// The locked cards the commander leaves out, as the last turn read
+	// them. Version 8. The turn reads them again before it plans.
+	ExcludedCards []string `json:"excluded_cards,omitempty"`
 	// The slots of the last deck, as SlotsKey wrote them (D-1118).
 	// Version 7. An older snapshot holds none, and the turn compares the
 	// slots before and after itself, which is the rule before D-1118.
@@ -116,6 +125,8 @@ func (s *State) Snapshot() Snapshot {
 		UnresolvedCommanderAsked: s.UnresolvedCommanderAsked,
 		CommanderOptions:         s.CommanderOptions,
 		UnmatchedThemeAsked:      s.UnmatchedThemeAsked,
+		ExclusionAsked:           s.ExclusionAsked,
+		ExcludedCards:            s.ExcludedCards,
 		BuiltSlots:               s.BuiltSlots,
 		Messages:                 s.Messages,
 		AskCount:                 s.AskCount,
@@ -181,6 +192,8 @@ func Restore(id string, slots *mtgv1.Slots, snap Snapshot) *State {
 	st.UnresolvedCommanderAsked = snap.UnresolvedCommanderAsked
 	st.CommanderOptions = snap.CommanderOptions
 	st.UnmatchedThemeAsked = snap.UnmatchedThemeAsked
+	st.ExclusionAsked = snap.ExclusionAsked
+	st.ExcludedCards = snap.ExcludedCards
 	st.BuiltSlots = snap.BuiltSlots
 	st.Messages = snap.Messages
 	st.AskCount = snap.AskCount

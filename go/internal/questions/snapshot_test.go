@@ -47,6 +47,8 @@ func fullState() *State {
 	st.UnmatchedThemeAsked = "opponent milling cards"
 	st.Ctx.ThemeUnmatched, st.Ctx.ThemeChanged = true, true
 	st.Ctx.ThemeMissing = []string{"cantrips"}
+	st.ExcludedCards, st.ExclusionAsked = []string{"The Arkenstone"}, "smaug the impenetrable|the arkenstone"
+	st.Ctx.CommanderExcludesCard, st.Ctx.ExclusionChanged = true, true
 	st.BuiltSlots = SlotsKey(&mtgv1.Slots{Theme: "lifegain"})
 	st.Ctx.Reasked = map[string]bool{"power": true}
 	st.AskCount, st.Turn = 2, 2

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
+	"github.com/nkramber/decktome/go/internal/candidates"
 	"github.com/nkramber/decktome/go/internal/llm"
 )
 
@@ -160,6 +161,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	// the reader's own choice is the one that stands.
 	a.applyOptionAnswers(st)
 	a.applyManaPermission(st, words)
+	a.applyExclusionAnswer(st, words)
 	// The scope question closes when the user answers it with a deck.
 	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
 	// burn deck" instead has said the same thing. Nothing else closed
@@ -265,6 +267,81 @@ func (a *Agent) readFacts(st *State) {
 	}
 	// The theme row reads the theme as this turn left it (D-725).
 	a.readThemeMatch(st)
+	// The exclusion row reads the commander and the locked cards as this
+	// turn left them (D-1217).
+	a.readExclusion(st)
+}
+
+// readExclusion sets the fact of the row that asks the reader to keep the
+// commander or to pick another one (D-1217). A Commander deck holds no
+// card outside the commander's color identity (CR 903.4).
+//
+// The reader asked for The Arkenstone, a white card, and then named Smaug
+// the Impenetrable, a black and red commander. No row compared the two.
+// The build kept the locked card, and the engine blocked the deck.
+//
+// The row asks once for each commander and set of cards. Each answer but
+// another commander leaves the cards out: the first option, a yes, a
+// decline, and the net of D-351. A new commander that holds the cards
+// closes the row, and one that leaves them out asks again.
+func (a *Agent) readExclusion(st *State) {
+	st.ExcludedCards = a.excludedCards(st)
+	st.Ctx.CommanderExcludesCard = len(st.ExcludedCards) > 0
+	st.Ctx.ExclusionChanged = st.ExclusionChanged()
+	out := st.Slots.GetSlotStates()[SlotCommanderExcludes] == mtgv1.SlotState_SLOT_STATE_ASKED
+	answered := st.Ctx.Filled[SlotCommanderExcludes] || st.Ctx.Skipped[SlotCommanderExcludes]
+	switch {
+	case !st.Ctx.CommanderExcludesCard:
+		if out {
+			a.log.Info("the commander holds every locked card now, so the exclusion row closed",
+				"session", st.SessionID, "commander", strings.Join(st.CommanderNames, " + "))
+			st.Close(SlotCommanderExcludes)
+		}
+	case out:
+	case answered && !st.Ctx.ExclusionChanged:
+		a.log.Info("the reader kept the commander, so the cards outside its colors leave the deck",
+			"session", st.SessionID, "commander", strings.Join(st.CommanderNames, " + "),
+			"cards", strings.Join(st.ExcludedCards, ", "))
+		for _, name := range st.ExcludedCards {
+			st.Unlock(name)
+			st.NamedCards = withoutName(st.NamedCards, name)
+		}
+		st.Ctx.NamedCard = len(st.NamedCards) > 0
+		st.ExcludedCards, st.Ctx.CommanderExcludesCard = nil, false
+	case answered:
+		a.log.Info("another commander leaves out a locked card, so the exclusion row may ask again",
+			"session", st.SessionID, "commander", strings.Join(st.CommanderNames, " + "),
+			"cards", strings.Join(st.ExcludedCards, ", "))
+		st.ReopenRows(a.cat, SlotCommanderExcludes)
+	}
+}
+
+// excludedCards are the locked cards outside the commander's color
+// identity. A name the card index does not hold is no proof, so it never
+// counts (D-153).
+func (a *Agent) excludedCards(st *State) []string {
+	if !st.Ctx.CommanderSet || st.Slots.GetFormat().GetId() != mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		return nil
+	}
+	src, ok := a.hints.(IdentitySource)
+	if !ok {
+		return nil
+	}
+	identity, known := commanderIdentity(st.CommanderNames, a.hints)
+	if !known {
+		return nil
+	}
+	allowed := map[mtgv1.Color]bool{}
+	for _, c := range identity {
+		allowed[c] = true
+	}
+	var out []string
+	for _, name := range st.LockedCards() {
+		if colors, known := src.ColorIdentity(name); known && !candidates.IdentityFits(colors, allowed) {
+			out = append(out, name)
+		}
+	}
+	return out
 }
 
 // readThemeMatch sets the fact of the theme row (D-725, D-1116). The row
@@ -534,6 +611,10 @@ func (a *Agent) send(ctx context.Context, st *State, message string, chosen []ch
 			if c.Row.StateKey() == SlotThemeUnmatched {
 				st.RecordAskedTheme()
 			}
+			// So does the exclusion row of D-1217.
+			if c.Row.StateKey() == SlotCommanderExcludes {
+				st.RecordAskedExclusion()
+			}
 		}
 		st.MarkAsked(c.Row.ID, c.Row.StateKey(), c.Row.Slot)
 		rec := Ask{
@@ -723,6 +804,12 @@ func (a *Agent) applyOptionAnswers(st *State) {
 			a.applyCommanderOption(st, ans.Index)
 			continue
 		}
+		// The exclusion row keeps the commander or reopens the choice. It
+		// fills no typed slot (D-1217).
+		if row.StateKey() == SlotCommanderExcludes {
+			a.applyExclusionOption(st, ans.Index)
+			continue
+		}
 		// The index names an option the reader saw. An ask stored before
 		// D-904 holds no values, so the list is built again by the same rule.
 		values := ask.OptionValues
@@ -792,6 +879,44 @@ func (a *Agent) applyCommanderOption(st *State, index int) {
 		a.log.Info("the reader picked the card the name meant, with no model in the path",
 			"session", st.SessionID, "name", st.UnresolvedCommander, "card", options[index])
 		st.CommanderResolvedName(options[index])
+	}
+}
+
+// applyExclusionOption reads an option of the exclusion row (D-1217). The
+// first option keeps the commander, and readExclusion then leaves the
+// cards out. The second reopens the choice of the commander, which is
+// what the swap words of D-130 do for a reader who types them.
+func (a *Agent) applyExclusionOption(st *State, index int) {
+	switch index {
+	case 0:
+		a.log.Info("the reader kept the commander over the cards outside its colors",
+			"session", st.SessionID, "commander", strings.Join(st.CommanderNames, " + "))
+		st.Close(SlotCommanderExcludes)
+	case 1:
+		a.log.Info("the reader wants another commander, so the choice reopens",
+			"session", st.SessionID, "commander", strings.Join(st.CommanderNames, " + "))
+		st.ClearCommander()
+		st.Close(SlotCommanderExcludes)
+	}
+}
+
+// applyExclusionAnswer reads a typed answer to the exclusion row
+// (D-1217). The key is typed, so an option match and the classifier can
+// not close it by name. Three answers need no code here: the swap words
+// of D-130 clear the commander, a new commander name replaces it, and
+// readExclusion closes the row for both.
+func (a *Agent) applyExclusionAnswer(st *State, message string) {
+	if st.Slots.GetSlotStates()[SlotCommanderExcludes] != mtgv1.SlotState_SLOT_STATE_ASKED || !st.Ctx.CommanderSet {
+		return
+	}
+	row, ok := a.askedRow(st, SlotCommanderExcludes)
+	if !ok || row.ID != SlotCommanderExcludes || len(row.Options) == 0 {
+		return
+	}
+	toks := tokens(message)
+	if optionAnswered(strings.ToLower(message), row.Options[0]) || acceptsOffer(message) ||
+		(len(toks) > 0 && toks[0] == "keep") {
+		a.applyExclusionOption(st, 0)
 	}
 }
 
@@ -2397,6 +2522,10 @@ var typedSlots = map[string]bool{
 	// commander, and "In the 99" locks the card. A name closes it with
 	// neither (D-118).
 	"named_card_role": true,
+	// The exclusion row closes on a choice between two acts. An option
+	// match would close it on "Pick another commander" as if the reader
+	// kept the commander (D-1217).
+	SlotCommanderExcludes: true,
 	// The gap question closes on a pool rule. An option match would close
 	// it with no rule, so "Fill the gaps" would keep owned cards alone
 	// (D-1027).

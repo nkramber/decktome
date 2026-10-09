@@ -19,7 +19,7 @@ Nineteen targets and three loop scripts spend money: `make codex-review`, `make 
 
 `make ruleset-check` is free. It reads the ruleset of `main` and the merge settings through `gh api`, and it compares them with `.github/rulesets/` (D-828).
 
-`make questions-gate` calls the real providers. One run of the 109 conversations (78 gate and 31 probe since D-730) costs $0.18 to $0.19 and takes about 20 minutes, measured on runs 33 to 35 (2026-09-04). Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
+`make questions-gate` calls the real providers. One run of the 110 conversations (78 gate and 32 probe since D-1217) costs $0.18 to $0.19 and takes about 20 minutes, measured on runs 33 to 35 (2026-09-04). Ask the owner before every run, and write to a new `GATE_OUT` file: a rerun must never overwrite a scored document (D-65).
 
 `make questions-eval` scores a gate run with the eval role. One run costs $0.09 to $0.10 (runs 33 to 35) and takes about 13 minutes. On `gpt-6-luna`, the eval of gate run 54 cost $0.0424 on 2026-09-29, against $0.0977 on `gpt-5.6-luna` (PR-105). `make eval-calibrate` measures the eval model against `claude-sonnet-5-5` since PR-105 (D-996). On 2026-09-29 it cost $0.0031 for the base pass and $0.0609 for the Sonnet 5.5 pass. Before PR-105, the `-n` cut of the calibration made the base pass exit 1, so the second pass never ran.
 

@@ -2,6 +2,7 @@ package questions
 
 import (
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode"
@@ -209,6 +210,19 @@ type IdentityChecker interface {
 	FitsColors(name string, colors []mtgv1.Color) (fits, known bool)
 }
 
+// IdentitySource answers the color identity of a named card. A hint
+// source that holds the card index implements it.
+//
+// The agent compares the commander's identity with each card the reader
+// asked to keep. A Commander deck holds no card outside that identity
+// (CR 903.4), and the engine blocks a deck that does (D-1217).
+//
+// known is false when the index does not hold the name. An unknown name
+// is not proof of anything, and the agent claims nothing about it.
+type IdentitySource interface {
+	ColorIdentity(name string) (colors []mtgv1.Color, known bool)
+}
+
 var placeholder = regexp.MustCompile(`\{[a-z_]+\}`)
 
 // resolve fills a row's placeholders, drops every sentence that still
@@ -334,6 +348,19 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 	// {locked} names the cards to keep, and never the commander (D-70).
 	if s := englishList(st.LockedCards()); s != "" {
 		rep["{locked}"] = s
+	}
+	// The exclusion row names the commander, its colors, and the cards
+	// those colors leave out, each with its own colors (D-1217). An
+	// artifact can be white through its Adventure, and the eval of gate
+	// run 64 called The Arkenstone colorless, so the colors say why.
+	if s := englishList(excludedWithColors(st.ExcludedCards, h)); s != "" {
+		rep["{excluded_cards}"] = s
+	}
+	if s := strings.TrimSpace(strings.Join(st.CommanderNames, " + ")); s != "" {
+		rep["{commander_name}"] = s
+	}
+	if colors, ok := commanderIdentity(st.CommanderNames, h); ok {
+		rep["{commander_colors}"] = identityWords(colors)
 	}
 	// The illegal-commander row names the card the user asked for (D-129).
 	if s := strings.TrimSpace(st.IllegalCommander); s != "" {
@@ -653,6 +680,69 @@ func orList(items []string) string {
 
 func englishList(items []string) string {
 	return joinList(items, "and")
+}
+
+// commanderIdentity is the union of the color identities of the
+// commanders. It answers false when the hint source can not tell, or
+// when the index does not hold one of the names.
+func commanderIdentity(commanders []string, h Hints) ([]mtgv1.Color, bool) {
+	src, ok := h.(IdentitySource)
+	if !ok || len(commanders) == 0 {
+		return nil, false
+	}
+	var out []mtgv1.Color
+	for _, name := range commanders {
+		colors, known := src.ColorIdentity(name)
+		if !known {
+			return nil, false
+		}
+		for _, c := range colors {
+			if c != mtgv1.Color_COLOR_C && !slices.Contains(out, c) {
+				out = append(out, c)
+			}
+		}
+	}
+	return out, true
+}
+
+// excludedWithColors writes each card with its color identity: "The
+// Arkenstone (white)". A card the hint source can not answer keeps its
+// name alone.
+func excludedWithColors(names []string, h Hints) []string {
+	src, ok := h.(IdentitySource)
+	out := make([]string, 0, len(names))
+	for _, name := range names {
+		if ok {
+			if colors, known := src.ColorIdentity(name); known {
+				out = append(out, name+" ("+identityWords(colors)+")")
+				continue
+			}
+		}
+		out = append(out, name)
+	}
+	return out
+}
+
+// identityWords names colors in words, in WUBRG order: "white", "black and
+// red". No color reads "colorless".
+func identityWords(colors []mtgv1.Color) string {
+	names := []struct {
+		c    mtgv1.Color
+		word string
+	}{
+		{mtgv1.Color_COLOR_W, "white"}, {mtgv1.Color_COLOR_U, "blue"}, {mtgv1.Color_COLOR_B, "black"},
+		{mtgv1.Color_COLOR_R, "red"}, {mtgv1.Color_COLOR_G, "green"},
+	}
+	var words []string
+	for _, n := range names {
+		if slices.Contains(colors, n.c) {
+			words = append(words, n.word)
+		}
+	}
+	if len(words) == 0 {
+		return "colorless"
+	}
+	return joinList(words, "and")
 }
 
 // quotedList joins words in quotes, so a reader tells the words of the
