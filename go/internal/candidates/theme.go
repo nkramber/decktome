@@ -198,6 +198,10 @@ type ThemeMatch struct {
 	// CommanderRows lists the rows that a commander of the request added
 	// through its own trigger, with no word of the user (F-212).
 	CommanderRows []string
+	// CommanderSpells are the kinds of spell that a cast trigger of a
+	// commander of the request counts, with no word of the user (F-229).
+	// Jodah, the Unifier counts legendary spells, and no row names them.
+	CommanderSpells []SpellClass
 
 	tagged map[string]map[string]bool // slug -> oracle ids
 	// wordOf maps a signal, as score emits it, to each theme word that
@@ -221,7 +225,7 @@ func (m ThemeMatch) Empty() bool {
 			return false
 		}
 	}
-	return true
+	return len(m.CommanderSpells) == 0
 }
 
 // noisyShare is the share of the card database above which a generic
@@ -744,6 +748,16 @@ func (m ThemeMatch) score(c *mtgv1.Card) (float64, []string) {
 		score += weightText
 		signals = append(signals, "text:"+n)
 	}
+	// A spell that a cast trigger of the commander counts is a type fact,
+	// as a card type is, and the classes of one commander count once
+	// (F-229).
+	for _, sp := range m.CommanderSpells {
+		if sp.fits(c) {
+			score += weightType
+			signals = append(signals, "commander-spell:"+sp.Phrase)
+			break
+		}
+	}
 	// The typal signals are one fact about one card type, so they count
 	// once. The land signals read a land alone, and the card signals read
 	// a card that is no land (D-759, D-760, F-144).
@@ -1013,6 +1027,13 @@ func (m ThemeMatch) Describe() string {
 	}
 	if len(m.CommanderRows) > 0 {
 		parts = append(parts, "commander rows "+strings.Join(m.CommanderRows, ", "))
+	}
+	if len(m.CommanderSpells) > 0 {
+		var s []string
+		for _, sp := range m.CommanderSpells {
+			s = append(s, sp.Phrase)
+		}
+		parts = append(parts, "commander spells "+strings.Join(s, "; "))
 	}
 	if len(m.Unmatched) > 0 {
 		parts = append(parts, "unmatched "+strings.Join(m.Unmatched, ", "))
