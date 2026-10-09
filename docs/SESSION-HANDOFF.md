@@ -6,33 +6,31 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-08, PR-140)
+## RESUME HERE (2026-10-08, PR-141)
 
-**Branch `fix/live-evals-question-bar`, PR-140, pull request #298: a question bar for the live evals, and one Go version (D-1211 to D-1216).** Role: author.
+**Branch `fix/commander-excludes-named-card`, PR-141, pull request #299: a commander that leaves out a locked card asks first (F-227, D-1217).** Role: author.
 
 Author provider: Claude Code
 
-**The base.** `main` at `6d684dc`, the merge of #297.
+**The base.** `main` at `6583b2b`, the merge of #298. A second session rebased it from `6d684dc` (D-1219).
 
-**The checks of the base.**
-
-- The first live eval under PR-138 read a thumbs-down of the owner on a question of deck `v-8k83YGt2Dn6IddKn3CBT`. It ended `blocked` at 19:18 local time on 2026-10-08, with no pull request.
-- The chat ends on a question, so none of six base replays built a deck. Five replays reached the commander rows, and three of them skipped the open row (D-1212).
-- The session made no push, so the keychain check of D-1209 still waits.
+**The cause.** Session `i26PF6UNqgWedc88skX5` asked for The One Ring and The Arkenstone. Then the reader named Smaug the Impenetrable. No row compared the commander with the locked cards, so the engine blocked deck `t5qJDgMGhwScPe1Z0n6Z` with `off_color`.
 
 **The code.**
 
-- `go/cmd/live-evals/bar.go`: `verdict.json` can name the scale `pass-fail`. Such a bar counts its replays (D-1214).
-- `scripts/live-evals/eval-prompt.md`: a question fault gets a bar from the question log (D-1212). A blocked reason names D-1212 or D-1214, in place of OQ-98.
-- `scripts/live-evals/restack-prompt.md`: the restack replays the fix as step 4 says.
-- `go/go.mod` names Go 1.27.2, and `golang.org/x/net` reads 0.60.0 (D-1216). Both Dockerfiles and the go pin of the live evals read 1.27.2.
-- `make go-version-check` holds each Dockerfile and the pin to the go line, in `make lint` and in CI.
+- `go/internal/questions/catalog.json`: the row `commander_excludes_card`, with two options.
+- `go/internal/questions/agent.go`: `readExclusion` sets the fact after each answer. `applyExclusionOption` reads the two options.
+- `go/internal/questions/resolve.go`: the placeholders `{commander_name}`, `{commander_colors}`, and `{excluded_cards}`.
+- `go/internal/questions/snapshot.go`: version 8 keeps the cards and the last commander that the row named.
+- `.claude/skills/mtg-corpus/SKILL.md`: the corpus row. `go/cmd/questions-gate/conversations.json`: probe 111.
 
-**Checks.** `make verify` passes with Node 22.23.2 and Go 1.27.2, the two docker builds included. govulncheck reads no called vulnerability.
+**Checks.** `go test ./...` passes. The tests of `go/internal/questions/commander_excludes_test.go` play the deployed case. Question gate run 64 passed with 74 of 75 for $0.1067, and probe 111 asked the row. The eval of run 64 called The Arkenstone colorless, so the row now names the colors of each card.
 
-**Review.** Gitar approved `952e046`, with 4 findings closed and no open threads. Codex round 1 found no defect but lacked hand-off evidence. This review approves effective head `952e046`, with no finding.
+**Review.** Gitar approved `5c0c1f6` before the rebase. The rebased head needs a new Gitar pass and a Codex review.
 
-**Next action.** Ask the owner for merge confirmation (D-834).
+**The rebase.** #298 merged the Go bump first (D-1216), so the bump needs no pull request of its own (D-1219). The decisions of this item moved to D-1217 and D-1218.
+
+**Next action.** Push the rebased branch, and do the Gitar pass. Then run `make codex-review PR=299`.
 
 ## How to resume
 
@@ -83,7 +81,7 @@ Twenty-two things a fresh session gets wrong without this file.
 - Commander brackets: the 2025-10-21 revision. Game Changers: 53 cards, list of 2026-02-09. Lutri is banned as a companion only, per the 2026-02-09 announcement (`companion_bans.json` holds the link). The content rules per bracket in `brackets.json` and the Spellbook thresholds were read 2026-09-02, and the Karsten tables are the 2022 articles, read 2026-09-02 (`docs/reference/bracket-profile-2026-09-02.md`).
 - Standard: 18 sets, Wilds of Eldraine to The Hobbit. Six sets leave at the first 2027 set. Verified 2026-08-24.
 - Card snapshot on disk: `.local/gcs/mtg-local-cards/scryfall/20260904T210157`, the newest of 13. Read 2026-09-13, when it flagged 53 Game Changers. Check every card fact against it. It holds 49 cards of Reality Fracture and no Jace, Multiverse Architect. A replay of a deck of that set needs a newer snapshot (read 2026-10-06).
-- The theme table `themes.json` reads `verified_at` 2026-09-20. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-20. The question gate set holds 109 conversations: 78 counted and 31 probes (D-730).
+- The theme table `themes.json` reads `verified_at` 2026-09-20. `make themes-check` read every slug against the snapshot of 2026-09-04 on 2026-09-20. The question gate set holds 110 conversations: 78 counted and 32 probes (D-730, D-1212).
 - LLM model ids and prices: `roles.json` and `prices.json`, verified 2026-09-29 (D-996). The max output per provider in `llm/client.go`, verified 2026-08-29. The judge role runs on Sonnet 5.5 (D-1000).
 - The owner repaired the application default credentials of this Mac on 2026-09-23, after the failure of 2026-09-13. The harvest then read `decktome-prod`, and the sandbox let it read the feedback of each user.
 - CAUTION: the `decktome` gcloud configuration named the Wallabee account and project on 2026-09-10, so `use_decktome` put the shell on the wrong project. `scripts/read-session.sh` reads `SESSION_PROJECT` and the account of `CLOUDSDK_CORE_ACCOUNT`, so an environment override reads `decktome-prod` with no change to the configuration. The owner has the commands to repair the configuration. A read on 2026-09-12 at 19:24 UTC found the configuration unchanged.
@@ -109,6 +107,7 @@ Twenty-two things a fresh session gets wrong without this file.
 0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it. Each tick stops on the old pin until the merge. Then read the next tick, and run `make live-evals-install CONFIRM=1` from `main` when it still stops.
 0. **The retry of the blocked eval** (D-1215). After the merge, run `make live-evals-retry ITEM=v-8k83YGt2Dn6IddKn3CBT`. Read its `verdict.json` and the bar line of the script log.
 0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. It fixes F1 only when the retry does not.
+0. **The live check of PR-141** (D-1217). After the deploy, ask for The Arkenstone and name Smaug the Impenetrable. The chat must ask to keep Smaug or pick another commander.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -131,6 +130,14 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-08: a commander that leaves out a locked card, PR-141
+
+**The owner asked why deck `t5qJDgMGhwScPe1Z0n6Z` was not legal.** The Arkenstone is white, and Smaug the Impenetrable is black and red. The session first said that no offer held white. That was wrong, because Dwalin, Weaponmaster is red and white.
+
+**The owner chose a question in the chat** (option A of D-1217). A drop at the build stays out, so a delegated commander can still keep a card outside the colors.
+
+**#298 merged the Go bump first.** The owner told a second session to rebase this pull request on `main` (D-1219).
+
 ### 2026-10-08: the question bar of a live eval, PR-140
 
 **The owner asked why a live eval waited on a question.** The eval read a thumbs-down on a question, and no replay of the chat built a deck. So the bar had no score, and the prompt named OQ-98.
@@ -148,16 +155,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The owner read the keychain.** No "x-access-token" item exists, and the default keychain sits in the home folder that the profile denies.
 
 **The live check of PR-137 passed, and the owner asked for two changes in this pull request.** The import dialog now fits the screen, and the bookmark comes first. The owner kept the new tab, because a page can not bring an open tab to the front (D-1210).
-
-### 2026-10-07: the bar of a live-eval fix, PR-138
-
-**The owner lifted the hold of #294 for that pull request alone.** It merged as `923c7df`, and the deploy serves prompt version 21 (D-1203).
-
-**D-1200 said that the script opens no pull request, but the session opens it.** The owner chose a check in the session and again in the script (D-1204).
-
-**The owner chose a full replay list, and a restack that replays again** (D-1205, D-1207). The start line of a replay names its tree of `go/` (D-1206).
-
-**Each new build of the tool asked again for the grant of the volume.** A self-signed key now gives each build one requirement. A test proved the requirement, and no tick proved the grant yet (D-1208).
 
 ## The archive
 

@@ -651,6 +651,24 @@ func conversations() []conversation {
 	}
 	cs = append(cs, c37)
 
+	// D-1217: the reader asks for a white card and then names a black
+	// and red commander. The exclusion row asks to keep the commander or
+	// to pick another, and the reader keeps it.
+	c38 := conversation{name: "a commander that leaves out a locked card"}
+	c38.ctx = newCtx("a commander deck with the arkenstone, and smaug the impenetrable leads it")
+	c38.ctx.Format, c38.ctx.Theme = mtgv1.FormatId_FORMAT_ID_COMMANDER, "treasure"
+	c38.ctx.NamedCard, c38.ctx.CommanderSet, c38.ctx.CommanderExcludesCard = true, true, true
+	for _, k := range []string{"format", "theme", "named_card_role", "commander", "commander_pick", "colors"} {
+		c38.ctx.Filled[k] = true
+	}
+	c38.steps = []step{
+		{want: []string{"commander_excludes_card", "power_commander"},
+			fill: []string{"commander_excludes_card", "power"},
+			set:  func(c *Context) { c.CommanderExcludesCard = false }},
+		{want: nil},
+	}
+	cs = append(cs, c38)
+
 	return cs
 }
 

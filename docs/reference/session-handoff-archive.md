@@ -15,6 +15,44 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-08, PR-140
+
+**Branch `fix/live-evals-question-bar`, PR-140, pull request #298: a question bar for the live evals, and one Go version (D-1211 to D-1216).** Role: author.
+
+Author provider: Claude Code
+
+**The base.** `main` at `6d684dc`, the merge of #297.
+
+**The checks of the base.**
+
+- The first live eval under PR-138 read a thumbs-down of the owner on a question of deck `v-8k83YGt2Dn6IddKn3CBT`. It ended `blocked` at 19:18 local time on 2026-10-08, with no pull request.
+- The chat ends on a question, so none of six base replays built a deck. Five replays reached the commander rows, and three of them skipped the open row (D-1212).
+- The session made no push, so the keychain check of D-1209 still waits.
+
+**The code.**
+
+- `go/cmd/live-evals/bar.go`: `verdict.json` can name the scale `pass-fail`. Such a bar counts its replays (D-1214).
+- `scripts/live-evals/eval-prompt.md`: a question fault gets a bar from the question log (D-1212). A blocked reason names D-1212 or D-1214, in place of OQ-98.
+- `scripts/live-evals/restack-prompt.md`: the restack replays the fix as step 4 says.
+- `go/go.mod` names Go 1.27.2, and `golang.org/x/net` reads 0.60.0 (D-1216). Both Dockerfiles and the go pin of the live evals read 1.27.2.
+- `make go-version-check` holds each Dockerfile and the pin to the go line, in `make lint` and in CI.
+
+**Checks.** `make verify` passes with Node 22.23.2 and Go 1.27.2, the two docker builds included. govulncheck reads no called vulnerability.
+
+**Review.** Gitar approved `952e046`, with 4 findings closed and no open threads. Codex round 1 found no defect but lacked hand-off evidence. This review approves effective head `952e046`, with no finding.
+
+**Next action.** Ask the owner for merge confirmation (D-834).
+
+### 2026-10-07: the bar of a live-eval fix, PR-138
+
+**The owner lifted the hold of #294 for that pull request alone.** It merged as `923c7df`, and the deploy serves prompt version 21 (D-1203).
+
+**D-1200 said that the script opens no pull request, but the session opens it.** The owner chose a check in the session and again in the script (D-1204).
+
+**The owner chose a full replay list, and a restack that replays again** (D-1205, D-1207). The start line of a replay names its tree of `go/` (D-1206).
+
+**Each new build of the tool asked again for the grant of the volume.** A self-signed key now gives each build one requirement. A test proved the requirement, and no tick proved the grant yet (D-1208).
+
 ## The resume section of 2026-10-07b, PR-139
 
 **Branch `chore/live-evals-no-keychain`, PR-139, pull request #297: no keychain store in a live-eval session, and a short import dialog (D-1209, D-1210).** Role: author.

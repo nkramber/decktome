@@ -132,6 +132,9 @@ type When struct {
 	CommanderUnresolved *bool `json:"commander_unresolved"`
 	// CommanderNoMatch narrows that to a name no card holds at all.
 	CommanderNoMatch *bool `json:"commander_no_match"`
+	// CommanderExcludesCard marks a commander whose color identity leaves
+	// out a card the reader asked to keep (D-1217).
+	CommanderExcludesCard *bool `json:"commander_excludes_card"`
 	// SetLimited marks a deck limited to the sets the reader named
 	// (D-376).
 	SetLimited *bool `json:"set_limited"`

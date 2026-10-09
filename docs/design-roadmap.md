@@ -640,6 +640,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-224 | **Weak cards filled the power floors.** Reader verdict `x5JGF0zyIE3DcID7QB5c` named Barbed Sextant and Springleaf Drum in a mono-green deck of bracket 4, and said that Hurricane is no win condition. The fast mana counter marked a filter and a creature tap, and the finisher count read the tag `burn-player-each`, whose cards also hit the caster. | ✅ PR-128 (#286): fast mana needs a mana ability that pays no mana and taps no creature (D-1159), and the finisher count drops the tag (D-1160). |
 | F-225 | **A hidden cost read as fast mana.** The check of PR-128 built an owned-only deck of bracket 4, and its profile marked Astral Cornucopia as fast mana. The cost {X}{X}{X} gives a mana value of 0, but one mana costs 3. | ✅ PR-130 (#288): fast mana needs no X and no multikicker in the cost (D-1162). |
 | F-226 | **The model did not see the theme of a shortlist card.** Deck `dDD9Iav9aGhgGF9dDLNQ` asked for planeswalkers from a set four days old. It left out Garruk, Veiled Butcher and four more themed cards, and it played off-theme reprints. A line read the name, the type, and the job, so a themed card with a staple job read like a staple. | ✅ PR-136 (#294): each themed line says "on theme" and carries the card text, and the model prefers such a card to another card of the same job. A themed planeswalker reads threat, and a deck that leaves out a themed card for a set fill card buys a repair turn (D-1190, D-1191, D-1195 to D-1198). |
+| F-227 | **A commander left out a locked card with no word.** Session `i26PF6UNqgWedc88skX5` asked for The Arkenstone, a white card, and then named Smaug the Impenetrable, a black and red commander. The engine blocked the deck with `off_color`. | ✅ PR-141 (#299): the row `commander_excludes_card` asks to keep the commander or to pick another one. Each answer but another commander leaves the card out (D-1217). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3651,6 +3652,23 @@ Gate:
 - A Codex review record that approves the effective head (D-815).
 
 > *In plain English:* a thumbs down on a question gave the eval no test of a fix, because the chat never reached a deck. Now it reads the questions of each replay. A fault that shows on some tries alone can pass too, when the fix never shows it in six tries. Also, every build now uses the same Go version, with a fix for a server crash.
+
+**PR-141: A commander that leaves out a locked card asks first (F-227, D-1217).** ✅ merged as #299. The mark comes before any review (D-822). A reader asked for The Arkenstone and then named Smaug the Impenetrable. The engine blocked the deck, because the card is white and the commander is black and red.
+
+- **The row (D-1217).** The row `commander_excludes_card` fires when the color identity of the commander leaves out a locked card. It names the commander, its colors, and the cards.
+- **The answers.** The first option, a yes, "keep", a decline, and the net of D-351 leave the cards out. The second option and the swap words of D-130 reopen the choice of the commander.
+- **A second commander.** A commander that holds the cards closes the row. A commander that leaves them out asks again, with its own name. The same commander again leaves the cards out.
+- **What stays open.** A delegated commander and a revision do not read the row, because the owner chose the question alone.
+
+Gate:
+- `go/internal/questions/commander_excludes_test.go` plays the deployed case through `Turn` and a store cycle. Without the row, the first test fails.
+- The corpus row, the scripted conversation, and the snapshot test read the new row and its fields.
+- Question gate run 64 passes with 74 of 75 counted conversations, and probe 111 asks the row. Its one invented question is a fit of `pool_thin` in conversation 22, which the row does not touch.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* a reader asked for a white card and then picked a black and red commander. The rules forbid that card in that deck, so the app built a deck it then blocked. Now the app asks first: keep the commander and leave the card out, or pick another commander.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
