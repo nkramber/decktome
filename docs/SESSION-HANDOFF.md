@@ -28,9 +28,9 @@ Author provider: Claude Code
 - `go/go.mod` names Go 1.27.2, and `golang.org/x/net` reads 0.60.0 (D-1216). Both Dockerfiles and the go pin of the live evals read 1.27.2.
 - `make go-version-check` holds each Dockerfile and the pin to the go line, in `make lint` and in CI.
 
-**Checks.** `go test ./cmd/live-evals/` passes the new tests of the pass-fail bar. govulncheck reads no called vulnerability on Go 1.27.2.
+**Checks.** `make verify` passes with Node 22.23.2 and Go 1.27.2, the two docker builds included. govulncheck reads no called vulnerability.
 
-**Review.** Gitar waits for its first review. The Codex review waits for the Gitar pass.
+**Review.** Gitar approved `f4c8895`, and its one finding is fixed. The commits of D-1216 need a new Gitar pass, and then the Codex review.
 
 **Next action.** Do the Gitar pass, then run `make codex-review PR=298`. After the approval, ask the owner for merge confirmation (D-834). The auto-merge of D-828 then merges the pull request.
 
@@ -106,7 +106,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **Go 1.27.2 on this Mac** (D-1216). Before the first tick after the merge, run `brew uninstall go`, and install Go 1.27.2 from go.dev. Then run `make live-evals-install CONFIRM=1` from `main`, so the agent finds that copy. Until then, each tick stops on the go pin.
+0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it, and the tick of 21:49 local time read go1.27.2. Each tick stops on the old pin of `main` until the merge. After the merge, read the next tick. When it still stops, run `make live-evals-install CONFIRM=1` from `main`.
 0. **The retry of the blocked eval** (D-1215). After the merge, run `make live-evals-retry ITEM=v-8k83YGt2Dn6IddKn3CBT`. Read its `verdict.json` and the bar line of the script log.
 0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. It fixes F1 only when the retry does not.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
