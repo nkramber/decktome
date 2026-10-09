@@ -26,11 +26,11 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. The tests of `go/internal/questions/commander_excludes_test.go` play the deployed case. Question gate run 64 passed with 74 of 75 for $0.1067, and probe 111 asked the row. The eval of run 64 called The Arkenstone colorless, so the row now names the colors of each card.
 
-**Review.** Gitar approved `5c0c1f6` before the rebase. The rebased head needs a new Gitar pass and a Codex review.
+**Review.** Gitar reviewed the current tip `50233b6`. The review has no open finding. Codex reviewed effective head `16b82bc`. Verdict: Ready for owner merge. No finding.
 
 **The rebase.** #298 merged the Go bump first (D-1216), so the bump needs no pull request of its own (D-1219). The decisions of this item moved to D-1217 and D-1218.
 
-**Next action.** Push the rebased branch, and do the Gitar pass. Then run `make codex-review PR=299`.
+**Next action.** The owner reads the Codex review and decides whether to merge.
 
 ## How to resume
 
