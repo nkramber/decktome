@@ -3639,7 +3639,7 @@ Gate:
 - **The counted rule (D-1214).** The rule of the worst and the best needs each base replay to fail. Now half or more of the base replays fail, and each of six or more fix replays passes. A bar of a count keeps the rule of D-1200.
 - **The prompt rules.** A blocked reason of step 3b names D-1212 or D-1214, in place of OQ-98. Step 4 and the restack replay the fix six times on a bar of pass or fail.
 - **The owner answers of the same eval (D-1211, D-1213, D-1215).** OQ-98 has its answer. The pick row keeps its text, and the chat box shows "Name your own". After the merge, the blocked eval runs again.
-- **One Go version (D-1216).** The advisory GO-2026-6617 failed CI on this pull request. The go line of `go/go.mod` now names Go 1.27.2 for this Mac, CI, each Docker build, and the live evals. `golang.org/x/net` moves to 0.60.0.
+- **One Go version (D-1216).** The advisory GO-2026-6617 failed CI on this pull request. The go line of `go/go.mod` now names Go 1.27.2 for this Mac, CI, each Docker build, and the live evals. `golang.org/x/net` moves to 0.60.0, and golangci-lint moves to 2.14.0, which reads the export data of Go 1.27.2.
 
 Gate:
 - `TestBarCountsAPassFailBar` holds the replays of the blocked eval, and the rule of the worst and the best refuses them.
