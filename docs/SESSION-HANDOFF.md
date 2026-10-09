@@ -30,7 +30,7 @@ Author provider: Claude Code
 
 **Checks.** `make verify` passes with Node 22.23.2 and Go 1.27.2, the two docker builds included. govulncheck reads no called vulnerability.
 
-**Review.** Gitar approved `f4c8895` and confirmed the fixes on `952e046`. Codex is Blocked pending a current Gitar pass.
+**Review.** Gitar approved effective head `952e046`. Its check completed at 03:02:00 UTC, after the push at 03:01:05 UTC. Each of its 4 findings is fixed, and no thread is open. Codex round 1 read no defect and said Blocked, because this file did not record that pass. `docs/reviews/pr-298-response.md` answers it.
 
 **Next action.** Do the Gitar pass, then run `make codex-review PR=298`. After the approval, ask the owner for merge confirmation (D-834). The auto-merge of D-828 then merges the pull request.
 
