@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. The bar of pass or fail holds: 4 of 6 base replays failed, and 6 of 6 replays of the head passed. The 18 replays cost $0.31, measured.
 
-**Review.** Gitar approved `df4b1de` with two findings, and `4e0252a` answers both. Then `make codex-review`.
+**Review.** Gitar approved `df4b1de` with two findings, and `4e0252a` answers both. Codex reviewed effective head `1e28631c7f44c62a00157e1721c196008215906a`. Verdict: Ready for owner merge. No finding.
 
 **Next action.** The owner reads the notice of the live eval and decides whether to merge. The item of D-1211 no longer needs to fix F1.
 
