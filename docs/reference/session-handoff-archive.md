@@ -15,6 +15,40 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-08, PR-141
+
+**Branch `fix/commander-excludes-named-card`, PR-141, pull request #299: a commander that leaves out a locked card asks first (F-227, D-1217).** Role: author.
+
+Author provider: Claude Code
+
+**The base.** `main` at `6583b2b`, the merge of #298. A second session rebased it from `6d684dc` (D-1219).
+
+**The cause.** Session `i26PF6UNqgWedc88skX5` asked for The One Ring and The Arkenstone. Then the reader named Smaug the Impenetrable. No row compared the commander with the locked cards, so the engine blocked deck `t5qJDgMGhwScPe1Z0n6Z` with `off_color`.
+
+**The code.**
+
+- `go/internal/questions/catalog.json`: the row `commander_excludes_card`, with two options.
+- `go/internal/questions/agent.go`: `readExclusion` sets the fact after each answer. `applyExclusionOption` reads the two options.
+- `go/internal/questions/resolve.go`: the placeholders `{commander_name}`, `{commander_colors}`, and `{excluded_cards}`.
+- `go/internal/questions/snapshot.go`: version 8 keeps the cards and the last commander that the row named.
+- `.claude/skills/mtg-corpus/SKILL.md`: the corpus row. `go/cmd/questions-gate/conversations.json`: probe 111.
+
+**Checks.** `go test ./...` passes. The tests of `go/internal/questions/commander_excludes_test.go` play the deployed case. Question gate run 64 passed with 74 of 75 for $0.1067, and probe 111 asked the row. The eval of run 64 called The Arkenstone colorless, so the row now names the colors of each card.
+
+**Review.** Gitar reviewed the current tip `50233b6`. The review has no open finding. Codex reviewed effective head `16b82bc`. Verdict: Ready for owner merge. No finding.
+
+**The rebase.** #298 merged the Go bump first (D-1216), so the bump needs no pull request of its own (D-1219). The decisions of this item moved to D-1217 and D-1218.
+
+**Next action.** The owner reads the Codex review and decides whether to merge.
+
+### 2026-10-07b: the keychain store of a live-eval session, PR-139
+
+**The cause was the Apple Git config.** It sets osxkeychain, and the clone added the gh helper after it. So git sent the session token to the keychain after each push (D-1209).
+
+**The owner read the keychain.** No "x-access-token" item exists, and the default keychain sits in the home folder that the profile denies.
+
+**The live check of PR-137 passed, and the owner asked for two changes in this pull request.** The import dialog now fits the screen, and the bookmark comes first. The owner kept the new tab, because a page can not bring an open tab to the front (D-1210).
+
 ## The resume section of 2026-10-08, PR-140
 
 **Branch `fix/live-evals-question-bar`, PR-140, pull request #298: a question bar for the live evals, and one Go version (D-1211 to D-1216).** Role: author.
