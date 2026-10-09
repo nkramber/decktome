@@ -112,8 +112,9 @@ func TestBarRefusesAHeadThatChangesNoGoFile(t *testing.T) {
 }
 
 func TestBarDropsAReplayWithNoDeck(t *testing.T) {
-	// OQ-98: a replay of the question phase can build no deck. Such a run
-	// stays in the verdict with no score, and it counts on no side (D-1205).
+	// A replay that never reached the fault, such as a replay of the
+	// question phase with no deck, stays in the verdict with no score. It
+	// counts on no side (D-1205, D-1212).
 	v, runs := barCase()
 	v.Replays[0].Score = nil
 	runs[0].Ended = false
@@ -147,6 +148,72 @@ func TestBarReadsALowerIsBetterMetric(t *testing.T) {
 }
 
 // gitRun runs one git command in dir for a test.
+// passFailCase is the question fault of deck v-8k83YGt2Dn6IddKn3CBT in
+// this shape (D-1212, D-1214). Six base replays read pass, no reading,
+// fail, pass, fail, and fail. Six fix replays pass.
+func passFailCase() (verdict, []livespend.Run) {
+	v := verdict{Bar: "the open commander row goes out before the pick row",
+		Metric: "the open commander row comes first", Better: "higher", Target: score(1), Scale: passFail}
+	var runs []livespend.Run
+	add := func(side, tree string, s *float64) {
+		id := fmt.Sprintf("%016x", len(runs)+1)
+		runs = append(runs, livespend.Run{ID: id, Target: replayTarget, Tree: tree, Ended: true})
+		v.Replays = append(v.Replays, replayV{Run: id, Side: side, Score: s})
+	}
+	for _, s := range []*float64{score(1), nil, score(0), score(1), score(0), score(0)} {
+		add("base", baseTree, s)
+	}
+	for range passFailFixReplays {
+		add("fix", headTree, score(1))
+	}
+	return v, runs
+}
+
+func TestBarCountsAPassFailBar(t *testing.T) {
+	v, runs := passFailCase()
+	if why := barFaults(v, runs, baseTree, headTree); len(why) > 0 {
+		t.Fatalf("faults = %v, want none", why)
+	}
+	// The rule of the worst and the best refuses the same replays, because
+	// two base replays pass. So an intermittent fault needs the scale.
+	v.Scale = ""
+	if why := barFaults(v, runs, baseTree, headTree); !strings.Contains(strings.Join(why, "; "), "does not beat the best base replay") {
+		t.Fatalf("faults = %v, want the rule of the worst and the best", why)
+	}
+}
+
+func TestBarRefusesAWeakPassFailVerdict(t *testing.T) {
+	cases := map[string]struct {
+		edit func(*verdict)
+		want string
+	}{
+		"one fix replay fails":                        {func(v *verdict) { v.Replays[8].Score = score(0) }, "1 of 6 fix replays fail"},
+		"five fix replays with a score":               {func(v *verdict) { v.Replays[11].Score = nil }, "the fix side has 5 replays with a score, and it needs 6"},
+		"the fault shows in two of five base replays": {func(v *verdict) { v.Replays[2].Score = score(1) }, "shows in 2 of 5 base replays"},
+		"a score between pass and fail":               {func(v *verdict) { v.Replays[7].Score = score(0.5) }, "is not 1 or 0"},
+		"lower is better":                             {func(v *verdict) { v.Better = "lower" }, `needs "better" "higher" and the target 1`},
+		"a target below a pass":                       {func(v *verdict) { v.Target = score(0.5) }, `needs "better" "higher" and the target 1`},
+		"another scale":                               {func(v *verdict) { v.Scale = "count" }, `scale "count"`},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			v, runs := passFailCase()
+			c.edit(&v)
+			why := barFaults(v, runs, baseTree, headTree)
+			if !strings.Contains(strings.Join(why, "; "), c.want) {
+				t.Fatalf("faults = %v, want one with %q", why, c.want)
+			}
+		})
+	}
+}
+
+func TestBarReadsTheScaleOfVerdictJSON(t *testing.T) {
+	var v verdict
+	if err := json.Unmarshal([]byte(`{"scale":"pass-fail"}`), &v); err != nil || v.Scale != passFail {
+		t.Fatalf("scale = %q, err = %v", v.Scale, err)
+	}
+}
+
 func gitRun(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)

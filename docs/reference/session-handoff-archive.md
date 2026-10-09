@@ -15,6 +15,41 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-07b, PR-139
+
+**Branch `chore/live-evals-no-keychain`, PR-139, pull request #297: no keychain store in a live-eval session, and a short import dialog (D-1209, D-1210).** Role: author.
+
+Author provider: Claude Code
+
+**The base.** `main` at `8ae2717`, the merge of #296. Cloud Build `50f909ae` deployed it, and revision `mtg-api-00131-xr6` serves it. No web file changed after `ea792c3`, so `deploy-web` did not run.
+
+**The checks of the base.**
+
+- The owner selected the bookmark of PR-137 on a Moxfield deck. The import dialog opened with the list and the name, and the fragment went away (D-1193).
+- The owner ran `make live-evals-sign-setup`. The tick of 14:33 local time waited for the grant. The tick of 14:39 made a new build and passed the probe with no dialog (D-1208).
+- No live eval ran under PR-138 yet, because no deck waits. So no `verdict.json` exists (D-1204).
+
+**The code.**
+
+- `scripts/live-evals.sh`: `session_credential` sets an empty helper, then the gh helper, in each new clone (D-1209). No clone of an older run exists.
+- `docs/tools/test_live_evals_git.py`: a lower helper gets no `store`.
+- `web/apps/web/src/components/ui/dialog.tsx`: each dialog scrolls inside the screen (D-1210).
+- `web/apps/web/src/features/deck/import-dialog.tsx`: for Moxfield, the bookmark comes first, and the steps fold.
+
+**Checks.** `make verify` passes with Node 22.23.2. `docs/tools/test_live_evals_git.py` fails with the old single helper, and it passes with the fix.
+
+**Review.** Gitar approved effective head `8427c204bbae3af5ab1227f9d7d2072d70b40ab4` at 19:49:25 UTC. No review thread stays open. Codex says Ready for owner merge for this effective head.
+
+**Next action.** Ask the owner for merge confirmation, then turn on auto-merge (D-834).
+
+### 2026-10-06b: the Moxfield bookmarklet, PR-137
+
+**The owner asked for the TTL check and the check of #292 first.** Both passed. The check build started a live eval, and the owner asked for the note of D-1194.
+
+**The console test of OQ-95 passed in the browser of the owner.** The owner permits the bookmarklet before an answer of Moxfield (D-1192). The owner chose a filled form in a new tab, with no Moxfield link (D-1193).
+
+**The owner tested the real bookmark on Moxfield.** The new tab opened `/decks` with the list. The owner chose the unit tests now and the live test after the deploy.
+
 ## The resume section of 2026-10-07, PR-138
 
 **Branch `feat/live-eval-bar-check`, PR-138, pull request #296: the live evals hold the bar of a fix (D-1200).** Role: author.

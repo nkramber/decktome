@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-08 correction pass 270 (PR-140, D-1211 to D-1215): the first live eval under PR-138 read a thumbs-down on a question. It ended `blocked`, because no replay built a deck. A question fault now gets a bar of pass or fail from the question log, and that bar counts its replays. Changes: PR-140.
 2026-10-07 correction pass 269 (PR-139, D-1209, D-1210): a live-eval session asked macOS to store its GitHub token, because the Apple Git config holds osxkeychain. The clone now holds the gh helper alone. The import dialog of a Moxfield link was taller than the screen. Each dialog now scrolls inside, and the steps fold under the bookmark. Changes: PR-139.
 2026-10-07 correction pass 268 (PR-138, D-1200, D-1203 to D-1208): the eval session of #294 called its fix ready on one replay of each side. A live eval now holds its bar with a script check and prompt rules. A key of the owner signs each build of the tool, so the grant of the volume stays. Changes: PR-125, PR-138.
 2026-10-06 correction pass 267 (PR-136, F-226, D-1190, D-1191, D-1195 to D-1202): a live eval read a planeswalker deck of a new set. The model played reprints it knew and left out themed cards, because no shortlist line named the theme. Each themed line now says "on theme" and carries the card text. A themed planeswalker reads threat, and a deck that leaves out a themed card buys a repair turn. Five bracket 1 replays played all 31 themed cards. Changes: F-226, PR-136.
@@ -3631,6 +3632,22 @@ Gate:
 - A Codex review record that approves the effective head (D-815).
 
 > *In plain English:* the eval sessions push code to GitHub. Each push made the Mac ask to save the GitHub token, and no one answered. Now git gives the token to gh alone. Also, the import window fits the screen again, and the Moxfield button comes first.
+
+**PR-140: A live eval reads a question fault, and a bar of pass or fail counts its replays (D-1211 to D-1215).** 🔧 open. The first live eval under PR-138 ended `blocked`. Its chat ended on a question, so no replay built a deck, and no replay had a score.
+
+- **The question bar (D-1212).** A thumbs-down on a question gets a bar of pass or fail. Each replay reads it from its question log, with no deck. A replay that did not reach the point of the fault gets no score.
+- **The counted rule (D-1214).** The rule of the worst and the best needs each base replay to fail. Now half or more of the base replays fail, and each of six or more fix replays passes. A bar of a count keeps the rule of D-1200.
+- **The prompt rules.** A blocked reason of step 3b names D-1212 or D-1214, in place of OQ-98. Step 4 and the restack replay the fix six times on a bar of pass or fail.
+- **The owner answers of the same eval (D-1211, D-1213, D-1215).** OQ-98 has its answer. The pick row keeps its text, and the chat box shows "Name your own". After the merge, the blocked eval runs again.
+
+Gate:
+- `TestBarCountsAPassFailBar` holds the replays of the blocked eval, and the rule of the worst and the best refuses them.
+- `TestBarRefusesAWeakPassFailVerdict` refuses a fix replay that fails, five fix replays, and a base fault in 2 of 5. It also refuses a score of 0.5, a lower direction, a target of 0.5, and another scale.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* a thumbs down on a question gave the eval no test of a fix, because the chat never reached a deck. Now it reads the questions of each replay. A fault that shows on some tries alone can pass too, when the fix never shows it in six tries.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
