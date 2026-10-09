@@ -387,6 +387,9 @@ func TestTheOfferNeverSharesATurnWithAPreference(t *testing.T) {
 // The first turn asks the theme and the colors and offers nothing. The
 // next turn answers both, and the offer goes out alone.
 //
+// The first message asks for names in its own words. A fact with no
+// such words does not count (D-1220).
+//
 // The pool is owned-only on purpose. An any-card pool asks the budget,
 // which takes the third place of the turn (MaxPerTurn) and holds the
 // offer back with no rule at all.
@@ -401,7 +404,7 @@ func TestNoOfferBesideAPreferenceQuestion(t *testing.T) {
 		classifyStep(t, first), fits(t, "theme", "colors"), askStep(t),
 		classifyStep(t, second))
 	st := NewState(true)
-	res, err := a.Turn(context.Background(), st, "Build a bracket-5 commander deck", nil)
+	res, err := a.Turn(context.Background(), st, "Build a bracket-5 commander deck, and suggest a commander", nil)
 	if err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}

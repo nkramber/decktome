@@ -538,7 +538,9 @@ func TestPickRowWithNoNamesAsksNothing(t *testing.T) {
 		classifyStep(t, out), fits(t, "theme"), askStep(t),
 		classifyStep(t, decline))
 	st := NewState(false)
-	if _, err := a.Turn(context.Background(), st, "Make me a good deck for 50 dollars.", nil); err != nil {
+	// The reader asks for names in words, because a fact with no such
+	// words does not count (D-1220).
+	if _, err := a.Turn(context.Background(), st, "Make me a good deck for 50 dollars, and suggest a commander.", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
 	res, err := a.Turn(context.Background(), st, "I dunno, you pick.", nil)
@@ -841,7 +843,7 @@ func TestNotOwnedRowIsRetired(t *testing.T) {
 }
 
 // TestDeclinedPickClosesTheCommanderSlot is D-208. Turn 2 answers "I
-// dunno, you pick", the classifier sets wants_suggestion, and the pick
+// dunno. Suggest a commander.", the classifier sets wants_suggestion, and the pick
 // row asks. Turn 3 answers "Whatever you think is best", and the
 // classifier declines the pick key. The decline closes commander_pick
 // alone. The D-147 rule runs after the decline, its guard reads an
@@ -875,7 +877,9 @@ func TestDeclinedPickClosesTheCommanderSlot(t *testing.T) {
 	if _, err := a.Turn(context.Background(), st, "Make me a good deck.", nil); err != nil {
 		t.Fatalf("turn 1: %v", err)
 	}
-	if _, err := a.Turn(context.Background(), st, "I dunno, you pick.", nil); err != nil {
+	// No commander question is out on turn 2, so the reader names the
+	// commander in the request for names (D-1220).
+	if _, err := a.Turn(context.Background(), st, "I dunno. Suggest a commander.", nil); err != nil {
 		t.Fatalf("turn 2: %v", err)
 	}
 	if st.Slots.GetSlotStates()["commander_pick"] != mtgv1.SlotState_SLOT_STATE_ASKED {

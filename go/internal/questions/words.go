@@ -637,19 +637,43 @@ func slotHasNouns(key string) bool {
 // The word before a format noun names the format and not the card. "The
 // best possible commander deck" asks for a deck, and the reader still
 // picks its commander (F-197, D-1039).
-func namesCommander(message string) bool {
+//
+// The word after a format verb or preposition names the format too. "The
+// best deck for Commander" and "a deck to play Commander" ask for a deck
+// of the format. An article or a possessive names the card: "a deck for
+// my commander" (D-1220).
+func namesCommander(message string) bool { return commanderRole(message, true) }
+
+// mentionsCommander reports whether the message speaks of the card that
+// leads the deck, negated or not. "I have no commander in mind" asks for
+// names, and namesCommander skips it for its negation (D-1220).
+func mentionsCommander(message string) bool { return commanderRole(message, false) }
+
+// commanderRole finds the word "commander" as the card and not as the
+// format. A negated word counts only when skipNegated is false.
+func commanderRole(message string, skipNegated bool) bool {
 	text := strings.ToLower(message)
 	toks := tokens(text)
 	for _, at := range commanderWord.FindAllStringIndex(text, -1) {
-		if negatedAt(toks, len(tokens(text[:at[0]]))) {
+		i := len(tokens(text[:at[0]]))
+		if skipNegated && negatedAt(toks, i) {
 			continue
 		}
 		if formatNoun.MatchString(text[at[1]:]) {
 			continue
 		}
+		if i > 0 && formatLead[toks[i-1]] {
+			continue
+		}
 		return true
 	}
 	return false
+}
+
+// formatLead holds the words that put the format name after them, with
+// no article between: "for Commander", "in Commander", "play Commander".
+var formatLead = map[string]bool{
+	"for": true, "in": true, "play": true, "plays": true, "playing": true,
 }
 
 // commanderWord finds the word, and formatNoun reads the word after it
