@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-08, PR-140)
 
-**Branch `fix/live-evals-question-bar`, PR-140, pull request #PRNUM: a live eval reads a question fault, and a bar of pass or fail counts its replays (D-1211 to D-1215).** Role: author.
+**Branch `fix/live-evals-question-bar`, PR-140, pull request #298: a live eval reads a question fault, and a bar of pass or fail counts its replays (D-1211 to D-1215).** Role: author.
 
 Author provider: Claude Code
 
@@ -26,11 +26,11 @@ Author provider: Claude Code
 - `scripts/live-evals/eval-prompt.md`: a question fault gets a bar from the question log (D-1212). A blocked reason names D-1212 or D-1214, in place of OQ-98.
 - `scripts/live-evals/restack-prompt.md`: the restack replays the fix as step 4 says.
 
-**Checks.** CHECKS
+**Checks.** `make verify` passes with Node 22.23.2. `go test ./cmd/live-evals/` passes the new tests of the pass-fail bar.
 
-**Review.** REVIEW
+**Review.** Gitar waits for its first review. The Codex review waits for the Gitar pass.
 
-**Next action.** NEXT
+**Next action.** Do the Gitar pass, then run `make codex-review PR=298`. After the approval, ask the owner for merge confirmation (D-834). The auto-merge of D-828 then merges the pull request.
 
 ## How to resume
 

@@ -3633,7 +3633,7 @@ Gate:
 
 > *In plain English:* the eval sessions push code to GitHub. Each push made the Mac ask to save the GitHub token, and no one answered. Now git gives the token to gh alone. Also, the import window fits the screen again, and the Moxfield button comes first.
 
-**PR-140: A live eval reads a question fault, and a bar of pass or fail counts its replays (D-1211 to D-1215).** 🔧 open. The first live eval under PR-138 ended `blocked`. Its chat ended on a question, so no replay built a deck, and no replay had a score.
+**PR-140: A live eval reads a question fault, and a bar of pass or fail counts its replays (D-1211 to D-1215).** ✅ merged as #298. The mark comes before any review (D-822). The first live eval under PR-138 ended `blocked`. Its chat ended on a question, so no replay built a deck, and no replay had a score.
 
 - **The question bar (D-1212).** A thumbs-down on a question gets a bar of pass or fail. Each replay reads it from its question log, with no deck. A replay that did not reach the point of the fault gets no score.
 - **The counted rule (D-1214).** The rule of the worst and the best needs each base replay to fail. Now half or more of the base replays fail, and each of six or more fix replays passes. A bar of a count keeps the rule of D-1200.
