@@ -147,7 +147,6 @@ func TestBarReadsALowerIsBetterMetric(t *testing.T) {
 	}
 }
 
-// gitRun runs one git command in dir for a test.
 // passFailCase is the question fault of deck v-8k83YGt2Dn6IddKn3CBT in
 // this shape (D-1212, D-1214). Six base replays read pass, no reading,
 // fail, pass, fail, and fail. Six fix replays pass.
@@ -214,6 +213,7 @@ func TestBarReadsTheScaleOfVerdictJSON(t *testing.T) {
 	}
 }
 
+// gitRun runs one git command in dir for a test.
 func gitRun(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", dir}, args...)...)
