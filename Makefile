@@ -95,13 +95,15 @@ context-budget: ## Check the byte budget of CLAUDE.md and the hand-off, and the 
 # ignores .SHELLFLAGS, so a 3.81 recipe reads pipefail from no variable.
 # The check holds the recipe rule, and it proves the rule against the make
 # of this machine. Its unit tests run in lifecycle-check.
-go-version-check: ## Check that each Dockerfile and the live-eval pin name the Go version of go/go.mod, free (D-1216)
-	@echo "==> go-version-check"
-	@python3 docs/tools/go_version_check.py
-
 pipefail-check: ## Check that every pipeline of the Makefile fails its target, free (F-160)
 	@echo "==> pipefail-check"
 	@python3 docs/tools/pipefail_check.py
+
+# Each Dockerfile and the live-eval pin name the go line of go/go.mod
+# (D-1216). Its unit tests run in lifecycle-check.
+go-version-check: ## Check that each Dockerfile and the live-eval pin name the Go version of go/go.mod, free (D-1216)
+	@echo "==> go-version-check"
+	@python3 docs/tools/go_version_check.py
 
 # LLM_REQUIRE_KEYS is not set here. The unit tests must pass with the
 # package default. Set it in a test with t.Setenv when a case needs it.
