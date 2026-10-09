@@ -123,9 +123,9 @@ func TestSuggestOneAnswersTheCommanderRow(t *testing.T) {
 	}
 }
 
-// TestFormatWordsAreNotTheCard is the word side of D-1220. A format
-// preposition or verb before "Commander" names the format, and an article
-// or a possessive names the card.
+// TestFormatWordsAreNotTheCard is the word side of D-1220. A play verb,
+// or a deck noun and a preposition, before "Commander" names the format.
+// An article, a possessive, or another noun names the card.
 func TestFormatWordsAreNotTheCard(t *testing.T) {
 	for msg, want := range map[string]bool{
 		"the best deck for commander":            false,
@@ -135,6 +135,8 @@ func TestFormatWordsAreNotTheCard(t *testing.T) {
 		"a deck for my commander":                true,
 		"pick a commander for me":                true,
 		"which commander should i use":           true,
+		"suggest a legend for commander":         true,
+		"pick a card for commander":              true,
 	} {
 		if got := namesCommander(msg); got != want {
 			t.Errorf("namesCommander(%q) = %v, want %v", msg, got, want)

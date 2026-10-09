@@ -638,10 +638,10 @@ func slotHasNouns(key string) bool {
 // best possible commander deck" asks for a deck, and the reader still
 // picks its commander (F-197, D-1039).
 //
-// The word after a format verb or preposition names the format too. "The
-// best deck for Commander" and "a deck to play Commander" ask for a deck
-// of the format. An article or a possessive names the card: "a deck for
-// my commander" (D-1220).
+// The word after a play verb, or after a deck noun and a preposition,
+// names the format too. "The best deck for Commander" and "a deck to play
+// Commander" ask for a deck of the format. An article or a possessive
+// names the card: "a deck for my commander" (D-1220).
 func namesCommander(message string) bool { return commanderRole(message, true) }
 
 // mentionsCommander reports whether the message speaks of the card that
@@ -662,7 +662,7 @@ func commanderRole(message string, skipNegated bool) bool {
 		if formatNoun.MatchString(text[at[1]:]) {
 			continue
 		}
-		if i > 0 && formatLead[toks[i-1]] {
+		if formatLead(toks, i) {
 			continue
 		}
 		return true
@@ -670,11 +670,25 @@ func commanderRole(message string, skipNegated bool) bool {
 	return false
 }
 
-// formatLead holds the words that put the format name after them, with
-// no article between: "for Commander", "in Commander", "play Commander".
-var formatLead = map[string]bool{
-	"for": true, "in": true, "play": true, "plays": true, "playing": true,
+// formatLead reports whether the words before index i put the format
+// name there. A play verb does: "play Commander". A preposition does
+// only after a deck noun: "a deck for Commander" asks for a deck, and
+// "suggest a legend for commander" asks for the card.
+func formatLead(toks []string, i int) bool {
+	if i < 1 {
+		return false
+	}
+	if playVerbs[toks[i-1]] {
+		return true
+	}
+	return i >= 2 && formatPrepositions[toks[i-1]] && deckNouns[toks[i-2]]
 }
+
+var (
+	playVerbs          = map[string]bool{"play": true, "plays": true, "playing": true}
+	formatPrepositions = map[string]bool{"for": true, "in": true}
+	deckNouns          = map[string]bool{"deck": true, "decks": true, "list": true, "build": true}
+)
 
 // commanderWord finds the word, and formatNoun reads the word after it
 // when only space stands between them. "Commander. Bracket 3" holds a

@@ -19,7 +19,7 @@ Author provider: Claude Code
 **The code.**
 
 - `go/internal/questions/agent.go`: `applyFacts` reads the open keys. `commanderQuestionOut` reads the commander rows of the catalog.
-- `go/internal/questions/words.go`: `mentionsCommander` keeps a negated word. `namesCommander` reads "for Commander" as the format.
+- `go/internal/questions/words.go`: `mentionsCommander` keeps a negated word. `namesCommander` reads "for Commander" after a deck noun as the format.
 - `go/internal/questions/suggestion_words_test.go`: this case, two more inputs of the class, and the controls.
 
 **Checks.** `go test ./...` passes. The bar of pass or fail holds: 4 of 6 base replays failed, and 6 of 6 fix replays passed. The replays cost $0.13, measured.
