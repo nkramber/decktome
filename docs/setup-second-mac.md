@@ -49,7 +49,7 @@ CAUTION: the checkout is on an external drive. Connect the drive before you star
 
 The pinned versions live in `go/go.mod`, `.nvmrc`, `web/package.json`, and `scripts/doctor.sh`. `make doctor` reads them and prints one line per tool, with the fix command on each `MISSING` line.
 
-1. Run `brew install go`. `go version` must print 1.27.0 or newer.
+1. Install the Go version of `go/go.mod` from https://go.dev/dl/. Homebrew can lag it (D-1216).
 2. Install nvm from https://github.com/nvm-sh/nvm, then open a new terminal.
 3. In the repo root, run `nvm install`. It reads `.nvmrc` and installs Node 22.23.2.
 4. Run `nvm alias default 22.23.2`. Node 20 on the PATH fails every web test with `ERR_REQUIRE_ESM`.

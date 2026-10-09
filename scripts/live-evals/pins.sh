@@ -15,7 +15,7 @@ PINS=(
   "jq|jq --version|jq-1.7.1-apple"
   "git|git --version|git version 2.50.1 (Apple Git-155)"
   "python3|python3 --version|Python 3.9.6"
-  "go|go version|go version go1.27.1 darwin/arm64"
+  "go|go version|go version go1.27.2 darwin/arm64"
   "gh|gh --version|gh version 2.102.0 (2026-09-30)"
   "codex|codex --version|codex-cli 0.39.0"
   "gcloud|gcloud version|Google Cloud SDK 533.0.0"

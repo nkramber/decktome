@@ -12,9 +12,18 @@ import (
 	"github.com/nkramber/decktome/go/internal/livespend"
 )
 
-// minReplays is the number of replays with a deck that each side of the
-// bar needs (D-1200).
+// minReplays is the number of replays with a score that each side of
+// the bar needs (D-1200).
 const minReplays = 3
+
+// passFailFixReplays is the number of fix replays with a score that a
+// bar of pass or fail needs (D-1214). A fix that does nothing passes six
+// of six with a chance of 1 in 64 when half of the base replays fail.
+const passFailFixReplays = 6
+
+// passFail is the scale of a bar of pass or fail. Each score is 1 for a
+// pass and 0 for a fail (D-1214).
+const passFail = "pass-fail"
 
 // replayTarget is the target of the spend lines of a replay.
 const replayTarget = "chat-probe"
@@ -30,13 +39,15 @@ type barFailed []string
 func (b barFailed) Error() string { return "the bar does not hold: " + strings.Join(b, "; ") }
 
 // verdict is verdict.json, which the eval session writes (D-1200). Each
-// replay names the id of its spend lines, and a replay that built no deck
-// has no score (D-1205).
+// replay names the id of its spend lines. A replay that never reached
+// the fault has no score (D-1205, D-1212). Scale is passFail for a bar
+// of pass or fail, and empty for a count (D-1214).
 type verdict struct {
 	Bar     string    `json:"bar"`
 	Metric  string    `json:"metric"`
 	Better  string    `json:"better"`
 	Target  *float64  `json:"target"`
+	Scale   string    `json:"scale"`
 	Replays []replayV `json:"replays"`
 }
 
@@ -62,6 +73,13 @@ func barFaults(v verdict, runs []livespend.Run, baseTree, headTree string) []str
 	}
 	if v.Target == nil {
 		why = append(why, "verdict.json names no target")
+	}
+	pf := v.Scale == passFail
+	if v.Scale != "" && !pf {
+		why = append(why, fmt.Sprintf("scale %q is not %q or empty", v.Scale, passFail))
+	}
+	if pf && (!higher || v.Target == nil || *v.Target != 1) {
+		why = append(why, `a bar of pass or fail needs "better" "higher" and the target 1`)
 	}
 	if baseTree == "" || headTree == "" {
 		return append(why, "the tree of the base or of the head does not read")
@@ -97,6 +115,8 @@ func barFaults(v verdict, runs []livespend.Run, baseTree, headTree string) []str
 			why = append(why, fmt.Sprintf("run %s: it built another tree than the %s code", rp.Run, rp.Side))
 		case rp.Score != nil && !r.Ended:
 			why = append(why, fmt.Sprintf("run %s: it has a score and no end line in a log", rp.Run))
+		case rp.Score != nil && pf && *rp.Score != 0 && *rp.Score != 1:
+			why = append(why, fmt.Sprintf("run %s: score %g is not 1 or 0 on a bar of pass or fail", rp.Run, *rp.Score))
 		case rp.Score != nil:
 			scores[rp.Side] = append(scores[rp.Side], *rp.Score)
 		}
@@ -111,13 +131,20 @@ func barFaults(v verdict, runs []livespend.Run, baseTree, headTree string) []str
 			}
 		}
 	}
+	need := map[string]int{"base": minReplays, "fix": minReplays}
+	if pf {
+		need["fix"] = passFailFixReplays
+	}
 	for _, side := range []string{"base", "fix"} {
-		if n := len(scores[side]); n < minReplays {
-			why = append(why, fmt.Sprintf("the %s side has %d replays with a deck, and it needs %d", side, n, minReplays))
+		if n := len(scores[side]); n < need[side] {
+			why = append(why, fmt.Sprintf("the %s side has %d replays with a score, and it needs %d", side, n, need[side]))
 		}
 	}
 	if len(why) > 0 || v.Target == nil {
 		return why
+	}
+	if pf {
+		return passFailFaults(scores["base"], scores["fix"])
 	}
 	worstFix, bestBase := worst(scores["fix"], higher), worst(scores["base"], !higher)
 	if higher && worstFix <= bestBase || !higher && worstFix >= bestBase {
@@ -127,6 +154,32 @@ func barFaults(v verdict, runs []livespend.Run, baseTree, headTree string) []str
 		why = append(why, fmt.Sprintf("the worst fix replay (%g) does not reach the target (%g)", worstFix, *v.Target))
 	}
 	return why
+}
+
+// passFailFaults is the counted rule of a bar of pass or fail (D-1214).
+// The fault must show in half or more of the base replays, so the base
+// proves it. Each fix replay must pass. A fault that shows on some base
+// replays alone can never meet the rule of the worst and the best.
+func passFailFaults(base, fix []float64) []string {
+	var why []string
+	if n := fails(base); 2*n < len(base) {
+		why = append(why, fmt.Sprintf("the fault shows in %d of %d base replays, and the bar needs half or more", n, len(base)))
+	}
+	if n := fails(fix); n > 0 {
+		why = append(why, fmt.Sprintf("%d of %d fix replays fail, and each one must pass", n, len(fix)))
+	}
+	return why
+}
+
+// fails counts the scores of 0 on a bar of pass or fail.
+func fails(s []float64) int {
+	n := 0
+	for _, x := range s {
+		if x == 0 {
+			n++
+		}
+	}
+	return n
 }
 
 // worst is the lowest score when higher is better, else the highest.

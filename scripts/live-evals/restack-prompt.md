@@ -44,10 +44,11 @@ A rebase can change the tree of `go/` on each side of the bar. Then the earlier 
 6. Replay the chat three or more times, as step 3b of the eval prompt says.
 7. Name these files `{{replay}}/restack-base-<n>.txt` and `{{replay}}/restack-base-<n>-decks.jsonl`.
 8. Run `git switch {{branch}}`.
-9. Replay the chat three or more times, to `{{replay}}/restack-<n>.txt` and `{{replay}}/restack-<n>-decks.jsonl`.
-10. Write `{{bundle}}/verdict.json` again. List each replay of the two new trees, the earlier ones too.
-11. Run the bar check again.
-12. When the bar check fails, write the result `blocked`, with each fault in `reason`.
+9. Replay the chat as item 4 of step 4 of the eval prompt says.
+10. Write each replay to `{{replay}}/restack-<n>.txt` and `{{replay}}/restack-<n>-decks.jsonl`.
+11. Write `{{bundle}}/verdict.json` again. List each replay of the two new trees, the earlier ones too.
+12. Run the bar check again.
+13. When the bar check fails, write the result `blocked`, with each fault in `reason`.
 
 The replays obey section "Paid targets" of the eval prompt, and the budget of ${{budget}} counts the earlier spend. Run no other paid target.
 

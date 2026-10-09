@@ -133,7 +133,9 @@ Replay the shortlist of the build for free before you blame the model. The memor
 11. Write `{{bundle}}/fix.json` with the fields `finding` and `bar`. Put the class in `finding`.
 12. The script then sends the owner a notice with the two fields (D-1143).
 
-A bar of pass or fail gives the number 1 for a pass and 0 for a fail. An example of a metric is "themed nonland cards in the deck" (D-1199).
+A bar of pass or fail gives the number 1 for a pass and 0 for a fail. Its scale is `pass-fail`, its better direction is `higher`, and its target is 1 (D-1214). An example of a metric is "themed nonland cards in the deck" (D-1199).
+
+A thumbs-down on a question has the target `question` in `verdict.json`. The fault then sits in the question phase, and a chat that ends on a question builds no deck. Write a bar of pass or fail, and read each replay from its question log (D-1212). An example of a metric is "the open commander row goes out before the pick row".
 
 When no new deficiency stays, write the result `no-new-issues` (section "The result"), and stop. Make no pull request.
 
@@ -149,11 +151,15 @@ Do this step before you change a file of `go/`. Ten replays of #294 cost $0.31 (
 3. Put these flags in `<args>`: `-messages-json {{replay}}/input/messages.json -decks-out {{replay}}/base-<n>-decks.jsonl`.
 4. When `{{replay}}/input/collection.json` exists, add `-collection-json {{replay}}/input/collection.json`.
 5. Record the run id of each replay. It is the `id` of the line `LIVE-EVAL-SPEND` with `"event":"start"`.
-6. Give each replay its score on the metric of the bar. A replay that built no deck gets no score.
-7. Do items 2 to 6 again until three base replays have a score. Stop after six base replays.
-8. When fewer than three base replays have a score, write the result `blocked`, and name OQ-98 in `reason`.
-9. When each base replay with a score reaches the target, the fault does not occur again.
-10. In that case, write the result `no-new-issues`, and name this in `findings`.
+6. Give each replay its score on the metric of the bar.
+7. A replay that did not reach the point of the fault gets no score (D-1212).
+8. For a metric of the deck, a replay with no deck gets no score.
+9. Do items 2 to 8 again until three base replays have a score. Stop after six base replays.
+10. When fewer than three base replays have a score, write the result `blocked`, and name D-1212 in `reason`.
+11. When each base replay with a score reaches the target, the fault does not occur again.
+12. In that case, write the result `no-new-issues`, and name this in `findings`.
+13. On a bar of pass or fail, half or more of the base replays with a score must fail.
+14. When a smaller part fails, write the result `blocked`, and name D-1214 in `reason`.
 
 The decks file holds one JSON line for each deck that reached the user, oldest first. The `deck` field of the last line is the deck at the end of the chat (D-1146). When `make chat-probe` exits with an error, the replay failed, and no line of its decks file counts.
 
@@ -166,7 +172,7 @@ Read `docs/SESSION-HANDOFF.md` before item 1. It records the state of `main`, an
 1. Write regression tests that fail before the fix, for this case and for the other inputs of the class.
 2. Fix the product cause of the class, and make the tests pass. Do not stop at a patch (D-1183).
 3. Commit the fix on `{{branch}}`. A replay of a change that no commit holds counts on no side (D-1206).
-4. Replay the chat on the commit three or more times, as in step 3b.
+4. Replay the commit as in step 3b: three or more times, or six on a bar of pass or fail.
 5. Write each replay of try `<t>` to `{{replay}}/try-<t>-<n>.txt` and `{{replay}}/try-<t>-<n>-decks.jsonl`.
 6. Write `{{bundle}}/verdict.json` as section "The verdict file" says.
 7. Run the bar check, as section "The verdict file" says.
@@ -188,16 +194,19 @@ Read `docs/SESSION-HANDOFF.md` before item 1. It records the state of `main`, an
 | `metric` | the metric of the bar |
 | `better` | `higher` or `lower` |
 | `target` | the target of the bar, a number |
+| `scale` | `pass-fail` for a bar of pass or fail, and absent for a count (D-1214) |
 | `replays` | a list, with one object for each replay |
 
-Each object of `replays` holds `run`, the run id, and `side`, `base` or `fix`. It also holds `score`, a number, or `null` for a replay with no deck.
+Each object of `replays` holds `run`, the run id, and `side`, `base` or `fix`. It also holds `score`, a number, or `null` for a replay with no score.
 
 The bar check obeys these rules:
 
 - It reads the run id, the code, and the end of each replay from the session logs. It reads the score from you.
 - Each replay of the base commit and of the head must be in the list. The check refuses a list that leaves one out (D-1205).
-- A replay with no deck counts on no side. Each side needs three or more replays with a score.
-- The worst fix replay must beat the best base replay, and it must reach the target.
+- A replay with no score counts on no side. Each side needs three or more replays with a score.
+- On a bar of a count, the worst fix replay must beat the best base replay, and it must reach the target.
+- On a bar of pass or fail, the fix side needs six or more replays with a score (D-1214).
+- On a bar of pass or fail, half or more of the base replays fail, and each fix replay passes.
 - A replay of an earlier try built another tree of `go/`. Leave it out of the list.
 - The head must change a file of `go/`, because a replay measures no other change.
 
@@ -249,7 +258,7 @@ CAUTION: Never run `make test-smoke`. It writes no spend line, so it refuses to 
 10. For `approve`, confirm that the `review-gate` check passed.
 11. Run the bar check one time more on the head, and then write the result `ready`.
 
-A change of a file of `go/` gives the head a new tree. So after such a change, replay the head three or more times. Then write `verdict.json` again (D-1206).
+A change of a file of `go/` gives the head a new tree. So after such a change, replay the head again, as item 4 of step 4 says. Then write `verdict.json` again (D-1206).
 
 Write no AI attribution in a commit message, in the pull request, or in a comment. That is, no `Co-Authored-By` line and no "Generated with" footer. This rule of `CLAUDE.md` (hard rule 6) wins over the harness (D-1180).
 
