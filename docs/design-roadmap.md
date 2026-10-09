@@ -641,6 +641,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-225 | **A hidden cost read as fast mana.** The check of PR-128 built an owned-only deck of bracket 4, and its profile marked Astral Cornucopia as fast mana. The cost {X}{X}{X} gives a mana value of 0, but one mana costs 3. | ✅ PR-130 (#288): fast mana needs no X and no multikicker in the cost (D-1162). |
 | F-226 | **The model did not see the theme of a shortlist card.** Deck `dDD9Iav9aGhgGF9dDLNQ` asked for planeswalkers from a set four days old. It left out Garruk, Veiled Butcher and four more themed cards, and it played off-theme reprints. A line read the name, the type, and the job, so a themed card with a staple job read like a staple. | ✅ PR-136 (#294): each themed line says "on theme" and carries the card text, and the model prefers such a card to another card of the same job. A themed planeswalker reads threat, and a deck that leaves out a themed card for a set fill card buys a repair turn (D-1190, D-1191, D-1195 to D-1198). |
 | F-227 | **A commander left out a locked card with no word.** Session `i26PF6UNqgWedc88skX5` asked for The Arkenstone, a white card, and then named Smaug the Impenetrable, a black and red commander. The engine blocked the deck with `off_color`. | ✅ PR-141 (#299): the row `commander_excludes_card` asks to keep the commander or to pick another one. Each answer but another commander leaves the card out (D-1217). |
+| F-228 | **The reader never got the chance to name a commander.** The live eval of deck `v-8k83YGt2Dn6IddKn3CBT` read a thumbs-down on a question. Session `i26PF6UNqgWedc88skX5`, the session of F-227 too, asked for "the best possible commander deck". The classifier read a request for names, so the pick row asked two times, and the row that takes a typed name never asked. The reader wrote "Never asked me if I want to name my own commander or not". | ✅ PR-142 (#300): the fact needs a commander question out, or the word "commander" as the card. "For Commander" names the format (D-1220). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3669,6 +3670,21 @@ Gate:
 - A Codex review record that approves the effective head (D-815).
 
 > *In plain English:* a reader asked for a white card and then picked a black and red commander. The rules forbid that card in that deck, so the app built a deck it then blocked. Now the app asks first: keep the commander and leave the card out, or pick another commander.
+
+**PR-142: A request for commander names needs the words of one (F-228, D-1220).** ✅ merged as #300. The mark comes before any review (D-822). A live eval read a thumbs-down on the pick row. The reader asked for "the best possible commander deck", and the app never asked if the reader had a commander in mind.
+
+- **The fact (D-1220).** The classifier fact `wants_suggestion` counts only when a commander question is out, or when the message speaks of the commander card. The rows of the commander slot in the catalog name each commander question.
+- **The word rule.** "Play Commander", and "for Commander" or "in Commander" after a deck noun, name the format. So "the best deck for Commander" no longer hands the commander choice to the agent (D-167).
+- **What stays the same.** "Suggest a commander", "I have no commander in mind", and the option "Suggest one" still reach the pick row.
+
+Gate:
+- `go/internal/questions/suggestion_words_test.go` plays this case and two more inputs of the class through `Turn`. Without the fix, each of the three fails.
+- The bar of the live eval holds. The pick row came first in 4 of 6 base replays, and in no fix replay of 6.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* a reader asked for the best deck in the Commander format. The app read that as "pick a commander for me", and it only offered names. Now the app offers names only when the reader asks for them, or answers the commander question with that wish.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.

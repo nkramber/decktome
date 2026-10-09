@@ -6,31 +6,27 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-08, PR-141)
+## RESUME HERE (2026-10-09, PR-142)
 
-**Branch `fix/commander-excludes-named-card`, PR-141, pull request #299: a commander that leaves out a locked card asks first (F-227, D-1217).** Role: author.
+**Branch `live-eval/v-8k83ygt2dn`, PR-142, pull request #300: a request for commander names needs the words of one (F-228, D-1220).** Role: author, a headless live-eval session.
 
 Author provider: Claude Code
 
-**The base.** `main` at `6583b2b`, the merge of #298. A second session rebased it from `6d684dc` (D-1219).
+**The base.** `main` at `5022913`, the merge of #299.
 
-**The cause.** Session `i26PF6UNqgWedc88skX5` asked for The One Ring and The Arkenstone. Then the reader named Smaug the Impenetrable. No row compared the commander with the locked cards, so the engine blocked deck `t5qJDgMGhwScPe1Z0n6Z` with `off_color`.
+**The cause.** The retry of D-1215 read the eval of deck `v-8k83YGt2Dn6IddKn3CBT` again. `applyFacts` trusted the fact `wants_suggestion` with no word check. So "the best possible commander deck" sent the pick row, and the commander row never asked.
 
 **The code.**
 
-- `go/internal/questions/catalog.json`: the row `commander_excludes_card`, with two options.
-- `go/internal/questions/agent.go`: `readExclusion` sets the fact after each answer. `applyExclusionOption` reads the two options.
-- `go/internal/questions/resolve.go`: the placeholders `{commander_name}`, `{commander_colors}`, and `{excluded_cards}`.
-- `go/internal/questions/snapshot.go`: version 8 keeps the cards and the last commander that the row named.
-- `.claude/skills/mtg-corpus/SKILL.md`: the corpus row. `go/cmd/questions-gate/conversations.json`: probe 111.
+- `go/internal/questions/agent.go`: `applyFacts` reads the open keys. `commanderQuestionOut` reads the commander rows of the catalog.
+- `go/internal/questions/words.go`: `mentionsCommander` keeps a negated word. `namesCommander` reads "for Commander" after a deck noun as the format.
+- `go/internal/questions/suggestion_words_test.go`: this case, two more inputs of the class, and the controls.
 
-**Checks.** `go test ./...` passes. The tests of `go/internal/questions/commander_excludes_test.go` play the deployed case. Question gate run 64 passed with 74 of 75 for $0.1067, and probe 111 asked the row. The eval of run 64 called The Arkenstone colorless, so the row now names the colors of each card.
+**Checks.** `go test ./...` passes. The bar of pass or fail holds: 4 of 6 base replays failed, and 6 of 6 replays of the head passed. The 18 replays cost $0.31, measured.
 
-**Review.** Gitar reviewed the current tip `50233b6`. The review has no open finding. Codex reviewed effective head `16b82bc`. Verdict: Ready for owner merge. No finding.
+**Review.** Gitar approved `df4b1de` with two findings, and `4e0252a` answers both. Codex reviewed effective head `1e28631c7f44c62a00157e1721c196008215906a`. Verdict: Ready for owner merge. No finding.
 
-**The rebase.** #298 merged the Go bump first (D-1216), so the bump needs no pull request of its own (D-1219). The decisions of this item moved to D-1217 and D-1218.
-
-**Next action.** The owner reads the Codex review and decides whether to merge.
+**Next action.** The owner reads the notice of the live eval and decides whether to merge. The item of D-1211 no longer needs to fix F1.
 
 ## How to resume
 
@@ -105,8 +101,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it. Each tick stops on the old pin until the merge. Then read the next tick, and run `make live-evals-install CONFIRM=1` from `main` when it still stops.
-0. **The retry of the blocked eval** (D-1215). After the merge, run `make live-evals-retry ITEM=v-8k83YGt2Dn6IddKn3CBT`. Read its `verdict.json` and the bar line of the script log.
-0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. It fixes F1 only when the retry does not.
+0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. PR-142 fixes F1 (D-1220).
 0. **The live check of PR-141** (D-1217). After the deploy, ask for The Arkenstone and name Smaug the Impenetrable. The chat must ask to keep Smaug or pick another commander.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -130,6 +125,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-09: the commander row before the pick row, PR-142
+
+**The live eval of D-1215 ran again on `main`.** Six base replays gave the pick row first four times, so the counted bar of D-1214 held.
+
+**The fix reads the words of a request for names.** A commander question out, or the word "commander" as the card, keeps the fact. A test also found that "the best deck for Commander" skipped every commander question.
+
 ### 2026-10-08: a commander that leaves out a locked card, PR-141
 
 **The owner asked why deck `t5qJDgMGhwScPe1Z0n6Z` was not legal.** The Arkenstone is white, and Smaug the Impenetrable is black and red. The session first said that no offer held white. That was wrong, because Dwalin, Weaponmaster is red and white.
@@ -148,14 +149,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **A new Go advisory failed CI.** The owner asked for one Go version everywhere. The go line of `go/go.mod` names it, and a check holds the copies (D-1216).
 
-### 2026-10-07b: the keychain store of a live-eval session, PR-139
-
-**The cause was the Apple Git config.** It sets osxkeychain, and the clone added the gh helper after it. So git sent the session token to the keychain after each push (D-1209).
-
-**The owner read the keychain.** No "x-access-token" item exists, and the default keychain sits in the home folder that the profile denies.
-
-**The live check of PR-137 passed, and the owner asked for two changes in this pull request.** The import dialog now fits the screen, and the bookmark comes first. The owner kept the new tab, because a page can not bring an open tab to the front (D-1210).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-07, the records of 2026-08-31 to 2026-10-06, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-08, the records of 2026-08-31 to 2026-10-07b, and 104 more sections, word for word. Read it for the detail behind a decision.

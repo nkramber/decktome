@@ -1700,7 +1700,7 @@ func (a *Agent) apply(ctx context.Context, st *State, out classifyOut, open []st
 	}
 	applyAvoid(st, out.Avoid)
 	a.applyKeys(st, out, open, message)
-	a.applyFacts(st, out, message)
+	a.applyFacts(st, out, open, message)
 }
 
 // SlotAvoid is the state key of the avoid slot (D-1122). No row asks it,
@@ -2427,8 +2427,9 @@ func (s *State) fillPrecons(res *Result) {
 	s.preconsNoneThisTurn, s.preconsUnavailableThisTurn = false, false
 }
 
-// applyFacts writes the classifier facts onto the context.
-func (a *Agent) applyFacts(st *State, out classifyOut, message string) {
+// applyFacts writes the classifier facts onto the context. The open
+// keys are the questions that were out when the message came.
+func (a *Agent) applyFacts(st *State, out classifyOut, open []string, message string) {
 	f := out.Facts
 	st.Ctx.NamedCard = st.Ctx.NamedCard || f.NamedCard
 	st.Ctx.BuyList = st.Ctx.BuyList || f.BuyList
@@ -2455,12 +2456,39 @@ func (a *Agent) applyFacts(st *State, out classifyOut, message string) {
 	// A request for a suggestion does not retire the names on the
 	// table. The same three stay until the user asks for others, and
 	// a refusal is what asks (D-80, D-120, D-123).
-	st.Ctx.Suggested = st.Ctx.Suggested || f.WantsSuggestion
+	//
+	// The fact hands the commander choice to the agent, so the user's
+	// own words must carry it. The classifier read "the best possible
+	// commander deck" as a request for names, and the row that lets the
+	// user name a commander never asked (D-1220). The fact counts when a
+	// commander question was out, or when the message speaks of the card
+	// that leads the deck. Otherwise the commander row asks, and its
+	// option "Suggest one" still reaches the pick row.
+	if f.WantsSuggestion && !a.commanderQuestionOut(open) && !mentionsCommander(message) {
+		a.log.Info("the classifier asked for commander names the message does not ask for, so the commander row asks first",
+			"session", st.SessionID)
+	} else {
+		st.Ctx.Suggested = st.Ctx.Suggested || f.WantsSuggestion
+	}
 	// A word rule can fire when the classifier misses one (corpus 11).
 	// anyPhrase reads the negation, so "we have a ban list" fires nothing.
 	if slot := Route(st.Ctx.Words); slot == "house_rules" {
 		st.Ctx.HouseFormat = st.Ctx.HouseFormat || anyPhrase(st.Ctx.Words, []string{"no ban list"})
 	}
+}
+
+// commanderQuestionOut reports whether a row of the commander slot was
+// out when the message came. It reads the catalog, so a new commander
+// row counts with no change here (D-1220).
+func (a *Agent) commanderQuestionOut(open []string) bool {
+	for _, key := range open {
+		for _, r := range a.cat.Rows {
+			if r.Slot == "commander" && r.StateKey() == key {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // power maps the classifier's power word onto the proto message.

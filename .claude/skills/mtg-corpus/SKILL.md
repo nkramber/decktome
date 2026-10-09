@@ -343,6 +343,8 @@ Slot rules: a slot stays open through the question phase. A later answer replace
 
 Commander rules: a name the user gives as the commander closes every commander row (D-71), the "can not lead" row included. The three rows ask one thing in different words. The pick row is the one exception to the no-repeat rule. It asks again only when the names on the table change. The same three names stay on the table until the user asks for others, and a retired name never comes back (D-73, D-80). The row never sends one list twice (D-163).
 
+The pick row needs the words of a request for names, or an answer to a commander question. "The best possible commander deck" and "the best deck for Commander" name the format, so the commander row asks first (D-1220).
+
 A superlative such as "buy the best lifegain commander" hands the choice to the agent, as "you pick" does (D-147, D-167).
 
 Locked-card rule: a card that becomes the commander is not a locked card (D-70). The locked row retired on 2026-08-28 (A-6). The classifier names the locked cards, the session state holds them, and the build keeps every one (D-242). No question asks whether the deck can cut one.
