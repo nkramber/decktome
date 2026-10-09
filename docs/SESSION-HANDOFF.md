@@ -32,7 +32,7 @@ Author provider: Claude Code
 
 **Review.** Gitar approved `952e046`, with 4 findings closed and no open threads. Codex round 1 found no defect but lacked hand-off evidence. This review approves effective head `952e046`, with no finding.
 
-**Next action.** Push the review metadata, wait for `review-gate`, then ask the owner for merge confirmation (D-834).
+**Next action.** Ask the owner for merge confirmation (D-834).
 
 ## How to resume
 
