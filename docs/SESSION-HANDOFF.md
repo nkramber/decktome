@@ -22,9 +22,9 @@ Author provider: Claude Code
 - `go/internal/questions/words.go`: `mentionsCommander` keeps a negated word. `namesCommander` reads "for Commander" after a deck noun as the format.
 - `go/internal/questions/suggestion_words_test.go`: this case, two more inputs of the class, and the controls.
 
-**Checks.** `go test ./...` passes. The bar of pass or fail holds: 4 of 6 base replays failed, and 6 of 6 fix replays passed. The replays cost $0.13, measured.
+**Checks.** `go test ./...` passes. The bar of pass or fail holds: 4 of 6 base replays failed, and 6 of 6 replays of the head passed. The 18 replays cost $0.31, measured.
 
-**Review.** Pending: Gitar, then `make codex-review`.
+**Review.** Gitar approved `df4b1de` with two findings, and `4e0252a` answers both. Then `make codex-review`.
 
 **Next action.** The owner reads the notice of the live eval and decides whether to merge. The item of D-1211 no longer needs to fix F1.
 
