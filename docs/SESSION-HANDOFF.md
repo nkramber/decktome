@@ -6,27 +6,29 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-09, PR-142)
+## RESUME HERE (2026-10-09, PR-143)
 
-**Branch `live-eval/v-8k83ygt2dn`, PR-142, pull request #300: a request for commander names needs the words of one (F-228, D-1220).** Role: author, a headless live-eval session.
+**Branch `live-eval/n9c1qmefun0b`, PR-143, pull request #PRNUM: the cast trigger of a commander names the theme of its shortlist (F-229, D-1221).** Role: author, a headless live-eval session.
 
 Author provider: Claude Code
 
-**The base.** `main` at `5022913`, the merge of #299.
+**The base.** `main` at `b7f483f`, the merge of #300.
 
-**The cause.** The retry of D-1215 read the eval of deck `v-8k83YGt2Dn6IddKn3CBT` again. `applyFacts` trusted the fact `wants_suggestion` with no word check. So "the best possible commander deck" sent the pick row, and the commander row never asked.
+**The cause.** The live eval of deck `N9c1QMEFUN0BratBUR2v` read a Jodah, the Unifier deck with no theme word. Jodah counts legendary spells, and no theme row names them. The owned-only shortlist held 20 of the 570 owned legendary nonland cards, and the deck held 17.
 
 **The code.**
 
-- `go/internal/questions/agent.go`: `applyFacts` reads the open keys. `commanderQuestionOut` reads the commander rows of the catalog.
-- `go/internal/questions/words.go`: `mentionsCommander` keeps a negated word. `namesCommander` reads "for Commander" after a deck noun as the format.
-- `go/internal/questions/suggestion_words_test.go`: this case, two more inputs of the class, and the controls.
+- `go/internal/candidates/commander_spells.go`: `commanderSpells` reads each cast trigger of the commander into a class of spells.
+- `go/internal/candidates/theme.go`: a spell of the class scores as a card type does. The class adds no word.
+- `go/internal/candidates/commander_spells_test.go`: Jodah, and two more inputs of the class, Jhoira and Sythis.
 
-**Checks.** `go test ./...` passes. The bar of pass or fail holds: 4 of 6 base replays failed, and 6 of 6 replays of the head passed. The 18 replays cost $0.31, measured.
+**Checks.** `go test ./...` passes. The bar holds: three base replays held 19, 16, and 16 legendary nonland cards, and three fix replays held 46, 45, and 47. The seven replays cost $0.63, measured.
 
-**Review.** Gitar approved `df4b1de` with two findings, and `4e0252a` answers both. Codex reviewed effective head `1e28631c7f44c62a00157e1721c196008215906a`. Verdict: Ready for owner merge. No finding.
+**Replay input.** The reader chose owned cards alone on the chat screen, and the replay input does not hold that choice. So each scored replay adds the turn "Use only my library."
 
-**Next action.** The owner reads the notice of the live eval and decides whether to merge. The item of D-1211 no longer needs to fix F1.
+**Review.** REVIEW_STATE
+
+**Next action.** The owner reads the notice of the live eval and decides whether to merge. OQ-100 and OQ-101 hold the side effects that the replays read.
 
 ## How to resume
 
@@ -125,6 +127,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-09: the cast trigger of a commander, PR-143
+
+**A live eval read a deck of the owner.** The reader declined the theme and picked Jodah, the Unifier. The shortlist read no cast trigger, so it offered few legends.
+
+**The fix reads each cast trigger of the commander.** The snapshot holds 236 such triggers on legal commanders, and the rule of F-212 read one phrase.
+
 ### 2026-10-09: the commander row before the pick row, PR-142
 
 **The live eval of D-1215 ran again on `main`.** Six base replays gave the pick row first four times, so the counted bar of D-1214 held.
@@ -139,16 +147,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **#298 merged the Go bump first.** The owner told a second session to rebase this pull request on `main` (D-1219).
 
-### 2026-10-08: the question bar of a live eval, PR-140
-
-**The owner asked why a live eval waited on a question.** The eval read a thumbs-down on a question, and no replay of the chat built a deck. So the bar had no score, and the prompt named OQ-98.
-
-**The owner answered three questions of that eval.** F1 goes to the item of D-1211, and the pick row keeps its text (D-1212, D-1213). The owner then asked to fix the evals.
-
-**A bar of pass or fail had a second fault.** It needed each base replay to fail, and the fault showed in 3 of 5. The owner chose the counted rule for each such bar (D-1214), and a retry of the eval after the merge (D-1215).
-
-**A new Go advisory failed CI.** The owner asked for one Go version everywhere. The go line of `go/go.mod` names it, and a check holds the copies (D-1216).
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-08, the records of 2026-08-31 to 2026-10-07b, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-09, the records of 2026-08-31 to 2026-10-08, and 104 more sections, word for word. Read it for the detail behind a decision.
