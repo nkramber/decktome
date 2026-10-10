@@ -28,7 +28,9 @@ Author provider: Claude Code
 
 **Not verified.** No headless probe ran under the switch. The auto-mode classifier refuses a launch of `claude -p` with `bypassPermissions`. The binary holds the name of the switch.
 
-**Next action.** Do the Gitar pass, then the Codex review. After the merge, the next tick runs the new script from `origin/main`. Then run `make live-evals-retry ITEM=v-als6BE4NsM3WGhr3EAeG` after the owner confirms. The retry starts a paid session.
+**Review.** Gitar passed on effective head `31f91f5`. The Codex review is ready for owner merge, with no finding.
+
+**Next action.** After the merge, the next tick runs the new script from `origin/main`. Then run `make live-evals-retry ITEM=v-als6BE4NsM3WGhr3EAeG` after the owner confirms. The retry starts a paid session.
 
 ## How to resume
 
