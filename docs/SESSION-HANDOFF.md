@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-09, PR-143)
 
-**Branch `live-eval/n9c1qmefun0b`, PR-143, pull request #PRNUM: the cast trigger of a commander names the theme of its shortlist (F-229, D-1221).** Role: author, a headless live-eval session.
+**Branch `live-eval/n9c1qmefun0b`, PR-143, pull request #301: the cast trigger of a commander names the theme of its shortlist (F-229, D-1221).** Role: author, a headless live-eval session.
 
 Author provider: Claude Code
 
@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **Replay input.** The reader chose owned cards alone on the chat screen, and the replay input does not hold that choice. So each scored replay adds the turn "Use only my library."
 
-**Review.** REVIEW_STATE
+**Review.** Gitar and Codex pending on #301.
 
 **Next action.** The owner reads the notice of the live eval and decides whether to merge. OQ-100 and OQ-101 hold the side effects that the replays read.
 
