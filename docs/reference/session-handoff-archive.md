@@ -15,6 +15,38 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-09, PR-145
+
+**Branch `fix/live-eval-no-background`, PR-145, pull request #303: a live-eval session gets no background task (D-1223).** Role: author.
+
+Author provider: Claude Code
+
+**The base.** `main` at `58e2ffb`, the merge of #301.
+
+**The cause.** The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result. Each session opened #302, started `make codex-review` as a background task, and ended its turn to wait. The process of `claude -p` ends with the turn, so it stopped the review each time. The skill `one-pr-one-session` says to run the review in the background, and the session obeyed it.
+
+**The code.**
+
+- `scripts/live-evals.sh`: `run_claude` sets `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`. The longest Bash timeout is the time limit of the session, and the default is 30 minutes.
+- `scripts/live-evals.sh`: the setup refuses a pinned Claude Code that does not know the switch. Version 2.1.288 knows it.
+- `scripts/live-evals.sh`: `last_words` puts the last result text of the session in the failure notice.
+- `scripts/live-evals/eval-prompt.md`: the section "One turn, no background command" wins over each skill. The restack prompt names it.
+- `docs/tools/test_live_evals_session.py`: tests of the switch, the guard, the prompts, and `last_words`.
+
+**Checks.** The six new tests pass. `bash -n` passes.
+
+**Not verified.** No headless probe ran under the switch. The auto-mode classifier refuses a launch of `claude -p` with `bypassPermissions`. The binary holds the name of the switch.
+
+**Review.** Gitar passed on effective head `31f91f5`. The Codex review is ready for owner merge, with no finding.
+
+**Next action.** After the merge, the next tick runs the new script from `origin/main`. Then run `make live-evals-retry ITEM=v-als6BE4NsM3WGhr3EAeG` after the owner confirms. The retry starts a paid session.
+
+### 2026-10-09: the commander row before the pick row, PR-142
+
+**The live eval of D-1215 ran again on `main`.** Six base replays gave the pick row first four times, so the counted bar of D-1214 held.
+
+**The fix reads the words of a request for names.** A commander question out, or the word "commander" as the card, keeps the fact. A test also found that "the best deck for Commander" skipped every commander question.
+
 ## The resume section of 2026-10-09, PR-143
 
 **Branch `live-eval/n9c1qmefun0b`, PR-143, pull request #301: the cast trigger of a commander names the theme of its shortlist (F-229, D-1221).** Role: author, a headless live-eval session.
