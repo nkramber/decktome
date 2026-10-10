@@ -15,6 +15,38 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-09, PR-143
+
+**Branch `live-eval/n9c1qmefun0b`, PR-143, pull request #301: the cast trigger of a commander names the theme of its shortlist (F-229, D-1221).** Role: author, a headless live-eval session.
+
+Author provider: Claude Code
+
+**The base.** `main` at `b7f483f`, the merge of #300.
+
+**The cause.** The live eval of deck `N9c1QMEFUN0BratBUR2v` read a Jodah, the Unifier deck with no theme word. Jodah counts legendary spells, and no theme row names them. The owned-only shortlist held 20 of the 570 owned legendary nonland cards, and the deck held 17.
+
+**The code.**
+
+- `go/internal/candidates/commander_spells.go`: `commanderSpells` reads each cast trigger of the commander into a class of spells.
+- `go/internal/candidates/theme.go`: a spell of the class scores as a card type does. The class adds no word.
+- `go/internal/candidates/commander_spells_test.go`: Jodah, and two more inputs of the class, Jhoira and Sythis.
+
+**Checks.** `go test ./...` passes. The bar holds: three base replays held 19, 16, and 16 legendary nonland cards, and three replays of the head held 45, 45, and 44. The ten replays cost $0.84, measured, try 1 included.
+
+**Replay input.** The reader chose owned cards alone on the chat screen, and the replay input does not hold that choice. So each scored replay adds the turn "Use only my library."
+
+**Review.** Gitar found that `Empty` read the class, so a filler theme named the deck. `a5e8125` fixes it with a test. Codex reviewed effective head `b63a2f5d4cec28ba614af2e8e2d959f6a5445a84`. Verdict: Ready for owner merge. No finding.
+
+**Next action.** The owner reads the notice of the live eval and decides whether to merge. OQ-100 and OQ-101 hold the side effects that the replays read.
+
+### 2026-10-08: a commander that leaves out a locked card, PR-141
+
+**The owner asked why deck `t5qJDgMGhwScPe1Z0n6Z` was not legal.** The Arkenstone is white, and Smaug the Impenetrable is black and red. The session first said that no offer held white. That was wrong, because Dwalin, Weaponmaster is red and white.
+
+**The owner chose a question in the chat** (option A of D-1217). A drop at the build stays out, so a delegated commander can still keep a card outside the colors.
+
+**#298 merged the Go bump first.** The owner told a second session to rebase this pull request on `main` (D-1219).
+
 ## The resume section of 2026-10-09, PR-142
 
 **Branch `live-eval/v-8k83ygt2dn`, PR-142, pull request #300: a request for commander names needs the words of one (F-228, D-1220).** Role: author, a headless live-eval session.

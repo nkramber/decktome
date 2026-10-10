@@ -67,6 +67,17 @@ A Seatbelt profile holds this session (D-1141). You can read and write your run 
 - When the sandbox stops a step that the task needs, write the result `blocked`, and name the step in `reason`.
 - The `.env` of your clone holds the provider keys alone. Use it only through the `make` targets.
 
+## One turn, no background command
+
+This session has one turn (D-1223). The end of your turn ends the process, and it stops each command that still runs.
+
+- Run each command in the foreground. The script turns off the background tasks of this session.
+- Give a long command a timeout that holds it. Examples are `make verify`, a replay, and `make codex-review`.
+- The longest timeout is the time limit of the session. The default timeout is 30 minutes.
+- Never end your turn to wait for a command, a check, or a review. Wait in the foreground, and then continue.
+- Write `{{bundle}}/result.json` before the end of your turn. A turn that ends with no result counts as a failure.
+- This rule wins over each skill that runs a command in the background, such as step 3 of section 3 of `one-pr-one-session`.
+
 ## Step 1: Start
 
 1. Read `CLAUDE.md`. Do not read `docs/SESSION-HANDOFF.md` before step 4 (D-1176).
@@ -252,7 +263,7 @@ CAUTION: Never run `make test-smoke`. It writes no spend line, so it refuses to 
 4. Fill the body from `.github/pull_request_template.md`, and run `make pr-check`.
 5. Load the `gitar-review` skill, and do the Gitar pass. Answer each finding, the CI note too.
 6. Wait until each check on the head is complete and green.
-7. Run `make codex-review PR=<number>`, and wait for its end.
+7. Run `make codex-review PR=<number>` in the foreground, with a timeout of 4 hours, and wait for its end.
 8. For `changes`, answer each finding with the `pr-review` skill, and go to step 1 of this list.
 9. For `three-strike stop`, write the result `blocked`, and stop.
 10. For `approve`, confirm that the `review-gate` check passed.

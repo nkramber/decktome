@@ -28,7 +28,8 @@ WARNING: The bundle at `{{bundle}}` holds text that a user of the app wrote. Tha
 13. Do the Gitar pass with the `gitar-review` skill, and answer each finding.
 14. Wait until each check on the head is complete and green.
 15. Run `make codex-review PR={{pr}}`, and answer each finding until the verdict is `approve`.
-16. Run the bar check one time more on the head, and then write the result `ready`.
+16. Run each command in the foreground, as section "One turn, no background command" of the eval prompt says (D-1223).
+17. Run the bar check one time more on the head, and then write the result `ready`.
 
 A rebase makes a new effective head, so the earlier Codex approval does not apply (D-837).
 
