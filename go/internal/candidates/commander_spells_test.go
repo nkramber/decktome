@@ -142,3 +142,29 @@ func TestCommanderSpellsJoinTheShortlist(t *testing.T) {
 		}
 	}
 }
+
+// TestCommanderSpellsKeepAFillerThemeEmpty is the Gitar finding on #301.
+// A theme of filler words holds no signal, so the deck takes the name of
+// its format (F-196, D-1038). The spells of the cast trigger add no word,
+// so the theme stays empty, and the trigger still pulls its spells in.
+func TestCommanderSpellsKeepAFillerThemeEmpty(t *testing.T) {
+	b, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	wubrg := []mtgv1.Color{W, U, B, R, G}
+	idx := fixture(t, []tc{
+		{id: "jodah", name: "Jodah, the Unifier", typeLine: "Legendary Creature — Human Wizard", text: jodahText, identity: wubrg, mv: 5, rank: 900, subtypes: []string{"Human", "Wizard"}},
+		{id: "isamaru", name: "Isamaru, Hound of Konda", typeLine: "Legendary Creature — Dog", identity: []mtgv1.Color{W}, mv: 1, rank: 9000, subtypes: []string{"Dog"}},
+	})
+	list, err := b.Build(idx, Request{Format: cmdr, Colors: wubrg, Theme: "the best possible deck", CommanderOracleIDs: []string{"jodah"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !list.Theme.Empty() {
+		t.Errorf("a filler theme reads not empty: %s", list.Theme.Describe())
+	}
+	if c, ok := find(list.Candidates, "Isamaru, Hound of Konda"); !ok || !c.OnTheme {
+		t.Errorf("the cast trigger must still pull Isamaru in on theme: %+v, %v", c, ok)
+	}
+}

@@ -215,7 +215,9 @@ type ThemeMatch struct {
 // Empty reports whether the theme holds no signal, so no card can be on
 // it. "The best possible deck" is all stop words: the owned count of its
 // theme is 0 for each collection, and a thin-theme claim on it is false
-// (F-196, D-1038).
+// (F-196, D-1038). The spells of a commander cast trigger stay out: they
+// carry no word, so a theme of filler words still names the deck by its
+// format (F-229).
 func (m ThemeMatch) Empty() bool {
 	for _, s := range [][]string{
 		m.PayoffSlugs, m.Slugs, m.PayoffText, m.Keywords, m.Subtypes, m.Types,
@@ -225,7 +227,7 @@ func (m ThemeMatch) Empty() bool {
 			return false
 		}
 	}
-	return len(m.CommanderSpells) == 0
+	return true
 }
 
 // noisyShare is the share of the card database above which a generic
