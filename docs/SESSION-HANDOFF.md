@@ -25,11 +25,11 @@ Author provider: Claude Code
 - `web/apps/web/src/features/chat/question-card.tsx`: the pick card reads "Name your own".
 - `go/cmd/questions-gate/conversations.json`: probe 112. `.claude/skills/mtg-corpus/SKILL.md`: the corpus row.
 
-**Checks.** `go test ./...` passes. Without the fix, each of the four case tests fails. The web test of the page passes. Question gate run 65 passed with 75 of 75 for $0.1065, and probe 112 met each expected slot.
+**Checks.** `go test ./...` passes. Without the fix, each of the four case tests fails. The web test of the page passes. Question gate run 66 passed on `cc0503d` with 75 of 75 for $0.1068, and probe 112 met each expected slot. `cc0503d` holds the code of `51e5def` and the Codex record alone. Run 65 ran on uncommitted changes, so it recorded `b7f483f`.
 
-**Review.** Gitar approved effective head `51e5def`. The Codex review is Blocked on `51e5def`, with open finding P1-1. Question gate run 65 records base commit `b7f483f`, so it does not prove the gate on this PR.
+**Review.** Gitar approved effective head `51e5def`. Codex round 1 gave Blocked on `51e5def`, with finding P1-1: run 65 recorded `b7f483f`. The owner chose a rerun, and run 66 answers P1-1.
 
-**Next action.** The owner authorizes a fresh paid question-gate run on the PR code. Then update both gate artifacts and request a new Codex review.
+**Next action.** Do the Gitar pass on the run 66 commit, and run `make codex-review PR=304` for round 2. Then the owner confirms the merge, and the author turns on the auto-merge (D-828).
 
 ## How to resume
 

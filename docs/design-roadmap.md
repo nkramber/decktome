@@ -3749,7 +3749,7 @@ Gate:
 - `go/internal/questions/answer_words_test.go` plays the three faults of the replays through `Turn`. Without the fix, each of the four case tests fails.
 - The same file holds the guard cases: "Not Jace", a card in the 99, and Sol Ring. It also holds two bracket options, "Not 1 Exhibition", a bracket of the classifier, and "skip the expensive cards".
 - `web/apps/web/src/features/chat/session-page.test.tsx` reads the placeholder of the pick card, and of no other card.
-- Question gate run 65 passed with 75 of 75 for $0.1065. Probe 112 plays the shape of the chat, and it met each expected slot.
+- Question gate run 66 passed on the code of this item with 75 of 75 for $0.1068. Probe 112 plays the shape of the chat, and it met each expected slot.
 - `make verify` passes.
 - A current Gitar review, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).
