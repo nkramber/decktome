@@ -6,31 +6,29 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-09, PR-145)
+## RESUME HERE (2026-10-09, PR-144)
 
-**Branch `fix/live-eval-no-background`, PR-145, pull request #303: a live-eval session gets no background task (D-1223).** Role: author.
+**Branch `live-eval/v-als6be4nsm`, PR-144, pull request #302: an inflected stop word that no card holds leaves the theme (F-230, D-1222).** Role: author, a headless live-eval session.
 
 Author provider: Claude Code
 
-**The base.** `main` at `58e2ffb`, the merge of #301.
+**The base.** `main` at `b04b7e8`, the merge of #303.
 
-**The cause.** The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result. Each session opened #302, started `make codex-review` as a background task, and ended its turn to wait. The process of `claude -p` ends with the turn, so it stopped the review each time. The skill `one-pr-one-session` says to run the review in the background, and the session obeyed it.
+**The cause.** The live eval of thumbs-down `als6BE4NsM3WGhr3EAeG` read the request "making lots of treasure tokens and using them to win". The theme row asked about "making". The stop lists hold "make", but the stop check read the surface form alone.
 
 **The code.**
 
-- `scripts/live-evals.sh`: `run_claude` sets `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`. The longest Bash timeout is the time limit of the session, and the default is 30 minutes.
-- `scripts/live-evals.sh`: the setup refuses a pinned Claude Code that does not know the switch. Version 2.1.288 knows it.
-- `scripts/live-evals.sh`: `last_words` puts the last result text of the session in the failure notice.
-- `scripts/live-evals/eval-prompt.md`: the section "One turn, no background command" wins over each skill. The restack prompt names it.
-- `docs/tools/test_live_evals_session.py`: tests of the switch, the guard, the prompts, and `last_words`.
+- `go/internal/candidates/theme.go`: `settleWords` fills the unmatched list after the scan. `fillerForm` reads the -s, -ing, and -ed base forms of a word that fired on no card.
+- `go/internal/candidates/candidates.go`: `Build` calls `settleWords`.
+- `go/internal/candidates/stopwords_test.go` and `go/internal/candidates/stopwords_snapshot_test.go`: this case, "building around dragons", "a deck that wanted lots of elves", and the controls.
 
-**Checks.** The six new tests pass. `bash -n` passes.
+**Checks.** `go test ./...` and `make themes-check` pass. The bar of pass or fail holds: 3 of 3 base replays failed, and 6 of 6 replays of the head passed. The 9 replays cost $0.0048, measured. After the rebase, `make verify` passed on this Mac, with the `docker` step.
 
-**Not verified.** No headless probe ran under the switch. The auto-mode classifier refuses a launch of `claude -p` with `bypassPermissions`. The binary holds the name of the switch.
+**The rebase.** The two eval sessions stopped before the Codex review (D-1223). A second session rebased this pull request on `b04b7e8`. It kept D-1223 and PR-145 of `main` beside D-1222, F-230, and PR-144, so the retry of the eval is not necessary.
 
-**Review.** Gitar passed on effective head `31f91f5`. The Codex review is ready for owner merge, with no finding.
+**Review.** Gitar approved `533298a` and `0c29594` with no thread, and the author answered each CI note. The first Codex record gave `Blocked` on `bd881a9`, because the checkout held no replay output. `docs/reference/pr302-replays-2026-10-09.md` and `docs/reviews/pr-302-response.md` answer it. The second record gives `Ready for owner merge` on `0c29594`, with no open finding.
 
-**Next action.** After the merge, the next tick runs the new script from `origin/main`. Then run `make live-evals-retry ITEM=v-als6BE4NsM3WGhr3EAeG` after the owner confirms. The retry starts a paid session.
+**Next action.** This pull request waits for the confirmation of the owner, then the auto-merge (D-828, D-834). OQ-102 to OQ-106 hold the other findings of the eval.
 
 ## How to resume
 
@@ -103,7 +101,6 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
-0. **The retry of deck `v-als6BE4NsM3WGhr3EAeG`** (D-1223). After the merge of PR-145, run `make live-evals-retry ITEM=v-als6BE4NsM3WGhr3EAeG`. Its session finishes #302. Ask the owner first, because the retry starts a paid session.
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it. Each tick stops on the old pin until the merge. Then read the next tick, and run `make live-evals-install CONFIRM=1` from `main` when it still stops.
 0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. PR-142 fixes F1 (D-1220).
@@ -130,6 +127,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-09b: an inflected stop word in the theme, PR-144
+
+**A live eval read a thumbs-down on the theme question.** The row asked about "making" in a request for treasure tokens. The stop check read the surface form of a word alone.
+
+**The fix reads the base forms of a word that no card holds.** A rule on the base forms alone also dropped "blocking", which 335 cards hold.
+
 ### 2026-10-09: a live-eval session that waited for a background review, PR-145
 
 **The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result.** Each session started the Codex review of #302 in the background and ended its turn. The end of the turn stopped the review.
@@ -141,12 +144,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **A live eval read a deck of the owner.** The reader declined the theme and picked Jodah, the Unifier. The shortlist read no cast trigger, so it offered few legends.
 
 **The fix reads each cast trigger of the commander.** The snapshot holds 236 such triggers on legal commanders, and the rule of F-212 read one phrase.
-
-### 2026-10-09: the commander row before the pick row, PR-142
-
-**The live eval of D-1215 ran again on `main`.** Six base replays gave the pick row first four times, so the counted bar of D-1214 held.
-
-**The fix reads the words of a request for names.** A commander question out, or the word "commander" as the card, keeps the fact. A test also found that "the best deck for Commander" skipped every commander question.
 
 ## The archive
 

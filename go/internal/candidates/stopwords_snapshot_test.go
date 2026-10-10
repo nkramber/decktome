@@ -1,6 +1,7 @@
 package candidates
 
 import (
+	"maps"
 	"strings"
 	"testing"
 
@@ -29,7 +30,9 @@ func TestFillerReachesNoThemeSnapshot(t *testing.T) {
 		}
 		return list.Stats.OnTheme, list.Theme.Unmatched
 	}
-	for theme, bare := range fillerThemes {
+	all := maps.Clone(fillerThemes)
+	maps.Copy(all, inflectedFillerThemes)
+	for theme, bare := range all {
 		got, missed := onTheme(theme)
 		if len(missed) > 0 {
 			t.Errorf("%q leaves %v unmatched, and the theme row would ask", theme, missed)
@@ -38,6 +41,22 @@ func TestFillerReachesNoThemeSnapshot(t *testing.T) {
 			t.Errorf("%q puts %d cards on theme, want %d as %q does", theme, got, want, bare)
 		}
 	}
+}
+
+// inflectedFillerThemes are the themes of F-230, each with the theme words
+// that must survive. The first is the prompt of a live eval. On the code
+// before F-230 each one asked the theme row about the -s, -ing, or -ed form
+// of a stop word, on the snapshot of 2026-09-04.
+var inflectedFillerThemes = map[string]string{
+	"making lots of treasure tokens and using them to win": "treasure tokens using win",
+	"building around dragons":                              "dragons",
+	"a deck that wanted lots of elves":                     "elves",
+	"a deck that makes lots of treasure":                   "treasure",
+	"builds around treasure tokens":                        "treasure tokens",
+	"needing lots of zombies":                              "zombies",
+	"focusing on lifegain":                                 "lifegain",
+	"liked goblins":                                        "goblins",
+	"giving my creatures counters":                         "creatures counters",
 }
 
 // TestStopWordsNameNoSubtypeSnapshot reads every subtype of a card that
