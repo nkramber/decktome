@@ -152,7 +152,8 @@ const (
 
 // ThemeMatch is the resolved theme, for logs and the gate doc.
 type ThemeMatch struct {
-	// Words are the normalized theme words in input order.
+	// Words are the normalized theme words in input order. Build drops
+	// each filler form that fired on no card (F-230).
 	Words []string
 	// Rows maps a word that found its row through an alias or a base form
 	// onto that row, such as "milling" onto mill (D-724).
@@ -193,7 +194,7 @@ type ThemeMatch struct {
 	// pool. Build fills it after the scan: a needle is a guess until a
 	// card holds it. A signal that two words bring counts for both, so a
 	// word is never unmatched because an earlier word brought its signal
-	// first (D-1116).
+	// first (D-1116). A filler form is never unmatched (F-230).
 	Unmatched []string
 	// CommanderRows lists the rows that a commander of the request added
 	// through its own trigger, with no word of the user (F-212).
@@ -382,6 +383,51 @@ func (m ThemeMatch) unmatchedWords(fired firedSignals) []string {
 		}
 	}
 	return out
+}
+
+// settleWords fills Unmatched after the scan of the pool, and it drops
+// each filler form from Words (F-230). A filler form fired on no card, so
+// it adds no signal to the shortlist, and the theme row must not name it.
+// A form that fired on a card stays a theme word, such as "blocking".
+func (m *ThemeMatch) settleWords(fired firedSignals) {
+	m.Unmatched = nil
+	var filler []string
+	for _, w := range m.unmatchedWords(fired) {
+		if fillerForm(w) {
+			filler = append(filler, w)
+			continue
+		}
+		m.Unmatched = append(m.Unmatched, w)
+	}
+	if len(filler) > 0 {
+		m.Words = slices.DeleteFunc(slices.Clone(m.Words), func(w string) bool {
+			return slices.Contains(filler, w)
+		})
+	}
+}
+
+// fillerForm reports whether a word is an -s, -ing, or -ed form of a stop
+// word (F-230). The stop lists hold "make", "build", and "want", and the
+// theme row asked about "making". A list of each form of each stop word
+// grew one chat at a time, so this rule reads the base forms in place of
+// the list. The base forms can also name a real theme: "blocking" is a
+// form of the filler word "block" and sits in the text of 335 cards. So
+// settleWords reads this rule only for a word that fired on no card.
+func fillerForm(w string) bool {
+	forms := wordForms(w)[1:]
+	// The verb forms join here and not in wordForms, because rowOf reads
+	// wordForms, and "countered" would find the counters row. A verb takes
+	// a plain -s or -es, and singular reads "gives" as "gif".
+	if stem, ok := strings.CutSuffix(w, "s"); ok && !strings.HasSuffix(stem, "s") {
+		forms = append(forms, stem, strings.TrimSuffix(stem, "e"))
+	}
+	if stem, ok := strings.CutSuffix(w, "ed"); ok && utf8.RuneCountInString(stem) >= minStemLen {
+		forms = append(forms, stem, stem+"e")
+		if n := len(stem); stem[n-1] == stem[n-2] {
+			forms = append(forms, stem[:n-1])
+		}
+	}
+	return slices.ContainsFunc(forms, isStopWord)
 }
 
 // match turns the user's words into signals. Each word maps through the

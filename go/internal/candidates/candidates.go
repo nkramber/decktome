@@ -522,7 +522,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	// The best finishers take the wincon role and the pin, up to the
 	// target of the bracket (D-726, D-741).
 	promoteFinishers(scored, req, mode, FinisherTarget(req.Bracket), finishers)
-	theme.Unmatched = theme.unmatchedWords(fired)
+	theme.settleWords(fired)
 
 	// The cards the sets hold rank on their own. The outside cards are a
 	// fill and never a competitor, so they are held back and added after

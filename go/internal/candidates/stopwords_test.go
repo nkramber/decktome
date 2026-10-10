@@ -1,8 +1,11 @@
 package candidates
 
 import (
+	"slices"
 	"strings"
 	"testing"
+
+	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
 )
 
 // fillerThemes are the theme phrasings of D-1188, each with the theme words
@@ -58,6 +61,65 @@ func TestStopWordsNameNoTheme(t *testing.T) {
 			if cardTypes[title(singular(w))] {
 				t.Errorf("stop word %q names a card type", w)
 			}
+		}
+	}
+}
+
+// TestInflectedFillerLeavesTheMatch is F-230. The stop lists hold "make",
+// "build", and "want", and the theme row asked about "making" in "making
+// lots of treasure tokens and using them to win". An -s, -ing, or -ed form
+// of a stop word that fires on no card is filler, so it is no theme word
+// and the theme row never names it. A form that a card holds stays, such
+// as "blocking" of the filler word "block".
+func TestInflectedFillerLeavesTheMatch(t *testing.T) {
+	b, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	idx := fixture(t, append(testCards(),
+		tc{id: "wall", name: "Wall of Denial", typeLine: "Creature — Wall", text: "Whenever this creature blocks, it gets +0/+2 until end of turn for each blocking creature you control.", identity: []mtgv1.Color{W}, mv: 3, rank: 900},
+	))
+	cases := map[string][]string{
+		"making lots of lifegain":                 {"lifegain"},
+		"building around cats":                    {"cats"},
+		"a deck that wanted lots of lifegain":     {"lifegain"},
+		"lifegain that makes and builds counters": {"lifegain", "counters"},
+		"needing, liking, and focusing on cats":   {"cats"},
+		"blocking lifegain":                       {"blocking", "lifegain"},
+		"making":                                  nil,
+	}
+	for theme, want := range cases {
+		list, err := b.Build(idx, Request{Format: cmdr, Theme: theme, PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(list.Theme.Unmatched) > 0 {
+			t.Errorf("%q leaves %v unmatched, and the theme row would ask", theme, list.Theme.Unmatched)
+		}
+		if !slices.Equal(list.Theme.Words, want) {
+			t.Errorf("%q has the theme words %v, want %v", theme, list.Theme.Words, want)
+		}
+	}
+	// A word that is no form of a stop word stays unmatched (D-1116).
+	list, err := b.Build(idx, Request{Format: cmdr, Theme: "making zzzz lifegain", PoolRule: mtgv1.PoolRule_POOL_RULE_ANY_CARD})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(list.Theme.Unmatched, []string{"zzzz"}) {
+		t.Errorf("unmatched %v, want [zzzz]", list.Theme.Unmatched)
+	}
+}
+
+// TestFillerFormReadsTheInflections guards the forms of F-230.
+func TestFillerFormReadsTheInflections(t *testing.T) {
+	for _, w := range []string{"making", "makes", "building", "builds", "wanted", "wanting", "needed", "liked", "giving", "gives", "focusing", "focuses", "fitting", "blocking"} {
+		if !fillerForm(w) {
+			t.Errorf("fillerForm(%q) = false, want true", w)
+		}
+	}
+	for _, w := range []string{"make", "treasure", "tokens", "milling", "sacrificed", "zzzz", "used", "red", "wishing"} {
+		if fillerForm(w) {
+			t.Errorf("fillerForm(%q) = true, want false", w)
 		}
 	}
 }
