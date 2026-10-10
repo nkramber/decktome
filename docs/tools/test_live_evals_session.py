@@ -40,7 +40,9 @@ class SessionEnvTest(unittest.TestCase):
         self.assertIn("## One turn, no background command", prompt)
         self.assertIn("`make codex-review PR=<number>` in the foreground", prompt)
         with open(os.path.join(PROMPTS, "restack-prompt.md"), encoding="utf-8") as handle:
-            self.assertIn('section "One turn, no background command"', handle.read())
+            restack = handle.read()
+        self.assertLess(restack.index("## One turn, no background command"), restack.index("## Steps"))
+        self.assertIn("`make codex-review PR={{pr}}` in the foreground, with a timeout of 4 hours", restack)
 
 
 class LastWordsTest(unittest.TestCase):
