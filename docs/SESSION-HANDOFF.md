@@ -22,7 +22,7 @@ Author provider: Claude Code
 - `go/internal/candidates/candidates.go`: `Build` calls `settleWords`.
 - `go/internal/candidates/stopwords_test.go` and `go/internal/candidates/stopwords_snapshot_test.go`: this case, "building around dragons", "a deck that wanted lots of elves", and the controls.
 
-**Checks.** `go test ./...` and `make themes-check` pass. The bar of pass or fail holds: 3 of 3 base replays failed, and 6 of 6 replays of the head passed. The 9 replays cost $0.0048, measured.
+**Checks.** `go test ./...` and `make themes-check` pass. The bar of pass or fail holds: 3 of 3 base replays failed, and 6 of 6 replays of the head passed. The 9 replays cost $0.0048, measured. After the rebase, `make verify` passed on this Mac, with the `docker` step.
 
 **The rebase.** The two eval sessions stopped before the Codex review (D-1223). A second session rebased this pull request on `b04b7e8`. It kept D-1223 and PR-145 of `main` beside D-1222, F-230, and PR-144, so the retry of the eval is not necessary.
 
