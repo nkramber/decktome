@@ -27,9 +27,9 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. Without the fix, each of the four case tests fails. The web test of the page passes. Question gate run 65 passed with 75 of 75 for $0.1065, and probe 112 met each expected slot.
 
-**Review.** Before the rebase, Gitar approved `39bd5bc`, and Codex gave Ready for owner merge on it with no finding. The rebase makes a new effective head, so it needs a new Gitar pass and a new Codex review.
+**Review.** Gitar approved effective head `51e5def`. The Codex review is Blocked on `51e5def`, with open finding P1-1. Question gate run 65 records base commit `b7f483f`, so it does not prove the gate on this PR.
 
-**Next action.** Run `make verify`, push, do the Gitar pass, and run `make codex-review PR=304`. Then the owner confirms the merge, and the author turns on the auto-merge (D-828).
+**Next action.** The owner authorizes a fresh paid question-gate run on the PR code. Then update both gate artifacts and request a new Codex review.
 
 ## How to resume
 
