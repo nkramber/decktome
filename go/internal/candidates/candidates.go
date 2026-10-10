@@ -345,6 +345,9 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 		}
 	}
 	theme := b.themes.matchIn(req.Theme, idx, b.themes.commanderRows(commanders, idx.Tags())...)
+	// A commander whose cast trigger counts a kind of spell adds that
+	// kind, with no word of the user (F-229).
+	theme.CommanderSpells = commanderSpells(commanders, idx)
 	avoid := b.themes.avoidMatch(req.Avoid, idx)
 	// A caller that names its own floors keeps them, and an empty map
 	// turns the floor off.

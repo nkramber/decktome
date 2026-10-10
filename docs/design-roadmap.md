@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-09 correction pass 271 (PR-143, F-229, D-1221): a live eval read a Jodah, the Unifier deck with 17 legendary cards. The shortlist read no cast trigger of the commander, so it offered 20 of the 570 owned legends. Each spell that the trigger counts is now on theme. Changes: F-229, PR-143.
 2026-10-08 correction pass 270 (PR-140, D-1211 to D-1216): the first live eval under PR-138 read a thumbs-down on a question. It ended `blocked`, because no replay built a deck. A question fault now gets a bar of pass or fail from the question log, and that bar counts its replays. A Go advisory moved each build to Go 1.27.2. Changes: PR-140.
 2026-10-07 correction pass 269 (PR-139, D-1209, D-1210): a live-eval session asked macOS to store its GitHub token, because the Apple Git config holds osxkeychain. The clone now holds the gh helper alone. The import dialog of a Moxfield link was taller than the screen. Each dialog now scrolls inside, and the steps fold under the bookmark. Changes: PR-139.
 2026-10-07 correction pass 268 (PR-138, D-1200, D-1203 to D-1208): the eval session of #294 called its fix ready on one replay of each side. A live eval now holds its bar with a script check and prompt rules. A key of the owner signs each build of the tool, so the grant of the volume stays. Changes: PR-125, PR-138.
@@ -642,6 +643,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-226 | **The model did not see the theme of a shortlist card.** Deck `dDD9Iav9aGhgGF9dDLNQ` asked for planeswalkers from a set four days old. It left out Garruk, Veiled Butcher and four more themed cards, and it played off-theme reprints. A line read the name, the type, and the job, so a themed card with a staple job read like a staple. | ✅ PR-136 (#294): each themed line says "on theme" and carries the card text, and the model prefers such a card to another card of the same job. A themed planeswalker reads threat, and a deck that leaves out a themed card for a set fill card buys a repair turn (D-1190, D-1191, D-1195 to D-1198). |
 | F-227 | **A commander left out a locked card with no word.** Session `i26PF6UNqgWedc88skX5` asked for The Arkenstone, a white card, and then named Smaug the Impenetrable, a black and red commander. The engine blocked the deck with `off_color`. | ✅ PR-141 (#299): the row `commander_excludes_card` asks to keep the commander or to pick another one. Each answer but another commander leaves the card out (D-1217). |
 | F-228 | **The reader never got the chance to name a commander.** The live eval of deck `v-8k83YGt2Dn6IddKn3CBT` read a thumbs-down on a question. Session `i26PF6UNqgWedc88skX5`, the session of F-227 too, asked for "the best possible commander deck". The classifier read a request for names, so the pick row asked two times, and the row that takes a typed name never asked. The reader wrote "Never asked me if I want to name my own commander or not". | ✅ PR-142 (#300): the fact needs a commander question out, or the word "commander" as the card. "For Commander" names the format (D-1220). |
+| F-229 | **The shortlist did not read the cast trigger of the commander.** The live eval of deck `N9c1QMEFUN0BratBUR2v` read a build of the owner. The reader declined the theme and picked Jodah, the Unifier from the offer. Jodah counts legendary spells, and no theme row names them. So the owned-only shortlist held 20 of the 570 owned legendary nonland cards, and the deck held 17. The summary said that the deck favors answers "over maximum legendary density". | ✅ PR-143 (#301): the spells that a cast trigger of the commander counts score as a card type does (D-1221). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3685,6 +3687,21 @@ Gate:
 - A Codex review record that approves the effective head (D-815).
 
 > *In plain English:* a reader asked for the best deck in the Commander format. The app read that as "pick a commander for me", and it only offered names. Now the app offers names only when the reader asks for them, or answers the commander question with that wish.
+
+**PR-143: The cast trigger of a commander names the theme of its shortlist (F-229, D-1221).** ✅ merged as #301. The mark comes before any review (D-822). A live eval read a Jodah, the Unifier deck with no theme word. The deck held 17 legendary cards, and the collection held 570.
+
+- **The rule (D-1221).** The shortlist reads each cast trigger of the commander: "Whenever you cast a legendary spell" names legendary spells. Each such spell scores as a card type does, so it is on theme.
+- **The words.** A type, a held subtype, a color, a color count, historic, and a "non" word each name a kind of spell. "Kicked" names no kind.
+- **What stays the same.** The class adds no theme word. So the theme question names no word of it, no theme is thin, and the deck name stays the format. The row `heroic` of F-212 still reads its own phrase.
+
+Gate:
+- `go/internal/candidates/commander_spells_test.go` reads Jodah, the Unifier, Jhoira, Weatherlight Captain, and Sythis, Harvest's Hand. Without the fix, each fails.
+- The bar of the live eval holds. Three base replays held 19, 16, and 16 legendary nonland cards, and three replays of the head held 45, 45, and 44.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* a commander that rewards one kind of spell now gets those spells offered, also when the reader names no theme. Jodah rewards legends, and the deck now holds them.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.

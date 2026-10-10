@@ -15,6 +15,38 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-09, PR-142
+
+**Branch `live-eval/v-8k83ygt2dn`, PR-142, pull request #300: a request for commander names needs the words of one (F-228, D-1220).** Role: author, a headless live-eval session.
+
+Author provider: Claude Code
+
+**The base.** `main` at `5022913`, the merge of #299.
+
+**The cause.** The retry of D-1215 read the eval of deck `v-8k83YGt2Dn6IddKn3CBT` again. `applyFacts` trusted the fact `wants_suggestion` with no word check. So "the best possible commander deck" sent the pick row, and the commander row never asked.
+
+**The code.**
+
+- `go/internal/questions/agent.go`: `applyFacts` reads the open keys. `commanderQuestionOut` reads the commander rows of the catalog.
+- `go/internal/questions/words.go`: `mentionsCommander` keeps a negated word. `namesCommander` reads "for Commander" after a deck noun as the format.
+- `go/internal/questions/suggestion_words_test.go`: this case, two more inputs of the class, and the controls.
+
+**Checks.** `go test ./...` passes. The bar of pass or fail holds: 4 of 6 base replays failed, and 6 of 6 replays of the head passed. The 18 replays cost $0.31, measured.
+
+**Review.** Gitar approved `df4b1de` with two findings, and `4e0252a` answers both. Codex reviewed effective head `1e28631c7f44c62a00157e1721c196008215906a`. Verdict: Ready for owner merge. No finding.
+
+**Next action.** The owner reads the notice of the live eval and decides whether to merge. The item of D-1211 no longer needs to fix F1.
+
+### 2026-10-08: the question bar of a live eval, PR-140
+
+**The owner asked why a live eval waited on a question.** The eval read a thumbs-down on a question, and no replay of the chat built a deck. So the bar had no score, and the prompt named OQ-98.
+
+**The owner answered three questions of that eval.** F1 goes to the item of D-1211, and the pick row keeps its text (D-1212, D-1213). The owner then asked to fix the evals.
+
+**A bar of pass or fail had a second fault.** It needed each base replay to fail, and the fault showed in 3 of 5. The owner chose the counted rule for each such bar (D-1214), and a retry of the eval after the merge (D-1215).
+
+**A new Go advisory failed CI.** The owner asked for one Go version everywhere. The go line of `go/go.mod` names it, and a check holds the copies (D-1216).
+
 ## The resume section of 2026-10-08, PR-141
 
 **Branch `fix/commander-excludes-named-card`, PR-141, pull request #299: a commander that leaves out a locked card asks first (F-227, D-1217).** Role: author.
