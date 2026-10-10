@@ -27,9 +27,9 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. Without the fix, each of the four case tests fails. The web test of the page passes. Question gate run 66 passed on `cc0503d` with 75 of 75 for $0.1068, and probe 112 met each expected slot. `cc0503d` holds the code of `51e5def` and the Codex record alone. Run 65 ran on uncommitted changes, so it recorded `b7f483f`.
 
-**Review.** Gitar approved effective head `a0f5017` with no open finding. Codex round 2 gives Ready for owner merge on `a0f5017`. P1-1 is fixed: run 66 records `cc0503d`, the PR code, and probe 112 met each expected slot.
+**Review.** Gitar approved effective head `a0f5017` with no open finding. Codex round 2 gives Ready for owner merge on `a0f5017`. P1-1 is fixed: run 66 records `cc0503d`, the PR code, and probe 112 met each expected slot. `docs/reviews/pr-304-response.md` holds the answer to P1-1.
 
-**Next action.** The owner reviews the four-part summary and confirms the merge. Then the author turns on the auto-merge (D-828).
+**Next action.** The pull request is pending the auto-merge. The owner reviews the four-part summary and confirms the merge. Then the author turns on the auto-merge (D-828).
 
 ## How to resume
 
