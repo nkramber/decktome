@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **The rebase.** The two eval sessions stopped before the Codex review (D-1223). A second session rebased this pull request on `b04b7e8`. It kept D-1223 and PR-145 of `main` beside D-1222, F-230, and PR-144, so the retry of the eval is not necessary.
 
-**Review.** Gitar and Codex review the rebased head.
+**Review.** The effective head is `bd881a9`. Gitar passed. Codex found no code defect, but the review is blocked because the F-230 replay bar has no outputs or bar artifact in this checkout.
 
 **Next action.** The owner reads the notice of the live eval and decides whether to merge. OQ-102 to OQ-106 hold the other findings of the eval.
 
