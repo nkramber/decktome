@@ -15,6 +15,36 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-09, PR-144
+
+**Branch `live-eval/v-als6be4nsm`, PR-144, pull request #302: an inflected stop word that no card holds leaves the theme (F-230, D-1222).** Role: author, a headless live-eval session.
+
+Author provider: Claude Code
+
+**The base.** `main` at `b04b7e8`, the merge of #303.
+
+**The cause.** The live eval of thumbs-down `als6BE4NsM3WGhr3EAeG` read the request "making lots of treasure tokens and using them to win". The theme row asked about "making". The stop lists hold "make", but the stop check read the surface form alone.
+
+**The code.**
+
+- `go/internal/candidates/theme.go`: `settleWords` fills the unmatched list after the scan. `fillerForm` reads the -s, -ing, and -ed base forms of a word that fired on no card.
+- `go/internal/candidates/candidates.go`: `Build` calls `settleWords`.
+- `go/internal/candidates/stopwords_test.go` and `go/internal/candidates/stopwords_snapshot_test.go`: this case, "building around dragons", "a deck that wanted lots of elves", and the controls.
+
+**Checks.** `go test ./...` and `make themes-check` pass. The bar of pass or fail holds: 3 of 3 base replays failed, and 6 of 6 replays of the head passed. The 9 replays cost $0.0048, measured. After the rebase, `make verify` passed on this Mac, with the `docker` step.
+
+**The rebase.** The two eval sessions stopped before the Codex review (D-1223). A second session rebased this pull request on `b04b7e8`. It kept D-1223 and PR-145 of `main` beside D-1222, F-230, and PR-144, so the retry of the eval is not necessary.
+
+**Review.** Gitar approved `533298a` and `0c29594` with no thread, and the author answered each CI note. The first Codex record gave `Blocked` on `bd881a9`, because the checkout held no replay output. `docs/reference/pr302-replays-2026-10-09.md` and `docs/reviews/pr-302-response.md` answer it. The second record gives `Ready for owner merge` on `0c29594`, with no open finding.
+
+**Next action.** This pull request waits for the confirmation of the owner, then the auto-merge (D-828, D-834). OQ-102 to OQ-106 hold the other findings of the eval.
+
+### 2026-10-09: the cast trigger of a commander, PR-143
+
+**A live eval read a deck of the owner.** The reader declined the theme and picked Jodah, the Unifier. The shortlist read no cast trigger, so it offered few legends.
+
+**The fix reads each cast trigger of the commander.** The snapshot holds 236 such triggers on legal commanders, and the rule of F-212 read one phrase.
+
 ## The resume section of 2026-10-09, PR-145
 
 **Branch `fix/live-eval-no-background`, PR-145, pull request #303: a live-eval session gets no background task (D-1223).** Role: author.

@@ -203,6 +203,19 @@ describe("SessionPage", () => {
     expect(screen.getByRole("button", { name: "Submit answers" })).toBeEnabled();
   });
 
+  it("the pick row asks for a name of the reader's own, and no other row does (D-1213)", async () => {
+    const pick = { id: "q3-commander_pick", slot: "commander", text: "Which commander do you want?", options: ["Jace", "Tam", "Tomik"], optionOracleIds: [] };
+    chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", pick), ev("question", formatQuestion)]));
+    await renderAt("/session/new");
+    const user = userEvent.setup();
+    await user.type(await screen.findByLabelText("Your message"), "planeswalkers");
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    const card = await screen.findByRole("group", { name: "Question: Which commander do you want?" });
+    expect(within(card).getByRole("textbox")).toHaveAttribute("placeholder", "Name your own");
+    const other = screen.getByRole("group", { name: "Question: Which format?" });
+    expect(within(other).getByRole("textbox")).not.toHaveAttribute("placeholder");
+  });
+
   it("an option pick toggles, and a second pick replaces it", async () => {
     chat.mockReturnValueOnce(events([ev("sessionStarted", "s1"), ev("question", formatQuestion)]));
     await renderAt("/session/new");
