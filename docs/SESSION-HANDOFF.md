@@ -6,29 +6,31 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-09, PR-143)
+## RESUME HERE (2026-10-09, PR-145)
 
-**Branch `live-eval/n9c1qmefun0b`, PR-143, pull request #301: the cast trigger of a commander names the theme of its shortlist (F-229, D-1221).** Role: author, a headless live-eval session.
+**Branch `fix/live-eval-no-background`, PR-145, pull request #303: a live-eval session gets no background task (D-1223).** Role: author.
 
 Author provider: Claude Code
 
-**The base.** `main` at `b7f483f`, the merge of #300.
+**The base.** `main` at `58e2ffb`, the merge of #301.
 
-**The cause.** The live eval of deck `N9c1QMEFUN0BratBUR2v` read a Jodah, the Unifier deck with no theme word. Jodah counts legendary spells, and no theme row names them. The owned-only shortlist held 20 of the 570 owned legendary nonland cards, and the deck held 17.
+**The cause.** The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result. Each session opened #302, started `make codex-review` as a background task, and ended its turn to wait. The process of `claude -p` ends with the turn, so it stopped the review each time. The skill `one-pr-one-session` says to run the review in the background, and the session obeyed it.
 
 **The code.**
 
-- `go/internal/candidates/commander_spells.go`: `commanderSpells` reads each cast trigger of the commander into a class of spells.
-- `go/internal/candidates/theme.go`: a spell of the class scores as a card type does. The class adds no word.
-- `go/internal/candidates/commander_spells_test.go`: Jodah, and two more inputs of the class, Jhoira and Sythis.
+- `scripts/live-evals.sh`: `run_claude` sets `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`. The longest Bash timeout is the time limit of the session, and the default is 30 minutes.
+- `scripts/live-evals.sh`: the setup refuses a pinned Claude Code that does not know the switch. Version 2.1.288 knows it.
+- `scripts/live-evals.sh`: `last_words` puts the last result text of the session in the failure notice.
+- `scripts/live-evals/eval-prompt.md`: the section "One turn, no background command" wins over each skill. The restack prompt names it.
+- `docs/tools/test_live_evals_session.py`: tests of the switch, the guard, the prompts, and `last_words`.
 
-**Checks.** `go test ./...` passes. The bar holds: three base replays held 19, 16, and 16 legendary nonland cards, and three replays of the head held 45, 45, and 44. The ten replays cost $0.84, measured, try 1 included.
+**Checks.** The six new tests pass. `bash -n` passes.
 
-**Replay input.** The reader chose owned cards alone on the chat screen, and the replay input does not hold that choice. So each scored replay adds the turn "Use only my library."
+**Not verified.** No headless probe ran under the switch. The auto-mode classifier refuses a launch of `claude -p` with `bypassPermissions`. The binary holds the name of the switch.
 
-**Review.** Gitar found that `Empty` read the class, so a filler theme named the deck. `a5e8125` fixes it with a test. Codex reviewed effective head `b63a2f5d4cec28ba614af2e8e2d959f6a5445a84`. Verdict: Ready for owner merge. No finding.
+**Review.** Gitar passed on effective head `31f91f5`. The Codex review is ready for owner merge, with no finding.
 
-**Next action.** The owner reads the notice of the live eval and decides whether to merge. OQ-100 and OQ-101 hold the side effects that the replays read.
+**Next action.** After the merge, the next tick runs the new script from `origin/main`. Then run `make live-evals-retry ITEM=v-als6BE4NsM3WGhr3EAeG` after the owner confirms. The retry starts a paid session.
 
 ## How to resume
 
@@ -101,6 +103,7 @@ Twenty-two things a fresh session gets wrong without this file.
 
 ## Next steps, in order
 
+0. **The retry of deck `v-als6BE4NsM3WGhr3EAeG`** (D-1223). After the merge of PR-145, run `make live-evals-retry ITEM=v-als6BE4NsM3WGhr3EAeG`. Its session finishes #302. Ask the owner first, because the retry starts a paid session.
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
 0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it. Each tick stops on the old pin until the merge. Then read the next tick, and run `make live-evals-install CONFIRM=1` from `main` when it still stops.
 0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. PR-142 fixes F1 (D-1220).
@@ -127,6 +130,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-09: a live-eval session that waited for a background review, PR-145
+
+**The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result.** Each session started the Codex review of #302 in the background and ended its turn. The end of the turn stopped the review.
+
+**A session now gets no background task.** The prompt says why, and the failure notice holds the last words of the session.
+
 ### 2026-10-09: the cast trigger of a commander, PR-143
 
 **A live eval read a deck of the owner.** The reader declined the theme and picked Jodah, the Unifier. The shortlist read no cast trigger, so it offered few legends.
@@ -138,14 +147,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The live eval of D-1215 ran again on `main`.** Six base replays gave the pick row first four times, so the counted bar of D-1214 held.
 
 **The fix reads the words of a request for names.** A commander question out, or the word "commander" as the card, keeps the fact. A test also found that "the best deck for Commander" skipped every commander question.
-
-### 2026-10-08: a commander that leaves out a locked card, PR-141
-
-**The owner asked why deck `t5qJDgMGhwScPe1Z0n6Z` was not legal.** The Arkenstone is white, and Smaug the Impenetrable is black and red. The session first said that no offer held white. That was wrong, because Dwalin, Weaponmaster is red and white.
-
-**The owner chose a question in the chat** (option A of D-1217). A drop at the build stays out, so a delegated commander can still keep a card outside the colors.
-
-**#298 merged the Go bump first.** The owner told a second session to rebase this pull request on `main` (D-1219).
 
 ## The archive
 

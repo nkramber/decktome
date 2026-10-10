@@ -354,6 +354,10 @@ if [ "$dry" = 0 ]; then
   fi
   "$CLAUDE_BIN" --version 2>/dev/null | grep -q "^$CLAUDE_VERSION " || die "$CLAUDE_BIN is not Claude Code $CLAUDE_VERSION"
   CLAUDE_SUM=$(sum "$CLAUDE_BIN")
+  # A version that does not know the switch lets a session start a
+  # background command, and the end of its turn stops it (D-1223).
+  LC_ALL=C grep -a -q CLAUDE_CODE_DISABLE_BACKGROUND_TASKS "$CLAUDE_BIN" \
+    || die "Claude Code $CLAUDE_VERSION does not know CLAUDE_CODE_DISABLE_BACKGROUND_TASKS (D-1223)"
 
   # The session gets its own Claude token and its own Codex login
   # (D-1184). The gh token is a copy of the login of the owner (D-1164).
@@ -528,10 +532,14 @@ run_claude() { # deck run prompt-file log-file -> exit code
   # env -i passes only the names below. No cloud credential, no login of
   # the owner, and no provider key reach the process. A provider key in
   # the environment would also replace the Claude plan (D-1142).
+  # The process of claude -p ends at the end of the turn, and it stops
+  # each background command then. So a session gets no background task,
+  # and a foreground command can wait as long as the session (D-1223).
   (cd "$run/repo" && env -i \
     HOME="$HOME" USER="$(id -un)" LOGNAME="$(id -un)" LANG="${LANG:-en_US.UTF-8}" TERM=dumb SHELL=/bin/bash \
     PATH="$SESSION_PATH" TMPDIR="$run/tmp" CLAUDE_CODE_TMPDIR="$run/tmp" \
     CLAUDE_CONFIG_DIR="$run/claude-config" CLAUDE_CODE_OAUTH_TOKEN="$CLAUDE_TOKEN" DISABLE_AUTOUPDATER=1 \
+    CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1 BASH_MAX_TIMEOUT_MS=$(( TIMEOUT * 1000 )) BASH_DEFAULT_TIMEOUT_MS=1800000 \
     GH_TOKEN="$GH_SESSION_TOKEN" GH_CONFIG_DIR="$run/gh-config" XDG_CONFIG_HOME="$run/xdg-config" \
     GOCACHE="$CACHE/go-build" GOMODCACHE="$CACHE/go-mod" GOPATH="$CACHE/gopath" \
     npm_config_prefix="$CACHE/npm-global" npm_config_cache="$CACHE/npm" \
@@ -739,10 +747,20 @@ $( [ -n "$pr" ] && echo "PR #$pr")"
       dset "$deck" status failed attempts "$n"
       if [ "$n" -ge "$MAX_ATTEMPTS" ]; then
         mark "$uid" "$deck"
-        notify "decktome live eval: failed on deck $deck" "The session ended $n times with no result. Logs: $RUNS/$deck"
+        notify "decktome live eval: failed on deck $deck" "The session ended $n times with no result.
+Last words: $(last_words "$RUNS/$deck/session-$(dnum "$deck" sessions).log")
+Logs: $RUNS/$deck"
       fi
       ;;
   esac
+}
+
+last_words() { # session log -> the last result text of the session, cut to 300 characters (D-1223)
+  # The owner reads why the session stopped, such as a wait for a
+  # background command that the end of the turn stopped.
+  local words
+  words=$(jq -R -r 'fromjson? | select(.type == "result") | (.result // "")[0:300] | gsub("\n"; " ")' "$1" 2>/dev/null | tail -n 1)
+  printf '%s\n' "${words:-none}"
 }
 
 bar_check() { # deck pr [target] -> 0 when verdict.json holds the bar (D-1200)

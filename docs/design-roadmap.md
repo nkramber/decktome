@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-09 correction pass 273 (PR-145, D-1223): two sessions of one live eval started the Codex review in the background and ended the turn. The end of the turn stopped the review, so the eval failed with no result. A session now gets no background task. Changes: PR-145.
 2026-10-09 correction pass 271 (PR-143, F-229, D-1221): a live eval read a Jodah, the Unifier deck with 17 legendary cards. The shortlist read no cast trigger of the commander, so it offered 20 of the 570 owned legends. Each spell that the trigger counts is now on theme. Changes: F-229, PR-143.
 2026-10-08 correction pass 270 (PR-140, D-1211 to D-1216): the first live eval under PR-138 read a thumbs-down on a question. It ended `blocked`, because no replay built a deck. A question fault now gets a bar of pass or fail from the question log, and that bar counts its replays. A Go advisory moved each build to Go 1.27.2. Changes: PR-140.
 2026-10-07 correction pass 269 (PR-139, D-1209, D-1210): a live-eval session asked macOS to store its GitHub token, because the Apple Git config holds osxkeychain. The clone now holds the gh helper alone. The import dialog of a Moxfield link was taller than the screen. Each dialog now scrolls inside, and the steps fold under the bookmark. Changes: PR-139.
@@ -3702,6 +3703,21 @@ Gate:
 - A Codex review record that approves the effective head (D-815).
 
 > *In plain English:* a commander that rewards one kind of spell now gets those spells offered, also when the reader names no theme. Jodah rewards legends, and the deck now holds them.
+
+**PR-145: A live-eval session gets no background task (D-1223).** ✅ merged as #303. The mark comes before any review (D-822). The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result. Each session started the Codex review of #302 in the background, and then ended its turn. The process of `claude -p` ends with the turn, so the review stopped each time.
+
+- **The switch (D-1223).** `run_claude` sets `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`, so a session has no background command. A foreground command can wait as long as the session.
+- **The guard.** The setup refuses a pinned Claude Code that does not know the switch.
+- **The prompt.** The section "One turn, no background command" wins over the skill step that runs the review in the background.
+- **The notice.** A failure notice holds the last result text of the session, so the owner reads why it stopped.
+
+Gate:
+- `docs/tools/test_live_evals_session.py` reads the switch, the guard, the prompts, and `last_words`.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* a live eval runs as one turn with no person to wake it. A command left to run after that turn died with it. Each command now runs to its end inside the turn.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.
