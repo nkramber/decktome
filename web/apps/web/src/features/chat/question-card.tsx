@@ -21,6 +21,13 @@ export function draftAnswered(d: Draft | undefined): boolean {
   return d !== undefined && (d.declined === true || d.optionIndex !== undefined || d.text.trim() !== "");
 }
 
+// answerPlaceholder names what the free-text field takes. The pick row
+// offers three names, and a valid name the reader types leads the deck
+// (D-1213). The server sets each id to "q<n>-<row id>".
+export function answerPlaceholder(question: Question): string | undefined {
+  return question.id.endsWith("-commander_pick") ? "Name your own" : undefined;
+}
+
 // One open question: the options as toggle buttons and a free-text field
 // (ui plan, step 3). Nothing sends here. The page sends every answer at
 // once through its "Submit answers" button (D-282).
@@ -114,7 +121,7 @@ export function QuestionCard({
       {!closed && (
         <div className="flex flex-col gap-1.5">
           <Label htmlFor={answerId}>{question.options.length > 0 ? "Or answer in your own words" : "Your answer"}</Label>
-          <Input id={answerId} type="text" value={draft.text} disabled={disabled} onChange={(e) => onChange({ text: e.target.value })} />
+          <Input id={answerId} type="text" value={draft.text} placeholder={answerPlaceholder(question)} disabled={disabled} onChange={(e) => onChange({ text: e.target.value })} />
         </div>
       )}
       {/* A decline hands the choice back with no value (D-353). The
