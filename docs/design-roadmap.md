@@ -3704,7 +3704,7 @@ Gate:
 
 > *In plain English:* a commander that rewards one kind of spell now gets those spells offered, also when the reader names no theme. Jodah rewards legends, and the deck now holds them.
 
-**PR-145: A live-eval session gets no background task (D-1223).** ✅ merged as #N. The mark comes before any review (D-822). The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result. Each session started the Codex review of #302 in the background, and then ended its turn. The process of `claude -p` ends with the turn, so the review stopped each time.
+**PR-145: A live-eval session gets no background task (D-1223).** ✅ merged as #303. The mark comes before any review (D-822). The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result. Each session started the Codex review of #302 in the background, and then ended its turn. The process of `claude -p` ends with the turn, so the review stopped each time.
 
 - **The switch (D-1223).** `run_claude` sets `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1`, so a session has no background command. A foreground command can wait as long as the session.
 - **The guard.** The setup refuses a pinned Claude Code that does not know the switch.

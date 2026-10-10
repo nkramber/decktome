@@ -8,7 +8,7 @@ CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test fi
 
 ## RESUME HERE (2026-10-09, PR-145)
 
-**Branch `fix/live-eval-no-background`, PR-145: a live-eval session gets no background task (D-1223).** Role: author.
+**Branch `fix/live-eval-no-background`, PR-145, pull request #303: a live-eval session gets no background task (D-1223).** Role: author.
 
 Author provider: Claude Code
 
