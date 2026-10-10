@@ -3696,7 +3696,7 @@ Gate:
 
 Gate:
 - `go/internal/candidates/commander_spells_test.go` reads Jodah, the Unifier, Jhoira, Weatherlight Captain, and Sythis, Harvest's Hand. Without the fix, each fails.
-- The bar of the live eval holds. Three base replays held 19, 16, and 16 legendary nonland cards, and three fix replays held 46, 45, and 47.
+- The bar of the live eval holds. Three base replays held 19, 16, and 16 legendary nonland cards, and three replays of the head held 45, 45, and 44.
 - `make verify` passes.
 - A current Gitar review, with an answer to each finding.
 - A Codex review record that approves the effective head (D-815).

@@ -22,11 +22,11 @@ Author provider: Claude Code
 - `go/internal/candidates/theme.go`: a spell of the class scores as a card type does. The class adds no word.
 - `go/internal/candidates/commander_spells_test.go`: Jodah, and two more inputs of the class, Jhoira and Sythis.
 
-**Checks.** `go test ./...` passes. The bar holds: three base replays held 19, 16, and 16 legendary nonland cards, and three fix replays held 46, 45, and 47. The seven replays cost $0.63, measured.
+**Checks.** `go test ./...` passes. The bar holds: three base replays held 19, 16, and 16 legendary nonland cards, and three replays of the head held 45, 45, and 44. The ten replays cost $0.84, measured, try 1 included.
 
 **Replay input.** The reader chose owned cards alone on the chat screen, and the replay input does not hold that choice. So each scored replay adds the turn "Use only my library."
 
-**Review.** Gitar and Codex pending on #301.
+**Review.** Gitar found that `Empty` read the class, so a filler theme named the deck. `a5e8125` fixes it with a test. Codex pending.
 
 **Next action.** The owner reads the notice of the live eval and decides whether to merge. OQ-100 and OQ-101 hold the side effects that the replays read.
 
