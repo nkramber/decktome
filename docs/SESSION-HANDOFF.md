@@ -6,29 +6,30 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-09, PR-144)
+## RESUME HERE (2026-10-09, PR-146)
 
-**Branch `live-eval/v-als6be4nsm`, PR-144, pull request #302: an inflected stop word that no card holds leaves the theme (F-230, D-1222).** Role: author, a headless live-eval session.
+**Branch `fix/question-answer-classifier`, PR-146, pull request #304: the reader words keep a bracket, a commander, and a skip (F-231, D-1224, D-1225).** Role: author.
 
 Author provider: Claude Code
 
-**The base.** `main` at `b04b7e8`, the merge of #303.
+**The base.** `main` at `fd74cdc`, the merge of #302. #300 took PR-142 and fixed F1 of D-1215, so this item leaves the fact `wants_suggestion` alone. #302 took PR-144, and #303 took PR-145.
 
-**The cause.** The live eval of thumbs-down `als6BE4NsM3WGhr3EAeG` read the request "making lots of treasure tokens and using them to win". The theme row asked about "making". The stop lists hold "make", but the stop check read the surface form alone.
+**The rebase.** Each commit of the branch conflicted in the same documents, so one commit on `fd74cdc` holds the branch. It keeps D-1222, F-230, and PR-144 of `main` beside D-1224, D-1225, F-231, and PR-146.
+
+**The cause.** The replays of the chat `dDD9Iav9aGhgGF9dDLNQ` lost three answers. The classifier left the power empty after "1 Exhibition". It read "Jace, Multiverse Architect" under the commander row as a card, so the role row asked. A "skip" beside the pick declined nothing, and the chat stalled.
 
 **The code.**
 
-- `go/internal/candidates/theme.go`: `settleWords` fills the unmatched list after the scan. `fillerForm` reads the -s, -ing, and -ed base forms of a word that fired on no card.
-- `go/internal/candidates/candidates.go`: `Build` calls `settleWords`.
-- `go/internal/candidates/stopwords_test.go` and `go/internal/candidates/stopwords_snapshot_test.go`: this case, "building around dragons", "a deck that wanted lots of elves", and the controls.
+- `go/internal/questions/answer_words.go`: `keepPowerOption`, `readTypedCommander`, and `declineSkippedQuestion`. The first two correct the classify output before `apply`.
+- `go/internal/questions/answer_words_test.go`: the three faults and the guard cases.
+- `web/apps/web/src/features/chat/question-card.tsx`: the pick card reads "Name your own".
+- `go/cmd/questions-gate/conversations.json`: probe 112. `.claude/skills/mtg-corpus/SKILL.md`: the corpus row.
 
-**Checks.** `go test ./...` and `make themes-check` pass. The bar of pass or fail holds: 3 of 3 base replays failed, and 6 of 6 replays of the head passed. The 9 replays cost $0.0048, measured. After the rebase, `make verify` passed on this Mac, with the `docker` step.
+**Checks.** `go test ./...` passes. Without the fix, each of the four case tests fails. The web test of the page passes. Question gate run 66 passed on `cc0503d` with 75 of 75 for $0.1068, and probe 112 met each expected slot. `cc0503d` holds the code of `51e5def` and the Codex record alone. Run 65 ran on uncommitted changes, so it recorded `b7f483f`.
 
-**The rebase.** The two eval sessions stopped before the Codex review (D-1223). A second session rebased this pull request on `b04b7e8`. It kept D-1223 and PR-145 of `main` beside D-1222, F-230, and PR-144, so the retry of the eval is not necessary.
+**Review.** Gitar approved effective head `a0f5017` with no open finding. Codex round 2 gives Ready for owner merge on `a0f5017`. P1-1 is fixed: run 66 records `cc0503d`, the PR code, and probe 112 met each expected slot. `docs/reviews/pr-304-response.md` holds the answer to P1-1.
 
-**Review.** Gitar approved `533298a` and `0c29594` with no thread, and the author answered each CI note. The first Codex record gave `Blocked` on `bd881a9`, because the checkout held no replay output. `docs/reference/pr302-replays-2026-10-09.md` and `docs/reviews/pr-302-response.md` answer it. The second record gives `Ready for owner merge` on `0c29594`, with no open finding.
-
-**Next action.** This pull request waits for the confirmation of the owner, then the auto-merge (D-828, D-834). OQ-102 to OQ-106 hold the other findings of the eval.
+**Next action.** The pull request is pending the auto-merge. The owner reviews the four-part summary and confirms the merge. Then the author turns on the auto-merge (D-828).
 
 ## How to resume
 
@@ -102,9 +103,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
-0. **Go 1.27.2 on this Mac** (D-1216). The owner installed it. Each tick stops on the old pin until the merge. Then read the next tick, and run `make live-evals-install CONFIRM=1` from `main` when it still stops.
-0. **The classifier item of D-1211** (D-1212, D-1213). It reads a bracket answer and a commander pick, and the chat box shows "Name your own" under the pick row. It needs paid question gates. PR-142 fixes F1 (D-1220).
-0. **The live check of PR-141** (D-1217). After the deploy, ask for The Arkenstone and name Smaug the Impenetrable. The chat must ask to keep Smaug or pick another commander.
+0. **The live check of PR-146** (D-1224). After the deploy, type "1 Exhibition" under the power row and a commander name under the pick row. The deck must read bracket 1 and lead with that commander. Ask the owner before the paid run.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
 0. **The check of PR-120** (D-1090, D-1091, D-1095). It merged as #278. After the release of Star Trek on 2026-11-13, read "new cards pass ended", and check the push and the panel.
@@ -127,6 +126,16 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-09c: the reader words of three answers, PR-146
+
+**The live check of PR-141 passed** (D-1217). Session `ZI0UPTeGWcEH9endbJoE` asked to keep Smaug the Impenetrable or to pick another commander. The first run sent `owned-only`, and the test account owns neither card, so the second run sent `-pool any`.
+
+**The retry of D-1215 ran, and the shell of the session had no Go 1.27.2 on its PATH.** The owner had installed it in `/usr/local/go` on 2026-10-05. The eval session opened #300. Four pull requests of the live evals then took the item numbers before PR-146.
+
+**The live check of PR-144 passed** (D-1222). `make api-build` on the deploy of `fd74cdc` sent the treasure request, then picked Commander and typed "Skip that question." under colors. Turn 1 asked format and colors, and turn 2 asked power and commander. No row asked about "making".
+
+**The owner widened the item to the skip** (D-1224). A session decision puts "Name your own" on the pick card, because the page hides the chat box while a question is open (D-1225).
+
 ### 2026-10-09b: an inflected stop word in the theme, PR-144
 
 **A live eval read a thumbs-down on the theme question.** The row asked about "making" in a request for treasure tokens. The stop check read the surface form of a word alone.
@@ -138,12 +147,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result.** Each session started the Codex review of #302 in the background and ended its turn. The end of the turn stopped the review.
 
 **A session now gets no background task.** The prompt says why, and the failure notice holds the last words of the session.
-
-### 2026-10-09: the cast trigger of a commander, PR-143
-
-**A live eval read a deck of the owner.** The reader declined the theme and picked Jodah, the Unifier. The shortlist read no cast trigger, so it offered few legends.
-
-**The fix reads each cast trigger of the commander.** The snapshot holds 236 such triggers on legal commanders, and the rule of F-212 read one phrase.
 
 ## The archive
 

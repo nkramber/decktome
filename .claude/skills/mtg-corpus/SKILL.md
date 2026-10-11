@@ -345,6 +345,8 @@ Commander rules: a name the user gives as the commander closes every commander r
 
 The pick row needs the words of a request for names, or an answer to a commander question. "The best possible commander deck" and "the best deck for Commander" name the format, so the commander row asks first (D-1220).
 
+A typed answer counts as the answer it names (D-1224). Under the power row, "1 Exhibition" is bracket 1. Under a commander question, a card name that can lead a deck is the commander, so the role row does not ask. The answer field of the pick row reads "Name your own" (D-1225). A "skip" beside such an answer declines the one question that stays out.
+
 A superlative such as "buy the best lifegain commander" hands the choice to the agent, as "you pick" does (D-147, D-167).
 
 Locked-card rule: a card that becomes the commander is not a locked card (D-70). The locked row retired on 2026-08-28 (A-6). The classifier names the locked cards, the session state holds them, and the build keeps every one (D-242). No question asks whether the deck can cut one.

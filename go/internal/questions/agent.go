@@ -153,6 +153,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	// The word rules read the user's own words. A quoted question is the
 	// agent's text, and its format list is not a two-deck request.
 	words := UserWords(message)
+	out = a.readOwnWords(st, out, open, words)
 	a.apply(ctx, st, out, open, words, acc)
 	a.applyWords(st, turnWords{Message: words, Declined: out.DeclinedKeys, Closed: out.ClosedKeys, Open: open})
 	a.closeByOption(st, words)
@@ -162,6 +163,7 @@ func (a *Agent) classify(ctx context.Context, st *State, message string, acc *ll
 	a.applyOptionAnswers(st)
 	a.applyManaPermission(st, words)
 	a.applyExclusionAnswer(st, words)
+	a.declineSkippedQuestion(st, out.DeclinedKeys, open, words)
 	// The scope question closes when the user answers it with a deck.
 	// The row offers "Yes, a Magic deck", and a user who writes "a Modern
 	// burn deck" instead has said the same thing. Nothing else closed

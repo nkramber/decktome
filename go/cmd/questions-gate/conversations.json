@@ -1719,6 +1719,25 @@
         "budget": "100",
         "theme": "treasure"
       }
+    },
+    {
+      "id": 112,
+      "name": "a typed bracket, a typed commander, and a skip in one answer",
+      "collection": false,
+      "probe": true,
+      "note": "The turns of the chat of D-1211, with a commander that the local snapshot holds. The reader types the bracket option, then skips the budget question and names a commander in one message (D-1211, D-1213, D-1224).",
+      "messages": [
+        "Build me a deck focused on planeswalkers",
+        "Commander. Skip that question.",
+        "1 Exhibition. Fill the gaps from any card (buy list). Suggest three",
+        "Skip that question.. Teferi, Temporal Archmage"
+      ],
+      "expect": {
+        "format": "commander",
+        "power": "bracket 1",
+        "commander": "Teferi, Temporal Archmage",
+        "theme": "planeswalkers"
+      }
     }
   ]
 }
