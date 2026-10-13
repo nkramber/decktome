@@ -509,6 +509,10 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 	if req.Precon != "" {
 		swapped = swapBackPrecon(deck, req, b.cards)
 	}
+	// A copy the deck must buy goes to an owned twin, with no model call
+	// (D-1226). It runs before the engine, so the buy list and every
+	// finding describe the deck the reader gets.
+	twins := swapOwnedTwins(deck, req)
 	var excluded map[string]bool
 	if len(req.ExcludedOracleIDs) > 0 {
 		excluded = make(map[string]bool, len(req.ExcludedOracleIDs))
@@ -544,6 +548,10 @@ func (b *Builder) assemble(ctx context.Context, req Request, out *deckOut) pass 
 			msg += fmt.Sprintf(", and added %s", plural(refilled, "basic land"))
 		}
 		addFinding(deck, CodeBracketCut, mtgv1.Severity_SEVERITY_INFO, msg)
+	}
+	if len(twins) > 0 {
+		addFinding(deck, CodeOwnedTwin, mtgv1.Severity_SEVERITY_INFO,
+			fmt.Sprintf("you own cards that do the same as cards to buy, so the builder played %s", strings.Join(twins, ", ")))
 	}
 	if manaSteps > 0 {
 		addFinding(deck, CodeManaPass, mtgv1.Severity_SEVERITY_INFO,

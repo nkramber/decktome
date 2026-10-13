@@ -15,6 +15,37 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-09, PR-146
+
+**Branch `fix/question-answer-classifier`, PR-146, pull request #304: the reader words keep a bracket, a commander, and a skip (F-231, D-1224, D-1225).** Role: author.
+
+Author provider: Claude Code
+
+**The base.** `main` at `fd74cdc`, the merge of #302. #300 took PR-142 and fixed F1 of D-1215, so this item leaves the fact `wants_suggestion` alone. #302 took PR-144, and #303 took PR-145.
+
+**The rebase.** Each commit of the branch conflicted in the same documents, so one commit on `fd74cdc` holds the branch. It keeps D-1222, F-230, and PR-144 of `main` beside D-1224, D-1225, F-231, and PR-146.
+
+**The cause.** The replays of the chat `dDD9Iav9aGhgGF9dDLNQ` lost three answers. The classifier left the power empty after "1 Exhibition". It read "Jace, Multiverse Architect" under the commander row as a card, so the role row asked. A "skip" beside the pick declined nothing, and the chat stalled.
+
+**The code.**
+
+- `go/internal/questions/answer_words.go`: `keepPowerOption`, `readTypedCommander`, and `declineSkippedQuestion`. The first two correct the classify output before `apply`.
+- `go/internal/questions/answer_words_test.go`: the three faults and the guard cases.
+- `web/apps/web/src/features/chat/question-card.tsx`: the pick card reads "Name your own".
+- `go/cmd/questions-gate/conversations.json`: probe 112. `.claude/skills/mtg-corpus/SKILL.md`: the corpus row.
+
+**Checks.** `go test ./...` passes. Without the fix, each of the four case tests fails. The web test of the page passes. Question gate run 66 passed on `cc0503d` with 75 of 75 for $0.1068, and probe 112 met each expected slot. `cc0503d` holds the code of `51e5def` and the Codex record alone. Run 65 ran on uncommitted changes, so it recorded `b7f483f`.
+
+**Review.** Gitar approved effective head `a0f5017` with no open finding. Codex round 2 gives Ready for owner merge on `a0f5017`. P1-1 is fixed: run 66 records `cc0503d`, the PR code, and probe 112 met each expected slot. `docs/reviews/pr-304-response.md` holds the answer to P1-1.
+
+**Next action.** The pull request is pending the auto-merge. The owner reviews the four-part summary and confirms the merge. Then the author turns on the auto-merge (D-828).
+
+### 2026-10-09: a live-eval session that waited for a background review, PR-145
+
+**The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result.** Each session started the Codex review of #302 in the background and ended its turn. The end of the turn stopped the review.
+
+**A session now gets no background task.** The prompt says why, and the failure notice holds the last words of the session.
+
 ## The resume section of 2026-10-09, PR-144
 
 **Branch `live-eval/v-als6be4nsm`, PR-144, pull request #302: an inflected stop word that no card holds leaves the theme (F-230, D-1222).** Role: author, a headless live-eval session.
