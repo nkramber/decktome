@@ -258,6 +258,9 @@ type Stats struct {
 	// Outside counts the cards the fill took from outside the sets
 	// (D-382).
 	Outside int
+	// OwnedTwins counts the owned twins of the upgrades that joined the
+	// main list past its caps (D-1226).
+	OwnedTwins int
 	// Avoided counts the pool cards that took avoidPenalty (D-1122).
 	Avoided int
 }
@@ -540,6 +543,7 @@ func (b *Builder) Build(idx *cards.Index, req Request) (*List, error) {
 	case mtgv1.PoolRule_POOL_RULE_OWNED_FIRST:
 		main = ownedFirst(inSet, lim)
 		upgrades = topUpgrades(filterOwned(inSet, false), main, lim.Upgrades)
+		main, stats.OwnedTwins = addOwnedTwins(main, upgrades, inSet)
 	}
 	if fill := outsideFill(main, outsideCards, req.OutsideRoles); len(fill) > 0 {
 		main = mergeByRole(main, fill)
