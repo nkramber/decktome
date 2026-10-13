@@ -24,9 +24,9 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. Without the pass, `TestBuildSwapsOwnedTwins` fails. Three base replays scored 1, and three replays of try 2 scored 0. `live-evals bar` exits 0. The replays spent $2.63 of $3.00, so a later change of `go/` has no replay budget.
 
-**Review state at the checkpoint (D-946).** The context passed 300K tokens after the first Gitar pass, so a new session continues this pull request. Gitar reviewed head `364a9ba`: "Approved with suggestions", one finding on the hand-off (the PR-145 body left behind). The checkpoint commit fixes it, and its thread still needs a reply and a resolve. The Gitar CI note names the missing `docs/reviews/pr-305.md`, which the Codex review writes. No Codex review ran.
+**Review state at the checkpoint (D-946).** The context passed 300K tokens after the first Gitar pass, so a new session continues this pull request. Gitar reviewed head `364a9ba`: "Approved with suggestions", one finding on the hand-off (the PR-145 body left behind). Commit `b315b57` fixes it, and its thread has a reply and is resolved. The Gitar CI note names the missing `docs/reviews/pr-305.md`, which the Codex review writes. No Codex review ran.
 
-**Next action.** Reply on the Gitar thread with the checkpoint commit, and resolve it. Answer the CI note. Wait until each check is green, then run `make codex-review PR=305` in the foreground. Change no file of `go/`: the replays spent $2.63 of $3.00, and a new tree needs new replays (D-1206).
+**Next action.** Answer the CI note of Gitar. Wait until each check is green, then run `make codex-review PR=305` in the foreground. Change no file of `go/`: the replays spent $2.63 of $3.00, and a new tree needs new replays (D-1206).
 
 ## How to resume
 
