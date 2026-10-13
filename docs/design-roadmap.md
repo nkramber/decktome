@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-13 correction pass 275 (PR-147, F-232, D-1226): an owned-first deck bought cards that the collection held under other names. The shortlist and the build now put the owned twin in place of a card to buy. Changes: PR-147.
 2026-10-09 correction pass 274 (PR-146, F-231, D-1224, D-1225): the classifier lost a typed bracket, read a typed commander as a card, and missed a skip. Three word rules now correct the classify output first. Changes: PR-146.
 2026-10-09 correction pass 273 (PR-145, D-1223): two sessions of one live eval started the Codex review in the background and ended the turn. The end of the turn stopped the review, so the eval failed with no result. A session now gets no background task. Changes: PR-145.
 2026-10-09 correction pass 272 (PR-144, F-230, D-1222): a live eval read a thumbs-down on the theme question. The row asked about "making" in a request for treasure tokens, because the stop check read the surface form of a word alone. An inflected stop word that no card holds now leaves the theme. Changes: F-230, PR-144.
@@ -649,6 +650,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-229 | **The shortlist did not read the cast trigger of the commander.** The live eval of deck `N9c1QMEFUN0BratBUR2v` read a build of the owner. The reader declined the theme and picked Jodah, the Unifier from the offer. Jodah counts legendary spells, and no theme row names them. So the owned-only shortlist held 20 of the 570 owned legendary nonland cards, and the deck held 17. The summary said that the deck favors answers "over maximum legendary density". | ✅ PR-143 (#301): the spells that a cast trigger of the commander counts score as a card type does (D-1221). |
 | F-230 | **The theme question named an inflected stop word.** The live eval of thumbs-down `als6BE4NsM3WGhr3EAeG` read the request "making lots of treasure tokens and using them to win". The theme row of D-725 asked about "making". The stop lists hold "make", and the stop check read the surface form alone. The same fault asked about "building", "wanted", "needing", and ten more forms. | ✅ PR-144: a word that fires on no card, and whose -s, -ing, or -ed base form is a stop word, leaves the theme (D-1222). |
 | F-231 | **The reader words lost three answers.** The chat `dDD9Iav9aGhgGF9dDLNQ` answered "1 Exhibition" under the power row, and the classifier left the power empty, so the build used bracket 3. The reader then typed "Skip that question.. Jace, Multiverse Architect". The name went to the role row, or the skip declined nothing and the chat stalled. | ✅ PR-146: three rules read the words of the reader before the classify output applies (D-1224, D-1225). |
+| F-232 | **The deck bought a card that the collection held under another name.** The owned-first deck `SKhAyAbfXrbbhNPkgvEk` bought Grizzly Bears and Bear Cub, and the collection held Balduvian Bears and Runeclaw Bear. Three replays bought Llanowar Elves, and the collection held Fyndhorn Elves. No build step compared a card to buy with the owned cards. | ✅ PR-147: the shortlist adds the owned twin, and the build plays it in place of each copy to buy (D-1226). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3756,6 +3758,23 @@ Gate:
 
 
 > *In plain English:* a reader answered three questions in their own words, and the app lost each answer. It built at the wrong power, asked about a commander the reader had named, or stopped. The app now reads those exact words before it trusts its guess.
+
+**PR-147: An owned twin takes the place of a card to buy (F-232, D-1226).** ✅ merged as #N. The mark comes before any review (D-822). A live eval read an owned-first Bear deck that bought two cards the collection held under other names.
+
+- **The rule.** A twin has the same mana cost, type line, and rules text with the own name folded. Its power and toughness are as high or higher. A card with two faces has no twin.
+- **The shortlist.** Each owned twin of a card to buy joins the main list past the caps. It takes the role and the score of that card.
+- **The build.** The build plays the owned twin in place of each copy to buy, before the rules check, and the finding `owned_twin` names each swap. A commander, a locked card, a card a revision keeps, and a precon card stay.
+- **The pool rules.** The rule runs under each pool rule with a collection, because a twin plays the same (OQ-112).
+
+Gate:
+- `go/internal/candidates/twin_test.go` reads the rule on the cards of the eval, and the twin that joins the shortlist.
+- `go/internal/generate/ownedtwin_test.go` plays the Commander case, the elf case, a 60-card case, and the guards. Without the pass, `TestBuildSwapsOwnedTwins` fails.
+- Three base replays scored 1, and three replays of try 2 scored 0. `live-evals bar` exits 0.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* the deck told a reader to buy a card that they already owned under another name. The app now spots such a pair and plays the owned card.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.

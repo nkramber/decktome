@@ -6,30 +6,25 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-09, PR-146)
+## RESUME HERE (2026-10-13, PR-147)
 
-**Branch `fix/question-answer-classifier`, PR-146, pull request #304: the reader words keep a bracket, a commander, and a skip (F-231, D-1224, D-1225).** Role: author.
+**Branch `live-eval/skhayabfxrbb`, PR-147: an owned twin takes the place of a card to buy (F-232, D-1226).** Role: author, in a headless live-eval session (D-1132).
 
 Author provider: Claude Code
 
-**The base.** `main` at `fd74cdc`, the merge of #302. #300 took PR-142 and fixed F1 of D-1215, so this item leaves the fact `wants_suggestion` alone. #302 took PR-144, and #303 took PR-145.
+**The base.** `main` at `0562d6a`, the merge of #304.
 
-**The rebase.** Each commit of the branch conflicted in the same documents, so one commit on `fd74cdc` holds the branch. It keeps D-1222, F-230, and PR-144 of `main` beside D-1224, D-1225, F-231, and PR-146.
-
-**The cause.** The replays of the chat `dDD9Iav9aGhgGF9dDLNQ` lost three answers. The classifier left the power empty after "1 Exhibition". It read "Jace, Multiverse Architect" under the commander row as a card, so the role row asked. A "skip" beside the pick declined nothing, and the chat stalled.
+**The cause.** The live eval of deck `SKhAyAbfXrbbhNPkgvEk` read an owned-first Bear deck. It bought Grizzly Bears and Bear Cub, and the collection held Balduvian Bears and Runeclaw Bear, the same card. The replays bought Llanowar Elves, and the collection held Fyndhorn Elves. No build step compared a card to buy with the owned cards.
 
 **The code.**
 
-- `go/internal/questions/answer_words.go`: `keepPowerOption`, `readTypedCommander`, and `declineSkippedQuestion`. The first two correct the classify output before `apply`.
-- `go/internal/questions/answer_words_test.go`: the three faults and the guard cases.
-- `web/apps/web/src/features/chat/question-card.tsx`: the pick card reads "Name your own".
-- `go/cmd/questions-gate/conversations.json`: probe 112. `.claude/skills/mtg-corpus/SKILL.md`: the corpus row.
+- `go/internal/candidates/twin.go`: the twin rule and `addOwnedTwins`, which puts the owned twin of a card to buy on the shortlist.
+- `go/internal/generate/ownedtwin.go`: `swapOwnedTwins`, which plays an owned twin in place of each copy to buy, and the finding `owned_twin`.
+- `go/internal/cards/announcement_dates.json`: the date 2026-11-30, from the Wizards announcement of 2026-10-12. Without it `TestEmbeddedCalendarLoads` fails on each branch from 2026-10-13.
 
-**Checks.** `go test ./...` passes. Without the fix, each of the four case tests fails. The web test of the page passes. Question gate run 66 passed on `cc0503d` with 75 of 75 for $0.1068, and probe 112 met each expected slot. `cc0503d` holds the code of `51e5def` and the Codex record alone. Run 65 ran on uncommitted changes, so it recorded `b7f483f`.
+**Checks.** `go test ./...` passes. Without the pass, `TestBuildSwapsOwnedTwins` fails. Three base replays scored 1, and three replays of try 2 scored 0. `live-evals bar` exits 0. The replays spent $2.63 of $3.00, so a later change of `go/` has no replay budget.
 
-**Review.** Gitar approved effective head `a0f5017` with no open finding. Codex round 2 gives Ready for owner merge on `a0f5017`. P1-1 is fixed: run 66 records `cc0503d`, the PR code, and probe 112 met each expected slot. `docs/reviews/pr-304-response.md` holds the answer to P1-1.
-
-**Next action.** The pull request is pending the auto-merge. The owner reviews the four-part summary and confirms the merge. Then the author turns on the auto-merge (D-828).
+**Next action.** The owner reads the notice, then merges the pull request or answers OQ-112.
 
 ## How to resume
 
@@ -103,6 +98,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
+0. **The live check of PR-147** (D-1226). After the deploy, build an owned-first deck from a collection that holds Fyndhorn Elves and no Llanowar Elves. The deck must buy no card that an owned card equals. Ask the owner before the paid run.
 0. **The live check of PR-146** (D-1224). After the deploy, type "1 Exhibition" under the power row and a commander name under the pick row. The deck must read bracket 1 and lead with that commander. Ask the owner before the paid run.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
 0. **The check of PR-122** (D-1112). It merged as #281. After the deploy, send one approval email, and read the sender and a reply in the inbox.
@@ -126,6 +122,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-13: an owned twin of a card to buy, PR-147
+
+**A live eval read a revision of an owned-first Bear deck.** The deck bought two cards that the collection held under other names. The replays bought Llanowar Elves beside an owned Fyndhorn Elves.
+
+**The fix reads the printed card.** The same mana cost, type line, and rules text make a twin. The shortlist adds the owned twin, and the build plays it with no model call. The replays read the gap answer as any-card, so the rule runs under each pool rule with a collection (OQ-112).
+
 ### 2026-10-09c: the reader words of three answers, PR-146
 
 **The live check of PR-141 passed** (D-1217). Session `ZI0UPTeGWcEH9endbJoE` asked to keep Smaug the Impenetrable or to pick another commander. The first run sent `owned-only`, and the test account owns neither card, so the second run sent `-pool any`.
@@ -142,7 +144,7 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The fix reads the base forms of a word that no card holds.** A rule on the base forms alone also dropped "blocking", which 335 cards hold.
 
-### 2026-10-09: a live-eval session that waited for a background review, PR-145
+
 
 **The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result.** Each session started the Codex review of #302 in the background and ended its turn. The end of the turn stopped the review.
 
@@ -150,4 +152,4 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-09, the records of 2026-08-31 to 2026-10-08, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-09, the records of 2026-08-31 to 2026-10-09, and 104 more sections, word for word. Read it for the detail behind a decision.
