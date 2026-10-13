@@ -26,9 +26,9 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. Without the pass, `TestBuildSwapsOwnedTwins` fails. Three base replays scored 1, and three replays of try 2 scored 0. `live-evals bar` exits 0. The replays spent $2.63 of $3.00, so a later change of `go/` has no replay budget.
 
-**Review state at the checkpoint (D-946).** The context passed 300K tokens after the first Gitar pass, so a new session continues this pull request. Gitar reviewed head `364a9ba`: "Approved with suggestions", one finding on the hand-off (the PR-145 body left behind). Commit `b315b57` fixes it, and its thread has a reply and is resolved. The Gitar CI note names the missing review record of #305, which the Codex review writes. No Codex review ran. The second session removed the path of that record from this section, because `make ref-check` refuses a path that no file holds.
+**Review state.** Gitar reviewed effective head `364a9ba`: "Approved", one finding closed by commit `b315b57`. Its CI note named a dangling path in this section, and commit `2c1249e` removed it. A top-level comment answers the note. Each check on head `2c1249e` is green, `review-gate` excepted before the record. No review thread is open. The second session after the checkpoint (D-946) ran the Codex review and the bar check again, and `live-evals bar` exits 0.
 
-**Next action.** Wait until each check is green, then run `make codex-review PR=305` in the foreground. Change no file of `go/`: the replays spent $2.63 of $3.00, and a new tree needs new replays (D-1206).
+**Next action.** The owner reads the ready notice, and the owner merges (D-1137). This session turns on no auto-merge. Change no file of `go/`: a new tree needs new replays (D-1206).
 
 ## How to resume
 
