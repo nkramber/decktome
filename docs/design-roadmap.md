@@ -3759,7 +3759,7 @@ Gate:
 
 > *In plain English:* a reader answered three questions in their own words, and the app lost each answer. It built at the wrong power, asked about a commander the reader had named, or stopped. The app now reads those exact words before it trusts its guess.
 
-**PR-147: An owned twin takes the place of a card to buy (F-232, D-1226).** ✅ merged as #N. The mark comes before any review (D-822). A live eval read an owned-first Bear deck that bought two cards the collection held under other names.
+**PR-147: An owned twin takes the place of a card to buy (F-232, D-1226).** ✅ merged as #305. The mark comes before any review (D-822). A live eval read an owned-first Bear deck that bought two cards the collection held under other names.
 
 - **The rule.** A twin has the same mana cost, type line, and rules text with the own name folded. Its power and toughness are as high or higher. A card with two faces has no twin.
 - **The shortlist.** Each owned twin of a card to buy joins the main list past the caps. It takes the role and the score of that card.
