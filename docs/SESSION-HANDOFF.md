@@ -26,7 +26,7 @@ Author provider: Claude Code
 
 **Review state at the checkpoint (D-946).** The context passed 300K tokens after the first Gitar pass, so a new session continues this pull request. Gitar reviewed head `364a9ba`: "Approved with suggestions", one finding on the hand-off (the PR-145 body left behind). The checkpoint commit fixes it, and its thread still needs a reply and a resolve. The Gitar CI note names the missing `docs/reviews/pr-305.md`, which the Codex review writes. No Codex review ran.
 
-**Next action.** Reply on the Gitar thread with the checkpoint commit, and resolve it. Answer the CI note. Wait until each check is green, then run `make codex-review PR=305` in the foreground. Change no file of `go/`: the replay budget is spent, and a new tree needs new replays (D-1206).
+**Next action.** Reply on the Gitar thread with the checkpoint commit, and resolve it. Answer the CI note. Wait until each check is green, then run `make codex-review PR=305` in the foreground. Change no file of `go/`: the replays spent $2.63 of $3.00, and a new tree needs new replays (D-1206).
 
 ## How to resume
 
