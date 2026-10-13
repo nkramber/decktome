@@ -15,19 +15,24 @@ import (
 const CodeOwnedTwin = "owned_twin"
 
 // swapOwnedTwins plays an owned twin in place of each copy the deck must
-// buy, under owned-first, and returns one line for each swap (F-232,
-// D-1226). The model chose Grizzly Bears and Bear Cub over the owned
-// Balduvian Bears, and Llanowar Elves over the owned Fyndhorn Elves. The
-// shortlist held both cards, and no line of the prompt said which to
-// prefer. The pass needs no model call, and its rule reads the printed
-// card alone (candidates.TwinBeats).
+// buy, and returns one line for each swap (F-232, D-1226). The model
+// chose Grizzly Bears and Bear Cub over the owned Balduvian Bears, and
+// Llanowar Elves over the owned Fyndhorn Elves. The shortlist held both
+// cards, and no line of the prompt said which to prefer. The pass needs
+// no model call, and its rule reads the printed card alone
+// (candidates.TwinBeats).
+//
+// The pass runs under each pool rule with a collection. A twin plays the
+// same as the card it replaces, so an any-card deck stays as strong as
+// the reader asked, and its buy list gets shorter. Each replay of F-232
+// read the gap answer as any-card and bought Llanowar Elves.
 //
 // A card the user named stays: a commander, a locked card, a card a
 // revision keeps, and a precon card, whose share D-218 counts. A twin
 // comes from the pool, so the model can name it in a repair turn, and it
 // takes no more copies than the user owns or the format allows.
 func swapOwnedTwins(deck *mtgv1.Deck, req Request) []string {
-	if req.PoolRule != mtgv1.PoolRule_POOL_RULE_OWNED_FIRST || req.Pool == nil {
+	if req.OracleCounts == nil || req.Pool == nil {
 		return nil
 	}
 	keep := map[string]bool{}

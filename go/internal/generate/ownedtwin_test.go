@@ -137,8 +137,7 @@ func TestSwapOwnedTwinsSixty(t *testing.T) {
 }
 
 // TestSwapOwnedTwinsGuards proves the cards that stay: a card the user
-// asked to keep, and every card of a session that may not prefer the
-// collection.
+// asked to keep, and every card of a session with no collection.
 func TestSwapOwnedTwinsGuards(t *testing.T) {
 	t.Run("a locked card stays", func(t *testing.T) {
 		req := twinRequest(mtgv1.FormatId_FORMAT_ID_COMMANDER)
@@ -164,16 +163,24 @@ func TestSwapOwnedTwinsGuards(t *testing.T) {
 			t.Errorf("swaps = %v, want none", lines)
 		}
 	})
-	for _, rule := range []mtgv1.PoolRule{mtgv1.PoolRule_POOL_RULE_ANY_CARD, mtgv1.PoolRule_POOL_RULE_UNSPECIFIED} {
-		t.Run(rule.String(), func(t *testing.T) {
-			req := twinRequest(mtgv1.FormatId_FORMAT_ID_COMMANDER)
-			req.PoolRule = rule
-			deck := twinDeck(bought(twGrizzly, 1))
-			if lines := swapOwnedTwins(deck, req); len(lines) != 0 {
-				t.Errorf("swaps = %v, want none: the reader asked for no collection first", lines)
-			}
-		})
-	}
+	t.Run("a session with no collection swaps nothing", func(t *testing.T) {
+		req := twinRequest(mtgv1.FormatId_FORMAT_ID_COMMANDER)
+		req.OracleCounts = nil
+		deck := twinDeck(bought(twGrizzly, 1))
+		if lines := swapOwnedTwins(deck, req); len(lines) != 0 {
+			t.Errorf("swaps = %v, want none", lines)
+		}
+	})
+	// Each replay of F-232 read the gap answer as any-card. A twin plays
+	// the same, so the any-card deck takes it too (D-1226).
+	t.Run("an any-card deck with a collection takes the twin", func(t *testing.T) {
+		req := twinRequest(mtgv1.FormatId_FORMAT_ID_COMMANDER)
+		req.PoolRule = mtgv1.PoolRule_POOL_RULE_ANY_CARD
+		deck := twinDeck(bought(twLlanowar, 1))
+		if lines := swapOwnedTwins(deck, req); len(lines) != 1 || countIn(deck, "Fyndhorn Elves") != 1 {
+			t.Errorf("swaps = %v, deck = %v, want Fyndhorn Elves in place of Llanowar Elves", lines, deck.GetCards())
+		}
+	})
 }
 
 // TestBuildSwapsOwnedTwins proves that the build runs the pass and says
