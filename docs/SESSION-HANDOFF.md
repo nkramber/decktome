@@ -14,6 +14,8 @@ Author provider: Claude Code
 
 **The base.** `main` at `0562d6a`, the merge of #304.
 
+**Codex review.** The record at `docs/reviews/pr-305.md` approves effective head `364a9baf98c64c2d5e96663a4cb0fbc48056d902`. No open finding remains. The review commit is pending the auto-merge.
+
 **The cause.** The live eval of deck `SKhAyAbfXrbbhNPkgvEk` read an owned-first Bear deck. It bought Grizzly Bears and Bear Cub, and the collection held Balduvian Bears and Runeclaw Bear, the same card. The replays bought Llanowar Elves, and the collection held Fyndhorn Elves. No build step compared a card to buy with the owned cards.
 
 **The code.**
