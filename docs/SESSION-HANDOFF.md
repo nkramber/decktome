@@ -24,7 +24,9 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. Without the pass, `TestBuildSwapsOwnedTwins` fails. Three base replays scored 1, and three replays of try 2 scored 0. `live-evals bar` exits 0. The replays spent $2.63 of $3.00, so a later change of `go/` has no replay budget.
 
-**Next action.** The owner reads the notice, then merges the pull request or answers OQ-112.
+**Review state at the checkpoint (D-946).** The context passed 300K tokens after the first Gitar pass, so a new session continues this pull request. Gitar reviewed head `364a9ba`: "Approved with suggestions", one finding on the hand-off (the PR-145 body left behind). The checkpoint commit fixes it, and its thread still needs a reply and a resolve. The Gitar CI note names the missing `docs/reviews/pr-305.md`, which the Codex review writes. No Codex review ran.
+
+**Next action.** Reply on the Gitar thread with the checkpoint commit, and resolve it. Answer the CI note. Wait until each check is green, then run `make codex-review PR=305` in the foreground. Change no file of `go/`: the replay budget is spent, and a new tree needs new replays (D-1206).
 
 ## How to resume
 
@@ -143,12 +145,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 **A live eval read a thumbs-down on the theme question.** The row asked about "making" in a request for treasure tokens. The stop check read the surface form of a word alone.
 
 **The fix reads the base forms of a word that no card holds.** A rule on the base forms alone also dropped "blocking", which 335 cards hold.
-
-
-
-**The live eval of deck `v-als6BE4NsM3WGhr3EAeG` failed two times with no result.** Each session started the Codex review of #302 in the background and ended its turn. The end of the turn stopped the review.
-
-**A session now gets no background task.** The prompt says why, and the failure notice holds the last words of the session.
 
 ## The archive
 
