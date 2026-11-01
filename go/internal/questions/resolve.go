@@ -158,7 +158,48 @@ type ManaSource interface {
 	// deck wants, with the two counts. want is zero when the source can
 	// not answer, and the clause that names the counts then drops.
 	ThinSetMana(codes []string, format mtgv1.FormatId, colors []mtgv1.Color, power *mtgv1.PowerLevel) (thin bool, have, want int)
+	// ThinSetFixing reports whether the sets hold fewer fixing lands in
+	// the colors than the floor of D-799, with the two counts (D-1227).
+	// want is zero when the colors or the power hold no floor.
+	ThinSetFixing(codes []string, format mtgv1.FormatId, colors []mtgv1.Color, power *mtgv1.PowerLevel) (thin bool, have, want int)
 }
+
+// manaColors is the color identity the mana base of the deck serves:
+// the commander's in Commander once one is set, and the slot colors in
+// every other case (D-1227). The build reads the same rule (D-289). A
+// commander writes no color slot, so the mana row read every color, and
+// a blue-black commander of the Hobbit family passed with the 57 mana
+// cards of all five colors.
+func manaColors(st *State, h Hints) []mtgv1.Color {
+	if st.Ctx.CommanderSet && st.Slots.GetFormat().GetId() == mtgv1.FormatId_FORMAT_ID_COMMANDER {
+		if colors, ok := commanderIdentity(st.CommanderNames, h); ok && len(colors) > 0 {
+			return colors
+		}
+	}
+	return st.Slots.GetColors()
+}
+
+// thinSetMana reads both counts of the mana row (D-382, D-1227). It
+// answers the counts the row names: the mana cards when they fall short,
+// and else the fixing lands. kind names what the counts count. want is
+// zero when neither count falls short.
+func thinSetMana(ms ManaSource, st *State, h Hints) (thin bool, have, want int, kind string) {
+	codes, format, power := st.Slots.GetSetCodes(), st.Slots.GetFormat().GetId(), st.Slots.GetPower()
+	colors := manaColors(st, h)
+	if thin, have, want := ms.ThinSetMana(codes, format, colors, power); thin {
+		return true, have, want, manaCardsWord
+	}
+	if thin, have, want := ms.ThinSetFixing(codes, format, colors, power); thin {
+		return true, have, want, fixingLandsWord
+	}
+	return false, 0, 0, ""
+}
+
+// The words the mana row names its counts with (D-1227).
+const (
+	manaCardsWord   = "mana cards"
+	fixingLandsWord = "lands that make two or more colors of this deck"
+)
 
 // CommanderChecker reports whether a named card can lead a deck. A hint
 // source that holds the card index implements it.
@@ -463,12 +504,14 @@ func substitute(text string, st *State, h Hints) (string, []string) {
 		}
 		// The mana row names the count the sets hold and the count the
 		// deck wants (D-382). A source that can not count drops both, and
-		// the fallback carries the question.
+		// the fallback carries the question. The counts are the fixing
+		// lands when the mana cards suffice and the fixing lands do not
+		// (D-1227).
 		if ms, ok := h.(ManaSource); ok && strings.Contains(text, "{n_mana}") {
-			if _, have, want := ms.ThinSetMana(st.Slots.GetSetCodes(), st.Slots.GetFormat().GetId(),
-				st.Slots.GetColors(), st.Slots.GetPower()); want > 0 {
+			if _, have, want, kind := thinSetMana(ms, st, h); want > 0 {
 				rep["{n_mana}"] = strconv.Itoa(have)
 				rep["{m_mana}"] = strconv.Itoa(want)
+				rep["{mana_kind}"] = kind
 			}
 		}
 	}

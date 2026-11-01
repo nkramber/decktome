@@ -15,6 +15,36 @@ The oldest narratives sit in
 `docs/reference/session-log-2026-08-23-to-26.md` and
 `docs/reference/session-log-2026-08-27-to-28.md`.
 
+## The resume section of 2026-10-13, PR-147
+
+**Branch `live-eval/skhayabfxrbb`, PR-147: an owned twin takes the place of a card to buy (F-232, D-1226).** Role: author, in a headless live-eval session (D-1132).
+
+Author provider: Claude Code
+
+**The base.** `main` at `0562d6a`, the merge of #304.
+
+**Codex review.** The record at `docs/reviews/pr-305.md` approves effective head `364a9baf98c64c2d5e96663a4cb0fbc48056d902`. No open finding remains. The review commit is pending the auto-merge.
+
+**The cause.** The live eval of deck `SKhAyAbfXrbbhNPkgvEk` read an owned-first Bear deck. It bought Grizzly Bears and Bear Cub, and the collection held Balduvian Bears and Runeclaw Bear, the same card. The replays bought Llanowar Elves, and the collection held Fyndhorn Elves. No build step compared a card to buy with the owned cards.
+
+**The code.**
+
+- `go/internal/candidates/twin.go`: the twin rule and `addOwnedTwins`, which puts the owned twin of a card to buy on the shortlist.
+- `go/internal/generate/ownedtwin.go`: `swapOwnedTwins`, which plays an owned twin in place of each copy to buy, and the finding `owned_twin`.
+- `go/internal/cards/announcement_dates.json`: the date 2026-11-30, from the Wizards announcement of 2026-10-12. Without it `TestEmbeddedCalendarLoads` fails on each branch from 2026-10-13.
+
+**Checks.** `go test ./...` passes. Without the pass, `TestBuildSwapsOwnedTwins` fails. Three base replays scored 1, and three replays of try 2 scored 0. `live-evals bar` exits 0. The replays spent $2.63 of $3.00, so a later change of `go/` has no replay budget.
+
+**Review state.** Gitar reviewed effective head `364a9ba`: "Approved", one finding closed by commit `b315b57`. Its CI note named a dangling path in this section, and commit `2c1249e` removed it. A top-level comment answers the note. Each check on head `2c1249e` is green, `review-gate` excepted before the record. No review thread is open. The second session after the checkpoint (D-946) ran the Codex review and the bar check again, and `live-evals bar` exits 0.
+
+**Next action.** The owner reads the ready notice, and the owner merges (D-1137). This session turns on no auto-merge. Change no file of `go/`: a new tree needs new replays (D-1206).
+
+### 2026-10-09b: an inflected stop word in the theme, PR-144
+
+**A live eval read a thumbs-down on the theme question.** The row asked about "making" in a request for treasure tokens. The stop check read the surface form of a word alone.
+
+**The fix reads the base forms of a word that no card holds.** A rule on the base forms alone also dropped "blocking", which 335 cards hold.
+
 ## The resume section of 2026-10-09, PR-146
 
 **Branch `fix/question-answer-classifier`, PR-146, pull request #304: the reader words keep a bracket, a commander, and a skip (F-231, D-1224, D-1225).** Role: author.

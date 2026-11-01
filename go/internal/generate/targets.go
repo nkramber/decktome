@@ -2,6 +2,7 @@ package generate
 
 import (
 	"fmt"
+	"math"
 	"sync"
 
 	mtgv1 "github.com/nkramber/decktome/go/gen/mtg/v1"
@@ -75,6 +76,18 @@ func TargetsFor(format mtgv1.FormatId, power *mtgv1.PowerLevel) map[string]int {
 		"land": lands, "ramp": 2, "draw": 6, "removal": 6,
 		"threat": 14, "synergy": 8,
 	}
+}
+
+// FixingFloorFor is the count of fixing lands a deck of the given count
+// of colors must hold, and 0 when its power holds no floor (F-33, D-799).
+// The mana row of D-382 reads it, so the row and the profile read one
+// floor (D-1227).
+func FixingFloorFor(format mtgv1.FormatId, power *mtgv1.PowerLevel, colors int) int {
+	b, err := bands()
+	if err != nil {
+		return 0
+	}
+	return int(math.Ceil(b.FixingFloor(format, power, colors)))
 }
 
 // LimitsFor is the deck-building limits block the prompt reads. It states
