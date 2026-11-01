@@ -12,7 +12,11 @@ No owner question blocks it. The owner answered OQ-24 to OQ-27 on 2026-08-26 (D-
 
 ## Waits on a decision
 
-No question waits on a decision now. D-1192 answered OQ-95.
+OQ-120 waits on a decision. D-1192 answered OQ-95.
+
+| # | Question | Why only you | What it blocks |
+|---|---|---|---|
+| OQ-120 | GO-2026-6809 names `crypto/x509` of Go 1.27.2, and Go 1.27.3 fixes it. It fails `verify:go` and `verify:vuln` on `main`. `pnpm audit --audit-level high` also reads 7 high advisories in the lockfile of `main`, and `verify:web` fails. Where do the two fixes go? The options: (a) one pull request of their own, which keeps each change apart, but each open pull request waits for its merge; (b) the pull request that the failure stops, as D-1172 did, which ends the wait, but a live eval can not change CI or the Dockerfiles (D-1157, D-1158); (c) the Dependabot pull requests #307 and #259, which carry the bumps, but #307 fails the same checks. | The Go bump changes CI and both Dockerfiles (D-1216), and D-1218 made it an owner decision. Each earlier audit fix was an owner decision (D-1006, D-1022, D-1172). | The Codex record of #308 reads `Blocked` on the red checks alone, with no finding. #308 and each other pull request wait for green checks. |
 
 ## The two numbers M-5 exists to set
 
