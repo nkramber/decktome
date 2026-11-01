@@ -24,9 +24,11 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. Without the fix, three tests of `go/internal/questions/mana_row_test.go` fail. Three base replays scored 0, and six replays of try 1 scored 1. `live-evals bar` exits 0. The replays spent $0.20 of $3.00.
 
-**Review state.** Gitar and the Codex review follow the push. The review record and the checks hold their state.
+**Review state.** Pull request #308. Gitar reviewed effective head `09d3935`: "Approved", no finding, no review thread. A top-level comment answers its CI note. No Codex review ran yet, so `review-gate` is red.
 
-**Next action.** The owner reads the ready notice, and the owner merges (D-1137). This session turns on no auto-merge. A change of `go/` needs new replays (D-1206).
+**Red checks not of this change.** `verify:go` and `verify:vuln` fail on GO-2026-6809 in `crypto/x509` of Go 1.27.2, fixed in 1.27.3. `verify:web` fails on 7 high advisories of `pnpm audit` in the lockfile of `main`. Dependabot #307 shows the same failures. Each other check is green.
+
+**Next action.** The context checkpoint stopped the session at 300K tokens (D-946). Run `make codex-review PR=308` in the foreground, and answer each finding. Then run `live-evals bar` again on the head. A change of `go/` needs new replays (D-1206). The owner merges (D-1137).
 
 ## How to resume
 
