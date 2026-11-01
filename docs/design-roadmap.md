@@ -6,6 +6,7 @@ External facts were verified 2026-08-23, with 2026-08-24 re-passes noted inline.
 
 Owner decisions live in `docs/decisions.md` (D-#). Open questions live in `docs/open-questions.md` (OQ-#). The decision queue lives in `docs/owner-questions.md`. Research notes live in `docs/reference/`. The MtG knowledge base lives in `.claude/skills/mtg-corpus/`.
 
+2026-10-31 correction pass 276 (PR-148, F-233, D-1227): a Hobbit deck led by a four-color commander held 5 fixing lands of 17, and the mana row never asked. The row now reads the colors of the commander and the fixing floor. Changes: PR-148.
 2026-10-13 correction pass 275 (PR-147, F-232, D-1226): an owned-first deck bought cards that the collection held under other names. The shortlist and the build now put the owned twin in place of a card to buy. Changes: PR-147.
 2026-10-09 correction pass 274 (PR-146, F-231, D-1224, D-1225): the classifier lost a typed bracket, read a typed commander as a card, and missed a skip. Three word rules now correct the classify output first. Changes: PR-146.
 2026-10-09 correction pass 273 (PR-145, D-1223): two sessions of one live eval started the Codex review in the background and ended the turn. The end of the turn stopped the review, so the eval failed with no result. A session now gets no background task. Changes: PR-145.
@@ -651,6 +652,7 @@ Status: ✅ resolved · 🔧 planned (item listed) · 🅿 parked · ⏸ out of 
 | F-230 | **The theme question named an inflected stop word.** The live eval of thumbs-down `als6BE4NsM3WGhr3EAeG` read the request "making lots of treasure tokens and using them to win". The theme row of D-725 asked about "making". The stop lists hold "make", and the stop check read the surface form alone. The same fault asked about "building", "wanted", "needing", and ten more forms. | ✅ PR-144: a word that fires on no card, and whose -s, -ing, or -ed base form is a stop word, leaves the theme (D-1222). |
 | F-231 | **The reader words lost three answers.** The chat `dDD9Iav9aGhgGF9dDLNQ` answered "1 Exhibition" under the power row, and the classifier left the power empty, so the build used bracket 3. The reader then typed "Skip that question.. Jace, Multiverse Architect". The name went to the role row, or the skip declined nothing and the chat stalled. | ✅ PR-146: three rules read the words of the reader before the classify output applies (D-1224, D-1225). |
 | F-232 | **The deck bought a card that the collection held under another name.** The owned-first deck `SKhAyAbfXrbbhNPkgvEk` bought Grizzly Bears and Bear Cub, and the collection held Balduvian Bears and Runeclaw Bear. Three replays bought Llanowar Elves, and the collection held Fyndhorn Elves. No build step compared a card to buy with the owned cards. | ✅ PR-147: the shortlist adds the owned twin, and the build plays it in place of each copy to buy (D-1226). |
+| F-233 | **The mana row stayed silent for a set family that can not make the mana of the deck.** The live eval of deck `RI8g5HvR5Kuk8dvySKJa` read a Hobbit deck of owned cards led by Aragorn, the Uniter. The deck held 5 fixing lands against a floor of 17, the worst color held 0.67 of its sources, and the grade read bad. The row of D-382 read the color slot, which a commander never writes, and it read no fixing floor. | ✅ PR-148: the row reads the colors of the commander, and it compares the fixing lands of the family with the floor of D-799 (D-1227). |
 | F-209 | **A sign-in returned to the page of the last account.** The owner signed out on the admin page, and then signed in to a new invited account. The app returned to the admin page, which read "permission_denied" (D-1085). | ✅ PR-117: each sign-in lands on the home page. |
 | F-158 | **Two snapshot tests of PR-57 never ran.** `make themes-check` names each snapshot test by a `-run` pattern. The pattern held `TestTypalLandsReachATypalShortlist` from PR-55, and PR-57 added `TestTypalCardsReachATypalShortlist` and did not extend it. A `-run` pattern is an unanchored regular expression, and the land name never matches the card name. So the card test of PR-57 ran in no target. It also skips under `make verify`, because the verify workflow holds no card snapshot. Found 2026-09-20 by the checks of PR-58. | ✅ fixed by PR-58. The pattern reads `ReachATypalShortlist` now, which matches all three snapshot shortlist tests. A run of `make themes-check` reads five tests in place of three. |
 | F-30 | **No signal of deck quality exists.** The pool ranks on theme fit and EDHREC popularity, and the bracket drops Game Changers under bracket 3 and nothing else. A bracket 5 request got the three most popular legends whose text held "you" and "can" (session t8o1nGGquK6UdTQkfY3V, D-411, 2026-09-01). | ✅ PR-14B merged 2026-09-03 (#58, D-470 to D-493), and D-479 answered OQ-54. F-53 and F-94 carry the judge bar. The row read 🔧 until 2026-09-20. |
@@ -3775,6 +3777,22 @@ Gate:
 - A Codex review record that approves the effective head (D-815).
 
 > *In plain English:* the deck told a reader to buy a card that they already owned under another name. The app now spots such a pair and plays the owned card.
+
+**PR-148: The mana row reads the commander colors and the fixing lands (F-233, D-1227).** ✅ merged as #308. The mark comes before any review (D-822). A live eval read a Hobbit deck of owned cards led by a four-color commander, with 5 fixing lands of 17 and no question.
+
+- **The colors.** The row reads the identity of the commander once one is set, and the color slot in each other case. The build reads the same rule (D-289).
+- **The fixing count.** `CountFixingInSets` counts the lands of the family in the deck colors of the fixing class of the profile. `FixingFloorFor` reads the floor of D-799 for the power and the count of colors.
+- **The question.** When the mana cards suffice and the fixing lands do not, the row names the fixing counts. The answer and the build path stay those of D-382.
+
+Gate:
+- `go/internal/candidates/fixing_sets_test.go` counts the lands of the Hobbit family for four colors, two colors, a 60-card deck, and one color.
+- `go/internal/questions/mana_row_test.go` reads the deployed case, a blue-black commander, a 60-card deck, and a mono-colored deck. Without the fix, three of its tests fail.
+- Three base replays scored 0, and six replays of try 1 scored 1. `live-evals bar` exits 0.
+- `make verify` passes.
+- A current Gitar review, with an answer to each finding.
+- A Codex review record that approves the effective head (D-815).
+
+> *In plain English:* a reader asked for a deck from one set, and picked a commander of four colors. The set holds too few lands for four colors, and the app built a weak mana base in silence. The app now asks first if it can use lands from other sets.
 
 **PR-36: The reader's verdict as a quality signal (F-53, D-651).** 🔧 planned. It waits for verdicts.
 The quality model learns from meta lists and synthetic breaks alone. No person ever told it that a deck is good or bad.

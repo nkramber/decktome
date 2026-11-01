@@ -6,29 +6,27 @@ This file holds the current state, the resume steps, the facts that expire, the 
 
 CAUTION: the web tests need Node 22.23.2 (`.nvmrc`). Under Node 20 every test file fails at start with `ERR_REQUIRE_ESM` from jsdom 30. Put `~/.nvm/versions/node/v22.23.2/bin` on the PATH before `make verify`. On this machine `nvm use` reports the change and does not make it, so prepend the path yourself.
 
-## RESUME HERE (2026-10-13, PR-147)
+## RESUME HERE (2026-10-31, PR-148)
 
-**Branch `live-eval/skhayabfxrbb`, PR-147: an owned twin takes the place of a card to buy (F-232, D-1226).** Role: author, in a headless live-eval session (D-1132).
+**Branch `live-eval/ri8g5hvr5kuk`, PR-148: the mana row reads the commander colors and the fixing lands (F-233, D-1227).** Role: author, in a headless live-eval session (D-1132).
 
 Author provider: Claude Code
 
-**The base.** `main` at `0562d6a`, the merge of #304.
+**The base.** `main` at `06495b0`, the merge of #305.
 
-**Codex review.** The record at `docs/reviews/pr-305.md` approves effective head `364a9baf98c64c2d5e96663a4cb0fbc48056d902`. No open finding remains. The review commit is pending the auto-merge.
-
-**The cause.** The live eval of deck `SKhAyAbfXrbbhNPkgvEk` read an owned-first Bear deck. It bought Grizzly Bears and Bear Cub, and the collection held Balduvian Bears and Runeclaw Bear, the same card. The replays bought Llanowar Elves, and the collection held Fyndhorn Elves. No build step compared a card to buy with the owned cards.
+**The cause.** The live eval of deck `RI8g5HvR5Kuk8dvySKJa` read a Hobbit deck of owned cards led by Aragorn, the Uniter. It held 5 fixing lands against a floor of 17, and the grade read bad. The mana row of D-382 read the color slot, which a commander never writes, and it read no fixing floor.
 
 **The code.**
 
-- `go/internal/candidates/twin.go`: the twin rule and `addOwnedTwins`, which puts the owned twin of a card to buy on the shortlist.
-- `go/internal/generate/ownedtwin.go`: `swapOwnedTwins`, which plays an owned twin in place of each copy to buy, and the finding `owned_twin`.
-- `go/internal/cards/announcement_dates.json`: the date 2026-11-30, from the Wizards announcement of 2026-10-12. Without it `TestEmbeddedCalendarLoads` fails on each branch from 2026-10-13.
+- `go/internal/candidates/candidates.go`: `CountFixingInSets`, the fixing lands of a set family in the deck colors.
+- `go/internal/generate/targets.go`: `FixingFloorFor`, the floor of D-799.
+- `go/internal/questions/resolve.go` and `go/internal/questions/agent.go`: the row reads the colors of the commander and both counts. `go/internal/questions/catalog.json` names the kind of count.
 
-**Checks.** `go test ./...` passes. Without the pass, `TestBuildSwapsOwnedTwins` fails. Three base replays scored 1, and three replays of try 2 scored 0. `live-evals bar` exits 0. The replays spent $2.63 of $3.00, so a later change of `go/` has no replay budget.
+**Checks.** `go test ./...` passes. Without the fix, three tests of `go/internal/questions/mana_row_test.go` fail. Three base replays scored 0, and six replays of try 1 scored 1. `live-evals bar` exits 0. The replays spent $0.20 of $3.00.
 
-**Review state.** Gitar reviewed effective head `364a9ba`: "Approved", one finding closed by commit `b315b57`. Its CI note named a dangling path in this section, and commit `2c1249e` removed it. A top-level comment answers the note. Each check on head `2c1249e` is green, `review-gate` excepted before the record. No review thread is open. The second session after the checkpoint (D-946) ran the Codex review and the bar check again, and `live-evals bar` exits 0.
+**Review state.** Gitar and the Codex review follow the push. The review record and the checks hold their state.
 
-**Next action.** The owner reads the ready notice, and the owner merges (D-1137). This session turns on no auto-merge. Change no file of `go/`: a new tree needs new replays (D-1206).
+**Next action.** The owner reads the ready notice, and the owner merges (D-1137). This session turns on no auto-merge. A change of `go/` needs new replays (D-1206).
 
 ## How to resume
 
@@ -102,6 +100,7 @@ Twenty-two things a fresh session gets wrong without this file.
 ## Next steps, in order
 
 0. **The live rerun of I-1** (D-1023). After the ban announcement of 2026-10-12, read the stale pass and rerun a real stale deck. Ask the owner before the paid run.
+0. **The live check of PR-148** (D-1227). After the deploy, ask for a Commander deck of the Hobbit set and pick Aragorn, the Uniter. The mana row must ask before the build. Ask the owner before the paid run.
 0. **The live check of PR-147** (D-1226). After the deploy, build an owned-first deck from a collection that holds Fyndhorn Elves and no Llanowar Elves. The deck must buy no card that an owned card equals. Ask the owner before the paid run.
 0. **The live check of PR-146** (D-1224). After the deploy, type "1 Exhibition" under the power row and a commander name under the pick row. The deck must read bracket 1 and lead with that commander. Ask the owner before the paid run.
 0. **The live check of PR-139** (D-1209, D-1210). After the deploy, paste a Moxfield link in the import. The dialog must fit the screen, and the bookmark must come first. The next push of a live-eval session must show no keychain dialog.
@@ -126,6 +125,12 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 ## The three most recent sessions
 
+### 2026-10-31: the mana row of a set family, PR-148
+
+**A live eval read a Hobbit deck of owned cards.** Aragorn, the Uniter led it with 5 fixing lands of 17. The row that asks for mana from outside the sets never asked.
+
+**The fix reads the colors of the commander and the fixing floor.** A blue-black commander of the same family held 16 mana cards of 46 and got no row either. OQ-113 asks the owner about the land target of the count.
+
 ### 2026-10-13: an owned twin of a card to buy, PR-147
 
 **A live eval read a revision of an owned-first Bear deck.** The deck bought two cards that the collection held under other names. The replays bought Llanowar Elves beside an owned Fyndhorn Elves.
@@ -142,12 +147,6 @@ The repository is public (D-639). The rulesets API answers, and the ruleset of `
 
 **The owner widened the item to the skip** (D-1224). A session decision puts "Name your own" on the pick card, because the page hides the chat box while a question is open (D-1225).
 
-### 2026-10-09b: an inflected stop word in the theme, PR-144
-
-**A live eval read a thumbs-down on the theme question.** The row asked about "making" in a request for treasure tokens. The stop check read the surface form of a word alone.
-
-**The fix reads the base forms of a word that no card holds.** A rule on the base forms alone also dropped "blocking", which 335 cards hold.
-
 ## The archive
 
-`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-09, the records of 2026-08-31 to 2026-10-09, and 104 more sections, word for word. Read it for the detail behind a decision.
+`docs/reference/session-handoff-archive.md` holds every record this file no longer carries. It holds the resume sections of 2026-09-08, and of 2026-09-16 to 2026-10-13, the records of 2026-08-31 to 2026-10-09, and 104 more sections, word for word. Read it for the detail behind a decision.
