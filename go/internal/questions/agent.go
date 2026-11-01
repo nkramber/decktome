@@ -260,11 +260,11 @@ func (a *Agent) readFacts(st *State) {
 	}
 	// The mana row needs the count the sets offer against the count the
 	// deck wants (D-382). It only matters while a set limit is on and
-	// the key is open.
+	// the key is open. The counts read the colors of the commander, and
+	// the fixing lands count beside the mana cards (D-1227).
 	st.Ctx.ThinSetMana = false
 	if ms, ok := a.hints.(ManaSource); ok && st.Ctx.SetLimited && !st.Ctx.Filled[SlotSetOutsideMana] {
-		thin, _, _ := ms.ThinSetMana(st.Slots.GetSetCodes(), st.Slots.GetFormat().GetId(),
-			st.Slots.GetColors(), st.Slots.GetPower())
+		thin, _, _, _ := thinSetMana(ms, st, a.hints)
 		st.Ctx.ThinSetMana = thin
 	}
 	// The theme row reads the theme as this turn left it (D-725).

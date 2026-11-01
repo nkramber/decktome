@@ -1769,3 +1769,37 @@ func (b *Builder) CountManaInSets(idx *cards.Index, req Request) int {
 	}
 	return n
 }
+
+// CountFixingInSets counts the fixing lands a set family offers in the
+// deck's colors (D-1227). A fixing land is the class the profile counts
+// against the floor of D-799: a land that makes two or more deck colors,
+// or fetches a land that does. A deck of one color, or of no named
+// color, needs no fixing, so the count is zero.
+//
+// CountManaInSets counts every land and ramp card alike. A four-color
+// identity of the Hobbit family passed that count with 48 cards against
+// 46, and the family held 5 fixing lands against a floor of 17.
+func (b *Builder) CountFixingInSets(idx *cards.Index, req Request) int {
+	colorSet := req.colorSet()
+	if idx == nil || len(req.SetCodes) == 0 || len(colorSet) < 2 {
+		return 0
+	}
+	setCodes := cards.CodeSet(req.SetCodes)
+	legalKey := legalKeys[req.Format]
+	n := 0
+	for _, c := range idx.All() {
+		if IsBasicLand(c) || !hasPaperPrinting(c) || !cards.InSets(c, setCodes) {
+			continue
+		}
+		if legalKey != "" && !legalIn(c, legalKey) {
+			continue
+		}
+		if !IdentityFits(c.GetColorIdentity(), colorSet) {
+			continue
+		}
+		if profile.LandClassOf(c, colorSet) < profile.LandOther {
+			n++
+		}
+	}
+	return n
+}

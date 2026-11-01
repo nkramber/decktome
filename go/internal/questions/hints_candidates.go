@@ -81,6 +81,8 @@ type CandidateHints struct {
 	manaThin map[string]bool
 	manaHave map[string]int
 	manaWant map[string]int
+	// fixHave keeps the fixing count of D-1227 under the same key.
+	fixHave map[string]int
 }
 
 // CanLead reports whether a named card can lead a deck. "Lightning Bolt
@@ -730,6 +732,47 @@ func (h *CandidateHints) ThinSetMana(codes []string, format mtgv1.FormatId,
 	h.manaDone[key], h.manaThin[key] = true, thin
 	h.manaHave[key], h.manaWant[key] = have, want
 	return thin, have, want
+}
+
+// ThinSetFixing counts the fixing lands a set family offers in the deck
+// colors against the fixing floor of D-799 (D-1227). It answers the
+// ManaSource contract.
+//
+// The mana count of ThinSetMana reads every land and ramp card alike, so
+// a wide identity passes it with no fixing at all. The profile then
+// warns on each deck, and the row that asks for lands from outside the
+// sets stayed silent.
+//
+// want is zero when the colors or the power hold no floor, and the deck
+// is then never short.
+func (h *CandidateHints) ThinSetFixing(codes []string, format mtgv1.FormatId,
+	colors []mtgv1.Color, power *mtgv1.PowerLevel,
+) (thin bool, have, want int) {
+	if h == nil || h.Index == nil || h.Builder == nil || len(codes) == 0 || len(colors) < 2 {
+		return false, 0, 0
+	}
+	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		format = h.Format
+	}
+	if format == mtgv1.FormatId_FORMAT_ID_UNSPECIFIED {
+		return false, 0, 0
+	}
+	want = generate.FixingFloorFor(format, power, len(colors))
+	if want == 0 {
+		return false, 0, 0
+	}
+	key := strings.Join(codes, ",") + "|" + format.String() + "|" + colorKey(colors)
+	if n, ok := h.fixHave[key]; ok {
+		return n < want, n, want
+	}
+	have = h.Builder.CountFixingInSets(h.Index, candidates.Request{
+		Format: format, Colors: colors, SetCodes: codes,
+	})
+	if h.fixHave == nil {
+		h.fixHave = map[string]int{}
+	}
+	h.fixHave[key] = have
+	return have < want, have, want
 }
 
 // colorKey reads a color list as one cache key.

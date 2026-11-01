@@ -152,7 +152,7 @@
       "key": "set_outside_mana",
       "order": 22,
       "fixed": true,
-      "text": "{sets} hold {n_mana} mana cards, and this deck wants {m_mana}. May I use mana rocks and lands from outside them?",
+      "text": "{sets} hold {n_mana} {mana_kind}, and this deck wants {m_mana}. May I use mana rocks and lands from outside them?",
       "options": [
         "Yes, mana from any set",
         "No, only these sets"
