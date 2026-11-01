@@ -24,7 +24,7 @@ Author provider: Claude Code
 
 **Checks.** `go test ./...` passes. Without the fix, three tests of `go/internal/questions/mana_row_test.go` fail. Three base replays scored 0, and six replays of try 1 scored 1. `live-evals bar` exits 0. The replays spent $0.20 of $3.00.
 
-**Review state.** Pull request #308. Gitar reviewed head `fcc2f29`: "Approved", no finding, no review thread. The Codex record `docs/reviews/pr-308.md` holds no finding, and its verdict is `Blocked` on the red checks alone. Its head field `dcf5f83` is not the effective head `09d3935`.
+**Review state.** Pull request #308. Gitar approves effective head `111fabd36abf00393302bbdc86d34a8fee672213`, with no open thread. The Codex record `docs/reviews/pr-308.md` has no finding and verdict `Blocked` on the failed or pending required checks. No finding remains open.
 
 **Red checks not of this change.** `verify:go` and `verify:vuln` fail on GO-2026-6809 in `crypto/x509` of Go 1.27.2, fixed in 1.27.3. `verify:web` fails on 7 high advisories of `pnpm audit` in the lockfile of `main`. Dependabot #307 shows the same failures. Each other check is green.
 
